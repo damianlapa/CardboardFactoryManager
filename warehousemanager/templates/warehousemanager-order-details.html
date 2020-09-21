@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<table style="border: 1px solid black">
+    Dostawca: {{ order.provider }}
+    Nr zamówienia: {{ order.order_provider_number }}
+    Data złożenia zamówienia: {{ order.date_of_order }}
+
+    {% for o in ordered_items %}
+    <tr>
+        <td>{{ o.item_number }}</td>
+        <td>{{ o.sort }}</td>
+        <td>{{ o.format_width }}</td>
+        <td>{{ o.format_height }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

@@ -45,17 +45,21 @@ class Buyer(models.Model):
 
 
 class Order(models.Model):
-    provider = models.OneToOneField(CardboardProvider, on_delete=models.CASCADE)
+    provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     order_provider_number = models.IntegerField(unique=True)
     date_of_order = models.DateTimeField()
 
+    def __str__(self):
+        return '{} {}({})'.format(self.provider, self.order_provider_number, self.date_of_order)
+
 
 class OrderItem(models.Model):
-    order = models.OneToOneField(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
     item_number = models.IntegerField(unique=True)
     sort = models.CharField(max_length=15, choices=ITEM_SORTS)
     format_width = models.IntegerField()
     format_height = models.IntegerField()
+    ordered_quantity = models.IntegerField()
     buyer = models.ManyToManyField(Buyer, blank=True)
     cardboard_type = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     cardboard_weight = models.IntegerField()
@@ -63,6 +67,21 @@ class OrderItem(models.Model):
     dimension_two = models.IntegerField()
     dimension_three = models.IntegerField(blank=True, null=True)
     scores = models.CharField(max_length=64)
+
+    def __str__(self):
+        return '{} {}/{}'.format(self.order, self.item_number, self.buyer)
+
+
+class Delivery(models.Model):
+    items = models.ManyToManyField(OrderItem, through='OrderItemQuantity')
+    provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
+    date_of_delivery = models.DateField()
+
+
+class OrderItemQuantity(models.Model):
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
 
 
 
