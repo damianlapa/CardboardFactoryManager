@@ -46,8 +46,9 @@ class Buyer(models.Model):
 
 class Order(models.Model):
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
-    order_provider_number = models.IntegerField(unique=True)
+    order_provider_number = models.IntegerField()
     date_of_order = models.DateTimeField()
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
         return '{} {}({})'.format(self.provider, self.order_provider_number, self.date_of_order)
@@ -55,7 +56,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    item_number = models.IntegerField(unique=True)
+    item_number = models.IntegerField()
     sort = models.CharField(max_length=15, choices=ITEM_SORTS)
     format_width = models.IntegerField()
     format_height = models.IntegerField()
@@ -84,4 +85,6 @@ class OrderItemQuantity(models.Model):
     quantity = models.IntegerField()
 
 
-
+class Machine(models.Model):
+    name = models.CharField(max_length=32)
+    shortcut = models.CharField(max_length=8)

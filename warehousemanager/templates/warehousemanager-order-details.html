@@ -1,15 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends '__base__.html' %}
 
-<table style="border: 1px solid black">
+{% block title %}Order {{ order }} {% endblock %}
+
+{% block content %}
+<table class="zamowienie">
     Dostawca: {{ order.provider }}
     Nr zamówienia: {{ order.order_provider_number }}
     Data złożenia zamówienia: {{ order.date_of_order }}
+
+    <tr>
+        <th>Nr pozycji</th>
+        <th>Typ</th>
+        <th>Szerokość</th>
+        <th>Długość</th>
+        <th>Ilość zamówiona</th>
+        <th>Klient</th>
+        <th>Rodzaj tektury</th>
+
+    </tr>
 
     {% for o in ordered_items %}
     <tr>
@@ -17,9 +25,10 @@
         <td>{{ o.sort }}</td>
         <td>{{ o.format_width }}</td>
         <td>{{ o.format_height }}</td>
+        <td>{{ o.ordered_quantity }}</td>
+        <td>{{ o.buyer.all.name }}</td>
+        <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
     </tr>
     {% endfor %}
 </table>
-
-</body>
-</html>
+{% endblock %}

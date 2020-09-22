@@ -1,18 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends '__base__.html' %}
 
+{% block title %}Orders{% endblock %}
+
+{% block content %}
 <list>
 {% for o in orders_all %}
 
-    <li><a href="{% url 'order-details' order_id=o.id %}">{{ o }}</a></li>
+    {% if o.provider == 'Convert' %}
+
+        <li class="convert">
+
+    {% else %}
+
+        <li class="{{ o.provider }}">
+
+    {% endif %}
+
+    <a href="{% url 'order-details' order_id=o.id %}">{{ o }}//{{ o.provider }}</a></li>
 
 {% endfor %}
 </list>
-
-</body>
-</html>
+{% endblock %}
