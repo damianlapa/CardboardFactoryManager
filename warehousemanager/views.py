@@ -14,7 +14,6 @@ def index(request):
 class Orders(View):
 
     def get(self, request):
-        test = 'o'
         orders_all = Order.objects.all()
         return render(request, 'warehousemanager-orders.html', locals())
 
@@ -25,4 +24,10 @@ class OrdersDetails(View):
         order = Order.objects.get(id=order_id)
         ordered_items = order.orderitem_set.all()
         return render(request, 'warehousemanager-order-details.html', locals())
+
+
+class AllOrdersDetails(View):
+    def get(self, request):
+        orders = Order.objects.all()
+        return render(request, 'warehousemanager-all-orders-details.html', locals())
 

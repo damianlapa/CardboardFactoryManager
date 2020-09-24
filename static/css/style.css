@@ -3,10 +3,19 @@
     font-size: 20px;
 }
 
+.Aquila {
+    color: red;
+    font-size: 20px;
+}
+
 table {
   border-collapse: collapse;
 }
 
 .zamowienie table, th, td {
   border: 1px solid black;
+}
+
+.blackrow {
+    background: black;
 }

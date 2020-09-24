@@ -4,11 +4,9 @@
 
 {% block content %}
 <table class="zamowienie">
-    Dostawca: {{ order.provider }}
-    Nr zamówienia: {{ order.order_provider_number }}
-    Data złożenia zamówienia: {{ order.date_of_order }}
 
     <tr>
+        <th>Nr zamówienia</th>
         <th>Nr pozycji</th>
         <th>Typ</th>
         <th>Szerokość</th>
@@ -21,8 +19,12 @@
 
     </tr>
 
-    {% for o in ordered_items %}
-    <tr>
+    {% for order in orders %}
+    {% for o in order.orderitem_set.all %}
+    <tr class="{{ order.provider }}">
+        {% if forloop.first %}
+        <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
+        {% endif %}
         <td>{{ o.item_number }}</td>
         <td>{{ o.sort }}</td>
         <td>{{ o.format_width }}</td>
@@ -32,6 +34,10 @@
         <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
         <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
         <td>{{ o.scores }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+        <td colspan="10" class="black_row"> *** </td>
     </tr>
     {% endfor %}
 </table>

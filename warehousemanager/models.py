@@ -69,6 +69,10 @@ class OrderItem(models.Model):
     dimension_three = models.IntegerField(blank=True, null=True)
     scores = models.CharField(max_length=64)
 
+    class Meta:
+
+        ordering = ['item_number']
+
     def __str__(self):
         return '{} {}/{}'.format(self.order, self.item_number, self.buyer)
 
