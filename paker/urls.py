@@ -15,12 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails
+from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', index, name='index'),
     path('orders/', Orders.as_view(), name='orders'),
     path('order/<int:order_id>', OrdersDetails.as_view(), name='order-details'),
-    path('orders-details/', AllOrdersDetails.as_view(), name='all-orders-details')
+    path('orders-details/', AllOrdersDetails.as_view(), name='all-orders-details'),
+    path('new-order/', NewOrder.as_view(), name='new-order'),
+    path('non/', NextOrderNumber.as_view(), name='next-order-number')
 ]
