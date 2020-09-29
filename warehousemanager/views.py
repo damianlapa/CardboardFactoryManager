@@ -5,6 +5,7 @@ import json
 
 # import models from warehousemanager app
 from warehousemanager.models import *
+from warehousemanager.forms import *
 
 
 def index(request):
@@ -36,6 +37,9 @@ class AllOrdersDetails(View):
 class NewOrder(View):
     def get(self, request):
         providers = CardboardProvider.objects.all()
+        item_sorts = ITEM_SORTS
+        buyers = Buyer.objects.all()
+        cardboard_types = CARDBOARD_TYPES
         return render(request, 'warehousemanager-new-order.html', locals())
 
 
@@ -49,5 +53,18 @@ class NextOrderNumber(View):
         z = json.dumps(num)
 
         return HttpResponse(z)
+
+
+class ProviderForm(View):
+    def get(self, request):
+        form = CardboardProviderForm()
+        return render(request, 'new_provider.html', locals())
+
+    def post(self, request):
+        form = CardboardProviderForm(request.POST)
+        if form.is_valid():
+            new_provider = CardboardProvider(name=form.cleaned_data['name'])
+            new_provider.save()
+            return HttpResponse('ok')
 
 

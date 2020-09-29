@@ -21,9 +21,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
             })
         add_order_button.addEventListener('click', function(event){
+            let order_name = ''
             order_details.style.display = 'none'
             all_orders.style.display = 'inline'
-            order_description.innerText = 'okok'
+            if (order_num.value !== null){
+
+                console.log(provider.value)
+                if (provider.value === '1') {
+                    order_name = 'PAS'
+                }
+                else if (provider.value === '2') {
+                    order_name = 'CON'
+                }
+                else if (provider.value === '3') {
+                    order_name = 'AQ'
+                }
+
+                order_name += '/'
+                order_name += order_num.value
+            }
+            order_description.innerText = order_name
             event.preventDefault()
         })
         }

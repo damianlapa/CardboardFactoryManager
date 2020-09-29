@@ -1,0 +1,11 @@
+{% extends '__base__.html' %}
+
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Ddoaj">
+</form>
+{% endblock %}

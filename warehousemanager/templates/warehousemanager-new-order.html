@@ -32,9 +32,50 @@
         </p>
     </div>
     <div class="all-orders", style="display:none">
-        <h2>Szczegóły zamówienia: </h2>
-        <h2 class="order-description" style="color:red; display:block;" ></h2>
+        <h2 style="display:inline">Szczegóły zamówienia: </h2>
+        <h2 class="order-description" style="color:red; display:inline" ></h2>
+
+        <br/>
+
+        <label>Nr pozycji:
+            <input type="number" value="1" name="item-number">
+        </label>
+        <label>Typ zamówienia:
+            <select>
+                {% for sort in item_sorts %}
+                        <option value="{{ sort }}">{{ sort }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <br/>
+        <label>Długość:
+            <input name="height" type="number">
+        </label>
+        <label>Szerokość:
+            <input name="width" type="number">
+        </label>
+        <br/>
+        <label>Ilość
+            <input name="quantity" type="number">
+        </label>
+        <select name="buyer">Klient:
+            {% for b in buyers %}
+                <option value="{{ b.id }}">{{ b.name }}</option>
+            {% endfor %}
+        </select>
+        <br/>
+        <select name="cardboard-type">Typ fali:
+            {% for type in cardboard_types %}
+                <option value="{{ type }}">{{ type }}</option>
+            {% endfor %}
+        </select>
+        <label>Gramatura:
+            <input name="weight" type="number">
+        </label>
+
     </div>
 </form>
+
+Dziś jest: {{ now }}
 
 {% endblock %}
