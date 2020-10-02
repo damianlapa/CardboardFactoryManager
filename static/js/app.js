@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const NewOrderForm = document.querySelectorAll('.new-order')
+    const NewItem = document.querySelectorAll('new-order-item')
     if (NewOrderForm !== null) {
         const provider = document.querySelector('.provider')
         const order_num = document.querySelector('.order-number')
@@ -25,8 +26,6 @@ document.addEventListener("DOMContentLoaded", function () {
             order_details.style.display = 'none'
             all_orders.style.display = 'inline'
             if (order_num.value !== null){
-
-                console.log(provider.value)
                 if (provider.value === '1') {
                     order_name = 'PAS'
                 }
@@ -41,7 +40,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 order_name += order_num.value
             }
             order_description.innerText = order_name
+
+            $.ajax({
+                url: '/create-new-order/',
+                data: {'provider_num': provider.value},
+                type: 'GET',
+                dataType: 'json'
+            }).done(function (data) {
+                })
+            if (NewItem !== null) {
+                const OrderId = document.getElementById('id_order')
+                console.log(OrderId)
+                OrderId.value = OrderId.length - 1
+                // OrderId.disabled = true
+                }
             event.preventDefault()
         })
         }
+
 })

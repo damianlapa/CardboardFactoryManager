@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views import View
 import json
+import datetime
 
 # import models from warehousemanager app
 from warehousemanager.models import *
@@ -37,10 +38,21 @@ class AllOrdersDetails(View):
 class NewOrder(View):
     def get(self, request):
         providers = CardboardProvider.objects.all()
-        item_sorts = ITEM_SORTS
-        buyers = Buyer.objects.all()
-        cardboard_types = CARDBOARD_TYPES
+        form = NewOrderForm()
         return render(request, 'warehousemanager-new-order.html', locals())
+
+
+class NewOrderAdd(View):
+    def get(self, request):
+        provider_num = request.GET.get('provider_num')
+        provider = CardboardProvider.objects.get(id=int(provider_num))
+        all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number')
+        print(all_orders.reverse()[0])
+        num = all_orders.reverse()[0].order_provider_number + 1
+        new_order = Order.objects.create(provider=provider, order_provider_number=num, date_of_order=datetime.datetime.now())
+        new_order.save()
+
+        return HttpResponse('')
 
 
 class NextOrderNumber(View):
@@ -57,14 +69,12 @@ class NextOrderNumber(View):
 
 class ProviderForm(View):
     def get(self, request):
-        form = CardboardProviderForm()
+        form = NewOrderForm()
         return render(request, 'new_provider.html', locals())
 
     def post(self, request):
         form = CardboardProviderForm(request.POST)
         if form.is_valid():
-            new_provider = CardboardProvider(name=form.cleaned_data['name'])
-            new_provider.save()
             return HttpResponse('ok')
 
 

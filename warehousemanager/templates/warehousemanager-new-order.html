@@ -1,7 +1,7 @@
 {% extends '__base__.html' %}
 
 {% block title %}
-    Nowe zamówienie
+Nowe zamówienie
 {% endblock %}
 
 {% block content %}
@@ -12,7 +12,7 @@
             Dostawca:
             <select name="provider" class="provider">
                 {% for p in providers %}
-                    <option value="{{ p.id }}">{{ p.name }}</option>
+                <option value="{{ p.id }}">{{ p.name }}</option>
                 {% endfor %}
             </select>
         </label>
@@ -24,57 +24,28 @@
 
         <label>
             Data:
-                <input type="date" class='order-date' name="order-date" value="">
+            <input type="date" class='order-date' name="order-date" value="">
         </label>
 
         <p>
             <button id="add-order">Dodaj zamówienia</button>
         </p>
     </div>
-    <div class="all-orders", style="display:none">
-        <h2 style="display:inline">Szczegóły zamówienia: </h2>
-        <h2 class="order-description" style="color:red; display:inline" ></h2>
-
-        <br/>
-
-        <label>Nr pozycji:
-            <input type="number" value="1" name="item-number">
-        </label>
-        <label>Typ zamówienia:
-            <select>
-                {% for sort in item_sorts %}
-                        <option value="{{ sort }}">{{ sort }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <br/>
-        <label>Długość:
-            <input name="height" type="number">
-        </label>
-        <label>Szerokość:
-            <input name="width" type="number">
-        </label>
-        <br/>
-        <label>Ilość
-            <input name="quantity" type="number">
-        </label>
-        <select name="buyer">Klient:
-            {% for b in buyers %}
-                <option value="{{ b.id }}">{{ b.name }}</option>
-            {% endfor %}
-        </select>
-        <br/>
-        <select name="cardboard-type">Typ fali:
-            {% for type in cardboard_types %}
-                <option value="{{ type }}">{{ type }}</option>
-            {% endfor %}
-        </select>
-        <label>Gramatura:
-            <input name="weight" type="number">
-        </label>
-
-    </div>
 </form>
+<div class="all-orders" style="display:none">
+    <h2 style="display:inline">Szczegóły zamówienia: </h2>
+    <h2 class="order-description" style="color:red; display:inline"></h2>
+
+    <br/>
+
+    <form method="post" name="new-order-item">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Ddoaj">
+    </form>
+
+</div>
+
 
 Dziś jest: {{ now }}
 
