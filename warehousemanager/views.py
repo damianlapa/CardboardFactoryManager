@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponse
 from django.views import View
 import json
@@ -41,6 +42,12 @@ class NewOrder(View):
         form = NewOrderForm()
         return render(request, 'warehousemanager-new-order.html', locals())
 
+    def post(self, request):
+        order_id = Order.objects.all().order_by('id').reverse()[0].id
+        for order in Order.objects.all().reverse():
+            print(order.id)
+        return redirect('/add-items/{}'.format(order_id))
+
 
 class NewOrderAdd(View):
     def get(self, request):
@@ -53,6 +60,13 @@ class NewOrderAdd(View):
         new_order.save()
 
         return HttpResponse('')
+
+
+class NewItemAdd(View):
+    def get(self, request, order_id):
+        form = NewOrderForm()
+        order = Order.objects.get(id=order_id)
+        return render(request, 'add-item.html', locals())
 
 
 class NextOrderNumber(View):

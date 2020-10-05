@@ -1,0 +1,27 @@
+{% extends '__base__.html' %}
+
+{% block title %}
+Dodaj pozycje do zamówienia
+{% endblock %}
+
+{% block content %}
+
+<div id="order-id-number" style="display:none">
+    {{ order_id }}
+</div>
+
+<div class="all-orders">
+    <h2 style="display:inline">Szczegóły zamówienia: </h2>
+    <h2 class="order-description" style="color:red; display:inline"></h2>
+
+    <br/>
+
+    <form method="post" name="new-order-item" id="add-orders">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Ddoaj">
+    </form>
+
+</div>
+
+{% endblock %}

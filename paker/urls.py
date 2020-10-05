@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber, ProviderForm, NewOrderAdd
+from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber, ProviderForm, NewOrderAdd, NewItemAdd
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +27,5 @@ urlpatterns = [
     path('non/', NextOrderNumber.as_view(), name='next-order-number'),
     path('create-new-order/', NewOrderAdd.as_view(), name='new-order-create'),
     path('new-provider/', ProviderForm.as_view(), name='new-provider'),
+    path('add-items/<int:order_id>', NewItemAdd.as_view(), name='new-item')
 ]
