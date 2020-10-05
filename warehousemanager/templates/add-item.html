@@ -16,7 +16,7 @@ Dodaj pozycje do zamówienia
 
     <br/>
 
-    <form method="post" name="new-order-item" id="add-orders">
+    <form method="post" name="new-order-item" id="add-orders" action="">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="submit" value="Dodaj">

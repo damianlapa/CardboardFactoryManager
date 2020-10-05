@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i=0; i < orderSelect.options.length; i++){
             if (parseInt(orderSelect.options[i].value) === parseInt(orderNumber)){
                 orderSelect.options[i].selected = true;
-                orderSelect.disabled = true;
+                // orderSelect.disabled = true;
             }
         }
 

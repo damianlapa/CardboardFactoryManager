@@ -68,6 +68,15 @@ class NewItemAdd(View):
         order = Order.objects.get(id=order_id)
         return render(request, 'add-item.html', locals())
 
+    def post(self, request, order_id):
+        form = NewOrderForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('/add-items/{}'.format(order_id))
+        else:
+            return HttpResponse(form.errors)
+
+
 
 class NextOrderNumber(View):
     def get(self, request):
