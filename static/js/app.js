@@ -72,16 +72,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (addOrders !== null) {
         const orderNumber = document.querySelector('#order-id-number').innerText
-        console.log(orderNumber)
         const orderSelect = document.querySelector('#id_order')
         const itemNumber = document.querySelector('#id_item_number')
         const scores = document.querySelector('#id_scores')
 
         for (let i=0; i < orderSelect.options.length; i++){
-            console.log(orderSelect.options[i].value)
             if (parseInt(orderSelect.options[i].value) === parseInt(orderNumber)){
                 orderSelect.options[i].selected = true;
+                orderSelect.disabled = true;
             }
         }
+
+        $.ajax({
+            url: '/nin/',
+            data: {'order_num': parseInt(orderNumber)},
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (data) {
+        itemNumber.value = parseInt(data)
+        })
     }
 })

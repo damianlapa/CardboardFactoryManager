@@ -92,3 +92,14 @@ class ProviderForm(View):
             return HttpResponse('ok')
 
 
+class NextItemNumber(View):
+    def get(self, request):
+        order_num = request.GET.get('order_num')
+        order = Order.objects.get(id=int(order_num))
+        all_items = OrderItem.objects.all().filter(order=order)
+
+        num = len(all_items)
+
+        return HttpResponse(json.dumps(num + 1))
+
+
