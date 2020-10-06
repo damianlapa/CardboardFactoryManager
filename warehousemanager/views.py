@@ -40,6 +40,13 @@ class NewOrder(View):
     def get(self, request):
         providers = CardboardProvider.objects.all()
         form = NewOrderForm()
+
+        # deleting orders without items
+        orders = Order.objects.all()
+        for order in orders:
+            if not OrderItem.objects.all().filter(order=order):
+                order.delete()
+
         return render(request, 'warehousemanager-new-order.html', locals())
 
     def post(self, request):
@@ -64,6 +71,10 @@ class NewItemAdd(View):
         form = NewOrderForm()
         order = Order.objects.get(id=order_id)
         items = OrderItem.objects.all().filter(order=order)
+
+        if order.is_completed:
+            return HttpResponse('Zamówienie zostało już skompletowane')
+
         return render(request, 'add-item.html', locals())
 
     def post(self, request, order_id):
@@ -108,5 +119,14 @@ class NextItemNumber(View):
         num = len(all_items)
 
         return HttpResponse(json.dumps(num + 1))
+
+
+class CompleteOrder(View):
+    def get(self, request):
+        order_id = int(request.GET.get('order_id'))
+        order = Order.objects.get(id=order_id)
+        order.is_completed = True
+
+        return redirect('all-orders-details')
 
 

@@ -92,4 +92,18 @@ document.addEventListener("DOMContentLoaded", function () {
         itemNumber.value = parseInt(data)
         })
     }
+
+    // marking an order as completed
+    const completeOrderButton = document.querySelector('.save-and-end')
+
+    if (completeOrderButton !== null) {
+        completeOrderButton.addEventListener('click', function() {
+            $.ajax({
+            url: '/complete-order/',
+            data: {'order_id': parseInt(this.value)},
+            type: 'GET',
+            dataType: 'json'
+            })
+        })
+    }
 })
