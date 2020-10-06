@@ -14,6 +14,11 @@
 </head>
 
 <body>
+{% block nav %}
+<div class="navigation">
+    <a href="{% url 'new-order' %}">Dodaj zamówienie</a>
+</div>
+{% endblock %}
 {% block content %}{% endblock %}
 <script src="{% static 'js/app.js' %}"></script>
 </body>

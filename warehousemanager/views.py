@@ -44,8 +44,6 @@ class NewOrder(View):
 
     def post(self, request):
         order_id = Order.objects.all().order_by('id').reverse()[0].id
-        for order in Order.objects.all().reverse():
-            print(order.id)
         return redirect('/add-items/{}'.format(order_id))
 
 
@@ -54,7 +52,6 @@ class NewOrderAdd(View):
         provider_num = request.GET.get('provider_num')
         provider = CardboardProvider.objects.get(id=int(provider_num))
         all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number')
-        print(all_orders.reverse()[0])
         num = all_orders.reverse()[0].order_provider_number + 1
         new_order = Order.objects.create(provider=provider, order_provider_number=num, date_of_order=datetime.datetime.now())
         new_order.save()
@@ -66,6 +63,7 @@ class NewItemAdd(View):
     def get(self, request, order_id):
         form = NewOrderForm()
         order = Order.objects.get(id=order_id)
+        items = OrderItem.objects.all().filter(order=order)
         return render(request, 'add-item.html', locals())
 
     def post(self, request, order_id):

@@ -4,6 +4,9 @@
 Dodaj pozycje do zamówienia
 {% endblock %}
 
+{% block navigation %}
+{% endblock %}
+
 {% block content %}
 
 <div id="order-id-number" style="display:none">
@@ -22,6 +25,48 @@ Dodaj pozycje do zamówienia
         <input type="submit" value="Dodaj">
     </form>
 
+</div>
+
+<div class="order-items">
+    <br />
+    <h2>Pozycje w zamówieniu:</h2>
+    <table>
+
+        <tr>
+        <th>Nr pozycji</th>
+        <th>Typ</th>
+        <th>Szerokość</th>
+        <th>Długość</th>
+        <th>Ilość zamówiona</th>
+        <th>Klient</th>
+        <th>Rodzaj tektury</th>
+        <th>Wymiar pudełka</th>
+        <th>Bigi</th>
+
+        </tr>
+
+        {% for o in items %}
+        <tr>
+            <td>{{ o.item_number }}</td>
+            <td>{{ o.sort }}</td>
+            <td>{{ o.format_width }}</td>
+            <td>{{ o.format_height }}</td>
+            <td>{{ o.ordered_quantity }}</td>
+            <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
+            <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
+            <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
+            <td>{{ o.scores }}</td>
+        </tr>
+        {% empty %}
+        <br />
+            Nie ma tu jeszcze żadnych pozycji. Dodaj je przez formularz!
+        {% endfor %}
+    </table>
+    <p class="order-buttons">
+        <button>ZATWIERDŹ I ZAKOŃCZ</button>
+        <button>ZAPISZ</button>
+        <button>ANULUJ ZAMÓWIENIE</button>
+    </p>
 </div>
 
 {% endblock %}

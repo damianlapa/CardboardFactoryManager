@@ -19,3 +19,12 @@ table {
 .blackrow {
     background: black;
 }
+
+.navigation {
+    background: black;
+    color: white;
+}
+
+.navigation, a {
+    color: white;
+}
