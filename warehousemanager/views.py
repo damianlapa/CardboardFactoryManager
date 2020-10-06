@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse
 from django.views import View
+from django.contrib import messages
 import json
 import datetime
 
@@ -46,6 +47,12 @@ class NewOrder(View):
         for order in orders:
             if not OrderItem.objects.all().filter(order=order):
                 order.delete()
+
+        not_completed_orders = Order.objects.all()
+
+        for n_c_order in not_completed_orders:
+            if not n_c_order.is_completed:
+                messages.info(request, 'Masz niezakończone zamówienia')
 
         return render(request, 'warehousemanager-new-order.html', locals())
 
