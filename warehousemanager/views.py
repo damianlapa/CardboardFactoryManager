@@ -34,6 +34,7 @@ class OrdersDetails(View):
 class AllOrdersDetails(View):
     def get(self, request):
         orders = Order.objects.all()
+        providers = CardboardProvider.objects.all()
         return render(request, 'warehousemanager-all-orders-details.html', locals())
 
 
@@ -133,6 +134,7 @@ class CompleteOrder(View):
         order_id = int(request.GET.get('order_id'))
         order = Order.objects.get(id=order_id)
         order.is_completed = True
+        order.save()
 
         return redirect('all-orders-details')
 

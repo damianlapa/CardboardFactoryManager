@@ -63,7 +63,9 @@ Dodaj pozycje do zamówienia
         {% endfor %}
     </table>
     <p class="order-buttons">
-        <button class="save-and-end" value="{{ order.id }}">ZATWIERDŹ I ZAKOŃCZ</button>
+        <a href="{% url 'new-order' %}">
+            <button class="save-and-end" value="{{ order.id }}">ZATWIERDŹ I ZAKOŃCZ</button>
+        </a>
         <button>ZAPISZ</button>
         <button>ANULUJ ZAMÓWIENIE</button>
     </p>

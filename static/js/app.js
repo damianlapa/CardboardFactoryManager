@@ -106,4 +106,24 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         })
     }
+
+    // all orders filters
+    const filterByProvider = document.querySelector('#filter-by-provider')
+
+    if (filterByProvider !== null) {
+        filterByProvider.addEventListener('click', function () {
+
+        const allRows = document.querySelectorAll('.zamowienie')
+        const rows = allRows[0].rows
+        for (let i=0; i < rows.length; i++) {
+            console.log(rows[i].classList.value)
+            if (rows[i].classList.value === filterByProvider.value) {
+                rows[i].style.display = 'block'
+            }
+            else {
+                rows[i].style.display = 'none'
+            }
+        }
+        })
+    }
 })

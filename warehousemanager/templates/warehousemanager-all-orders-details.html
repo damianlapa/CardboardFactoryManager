@@ -7,9 +7,19 @@
 
 
 {% block content %}
+<div class="order-filters">
+Sortuj według:
+<select id="filter-by-provider">
+{% for provider in providers %}
+    <option value="{{ provider.name }}">{{ provider.name }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div>
 <table class="zamowienie">
 
-    <tr>
+    <tr class="order-table-description">
         <th>Nr zamówienia</th>
         <th>Nr pozycji</th>
         <th>Typ</th>
@@ -40,9 +50,10 @@
         <td>{{ o.scores }}</td>
     </tr>
     {% endfor %}
-    <tr>
+    <tr class="***">
         <td colspan="10" class="black_row"> *** </td>
     </tr>
     {% endfor %}
 </table>
+</div>
 {% endblock %}
