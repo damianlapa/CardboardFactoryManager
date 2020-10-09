@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber, \
-    ProviderForm, NewOrderAdd, NewItemAdd, NextItemNumber, CompleteOrder
+    ProviderForm, NewOrderAdd, NewItemAdd, NextItemNumber, CompleteOrder, DeleteOrder
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,5 +30,6 @@ urlpatterns = [
     path('new-provider/', ProviderForm.as_view(), name='new-provider'),
     path('add-items/<int:order_id>', NewItemAdd.as_view(), name='new-item'),
     path('nin/', NextItemNumber.as_view(), name='next-tem-number'),
-    path('complete-order/', CompleteOrder.as_view(), name='complete-order')
+    path('complete-order/', CompleteOrder.as_view(), name='complete-order'),
+    path('delete-order/', DeleteOrder.as_view(), name='delete-order'),
 ]

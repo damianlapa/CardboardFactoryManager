@@ -107,6 +107,23 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 
+    // marking an order as uncompleted
+    const uncompletedOrderButton = document.querySelector('.save')
+
+    // canceling an order
+    const cancelButton = document.querySelector('.cancel-order')
+
+    if (cancelButton !== null) {
+        cancelButton.addEventListener('click', function() {
+            $.ajax({
+            url: '/delete-order/',
+            data: {'order_id': parseInt(this.value)},
+            type: 'GET',
+            dataType: 'json'
+            })
+        })
+    }
+
     // all orders filters
     const filterByProvider = document.querySelector('#filter-by-provider')
 

@@ -66,8 +66,10 @@ Dodaj pozycje do zamówienia
         <a href="{% url 'new-order' %}">
             <button class="save-and-end" value="{{ order.id }}">ZATWIERDŹ I ZAKOŃCZ</button>
         </a>
-        <button>ZAPISZ</button>
-        <button>ANULUJ ZAMÓWIENIE</button>
+        <button class="save" value="{{ order.id }}">ZAPISZ</button>
+        <a href="{% url 'new-order' %}">
+            <button class="cancel-order" value="{{ order.id }}">ANULUJ ZAMÓWIENIE</button>
+        </a>
     </p>
 </div>
 

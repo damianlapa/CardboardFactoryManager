@@ -62,6 +62,14 @@ class NewOrder(View):
         return redirect('/add-items/{}'.format(order_id))
 
 
+class DeleteOrder(View):
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+        Order.objects.get(id=order_id).delete()
+
+        return redirect('/orders')
+
+
 class NewOrderAdd(View):
     def get(self, request):
         provider_num = request.GET.get('provider_num')
