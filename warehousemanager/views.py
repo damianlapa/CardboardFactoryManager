@@ -147,3 +147,14 @@ class CompleteOrder(View):
         return redirect('all-orders-details')
 
 
+class GetItemDetails(View):
+    def get(self, request):
+        item_id = int(request.GET.get('item_id'))
+        item = OrderItem.objects.get(id=item_id)
+
+        data = {
+            'height': item.format_height,
+            'width': item.format_width
+        }
+
+        return HttpResponse(json.dumps(data))

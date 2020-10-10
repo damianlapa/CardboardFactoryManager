@@ -79,10 +79,10 @@ Dodaj pozycje do zamówienia
 
 <div class="test">
     Osatnio zamawiane formaty:
-    <list>
+    <list class="last-ordered-items">
         {% for i in last_items %}
 
-        <ol>{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x {{ i.dimension_two }}
+        <ol id="{{ i.id }}">{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x {{ i.dimension_two }}
         {% if i.dimension_three %} x {{ i.dimension_three }}
         {% endif %}
         </ol>

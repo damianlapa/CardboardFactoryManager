@@ -145,4 +145,29 @@ document.addEventListener("DOMContentLoaded", function () {
         tableDescription.style.display = 'table-row'
         })
     }
+
+    // filling a form from last orders list
+
+    const lastOrderedItems = document.querySelector('.last-ordered-items')
+
+    if (lastOrderedItems !== null) {
+        const listElements = lastOrderedItems.getElementsByTagName('ol')
+        const newOrderHeight = document.querySelector('#id_format_width')
+        const newOrderWidth = document.querySelector('#id_format_height')
+        for (let i=0; i < listElements.length; i++) {
+            listElements[i].addEventListener('click', function() {
+                console.log(this.id)
+                $.ajax({
+                    url: '/gid/',
+                    data: {'item_id': listElements[i].id},
+                    type: 'GET',
+                    dataType: 'json'
+                }).done(function (data) {
+                console.log(data)
+                    newOrderHeight.value = data.height
+                    newOrderWidth.value = data.width
+                    })
+            })
+        }
+    }
 })
