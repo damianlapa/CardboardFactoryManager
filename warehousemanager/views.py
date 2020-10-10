@@ -102,13 +102,12 @@ class NewItemAdd(View):
             return HttpResponse(form.errors)
 
 
-
 class NextOrderNumber(View):
     def get(self, request):
         provider_num = request.GET.get('provider_num')
         provider = CardboardProvider.objects.get(id=int(provider_num))
-        all_orders = Order.objects.all().filter(provider=provider)
-        num = all_orders.count() + 1
+        all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number').reverse()
+        num = all_orders[0].order_provider_number + 1
 
         z = json.dumps(num)
 
