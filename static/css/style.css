@@ -28,3 +28,9 @@ table {
 .navigation, a {
     color: white;
 }
+
+.test {
+    display: inline-block;
+    margin: 0 auto;
+    text-align: center;
+}

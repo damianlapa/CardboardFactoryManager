@@ -9,6 +9,8 @@ Dodaj pozycje do zamówienia
 
 {% block content %}
 
+<div class="test">
+
 <div id="order-id-number" style="display:none">
     {{ order_id }}
 </div>
@@ -71,6 +73,22 @@ Dodaj pozycje do zamówienia
             <button class="cancel-order" value="{{ order.id }}">ANULUJ ZAMÓWIENIE</button>
         </a>
     </p>
+</div>
+
+</div>
+
+<div class="test">
+    Osatnio zamawiane formaty:
+    <list>
+        {% for i in last_items %}
+
+        <ol>{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x {{ i.dimension_two }}
+        {% if i.dimension_three %} x {{ i.dimension_three }}
+        {% endif %}
+        </ol>
+
+        {% endfor %}
+    </list>
 </div>
 
 {% endblock %}
