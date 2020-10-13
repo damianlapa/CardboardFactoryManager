@@ -152,9 +152,22 @@ class GetItemDetails(View):
         item_id = int(request.GET.get('item_id'))
         item = OrderItem.objects.get(id=item_id)
 
+        if item.buyer.all():
+            buyer = item.buyer.all()[0].name
+        else:
+            buyer = ''
+
         data = {
             'height': item.format_height,
-            'width': item.format_width
+            'width': item.format_width,
+            'dimension_one': item.dimension_one,
+            'dimension_two': item.dimension_two,
+            'dimension_three': item.dimension_three,
+            'sort': item.sort,
+            'buyer': buyer,
+            'weight': item.cardboard_weight,
+            'cardboard_type': item.cardboard_type,
+            'scores': item.scores
         }
 
         return HttpResponse(json.dumps(data))

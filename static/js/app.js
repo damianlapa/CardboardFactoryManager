@@ -154,6 +154,14 @@ document.addEventListener("DOMContentLoaded", function () {
         const listElements = lastOrderedItems.getElementsByTagName('ol')
         const newOrderHeight = document.querySelector('#id_format_width')
         const newOrderWidth = document.querySelector('#id_format_height')
+        const newOrderDimOne = document.querySelector('#id_dimension_one')
+        const newOrderDimTwo = document.querySelector('#id_dimension_two')
+        const newOrderDimThree = document.querySelector('#id_dimension_three')
+        const newOrderSort = document.querySelector('#id_sort')
+        const newOrderWeight = document.querySelector('#id_cardboard_weight')
+        const newOrderType = document.querySelector('#id_cardboard_type')
+        const newOrderBuyer = document.querySelector('#id_buyer')
+        const newOrderScores = document.querySelector('#id_scores')
         for (let i=0; i < listElements.length; i++) {
             listElements[i].addEventListener('click', function() {
                 console.log(this.id)
@@ -166,6 +174,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log(data)
                     newOrderHeight.value = data.height
                     newOrderWidth.value = data.width
+                    newOrderDimOne.value = data.dimension_one
+                    newOrderDimTwo.value = data.dimension_two
+                    if (data.dimension_three !== null) {
+                        newOrderDimThree.value = data.dimension_three
+                    }
+                    else {
+                        newOrderDimThree.value = ''
+                    }
+                    newOrderSort.value = data.sort
+                    newOrderWeight.value = data.weight
+                    newOrderType.value = data.cardboard_type
+                    if (data.buyer === ''){
+                        for (let i=0; i < newOrderBuyer.options.length; i++){
+                            newOrderBuyer.options[i].selected = false
+                        }
+                    }
+                    else {
+                        for (let i=0; i < newOrderBuyer.options.length; i++){
+                            if (newOrderBuyer.options[i].innerText === data.buyer) {
+                                newOrderBuyer.options[i].selected = true
+                            }
+                        }
+                    }
+                    newOrderScores.value = data.scores
                     })
             })
         }
