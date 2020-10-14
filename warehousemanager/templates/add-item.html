@@ -78,17 +78,28 @@ Dodaj pozycje do zamówienia
 </div>
 
 <div class="test">
-    Osatnio zamawiane formaty:
-    <list class="last-ordered-items">
-        {% for i in last_items %}
-
-        <ol id="{{ i.id }}">{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x {{ i.dimension_two }}
-        {% if i.dimension_three %} x {{ i.dimension_three }}
-        {% endif %}
-        </ol>
-
+    <div class="right-column-1">
+        Formaty klienta:
+        {% for item in all_items %}
+            {% for b in item.buyer.all %}
+            <p  class="{{ b.name }}">{{ item.dimension_one }}</p>
+            {% endfor %}
         {% endfor %}
-    </list>
+    </div>
+    <div class="right-column-2">
+        Osatnio zamawiane formaty:
+        <list class="last-ordered-items">
+            {% for i in last_items %}
+
+            <ol id="{{ i.id }}">{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x {{ i.dimension_two }}
+            {% if i.dimension_three %} x {{ i.dimension_three }}
+            {% endif %}
+            </ol>
+
+            {% endfor %}
+        </list>
+    </div>
+
 </div>
 
 {% endblock %}

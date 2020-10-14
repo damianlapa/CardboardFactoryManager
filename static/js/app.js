@@ -202,4 +202,30 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
     }
+
+    const buyerSelector = document.querySelector('#id_buyer')
+
+    if (buyerSelector !== null) {
+        buyerSelector.addEventListener('click', function () {
+            let selectedOption = ''
+            const allFormats = document.querySelector('.right-column-1').querySelectorAll('p')
+            for (let i=0; i < buyerSelector.options.length; i++){
+                if (buyerSelector.options[i].selected === true){
+                    selectedOption = buyerSelector.options[i].innerText
+                    console.log(selectedOption)
+                    for (let j=0; j < allFormats.length; j++){
+                        console.log(allFormats[j].classList.value)
+                        if (allFormats[j].classList.value === selectedOption) {
+                            allFormats[j].style.display = 'block'
+                        }
+                        else {
+                            allFormats[j].style.display = 'none'
+                        }
+                    }
+
+                }
+            }
+        })
+    }
+
 })

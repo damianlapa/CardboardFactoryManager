@@ -88,6 +88,7 @@ class NewItemAdd(View):
         order = Order.objects.get(id=order_id)
         items = OrderItem.objects.all().filter(order=order)
         last_items = OrderItem.objects.all().reverse()[:5]
+        all_items = OrderItem.objects.all()
 
         if order.is_completed:
             return HttpResponse('Zamówienie zostało już skompletowane')
