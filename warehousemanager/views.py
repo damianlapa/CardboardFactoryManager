@@ -3,9 +3,13 @@ from django.urls import reverse
 from django.http import HttpResponse
 from django.views import View
 from django.contrib import messages
+from django.http import FileResponse
+from reportlab.pdfgen import canvas
+import io
 import json
 import datetime
 
+import subprocess
 # import models from warehousemanager app
 from warehousemanager.models import *
 from warehousemanager.forms import *
@@ -172,3 +176,17 @@ class GetItemDetails(View):
         }
 
         return HttpResponse(json.dumps(data))
+
+
+class PrintTest(View):
+    def get(self, request):
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer)
+        p.drawString(100, 100, 'Hello World.')
+        p.showPage()
+        p.save()
+        lpr = subprocess.Popen("/usr/bin/lpr", stdin=subprocess.PIPE)
+        lpr.stdin.write(b'ok')
+        buffer.seek(0)
+
+        return FileResponse(buffer, as_attachment=True, filename='hello.pdf')
