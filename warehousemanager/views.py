@@ -6,6 +6,9 @@ from django.contrib import messages
 from django.http import FileResponse
 from reportlab.pdfgen import canvas
 import io
+import os
+from django.conf import settings
+import docx
 import json
 import datetime
 
@@ -80,7 +83,8 @@ class NewOrderAdd(View):
         provider = CardboardProvider.objects.get(id=int(provider_num))
         all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number')
         num = all_orders.reverse()[0].order_provider_number + 1
-        new_order = Order.objects.create(provider=provider, order_provider_number=num, date_of_order=datetime.datetime.now())
+        new_order = Order.objects.create(provider=provider, order_provider_number=num,
+                                         date_of_order=datetime.datetime.now())
         new_order.save()
 
         return HttpResponse('')
@@ -190,3 +194,40 @@ class PrintTest(View):
         buffer.seek(0)
 
         return FileResponse(buffer, as_attachment=True, filename='hello.pdf')
+
+
+class OpenFile(View):
+    def get(self, request, order_item_id):
+        order_item = OrderItem.objects.get(id=order_item_id)
+
+        os.chdir('/home/damian/PycharmProjects/PakerProject/media/paker')
+        document = docx.Document('zp.docx')
+        print(len(document.sections))
+
+        text = ''
+
+        for p in document.paragraphs:
+            if p.text == 'TERMIN REALIZACJI':
+                p.text = 'nowy termin'
+            text += ' $'
+            text += '<br />'
+            text += p.text
+
+        text += '<br />'
+        text += 'Tabele <br />'
+
+        for t in document.tables:
+            text2 = ''
+            for i, row in enumerate(t.rows):
+                for c in row.cells:
+                    if c.text == 'TYP MASZYNY':
+                        if order_item.sort in ('201', '202', '203'):
+                            c.text = 'f. ' + order_item.sort
+
+                    text2 += c.text
+
+            text += text2
+
+        document.save('zp.docx')
+
+        return HttpResponse(text)
