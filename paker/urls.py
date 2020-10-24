@@ -16,11 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber, \
-    ProviderForm, NewOrderAdd, NewItemAdd, NextItemNumber, CompleteOrder, DeleteOrder, GetItemDetails, PrintTest, OpenFile
+    ProviderForm, NewOrderAdd, NewItemAdd, NextItemNumber, CompleteOrder, DeleteOrder, GetItemDetails, PrintTest, \
+    OpenFile, NewAllOrders, StartPage, LogoutView, ManageView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', index, name='index'),
+    # path('', index, name='index'),
     path('orders/', Orders.as_view(), name='orders'),
     path('order/<int:order_id>', OrdersDetails.as_view(), name='order-details'),
     path('orders-details/', AllOrdersDetails.as_view(), name='all-orders-details'),
@@ -34,5 +35,9 @@ urlpatterns = [
     path('delete-order/', DeleteOrder.as_view(), name='delete-order'),
     path('gid/', GetItemDetails.as_view(), name='get-item-details'),
     path('print-test/', PrintTest.as_view(), name='print-test'),
-    path('open-order/<int:order_item_id>/', OpenFile.as_view(), name='open-order')
+    path('open-order/<int:order_item_id>/', OpenFile.as_view(), name='open-order'),
+    path('new-all-orders/', NewAllOrders.as_view(), name='new-all-orders'),
+    path('', StartPage.as_view(), name='start-page'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('manage/', ManageView.as_view(), name='manage')
 ]

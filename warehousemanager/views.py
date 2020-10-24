@@ -4,9 +4,12 @@ from django.http import HttpResponse
 from django.views import View
 from django.contrib import messages
 from django.http import FileResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import authenticate, login, logout
 from reportlab.pdfgen import canvas
 import io
 import os
+import shutil
 from django.conf import settings
 import docx
 import json
@@ -38,7 +41,8 @@ class OrdersDetails(View):
         return render(request, 'warehousemanager-order-details.html', locals())
 
 
-class AllOrdersDetails(View):
+class AllOrdersDetails(LoginRequiredMixin, View):
+    login_url = '/'
     def get(self, request):
         orders = Order.objects.all()
         providers = CardboardProvider.objects.all()
@@ -201,7 +205,13 @@ class OpenFile(View):
         order_item = OrderItem.objects.get(id=order_item_id)
 
         os.chdir('/home/damian/PycharmProjects/PakerProject/media/paker')
-        document = docx.Document('zp.docx')
+
+        src = 'zp.docx'
+        dst = 'zp{}'.format(order_item.id)
+
+        os.rename(src, 'oko.docx')
+
+        '''document = docx.Document('zp{}'.format(order_item.id))
         print(len(document.sections))
 
         text = ''
@@ -228,6 +238,45 @@ class OpenFile(View):
 
             text += text2
 
-        document.save('zp.docx')
+        document.save('zp.docx')'''
 
-        return HttpResponse(text)
+        return HttpResponse('')
+
+
+class NewAllOrders(View):
+    def get(self, request):
+        orders = Order.objects.all()
+        providers = CardboardProvider.objects.all()
+        quantities = OrderItemQuantity.objects.all()
+        return render(request, 'new-all-orders.html', locals())
+
+
+class StartPage(View):
+    def get(self, request):
+        user = request.user
+        return render(request, 'start-page.html', locals())
+
+    def post(self, request):
+        name = request.POST.get('login')
+        password = request.POST.get('password')
+
+        user = authenticate(username=name, password=password)
+
+        if user is not None:
+            login(request, user)
+
+        return redirect('start-page')
+
+
+class LogoutView(View):
+    def get(self, request):
+        logout(request)
+
+        return redirect('start-page')
+
+
+class ManageView(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request):
+        return render(request, 'warehousemanager-manage.html', locals())

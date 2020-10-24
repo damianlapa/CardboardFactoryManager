@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Paker - Strona Główna | {% if request.user.is_authenticated %}{{ user }}{% else %}Zaloguj{% endif %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="start-page">
+    <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
+</div>
+<div class="start-page">
+    <h1>Cardboard Boxes Factory</h1>
+    <h2>Manager</h2>
+</div>
+<div class="start-page">
+    <div class="div3"></div>
+    <div class="div3">
+
+        {% if request.user.is_authenticated %}
+        <div class="hello-user">
+        <h2>Hello {{ request.user }}</h2>
+        <h4><a href="{% url 'logout' %}">Logout</a></h4>
+            <a href="{% url 'manage' %}"><button class="btn-style">Manage</button></a>
+        </div>
+        {% else %}
+
+        <form name='login' method="post">
+        <br />
+            {% csrf_token %}
+            <label>Login:
+                <input type='text' name="login">
+            </label>
+            <br />
+            <label>Password:
+                <input type='password' name="password">
+            </label>
+            <br />
+            <input type="submit" class="submit-button" value="Login">
+        <br />
+        </form>
+
+        {% endif %}
+    </div>
+    <div class="div3"></div>
+</div>
+
+</body>
+</html>

@@ -26,7 +26,7 @@ table {
 }
 
 .navigation a:link, a:visited{
-    color: yellow;
+    color: grey;
 }
 
 .test {
@@ -37,4 +37,107 @@ table {
 
 .order-details a{
     color: orange;
+}
+
+.start-page {
+    align-content: center;
+    text-align: center;
+}
+
+.div3 {
+    width: 30%;
+    display: inline-block;
+}
+
+form {
+  border: 3px solid black;
+}
+
+input {
+    width: 30%;
+    padding: 8px 12px;
+    margin: 6px 0;
+    box-sizing: border-box;
+    border: 2px solid orange;
+    border-radius: 4px;
+}
+
+input:focus {
+    background-color: orange;
+}
+
+input[type=button], input[type=submit], input[type=reset] {
+  background-color: orange;
+  border: 2px solid orange;
+  color: black;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.btn-style {
+  background-color: orange;
+  border: 2px solid orange;
+  color: black;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.hello-user {
+    border: 2px solid orange;
+}
+
+.header {
+    background-color: black;
+    color: white;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header img {
+    border: 2px solid orange;
+}
+
+.header a:link {
+    text-decoration: none;
+}
+
+.header a:visited {
+    color: #ff8400;
+    text-decoration: none;
+}
+
+.header a:hover {
+    color: pink;
+    text-decoration: none;
+}
+
+.management-menu {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;;
+    align-items: center;
+    background-color: grey;
+}
+
+.management-button {
+    width: 50px;
+    height: 50px;
+    border: 2px solid orange;
+    text-align: center;
+    flex-basis: 33%;
+}
+
+.management-menu button {
+    font-size: 20px;
+    color: white;
+    background-color: black
+}
+
+.orders-notebook {
 }
