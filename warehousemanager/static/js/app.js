@@ -229,4 +229,78 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 
+    // cardboard format converter
+
+    function FormatConverter(dim_1, dim_2, dim_3, box_type, cardboard_type) {
+
+    dim_1 = parseInt(dim_1)
+    dim_2 = parseInt(dim_2)
+    dim_3 = parseInt(dim_3)
+
+    let width = 0
+    let height = 0
+
+    if (box_type == 201 || box_type == 202) {
+        width = 2*(dim_1 + dim_2)
+        height = dim_2 + dim_3
+    }else if(box_type == 203){
+        width = 2*(dim_1 + dim_2)
+        height = 2*dim_2 + dim_3
+    }else {
+        width = 0
+        height = 0
+    }
+
+    if (cardboard_type === 'b') {
+        width += 49
+        height += 12
+    }else if (cardboard_type === 'c') {
+        width += 53
+        height += 12
+    }else if (cardboard_type === 'e') {
+        width += 49
+        height += 12
+    }else if (cardboard_type === 'eb') {
+        width += 53
+        height += 10
+    }else {
+        width += 60
+        height += 22
+    }
+    return [width, height]
+    }
+
+    // page to convert
+
+    const converterDiv = document.querySelector('.converter-div')
+
+    // if page exists
+
+    if (converterDiv !== null) {
+        // all values
+        const boxType = document.querySelector('#sort-select')
+        const cardboardType = document.querySelector('#cardboard-select')
+        const boxWidth = document.querySelector('#width')
+        const boxLength = document.querySelector('#length')
+        const boxHeight = document.querySelector('#height')
+        const result = document.querySelector('#cardboard-format')
+
+        converterDiv.addEventListener('click', function () {
+            console.log(boxType.value)
+            console.log(cardboardType.value)
+            console.log(boxWidth.value)
+            console.log(boxLength.value)
+            console.log(boxHeight.value)
+            console.log(result.innerText)
+
+            re = FormatConverter(boxWidth.value, boxLength.value, boxHeight.value, boxType.value, cardboardType.value)
+
+            console.log(String(re[0]) + 'x' + String(re[1]))
+
+            result.innerText = String(re[0]) + 'x' + String(re[1])
+        })
+
+
+    }
+
 })

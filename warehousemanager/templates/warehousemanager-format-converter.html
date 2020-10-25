@@ -1,0 +1,51 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div class="converter-div">
+    <h1>FORMAT CONVERTER</h1>
+    <div class="dimensions-container">
+        <label>Box type:
+            <select name="sort-select" id="sort-select">
+                <option value="201">FEFCO 201</option>
+                <option value="202">FEFCO 202</option>
+                <option value="203">FEFCO 203</option>
+                <option value="409">FEFCO 409</option>
+            </select>
+        </label>
+        <br />
+        <label>Cardboard type:
+            <select name="cardboard-select" id="cardboard-select">
+                <option value="b">B</option>
+                <option value="c">C</option>
+                <option value="e">E</option>
+                <option value="bc">BC</option>
+                <option value="eb">EB</option>
+            </select>
+        </label>
+        <br />
+        <label>Width
+            <input type="number" value="500" id="width">
+        </label>
+        <br />
+        <label>Length
+            <input type="number" value="500" id="length">
+        </label>
+        <br />
+        <label>Height
+            <input type="number" value="500" id="height">
+        </label>
+
+    </div>
+    <div class="result-converter">
+        <h2>
+            Cardboard Format:
+        </h2>
+
+        <p id="cardboard-format">
+            result
+        </p>
+
+    </div>
+</div>
+{% endblock %}

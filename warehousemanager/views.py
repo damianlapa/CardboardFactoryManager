@@ -312,3 +312,10 @@ class AllProvidersView(LoginRequiredMixin, View):
     def get(self, request):
         providers = CardboardProvider.objects.all()
         return render(request, 'warehousemanager-all-providers.html', locals())
+
+
+# przelicznik formatów
+class FormatConverter(View):
+
+    def get(self, request):
+        return render(request, 'warehousemanager-format-converter.html', locals())
