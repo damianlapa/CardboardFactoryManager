@@ -4,60 +4,61 @@
 
 {% block content %}
 <div class="orders-notebook">
-<div class="order-filters">
-    <h2>Filtry</h2>
-    <h3>Dostawca</h3>
+    <div class="order-filters">
+        <h2>Filtry</h2>
+        <h3>Dostawca</h3>
         <select id="filter-by-provider">
-        {% for provider in providers %}
+            {% for provider in providers %}
             <option value="{{ provider.name }}">{{ provider.name }}</option>
-        {% endfor %}
+            {% endfor %}
         </select>
-    <h3>Data Zamówienia</h3>
-    <h4 style="display: inline;">Od:</h4>
-    <input type="date" style="display: inline;" id="from">
-    <h4 style="display: inline;">Do:</h4>
-    <input type="date" style="display: inline;" id="to">
-</div>
+        <h3>Data Zamówienia</h3>
+        <h4 style="display: inline;">Od:</h4>
+        <input type="date" style="display: inline;" id="from">
+        <h4 style="display: inline;">Do:</h4>
+        <input type="date" style="display: inline;" id="to">
+    </div>
 
-<div>
-<table class="zamowienie">
+    <div>
+        <table class="zamowienie">
 
-    <tr class="order-table-description">
-        <th>Nr zamówienia</th>
-        <th>Nr pozycji</th>
-        <th>Typ</th>
-        <th>Szerokość</th>
-        <th>Długość</th>
-        <th>Ilość zamówiona</th>
-        <th>Klient</th>
-        <th>Rodzaj tektury</th>
-        <th>Wymiar pudełka</th>
-        <th>Bigi</th>
+            <tr class="order-table-description">
+                <th>Nr zamówienia</th>
+                <th>Nr pozycji</th>
+                <th>Typ</th>
+                <th>Szerokość</th>
+                <th>Długość</th>
+                <th>Ilość zamówiona</th>
+                <th>Klient</th>
+                <th>Rodzaj tektury</th>
+                <th>Wymiar pudełka</th>
+                <th>Bigi</th>
 
-    </tr>
+            </tr>
 
-    {% for order in orders %}
-    {% for o in order.orderitem_set.all %}
-    <tr class="{{ order.provider }}">
-        {% if forloop.first %}
-        <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
-        {% endif %}
-        <td>{{ o.item_number }}</td>
-        <td>{{ o.sort }}</td>
-        <td>{{ o.format_width }}</td>
-        <td>{{ o.format_height }}</td>
-        <td>{{ o.ordered_quantity }}</td>
-        <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
-        <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
-        <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
-        <td>{{ o.scores }}</td>
-    </tr>
-    {% endfor %}
-    <tr class="***">
-        <td colspan="10" class="black_row"> *** </td>
-    </tr>
-    {% endfor %}
-</table>
-</div>
+            {% for order in orders %}
+            {% for o in order.orderitem_set.all %}
+            <tr class="{{ order.provider }}">
+                {% if forloop.first %}
+                <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
+                {% endif %}
+                <td>{{ o.item_number }}</td>
+                <td>{{ o.sort }}</td>
+                <td>{{ o.format_width }}</td>
+                <td>{{ o.format_height }}</td>
+                <td>{{ o.ordered_quantity }}</td>
+                <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
+                <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
+                <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}
+                </td>
+                <td>{{ o.scores }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="***">
+                <td colspan="10" class="black_row"> ***</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -42,6 +42,7 @@ class OrdersDetails(View):
 
 class AllOrdersDetails(LoginRequiredMixin, View):
     login_url = '/'
+
     def get(self, request):
         orders = Order.objects.all()
         providers = CardboardProvider.objects.all()
@@ -68,8 +69,25 @@ class NewOrder(View):
         return render(request, 'warehousemanager-new-order.html', locals())
 
     def post(self, request):
-        order_id = Order.objects.all().order_by('id').reverse()[0].id
-        return redirect('/add-items/{}'.format(order_id))
+        form = NewOrderForm(request.POST)
+        if form.is_valid():
+            provider = form.cleaned_data['provider']
+            order_provider_number = form.cleaned_data['order_provider_number']
+            date_of_order = form.cleaned_data['date_of_order']
+
+            provider_object = CardboardProvider.objects.get(name=provider)
+
+            new_order = Order.objects.create(provider=provider_object, order_provider_number=int(order_provider_number),
+                                             date_of_order=datetime.datetime.now())
+
+            new_order.save()
+
+            orders = Order.objects.all()
+            if orders:
+                order_id = orders.order_by('id').reverse()[0].id
+            else:
+                order_id = 1
+            return redirect('/add-items/{}'.format(order_id))
 
 
 class DeleteOrder(View):
@@ -95,7 +113,7 @@ class NewOrderAdd(View):
 
 class NewItemAdd(View):
     def get(self, request, order_id):
-        form = NewOrderForm()
+        form = NewOrderItemForm()
         order = Order.objects.get(id=order_id)
         items = OrderItem.objects.all().filter(order=order)
         last_items = OrderItem.objects.all().reverse()[:5]
@@ -120,7 +138,10 @@ class NextOrderNumber(View):
         provider_num = request.GET.get('provider_num')
         provider = CardboardProvider.objects.get(id=int(provider_num))
         all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number').reverse()
-        num = all_orders[0].order_provider_number + 1
+        if all_orders:
+            num = all_orders[0].order_provider_number + 1
+        else:
+            num = 1
 
         z = json.dumps(num)
 
@@ -129,13 +150,16 @@ class NextOrderNumber(View):
 
 class ProviderForm(View):
     def get(self, request):
-        form = NewOrderForm()
+        form = CardboardProviderForm()
         return render(request, 'new_provider.html', locals())
 
     def post(self, request):
         form = CardboardProviderForm(request.POST)
         if form.is_valid():
-            return HttpResponse('ok')
+            name = form.cleaned_data['name']
+            CardboardProvider.objects.create(name=name)
+
+            return redirect('manage')
 
 
 class NextItemNumber(View):

@@ -1,13 +1,20 @@
 from django import forms
-from warehousemanager.models import CardboardProvider, OrderItem
+from warehousemanager.models import CardboardProvider, OrderItem, Order
 
 
-class CardboardProviderForm(forms.Form):
-    name = forms.CharField(label='Nazwa producenta', max_length=50, widget=forms.Textarea)
+class CardboardProviderForm(forms.ModelForm):
+    class Meta:
+        model = CardboardProvider
+        fields = ('name',)
 
 
-class NewOrderForm(forms.ModelForm):
+class NewOrderItemForm(forms.ModelForm):
     class Meta:
         model = OrderItem
         fields = '__all__'
 
+
+class NewOrderForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ('provider', 'order_provider_number', 'date_of_order')

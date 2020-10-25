@@ -1,46 +1,23 @@
-{% extends '__base__.html' %}
+{% extends '__base2__.html' %}
 
 {% block title %}
-Nowe zamówienie
+New Order
 {% endblock %}
-
-{% block navigation %}
-{% endblock %}
-
 
 {% block content %}
+<div style="display: inline-block">
+    <form class="new-order" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Add">
+    </form>
+    <div>
 
-<form class="new-order" method="post">
-    {% csrf_token %}
-    <div class="order-details">
-        <label>
-            Dostawca:
-            <select name="provider" class="provider">
-                {% for p in providers %}
-                <option value="{{ p.id }}">{{ p.name }}</option>
-                {% endfor %}
-            </select>
-        </label>
+        Time: {{ now }}
 
-        <label>
-            Nr zamówienia:
-            <input type="number" class="order-number" value="0" disabled>
-        </label>
-
-        <label>
-            Data:
-            <input type="date" class='order-date' name="order-date" value="">
-        </label>
-
-        <p>
-            <input type="submit" id='add-order' value="Dodaj zamówienia">
-        </p>
     </div>
-</form>
+</div>
 
-
-
-Dziś jest: {{ now }}
 <!--
 {% if messages %}
     {% for message in messages %}

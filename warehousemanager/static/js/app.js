@@ -2,9 +2,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const NewOrderForm = document.querySelectorAll('.new-order')
     const NewItem = document.querySelectorAll('new-order-item')
     if (NewOrderForm !== null) {
-        const provider = document.querySelector('.provider')
-        const order_num = document.querySelector('.order-number')
-        const order_date = document.querySelector('.order-date')
+        const provider = document.querySelector('#id_provider')
+        const order_num = document.querySelector('#id_order_provider_number')
+        const order_date = document.querySelector('#id_date_of_order')
         const add_order_button = document.querySelector('#add-order')
         const order_details = document.querySelector('.order-details')
         const all_orders = document.querySelector('.all-orders')

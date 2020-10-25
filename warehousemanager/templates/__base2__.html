@@ -17,7 +17,7 @@
 {% block header %}
 <div class="header">
     <p>
-        <a href="{% url 'start-page' %}">
+        <a href="{% url 'manage' %}">
             <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
         </a>
     </p>
@@ -26,7 +26,8 @@
     </p>
 </div>
 {% endblock %}
-{% block content %}{% endblock %}
+    {% block navigation %}{% include 'navigation.html' %}{% endblock %}
+    {% block content %}{% endblock %}
 <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>
