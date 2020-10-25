@@ -153,3 +153,16 @@ input[type=button], input[type=submit], input[type=reset] {
     background-color: black;
     border: 2px solid orange;
 }
+
+.all-providers-container {
+    display: inline-block;
+}
+
+.order-items {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.all-orders {
+    display: inline-block;
+}

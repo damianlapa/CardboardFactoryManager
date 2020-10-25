@@ -125,7 +125,7 @@ class NewItemAdd(View):
         return render(request, 'add-item.html', locals())
 
     def post(self, request, order_id):
-        form = NewOrderForm(request.POST)
+        form = NewOrderItemForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('/add-items/{}'.format(order_id))
@@ -303,3 +303,12 @@ class ManageView(LoginRequiredMixin, View):
 
     def get(self, request):
         return render(request, 'warehousemanager-manage.html', locals())
+
+
+# wszyscy dostawcy
+class AllProvidersView(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request):
+        providers = CardboardProvider.objects.all()
+        return render(request, 'warehousemanager-all-providers.html', locals())

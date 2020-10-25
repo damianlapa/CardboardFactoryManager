@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber, \
     ProviderForm, NewOrderAdd, NewItemAdd, NextItemNumber, CompleteOrder, DeleteOrder, GetItemDetails, PrintTest, \
-    OpenFile, NewAllOrders, StartPage, LogoutView, ManageView
+    OpenFile, NewAllOrders, StartPage, LogoutView, ManageView, AllProvidersView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,5 +39,6 @@ urlpatterns = [
     path('new-all-orders/', NewAllOrders.as_view(), name='new-all-orders'),
     path('', StartPage.as_view(), name='start-page'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('manage/', ManageView.as_view(), name='manage')
+    path('manage/', ManageView.as_view(), name='manage'),
+    path('all-providers/', AllProvidersView.as_view(), name='all-providers')
 ]

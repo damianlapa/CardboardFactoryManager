@@ -1,14 +1,14 @@
-{% extends '__base__.html' %}
+{% extends '__base2__.html' %}
 
-{% block title %}Orders{% endblock %}
-
-{% block navigation %}
-{% endblock %}
+{% block title %}Add New Provider{% endblock %}
 
 {% block content %}
+<div style="display: inline-block">
+    <h2>ADD NEW PROVIDER</h2>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <input type="submit" value="Ddoaj">
+    <input type="submit" value="Add">
 </form>
+</div>
 {% endblock %}

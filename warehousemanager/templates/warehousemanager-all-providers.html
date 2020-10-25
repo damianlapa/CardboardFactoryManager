@@ -1,0 +1,24 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div class='all-providers-container'>
+
+    <h1>Wszyscy Dostawcy:</h1>
+
+    <table class="all-providers-list">
+
+        <tr>
+            <th>Nazwa</th>
+        </tr>
+        {% for p in providers %}
+        <tr>
+            <td>{{ p.name }}</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</div>
+
+{% endblock %}

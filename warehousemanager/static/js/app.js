@@ -97,6 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const completeOrderButton = document.querySelector('.save-and-end')
 
     if (completeOrderButton !== null) {
+        console.log(completeOrderButton)
         completeOrderButton.addEventListener('click', function() {
             $.ajax({
             url: '/complete-order/',

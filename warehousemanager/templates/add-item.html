@@ -1,105 +1,106 @@
-{% extends '__base__.html' %}
+{% extends '__base2__.html' %}
 
 {% block title %}
-Dodaj pozycje do zamówienia
-{% endblock %}
-
-{% block navigation %}
+Add Items to an Order
 {% endblock %}
 
 {% block content %}
 
 <div class="test">
 
-<div id="order-id-number" style="display:none">
-    {{ order_id }}
-</div>
-
-<div class="all-orders">
-    <h2 style="display:inline">Szczegóły zamówienia: </h2>
-    <h2 class="order-description" style="color:red; display:inline">{{ order }}</h2>
-
-    <br/>
-
-    <form method="post" name="new-order-item" id="add-orders" action="">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Dodaj">
-    </form>
-
-</div>
-
-<div class="order-items">
-    <br />
-    <h2>Pozycje w zamówieniu:</h2>
-    <table>
-
-        <tr>
-        <th>Nr pozycji</th>
-        <th>Typ</th>
-        <th>Szerokość</th>
-        <th>Długość</th>
-        <th>Ilość zamówiona</th>
-        <th>Klient</th>
-        <th>Rodzaj tektury</th>
-        <th>Wymiar pudełka</th>
-        <th>Bigi</th>
-
-        </tr>
-
-        {% for o in items %}
-        <tr>
-            <td>{{ o.item_number }}</td>
-            <td>{{ o.sort }}</td>
-            <td>{{ o.format_width }}</td>
-            <td>{{ o.format_height }}</td>
-            <td>{{ o.ordered_quantity }}</td>
-            <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
-            <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
-            <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
-            <td>{{ o.scores }}</td>
-        </tr>
-        {% empty %}
-        <br />
-            Nie ma tu jeszcze żadnych pozycji. Dodaj je przez formularz!
-        {% endfor %}
-    </table>
-    <p class="order-buttons">
-        <a href="{% url 'new-order' %}">
-            <button class="save-and-end" value="{{ order.id }}">ZATWIERDŹ I ZAKOŃCZ</button>
-        </a>
-        <button class="save" value="{{ order.id }}">ZAPISZ</button>
-        <a href="{% url 'new-order' %}">
-            <button class="cancel-order" value="{{ order.id }}">ANULUJ ZAMÓWIENIE</button>
-        </a>
-    </p>
-</div>
-
-</div>
-
-<div class="test">
-    <div class="right-column-1">
-        Formaty klienta:
-        {% for item in all_items %}
-            {% for b in item.buyer.all %}
-            <p  class="{{ b.name }}">{{ item.dimension_one }}</p>
-            {% endfor %}
-        {% endfor %}
-    </div>
-    <div class="right-column-2">
-        Osatnio zamawiane formaty:
-        <list class="last-ordered-items">
-            {% for i in last_items %}
-
-            <ol id="{{ i.id }}">{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x {{ i.dimension_two }}
-            {% if i.dimension_three %} x {{ i.dimension_three }}
-            {% endif %}
-            </ol>
-
-            {% endfor %}
-        </list>
+    <div id="order-id-number" style="display:none">
+        {{ order_id }}
     </div>
 
-</div>
+    <div class="all-orders">
+        <h2 style="display:inline">Szczegóły zamówienia: </h2>
+        <h2 class="order-description" style="color:red; display:inline">{{ order }}</h2>
 
+        <br/>
+
+        <form method="post" name="new-order-item" id="add-orders" action="">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Dodaj">
+        </form>
+
+    </div>
+
+    <div class="order-items">
+        <div>
+            <br/>
+            <h2>Pozycje w zamówieniu:</h2>
+            <table>
+
+                <tr>
+                    <th>Nr pozycji</th>
+                    <th>Typ</th>
+                    <th>Szerokość</th>
+                    <th>Długość</th>
+                    <th>Ilość zamówiona</th>
+                    <th>Klient</th>
+                    <th>Rodzaj tektury</th>
+                    <th>Wymiar pudełka</th>
+                    <th>Bigi</th>
+
+                </tr>
+
+                {% for o in items %}
+                <tr>
+                    <td>{{ o.item_number }}</td>
+                    <td>{{ o.sort }}</td>
+                    <td>{{ o.format_width }}</td>
+                    <td>{{ o.format_height }}</td>
+                    <td>{{ o.ordered_quantity }}</td>
+                    <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
+                    <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
+                    <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}
+                    </td>
+                    <td>{{ o.scores }}</td>
+                </tr>
+                {% empty %}
+                <br/>
+                Nie ma tu jeszcze żadnych pozycji. Dodaj je przez formularz!
+                {% endfor %}
+            </table>
+            <p class="order-buttons">
+                <a href="{% url 'new-order' %}">
+                    <button class="save-and-end" value="{{ order.id }}">ZATWIERDŹ I ZAKOŃCZ</button>
+                </a>
+                <button class="save" value="{{ order.id }}">ZAPISZ</button>
+                <a href="{% url 'new-order' %}">
+                    <button class="cancel-order" value="{{ order.id }}">ANULUJ ZAMÓWIENIE</button>
+                </a>
+            </p>
+
+        </div>
+
+        <div class="test">
+            <div class="right-column-1">
+                Formaty klienta:
+                {% for item in all_items %}
+                {% for b in item.buyer.all %}
+                <p class="{{ b.name }}">{{ item.dimension_one }}</p>
+                {% endfor %}
+                {% endfor %}
+            </div>
+            <div class="right-column-2">
+                Osatnio zamawiane formaty:
+                <list class="last-ordered-items">
+                    {% for i in last_items %}
+
+                    <ol id="{{ i.id }}">{{ i.format_width }} x {{ i.format_height }} | {{ i.dimension_one }} x
+                        {{ i.dimension_two }}{% if i.dimension_three %} x {{ i.dimension_three }}
+                        {% endif %}
+                    </ol>
+
+                    {% endfor %}
+                </list>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}
