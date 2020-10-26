@@ -29,6 +29,7 @@
                 <th>Szerokość</th>
                 <th>Długość</th>
                 <th>Ilość zamówiona</th>
+                <th>Ilość dostarczona</th>
                 <th>Klient</th>
                 <th>Rodzaj tektury</th>
                 <th>Wymiar pudełka</th>
@@ -47,6 +48,7 @@
                 <td>{{ o.format_width }}</td>
                 <td>{{ o.format_height }}</td>
                 <td>{{ o.ordered_quantity }}</td>
+                <td>{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}{% endfor %}</td>
                 <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
                 <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
                 <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}
@@ -55,7 +57,7 @@
             </tr>
             {% endfor %}
             <tr class="***">
-                <td colspan="10" class="black_row"> ***</td>
+                <td colspan="11" class="black_row"> ***</td>
             </tr>
             {% endfor %}
         </table>

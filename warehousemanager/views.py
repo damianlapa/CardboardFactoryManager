@@ -46,6 +46,7 @@ class AllOrdersDetails(LoginRequiredMixin, View):
     def get(self, request):
         orders = Order.objects.all()
         providers = CardboardProvider.objects.all()
+        quantities = OrderItemQuantity.objects.all()
         return render(request, 'warehousemanager-all-orders-details.html', locals())
 
 
@@ -319,3 +320,23 @@ class FormatConverter(View):
 
     def get(self, request):
         return render(request, 'warehousemanager-format-converter.html', locals())
+
+
+# zarządzanie dostawami
+class DeliveriesManagement(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request):
+        all_deliveries = Delivery.objects.all()
+        return render(request, 'warehousemanager-all-deliveries.html', locals())
+
+
+# szczegóły dostawy
+class DeliveryDetails(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        quantities = OrderItemQuantity.objects.filter(delivery=delivery)
+
+        return render(request, 'warehousemanager-delivery-details.html', locals())

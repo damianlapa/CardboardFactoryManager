@@ -1,0 +1,28 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div class='all-deliveries-container'>
+
+    <h1>Delivery Details:</h1>
+
+    <h2>{{ delivery.provider }} / {{ deliver.date_of_provide }}</h2>
+
+    <table class="all-deliveries-list">
+
+        <tr>
+            <th>Format</th>
+            <th>Quantity</th>
+        </tr>
+        {% for q in quantities %}
+        <tr>
+            <td>{{ q.order_item }}</td>
+            <td>{{ q.quantity }}</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</div>
+
+{% endblock %}

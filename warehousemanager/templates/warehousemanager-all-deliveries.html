@@ -1,0 +1,28 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div class='all-deliveries-container'>
+
+    <h1>Deliveries:</h1>
+
+    <table class="all-deliveries-list">
+
+        <tr>
+            <th>Dostawca</th>
+            <th>Data</th>
+        </tr>
+        {% for d in all_deliveries %}
+        <a href="{% url 'delivery-details' delivery_id=d.id %}">x
+        </a>
+        <tr>
+            <td>{{ d.provider }}</td>
+            <td>{{ d.date_of_delivery }}</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</div>
+
+{% endblock %}

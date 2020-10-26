@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.functions import ExtractYear
+import datetime
 
 
 ITEM_SORTS = (
@@ -51,7 +53,7 @@ class Order(models.Model):
     is_completed = models.BooleanField(default=False)
 
     def __str__(self):
-        return '{} {}({})'.format(self.provider, self.order_provider_number, self.date_of_order)
+        return '{} {}'.format(self.provider, self.order_provider_number)
 
 
 class OrderItem(models.Model):
@@ -74,7 +76,7 @@ class OrderItem(models.Model):
         ordering = ['item_number']
 
     def __str__(self):
-        return '{} {}/{}'.format(self.order, self.item_number, self.buyer)
+        return '{}/{}'.format(self.order, self.item_number)
 
 
 class Delivery(models.Model):
