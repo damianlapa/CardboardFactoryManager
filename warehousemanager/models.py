@@ -20,6 +20,14 @@ CARDBOARD_TYPES = (
 )
 
 
+GENRES = (
+    ('Ordinary', 'Ordinary'),
+    ('To Do List', 'To Do List'),
+    ('Journal', 'Journal'),
+    ('Notice', 'Notice')
+)
+
+
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
@@ -98,5 +106,6 @@ class Machine(models.Model):
 
 class Note(models.Model):
     add_date = models.DateTimeField(auto_now_add=True)
+    genre = models.CharField(max_length=16, choices=GENRES, default='Ordinary')
     title = models.CharField(max_length=32, default='Note')
     content = models.TextField()
