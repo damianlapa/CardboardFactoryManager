@@ -354,10 +354,20 @@ class NoteAdd(LoginRequiredMixin, View):
     def post(self, request):
         note_form = NoteForm(request.POST)
         if note_form.is_valid():
+            genre = note_form.cleaned_data['genre']
             title = note_form.cleaned_data['title']
             content = note_form.cleaned_data['content']
-            new_note = Note.objects.create(title=title, content=content)
+            new_note = Note.objects.create(genre=genre, title=title, content=content)
 
             new_note.save()
 
-            return HttpResponse('ok')
+            return redirect('notes')
+
+
+# wszystkie notatki
+class AllNotes(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request):
+        all_notes = Note.objects.all()
+        return render(request, 'warehousemanager-all-notes.html', locals())
