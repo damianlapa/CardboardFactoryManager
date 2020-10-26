@@ -1,0 +1,15 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div style="display: inline-block">
+
+    <form method="post">
+        {% csrf_token %}
+        {{ note_form.as_p }}
+        <input type="submit" value="Add">
+    </form>
+
+</div>
+
+{% endblock %}

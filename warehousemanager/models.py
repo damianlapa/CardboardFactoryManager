@@ -94,3 +94,9 @@ class OrderItemQuantity(models.Model):
 class Machine(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=8)
+
+
+class Note(models.Model):
+    add_date = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=32, default='Note')
+    content = models.TextField()

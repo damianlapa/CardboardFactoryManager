@@ -340,3 +340,24 @@ class DeliveryDetails(LoginRequiredMixin, View):
         quantities = OrderItemQuantity.objects.filter(delivery=delivery)
 
         return render(request, 'warehousemanager-delivery-details.html', locals())
+
+
+# dodawanie notatek
+class NoteAdd(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request):
+        note_form = NoteForm()
+
+        return render(request, 'warehousemanager-add-note.html', locals())
+
+    def post(self, request):
+        note_form = NoteForm(request.POST)
+        if note_form.is_valid():
+            title = note_form.cleaned_data['title']
+            content = note_form.cleaned_data['content']
+            new_note = Note.objects.create(title=title, content=content)
+
+            new_note.save()
+
+            return HttpResponse('ok')
