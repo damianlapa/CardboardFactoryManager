@@ -28,6 +28,15 @@ GENRES = (
 )
 
 
+ABSENCE_TYPES = (
+    ('NN', 'Nieobecność nieusprawiedliwiona'),
+    ('UW', 'Urlop wypoczynkowy'),
+    ('UO', 'Urlop okolicznościowy'),
+    ('SP', 'Spóźnienie'),
+    ('UB', 'Urlop bezpłatny')
+)
+
+
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
@@ -109,3 +118,9 @@ class Note(models.Model):
     genre = models.CharField(max_length=16, choices=GENRES, default='Ordinary')
     title = models.CharField(max_length=32, default='Note')
     content = models.TextField()
+
+
+class Absence(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    absence_date = models.DateField()
+    absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
