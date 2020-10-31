@@ -1,0 +1,26 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+OCTOBER 2020
+
+<table class="absence-list">
+
+    <th>DAY</th>
+    {% for w in workers %}
+        <th>{{ w }}</th>
+    {% endfor %}
+
+    {% for d in month_days %}
+        <tr>
+            <td>{{ d }}</td>
+            {% for w in workers %}
+            <td class="day{{ d }} worker{{ w.id }}" style="background-color: green"></td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+
+</table>
+
+{% endblock %}

@@ -303,4 +303,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+    const AbsenceList = document.querySelector('.absence-list')
+
+    if (AbsenceList !== null) {
+        $.ajax({
+        url: '/absences/',
+        data: {},
+        type: 'GET',
+        dataType: 'json'
+    }).done(function (data) {
+        console.log(data)
+        for (let i=0; i < data.length; i++){
+            console.log(i, data[i])
+            day_text = 'day' + data[i][1]
+            worker_text = 'worker' + data[i][0]
+            query_text = worker_text + ' ' + day_text
+            let absenceField = document.getElementsByClassName(query_text)
+            absenceField[0].innerText = 'x'
+            absenceField[0].style.backgroundColor = 'red'
+            console.log(absenceField)
+        }
+        })
+    }
+
 })

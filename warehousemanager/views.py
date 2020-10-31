@@ -371,3 +371,23 @@ class AllNotes(LoginRequiredMixin, View):
     def get(self, request):
         all_notes = Note.objects.all()
         return render(request, 'warehousemanager-all-notes.html', locals())
+
+
+class AbsencesList(View):
+
+    def get(self, request):
+        workers = Person.objects.all()
+        absences = Absence.objects.all()
+        month_days = [x for x in range(1, 32)]
+
+        return render(request, 'warehousemanager-absenceslist.html', locals())
+
+
+class Absences(View):
+
+    def get(self, request):
+        absences_objects = Absence.objects.all()
+        absences = []
+        for a in absences_objects:
+            absences.append((a.worker.id, a.absence_date.day))
+        return HttpResponse(json.dumps(absences))
