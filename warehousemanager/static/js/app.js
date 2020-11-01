@@ -304,25 +304,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const AbsenceList = document.querySelector('.absence-list')
     const monthSelect = document.querySelector('#monthSelect')
 
-    console.log(monthSelect.value)
-
     if (AbsenceList !== null) {
-        monthSelect.addEventListener('click', function () {
         $.ajax({
         url: '/absences/',
         data: {'month': monthSelect.value},
         type: 'GET',
         dataType: 'json'
-    }).done(function (data) {
-        for (let i=0; i < data.length; i++){
-            day_text = 'day' + data[i][1]
-            worker_text = 'worker' + data[i][0]
-            query_text = worker_text + ' ' + day_text
-            let absenceField = document.getElementsByClassName(query_text)
-            absenceField[0].innerText = ''
-            absenceField[0].style.backgroundColor = 'red'
-        }
-        })
+        }).done(function (data) {
+            for (let i=0; i < data.length; i++){
+                day_text = 'day' + data[i][1]
+                worker_text = 'worker' + data[i][0]
+                query_text = worker_text + ' ' + day_text
+                let absenceField = document.getElementsByClassName(query_text)
+                absenceField[0].innerText = ''
+                absenceField[0].style.backgroundColor = 'red'
+            }
+            })
+        monthSelect.addEventListener('click', function () {
+            link = 'http://127.0.0.1:8000/absences-list/?month=' + monthSelect.value
+            window.location.replace(link)
         })
     }
 

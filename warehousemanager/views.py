@@ -395,26 +395,43 @@ class AbsencesList(View):
 
             return weekday_num
 
+        def today_month():
+            today = datetime.datetime.now()
+
+            a = datetime.datetime.strftime(today, '%d-%m-%Y')
+            a_dt = datetime.datetime.strptime(a, '%d-%m-%Y')
+
+            am = months[int(a_dt.month - 1)]
+            ay = a_dt.year
+
+            aa = am + ' ' + str(ay)
+
+            return aa
+
+        months = (
+            'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+            'November',
+            'December')
+
+        month = request.GET.get('month')
+
+        if not month:
+            month = datetime.datetime.today()
+            aa = today_month()
+            month_date = datetime.datetime.today()
+        else:
+            aa = month
+            month_split = month.split()
+            new_date = f'01-{months.index(month_split[0]) + 1}-{month_split[1]}'
+            month_date = datetime.datetime.strptime(new_date, '%d-%m-%Y')
 
         workers = Person.objects.all()
         absences = Absence.objects.all()
-        months = (
-        'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November',
-        'December')
 
-        today = datetime.datetime.now()
+        a = datetime.datetime.strftime(month_date, '%d-%m-%Y')
 
-        weekday = datetime.datetime.weekday(today)
-
-        a = datetime.datetime.strftime(today, '%d-%m-%Y')
-        a_dt = datetime.datetime.strptime(a, '%d-%m-%Y')
-
-        am = months[int(a_dt.month - 1)]
-        ay = a_dt.year
-
-        aa = am + ' ' + str(ay)
-
-        month_days = [(x, weekday_of_month_days(datetime.datetime.strptime(a, '%d-%m-%Y'), x)) for x in range(1, month_days_function(today) + 1)]
+        month_days = [(x, weekday_of_month_days(datetime.datetime.strptime(a, '%d-%m-%Y'), x)) for x in
+                      range(1, month_days_function(month_date) + 1)]
 
         def month_list(start_date, end_date):
             start_date_str = datetime.datetime.strptime(start_date, '%d-%m-%Y')
@@ -445,7 +462,8 @@ class AbsencesList(View):
 
             return months_list
 
-        z = month_list('01-01-2017', '01-01-2050')
+        end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=31)
+        z = month_list('01-01-2017', datetime.datetime.strftime(end_plus_31, '%d-%m-%Y'))
 
         return render(request, 'warehousemanager-absenceslist.html', locals())
 
@@ -453,11 +471,21 @@ class AbsencesList(View):
 class Absences(View):
 
     def get(self, request):
-        absences_objects = Absence.objects.all()
-        absences = []
+        months = (
+            'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+            'November',
+            'December')
         month = request.GET.get('month')
-        c = datetime.datetime.strptime(month, '%B %Y')
-        print(c)
+        div_date = month.split()
+        year = div_date[1]
+        month_ = months.index(div_date[0]) + 1
+        if month_ != 12:
+            absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
+                                                            absence_date__lte=datetime.date(int(year), month_ + 1, 1))
+        else:
+            absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
+                                                            absence_date__lte=datetime.date(int(year) + 1, 1, 1))
+        absences = []
         for a in absences_objects:
             absences.append((a.worker.id, a.absence_date.day))
         return HttpResponse(json.dumps(absences))
