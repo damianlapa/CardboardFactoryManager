@@ -3,7 +3,16 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
-OCTOBER 2020
+
+<select>
+    {% for zz in z %}
+    {% if zz == aa %}
+        <option value="{{ zz }}" selected>{{ zz }}</option>
+    {% else %}
+        <option value="{{ zz }}">{{ zz }}</option>
+    {% endif %}
+{% endfor %}
+</select>
 
 <table class="absence-list">
 

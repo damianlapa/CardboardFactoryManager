@@ -379,6 +379,50 @@ class AbsencesList(View):
         workers = Person.objects.all()
         absences = Absence.objects.all()
         month_days = [x for x in range(1, 32)]
+        months = (
+        'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November',
+        'December')
+
+        today = datetime.datetime.now()
+        a = datetime.datetime.strftime(today, '%d-%m-%Y')
+        a_dt = datetime.datetime.strptime(a, '%d-%m-%Y')
+
+        am = months[int(a_dt.month - 1)]
+        ay = a_dt.year
+
+        aa = am + ' ' + str(ay)
+
+
+        def month_list(start_date, end_date):
+            start_date_str = datetime.datetime.strptime(start_date, '%d-%m-%Y')
+            end_date_str = datetime.datetime.strptime(end_date, '%d-%m-%Y')
+
+            month_year = str(start_date_str.month) + ' ' + str(start_date_str.year)
+            month_year_end = str(end_date_str.month) + ' ' + str(end_date_str.year)
+
+            months_list = []
+
+            while month_year != month_year_end:
+                month_num_arg = datetime.datetime.strftime(start_date_str, '%d-%m-%Y')
+                month_num = datetime.datetime.strptime(month_num_arg, '%d-%m-%Y').month
+                year = datetime.datetime.strptime(month_num_arg, '%d-%m-%Y').year
+                month_name = months[int(month_num) - 1]
+                months_list.append(month_name + ' ' + str(year))
+                if start_date_str.month in (1, 3, 5, 7, 8, 10, 12):
+                    days_num = 31
+                elif start_date_str.month == 2:
+                    if start_date_str.year % 4 == 0:
+                        days_num = 29
+                    else:
+                        days_num = 28
+                else:
+                    days_num = 30
+                start_date_str = start_date_str + datetime.timedelta(days=days_num)
+                month_year = str(start_date_str.month) + ' ' + str(start_date_str.year)
+
+            return months_list
+
+        z = month_list('01-01-2017', '01-01-2050')
 
         return render(request, 'warehousemanager-absenceslist.html', locals())
 
