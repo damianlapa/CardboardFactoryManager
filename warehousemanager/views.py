@@ -489,3 +489,11 @@ class Absences(View):
         for a in absences_objects:
             absences.append((a.worker.id, a.absence_date.day))
         return HttpResponse(json.dumps(absences))
+
+
+class GetLocalVar(View):
+    def get(self, request, variable_name):
+        if os.environ[variable_name]:
+            return HttpResponse(json.dumps(os.environ[variable_name]))
+        else:
+            return redirect('manage')

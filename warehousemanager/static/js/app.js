@@ -321,8 +321,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             })
         monthSelect.addEventListener('click', function () {
-            link = 'http://127.0.0.1:8000/absences-list/?month=' + monthSelect.value
-            window.location.replace(link)
+            $.ajax({
+            url: '/get-local-var/PAKER_MAIN/',
+            data: {},
+            type: 'GET',
+            dataType: 'json'
+            }).done(function (data) {
+                console.log(data)
+                link = data + 'absences-list/?month=' + monthSelect.value
+                window.location.replace(link)
+                })
         })
     }
 
