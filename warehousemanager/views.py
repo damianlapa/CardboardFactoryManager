@@ -419,11 +419,17 @@ class AbsencesList(View):
             month = datetime.datetime.today()
             aa = today_month()
             month_date = datetime.datetime.today()
+            day_num = month_date.day
+            print(day_num)
         else:
             aa = month
             month_split = month.split()
             new_date = f'01-{months.index(month_split[0]) + 1}-{month_split[1]}'
             month_date = datetime.datetime.strptime(new_date, '%d-%m-%Y')
+            if month_date.month == datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
+                day_num = datetime.datetime.today().day
+            else:
+                day_num = 32
 
         workers = Person.objects.all()
         absences = Absence.objects.all()

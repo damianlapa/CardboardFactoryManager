@@ -30,7 +30,11 @@
             {% else %}
                 <td style="background-color: orange">{{ d }}
                 {% for w in workers %}
-                    <td class="day{{ d }} worker{{ w.id }}" style="background-color: green"></td>
+                    {% if day_num >= d %}
+                        <td class="day{{ d }} worker{{ w.id }}" style="background-color: green"></td>
+                    {% else %}
+                        <td class="day{{ d }} worker{{ w.id }}"></td>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
         </tr>
