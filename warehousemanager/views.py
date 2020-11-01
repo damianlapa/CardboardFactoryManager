@@ -376,14 +376,36 @@ class AllNotes(LoginRequiredMixin, View):
 class AbsencesList(View):
 
     def get(self, request):
+        def month_days_function(month_and_year):
+            if month_and_year.month in (1, 3, 5, 7, 8, 10, 12):
+                days_num = 31
+            elif month_and_year.month == 2:
+                if month_and_year.year % 4 == 0:
+                    days_num = 29
+                else:
+                    days_num = 28
+            else:
+                days_num = 30
+
+            return days_num
+
+        def weekday_of_month_days(some_date, day):
+            weekday_ = datetime.datetime.strptime(f'{day}-{some_date.month}-{some_date.year}', '%d-%m-%Y')
+            weekday_num = weekday_.weekday()
+
+            return weekday_num
+
+
         workers = Person.objects.all()
         absences = Absence.objects.all()
-        month_days = [x for x in range(1, 32)]
         months = (
         'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November',
         'December')
 
         today = datetime.datetime.now()
+
+        weekday = datetime.datetime.weekday(today)
+
         a = datetime.datetime.strftime(today, '%d-%m-%Y')
         a_dt = datetime.datetime.strptime(a, '%d-%m-%Y')
 
@@ -392,6 +414,7 @@ class AbsencesList(View):
 
         aa = am + ' ' + str(ay)
 
+        month_days = [(x, weekday_of_month_days(datetime.datetime.strptime(a, '%d-%m-%Y'), x)) for x in range(1, month_days_function(today) + 1)]
 
         def month_list(start_date, end_date):
             start_date_str = datetime.datetime.strptime(start_date, '%d-%m-%Y')
@@ -432,6 +455,9 @@ class Absences(View):
     def get(self, request):
         absences_objects = Absence.objects.all()
         absences = []
+        month = request.GET.get('month')
+        c = datetime.datetime.strptime(month, '%B %Y')
+        print(c)
         for a in absences_objects:
             absences.append((a.worker.id, a.absence_date.day))
         return HttpResponse(json.dumps(absences))

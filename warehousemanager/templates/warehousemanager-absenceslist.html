@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<select>
+<select id="monthSelect">
     {% for zz in z %}
     {% if zz == aa %}
         <option value="{{ zz }}" selected>{{ zz }}</option>
@@ -21,15 +21,24 @@
         <th>{{ w }}</th>
     {% endfor %}
 
-    {% for d in month_days %}
+    {% for d, d1 in month_days %}
         <tr>
-            <td>{{ d }}</td>
-            {% for w in workers %}
-            <td class="day{{ d }} worker{{ w.id }}" style="background-color: green"></td>
-            {% endfor %}
+            {% if d1 >= 5 %}
+                <td style="background-color: pink">{{ d }}</td>
+                {% for w in workers %}
+                    <td class="day{{ d }} worker{{ w.id }}" style="background-color: orange"></td>
+                {% endfor %}
+            {% else %}
+                <td style="background-color: orange">{{ d }}
+                {% for w in workers %}
+                    <td class="day{{ d }} worker{{ w.id }}" style="background-color: green"></td>
+                {% endfor %}
+            {% endif %}
         </tr>
     {% endfor %}
 
 </table>
 
 {% endblock %}
+
+{% block footer %}{% endblock %}

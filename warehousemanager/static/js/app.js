@@ -295,8 +295,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             re = FormatConverter(boxWidth.value, boxLength.value, boxHeight.value, boxType.value, cardboardType.value)
 
-            console.log(String(re[0]) + 'x' + String(re[1]))
-
             result.innerText = String(re[0]) + 'x' + String(re[1])
         })
 
@@ -304,25 +302,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const AbsenceList = document.querySelector('.absence-list')
+    const monthSelect = document.querySelector('#monthSelect')
+
+    console.log(monthSelect.value)
 
     if (AbsenceList !== null) {
+        monthSelect.addEventListener('click', function () {
         $.ajax({
         url: '/absences/',
-        data: {},
+        data: {'month': monthSelect.value},
         type: 'GET',
         dataType: 'json'
     }).done(function (data) {
-        console.log(data)
         for (let i=0; i < data.length; i++){
-            console.log(i, data[i])
             day_text = 'day' + data[i][1]
             worker_text = 'worker' + data[i][0]
             query_text = worker_text + ' ' + day_text
             let absenceField = document.getElementsByClassName(query_text)
-            absenceField[0].innerText = 'x'
+            absenceField[0].innerText = ''
             absenceField[0].style.backgroundColor = 'red'
-            console.log(absenceField)
         }
+        })
         })
     }
 
