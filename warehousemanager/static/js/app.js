@@ -334,4 +334,21 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 
+    // add absences form
+    const absencesButtonsContainer = document.getElementById('absenceAddContainer')
+    const addShortAbsenceButton = document.getElementById('short-A')
+    const addLongAbsenceButton = document.getElementById('long-A')
+    const shortAbsenceForm = document.getElementById('shortAbsenceForm')
+
+    if (absencesButtonsContainer !== null ) {
+            addShortAbsenceButton.addEventListener('click', function () {
+                absencesButtonsContainer.style.display = 'none';
+                shortAbsenceForm.style.display = 'block';
+            })
+            addLongAbsenceButton.addEventListener('click', function () {
+                absencesButtonsContainer.style.display = 'none';
+                longAbsenceForm.style.display = 'block';
+            })
+        }
+
 })

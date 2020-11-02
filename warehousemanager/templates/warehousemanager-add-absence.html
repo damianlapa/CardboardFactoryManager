@@ -3,12 +3,52 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
-
-<div class="short-absence">
-    <button id="short-A" value="1-Day Absence">1-Day Absence</button>
+<br />
+<div id="absenceAddContainer">
+    <div id="short-absence" class="absenceAddElement">
+        <button class="absence-button" id="short-A" value="1-Day Absence">1-Day Absence</button>
+    </div>
+    <div id="long-absence" class="absenceAddElement">
+        <button class="absence-button" id="long-A" value=">1-Day Absence">>1-Day Absence</button>
+    </div>
 </div>
-<div class="long-absence">
-    <button id="long-A" value=">1-Day Absence">>1-Day Absence</button>
+
+<div id="shortAbsenceForm" style="display: none;">
+    <form method="post">
+        {% csrf_token %}
+        {{ short_absence_form.as_p }}
+        <input type="submit" value="Add Absence">
+    </form>
 </div>
 
+<div id="longAbsenceForm" style="display: none;">
+    <form method="post">
+        {% csrf_token %}
+        <label>Worker:
+        <select name="worker" required>Worker:
+            {% for w in workers %}
+                <option value="{{ w }}">{{ w }}</option>
+            {% endfor %}
+        </select>
+        </label>
+        <br />
+        <label>First Absence Day:
+            <input type="date" name="first_day" required>
+        </label>
+        <br />
+        <label>Last Absence Day:
+            <input type="date" name="last_day" required>
+        </label>
+        <br />
+        <label>Absence Type:
+            <select name="type" required>
+                {% for r1, r2 in reasons %}
+                    <option value="{{ r1 }}">{{ r2 }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <br />
+        <input type="submit" value="Add Long Absence">
+    </form>
+</div>
 {% endblock %}

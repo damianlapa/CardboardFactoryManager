@@ -33,7 +33,8 @@ ABSENCE_TYPES = (
     ('UW', 'Urlop wypoczynkowy'),
     ('UO', 'Urlop okolicznościowy'),
     ('SP', 'Spóźnienie'),
-    ('UB', 'Urlop bezpłatny')
+    ('UB', 'Urlop bezpłatny'),
+    ('UZ', 'Urlop zdrowotny')
 )
 
 

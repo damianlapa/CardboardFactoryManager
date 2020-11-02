@@ -507,4 +507,44 @@ class GetLocalVar(View):
 
 class AbsenceAdd(View):
     def get(self, request):
+        short_absence_form = AbsenceForm
+        workers = Person.objects.all()
+        reasons = ABSENCE_TYPES
         return render(request, 'warehousemanager-add-absence.html', locals())
+
+    def post(self, request):
+        short_absence_form = AbsenceForm(request.POST)
+        if short_absence_form.is_valid():
+            worker = short_absence_form.cleaned_data['worker']
+            absence_date = short_absence_form.cleaned_data['absence_date']
+            absence_type = short_absence_form.cleaned_data['absence_type']
+
+            # worker_object = Person.objects.filter(first_name=worker.split()[0]).filter(last_name=worker.split()[1])[0]
+
+            new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
+
+            new_absence.save()
+
+            return redirect('absence-list')
+
+        else:
+            worker = request.POST.get('worker')
+            first_day = request.POST.get('first_day')
+            last_day = request.POST.get('last_day')
+            absence_type = request.POST.get('type')
+
+            worker_s = worker.split()
+            worker_object = Person.objects.filter(first_name=worker_s[0], last_name=worker_s[1])[0]
+            first_day_date = datetime.datetime.strptime(first_day, '%Y-%m-%d')
+            last_day_date = datetime.datetime.strptime(last_day, '%Y-%m-%d')
+
+            '''safety_counter = 0
+            while first_day_date != last_day_date:
+                if safety_counter < 1:
+                    print(safety_counter)
+                    safety_counter += 1
+                    print(first_day_date)
+                    first_day_date = first_day_date + datetime.timedelta(days=1)
+                    print(first_day_date == last_day_date)'''
+
+            return HttpResponse(f'{worker_object}{first_day_date}{last_day_date}{absence_type}')

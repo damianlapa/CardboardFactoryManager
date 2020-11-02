@@ -1,5 +1,5 @@
 from django import forms
-from warehousemanager.models import CardboardProvider, OrderItem, Order, Note
+from warehousemanager.models import CardboardProvider, OrderItem, Order, Note, Absence
 
 
 class CardboardProviderForm(forms.ModelForm):
@@ -23,4 +23,9 @@ class NewOrderForm(forms.ModelForm):
 class NoteForm(forms.ModelForm):
     class Meta:
         model = Note
+        fields = '__all__'
+
+class AbsenceForm(forms.ModelForm):
+    class Meta:
+        model = Absence
         fields = '__all__'

@@ -203,3 +203,37 @@ input[type=button], input[type=submit], input[type=reset] {
 .all-deliveries-container {
     display: inline-block;
 }
+
+.absence-button {
+	background-color:#fca919;
+	border-radius:11px;
+	border:1px solid #000000;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:23px;
+	font-weight:bold;
+	padding:18px 47px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #000000;
+}
+.absence-button:hover {
+	background-color:#f7de3b;
+}
+.absence-button:active {
+	position:relative;
+	top:1px;
+}
+
+#absenceAddContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;;
+    align-items: center;
+}
+
+.absenceAddElement {
+    text-align: center;
+    flex-basis: 49%;
+}
