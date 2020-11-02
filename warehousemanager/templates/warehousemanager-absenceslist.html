@@ -3,6 +3,11 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+<br />
+
+<a href="{% url 'add-absence' %}"><button>Add Absence</button></a>
+
+<br />
 
 <select id="monthSelect">
     {% for zz in z %}

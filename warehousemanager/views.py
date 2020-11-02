@@ -503,3 +503,8 @@ class GetLocalVar(View):
             return HttpResponse(json.dumps(os.environ[variable_name]))
         else:
             return redirect('manage')
+
+
+class AbsenceAdd(View):
+    def get(self, request):
+        return render(request, 'warehousemanager-add-absence.html', locals())
