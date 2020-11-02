@@ -493,7 +493,7 @@ class Absences(View):
                                                             absence_date__lte=datetime.date(int(year) + 1, 1, 1))
         absences = []
         for a in absences_objects:
-            absences.append((a.worker.id, a.absence_date.day))
+            absences.append((a.worker.id, a.absence_date.day, a.absence_type))
         return HttpResponse(json.dumps(absences))
 
 

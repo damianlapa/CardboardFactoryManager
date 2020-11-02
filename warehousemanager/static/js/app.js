@@ -316,8 +316,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 worker_text = 'worker' + data[i][0]
                 query_text = worker_text + ' ' + day_text
                 let absenceField = document.getElementsByClassName(query_text)
-                absenceField[0].innerText = ''
+                absenceField[0].innerText = data[i][2]
                 absenceField[0].style.backgroundColor = 'red'
+                absenceField[0].style.color = 'white'
+                absenceField[0].style.textAlign = 'center'
             }
             })
         monthSelect.addEventListener('click', function () {
