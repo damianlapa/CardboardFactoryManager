@@ -538,13 +538,19 @@ class AbsenceAdd(View):
             first_day_date = datetime.datetime.strptime(first_day, '%Y-%m-%d')
             last_day_date = datetime.datetime.strptime(last_day, '%Y-%m-%d')
 
-            '''safety_counter = 0
+            safety_counter = 0
             while first_day_date != last_day_date:
-                if safety_counter < 1:
-                    print(safety_counter)
+                if safety_counter < 15:
                     safety_counter += 1
-                    print(first_day_date)
+                    if first_day_date.weekday() < 5:
+                        new_absence = Absence(worker=worker_object, absence_date=first_day_date, absence_type=absence_type)
+                        new_absence.save()
                     first_day_date = first_day_date + datetime.timedelta(days=1)
-                    print(first_day_date == last_day_date)'''
+                    if first_day_date == last_day_date:
+                        new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                              absence_type=absence_type)
+                        new_absence.save()
+                else:
+                    break
 
-            return HttpResponse(f'{worker_object}{first_day_date}{last_day_date}{absence_type}')
+            return redirect('absence-list')
