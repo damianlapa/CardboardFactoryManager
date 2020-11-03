@@ -330,7 +330,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     holidayFields[0].style.backgroundColor = 'pink'
                     holidayFields[0].style.textAlign = 'center'
                     holidayFieldsLength = holidayFields.length
-                    for (let j=1; j < holidayFieldsLength; j++){
+                    for (let j=holidayFieldsLength - 1; j > 0; j--){
                         holidayFields[j].remove()
                     }
                 }
