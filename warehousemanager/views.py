@@ -474,7 +474,7 @@ class AbsencesList(View):
         return render(request, 'warehousemanager-absenceslist.html', locals())
 
 
-class Absences(View):
+class AbsencesAndHolidays(View):
 
     def get(self, request):
         months = (
@@ -488,13 +488,28 @@ class Absences(View):
         if month_ != 12:
             absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
                                                             absence_date__lte=datetime.date(int(year), month_ + 1, 1))
+            holiday_objects = Holiday.objects.all().filter(holiday_date__gte=datetime.date(int(year), month_, 1),
+                                                            holiday_date__lte=datetime.date(int(year), month_ + 1, 1))
         else:
             absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
                                                             absence_date__lte=datetime.date(int(year) + 1, 1, 1))
-        absences = []
+            holiday_objects = Holiday.objects.all().filter(holiday_date__gte=datetime.date(int(year), month_, 1),
+                                                            holiday_date__lte=datetime.date(int(year) + 1, 1, 1))
+
+        # deleting vacations on holidays
+        for h in holiday_objects:
+            absences = Absence.objects.all().filter(absence_date=h.holiday_date)
+            if len(absences) > 0:
+                for a in absences:
+                    a.delete()
+
+
+        absences_and_holidays = []
         for a in absences_objects:
-            absences.append((a.worker.id, a.absence_date.day, a.absence_type))
-        return HttpResponse(json.dumps(absences))
+            absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type))
+        for h in holiday_objects:
+            absences_and_holidays.append((-1, h.holiday_date.day, h.name))
+        return HttpResponse(json.dumps(absences_and_holidays))
 
 
 class GetLocalVar(View):

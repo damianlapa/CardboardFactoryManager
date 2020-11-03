@@ -313,13 +313,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }).done(function (data) {
             for (let i=0; i < data.length; i++){
                 day_text = 'day' + data[i][1]
-                worker_text = 'worker' + data[i][0]
-                query_text = worker_text + ' ' + day_text
-                let absenceField = document.getElementsByClassName(query_text)
-                absenceField[0].innerText = data[i][2]
-                absenceField[0].style.backgroundColor = 'red'
-                absenceField[0].style.color = 'white'
-                absenceField[0].style.textAlign = 'center'
+                if (data[i][0] >= 0){
+                    worker_text = 'worker' + data[i][0]
+                    query_text = worker_text + ' ' + day_text
+                    let absenceField = document.getElementsByClassName(query_text)
+                    absenceField[0].innerText = data[i][2]
+                    absenceField[0].style.backgroundColor = 'red'
+                    absenceField[0].style.color = 'white'
+                    absenceField[0].style.textAlign = 'center'
+                    }
+                else {
+                    let holidayFields = document.getElementsByClassName(day_text)
+                    console.log(holidayFields)
+                    holidayFields[0].colSpan = holidayFields.length
+                    holidayFields[0].innerText = data[i][2]
+                    holidayFields[0].style.backgroundColor = 'pink'
+                    holidayFields[0].style.textAlign = 'center'
+                    for (let j=1; j < holidayFields.length; j++){
+                        holidayFields[j].remove()
+                    }
+                }
             }
             })
         monthSelect.addEventListener('click', function () {

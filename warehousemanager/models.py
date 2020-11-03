@@ -125,3 +125,11 @@ class Absence(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     absence_date = models.DateField()
     absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
+
+    def __str__(self):
+        return f'{self.absence_date} {self.worker}'
+
+
+class Holiday(models.Model):
+    name = models.CharField(max_length=32)
+    holiday_date = models.DateField(unique=True)

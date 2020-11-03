@@ -25,6 +25,7 @@ class NoteForm(forms.ModelForm):
         model = Note
         fields = '__all__'
 
+
 class AbsenceForm(forms.ModelForm):
     class Meta:
         model = Absence
