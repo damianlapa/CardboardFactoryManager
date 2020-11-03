@@ -329,7 +329,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     holidayFields[0].innerText = data[i][2]
                     holidayFields[0].style.backgroundColor = 'pink'
                     holidayFields[0].style.textAlign = 'center'
-                    for (let j=1; j < holidayFields.length; j++){
+                    holidayFieldsLength = holidayFields.length
+                    for (let j=1; j < holidayFieldsLength; j++){
                         holidayFields[j].remove()
                     }
                 }
