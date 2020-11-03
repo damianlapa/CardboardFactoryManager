@@ -43,6 +43,8 @@ class Person(models.Model):
     last_name = models.CharField(max_length=32)
     email_address = models.EmailField()
     telephone = models.CharField(max_length=16)
+    job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
+    job_end = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
@@ -50,7 +52,6 @@ class Person(models.Model):
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
-    employers = models.ManyToManyField(Person, blank=True)
 
     def __str__(self):
         return self.name
@@ -58,7 +59,6 @@ class CardboardProvider(models.Model):
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
-    employers = models.ManyToManyField(Person, blank=True)
 
     def __str__(self):
         return self.name

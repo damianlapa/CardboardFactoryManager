@@ -324,7 +324,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)
-                    console.log(holidayFields)
                     holidayFields[0].colSpan = holidayFields.length
                     holidayFields[0].innerText = data[i][2]
                     holidayFields[0].style.backgroundColor = 'pink'
@@ -343,7 +342,6 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'GET',
             dataType: 'json'
             }).done(function (data) {
-                console.log(data)
                 link = data + 'absences-list/?month=' + monthSelect.value
                 window.location.replace(link)
                 })
