@@ -498,6 +498,7 @@ class AbsencesList(View):
 
             return months_list
 
+        end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
         end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=31)
         z = month_list('01-01-2017', datetime.datetime.strftime(end_plus_31, '%d-%m-%Y'))
 
@@ -599,3 +600,8 @@ class AbsenceAdd(View):
                     break
 
             return redirect('absence-list')
+
+
+class ThisMonth(View):
+    def get(self, request):
+        month = request.POST.get('month')

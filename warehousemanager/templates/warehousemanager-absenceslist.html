@@ -8,12 +8,17 @@
 <a href="{% url 'add-absence' %}"><button class="absence-button">Add Absence</button></a>
 
 <br />
-
-<a href="{% url 'absence-list' %}?month={{ prev_month }}"><button class="absence-button">PREV</button></a>
-<a href="{% url 'absence-list' %}?month={{ next_month }}"><button class="absence-button">NEXT</button></a>
-
 <br />
 
+<a href="{% url 'absence-list' %}?month={{ prev_month }}"><button class="monthNavButton" id="nextBtn">PREV</button></a>
+{% if not end_list_condition %}
+<a href="{% url 'absence-list' %}?month={{ next_month }}"><button class="monthNavButton" id="prevBtn">NEXT</button></a>
+{% else %}
+<a href="{% url 'absence-list' %}?month={{ next_month }}"><button disabled class="monthNavButton" id="prevBtn">NEXT</button></a>
+{% endif %}
+
+<br />
+{{ end_list_condition }}
 <select id="monthSelect">
     {% for zz in z %}
     {% if zz == aa %}

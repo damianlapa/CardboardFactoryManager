@@ -365,4 +365,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
 
+    const prevBtn = document.getElementById('prevBtn')
+    const nextBtn = document.getElementById('nextBtn')
+
 })
