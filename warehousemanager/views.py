@@ -398,15 +398,36 @@ class AbsencesList(View):
         def today_month():
             today = datetime.datetime.now()
 
-            a = datetime.datetime.strftime(today, '%d-%m-%Y')
-            a_dt = datetime.datetime.strptime(a, '%d-%m-%Y')
+            ab = datetime.datetime.strftime(today, '%d-%m-%Y')
+            a_dt = datetime.datetime.strptime(ab, '%d-%m-%Y')
 
             am = months[int(a_dt.month - 1)]
             ay = a_dt.year
 
-            aa = am + ' ' + str(ay)
+            aaa = am + ' ' + str(ay)
 
-            return aa
+            return aaa
+
+        def previous_and_next_month(some_date_str_yyyy_mm_dd):
+            this_month = datetime.datetime.strptime(some_date_str_yyyy_mm_dd, '%Y-%m-%d').month
+            this_year = datetime.datetime.strptime(some_date_str_yyyy_mm_dd, '%Y-%m-%d').year
+
+            if int(this_month) == 12:
+                next_month_num = 1
+                prev_month_num = 11
+                next_year = this_year + 1
+                prev_year = this_year
+            elif int(this_month) == 1:
+                next_month_num = 2
+                prev_month_num = 12
+                next_year = this_year
+                prev_year = this_year - 1
+            else:
+                next_month_num = int(this_month) + 1
+                prev_month_num = int(this_month) - 1
+                prev_year = this_year
+                next_year = this_year
+            return months[prev_month_num - 1] + f' {prev_year}', months[next_month_num - 1] + f' {next_year}'
 
         months = (
             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
@@ -416,11 +437,12 @@ class AbsencesList(View):
         month = request.GET.get('month')
 
         if not month:
-            month = datetime.datetime.today()
+            month = datetime.date.today()
             aa = today_month()
             month_date = datetime.datetime.today()
             day_num = month_date.day
-            print(day_num)
+            print(previous_and_next_month(datetime.date.strftime(month, '%Y-%m-%d')))
+            prev_month, next_month = previous_and_next_month(datetime.date.strftime(month, '%Y-%m-%d'))
         else:
             aa = month
             month_split = month.split()
@@ -430,8 +452,16 @@ class AbsencesList(View):
                 day_num = datetime.datetime.today().day
             else:
                 day_num = 32
+            print(month_split)
+            print(months.index(month_split[0]) + 1)
+            prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
-        workers = Person.objects.all()
+        month_year = aa.split()
+        str_date = f'{month_year[1]}-{months.index(month_year[0]) + 1}-1'
+        month_days = month_days_function(datetime.datetime.strptime(str_date, '%Y-%m-%d'))
+
+        workers = Person.objects.all().filter(
+            job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
         absences = Absence.objects.all()
 
         a = datetime.datetime.strftime(month_date, '%d-%m-%Y')
@@ -489,12 +519,12 @@ class AbsencesAndHolidays(View):
             absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
                                                             absence_date__lte=datetime.date(int(year), month_ + 1, 1))
             holiday_objects = Holiday.objects.all().filter(holiday_date__gte=datetime.date(int(year), month_, 1),
-                                                            holiday_date__lte=datetime.date(int(year), month_ + 1, 1))
+                                                           holiday_date__lte=datetime.date(int(year), month_ + 1, 1))
         else:
             absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
                                                             absence_date__lte=datetime.date(int(year) + 1, 1, 1))
             holiday_objects = Holiday.objects.all().filter(holiday_date__gte=datetime.date(int(year), month_, 1),
-                                                            holiday_date__lte=datetime.date(int(year) + 1, 1, 1))
+                                                           holiday_date__lte=datetime.date(int(year) + 1, 1, 1))
 
         # deleting vacations on holidays
         for h in holiday_objects:
@@ -502,7 +532,6 @@ class AbsencesAndHolidays(View):
             if len(absences) > 0:
                 for a in absences:
                     a.delete()
-
 
         absences_and_holidays = []
         for a in absences_objects:
@@ -558,7 +587,8 @@ class AbsenceAdd(View):
                 if safety_counter < 15:
                     safety_counter += 1
                     if first_day_date.weekday() < 5:
-                        new_absence = Absence(worker=worker_object, absence_date=first_day_date, absence_type=absence_type)
+                        new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                              absence_type=absence_type)
                         new_absence.save()
                     first_day_date = first_day_date + datetime.timedelta(days=1)
                     if first_day_date == last_day_date:
