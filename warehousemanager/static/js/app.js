@@ -311,13 +311,13 @@ document.addEventListener("DOMContentLoaded", function () {
         type: 'GET',
         dataType: 'json'
         }).done(function (data) {
-            for (let i=0; i < data.length; i++){
-                day_text = 'day' + data[i][1]
-                if (data[i][0] >= 0){
-                    worker_text = 'worker' + data[i][0]
+            for (let i=0; i < data[0].length; i++){
+                day_text = 'day' + data[0][i][1]
+                if (data[0][i][0] >= 0){
+                    worker_text = 'worker' + data[0][i][0]
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
-                    absenceField[0].innerText = data[i][2]
+                    absenceField[0].innerText = data[0][i][2]
                     absenceField[0].style.backgroundColor = 'red'
                     absenceField[0].style.color = 'white'
                     absenceField[0].style.textAlign = 'center'
@@ -325,13 +325,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)
                     holidayFields[0].colSpan = holidayFields.length
-                    holidayFields[0].innerText = data[i][2]
+                    holidayFields[0].innerText = data[0][i][2]
                     holidayFields[0].style.backgroundColor = 'pink'
                     holidayFields[0].style.textAlign = 'center'
                     holidayFieldsLength = holidayFields.length
                     for (let j=holidayFieldsLength - 1; j > 0; j--){
                         holidayFields[j].remove()
                     }
+                }
+            }
+            for (let x=0; x < data[1].length; x++){
+                for (let y=0; data[1][x][1][y]; y++){
+                    worker_id = 'worker' + String(data[1][x][0])
+                    day_id = 'day' + String(data[1][x][1][y])
+                    query_text = worker_id + ' ' + day_id
+                    let nonWorkField = document.getElementsByClassName(query_text)
+                    nonWorkField[0].innerText = ''
+                    nonWorkField[0].style.backgroundColor = 'white'
+                    nonWorkField[0].style.color = 'white'
+                    nonWorkField[0].style.textAlign = 'center'
                 }
             }
             })

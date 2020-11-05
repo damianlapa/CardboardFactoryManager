@@ -505,6 +505,31 @@ class AbsencesList(View):
 class AbsencesAndHolidays(View):
 
     def get(self, request):
+        def days_without_work(worker, mm_yyyy_str):
+            start = worker.job_start
+            end = worker.job_end
+            month__ = datetime.datetime.strptime(mm_yyyy_str, '%m-%Y')
+
+            if month__.month in (1, 3, 5, 7, 8, 10, 12):
+                days = 31
+            elif month__.month == 2:
+                days = 28
+                if month__.year % 4 == 0:
+                    days = 29
+            else:
+                days = 30
+
+            result_days = []
+
+            if start.month == month__.month:
+                result_days = [x for x in range(1, start.day)]
+            if end:
+                if end.month == month__.month:
+                    for y in range(end.day, days + 1):
+                        result_days.append(y)
+
+            return worker.id, result_days
+
         months = (
             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
             'November',
@@ -531,12 +556,20 @@ class AbsencesAndHolidays(View):
                 for a in absences:
                     a.delete()
 
+        workers = Person.objects.all()
+        non_work_days = []
+
+        for w in workers:
+            r = days_without_work(w, f'{month_}-{year}')
+            if len(r[1]) > 0:
+                non_work_days.append(r)
+
         absences_and_holidays = []
         for a in absences_objects:
             absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
-        return HttpResponse(json.dumps(absences_and_holidays))
+        return HttpResponse(json.dumps((absences_and_holidays, non_work_days)))
 
 
 class GetLocalVar(View):
