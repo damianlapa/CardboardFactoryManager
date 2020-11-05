@@ -441,7 +441,6 @@ class AbsencesList(View):
             aa = today_month()
             month_date = datetime.datetime.today()
             day_num = month_date.day
-            print(previous_and_next_month(datetime.date.strftime(month, '%Y-%m-%d')))
             prev_month, next_month = previous_and_next_month(datetime.date.strftime(month, '%Y-%m-%d'))
         else:
             aa = month
@@ -452,8 +451,6 @@ class AbsencesList(View):
                 day_num = datetime.datetime.today().day
             else:
                 day_num = 32
-            print(month_split)
-            print(months.index(month_split[0]) + 1)
             prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
         month_year = aa.split()
@@ -564,8 +561,6 @@ class AbsenceAdd(View):
             absence_date = short_absence_form.cleaned_data['absence_date']
             absence_type = short_absence_form.cleaned_data['absence_type']
 
-            # worker_object = Person.objects.filter(first_name=worker.split()[0]).filter(last_name=worker.split()[1])[0]
-
             new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
 
             new_absence.save()
@@ -591,6 +586,13 @@ class AbsenceAdd(View):
                         new_absence = Absence(worker=worker_object, absence_date=first_day_date,
                                               absence_type=absence_type)
                         new_absence.save()
+                    else:
+                        if absence_type == 'UZ':
+                            new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                  absence_type=absence_type)
+                            new_absence.save()
+                        else:
+                            pass
                     first_day_date = first_day_date + datetime.timedelta(days=1)
                     if first_day_date == last_day_date:
                         new_absence = Absence(worker=worker_object, absence_date=first_day_date,
