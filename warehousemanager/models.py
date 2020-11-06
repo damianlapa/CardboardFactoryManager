@@ -133,3 +133,12 @@ class Absence(models.Model):
 class Holiday(models.Model):
     name = models.CharField(max_length=32)
     holiday_date = models.DateField(unique=True)
+
+
+class ExtraHour(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    extras_date = models.DateField()
+    quantity = models.DecimalField(max_digits=3, decimal_places=1)
+
+    def __str__(self):
+        return f'{self.worker} {self.extras_date} {self.quantity}'

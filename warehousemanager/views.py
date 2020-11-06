@@ -573,12 +573,20 @@ class AbsencesAndHolidays(View):
             if len(r[1]) > 0:
                 non_work_days.append(r)
 
+        extra_hours = []
+        month_start_date = datetime.date(int(year), month_, 1)
+        month_end_date = datetime.date(int(year), month_, 28)
+        e_h = ExtraHour.objects.all().filter(extras_date__gte=month_start_date).filter(extras_date__lte=month_end_date)
+
+        for e in e_h:
+            extra_hours.append((e.worker.id, e.extras_date.day, float(e.quantity)))
+
         absences_and_holidays = []
         for a in absences_objects:
             absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
-        return HttpResponse(json.dumps((absences_and_holidays, non_work_days)))
+        return HttpResponse(json.dumps((absences_and_holidays, non_work_days, extra_hours)))
 
 
 class GetLocalVar(View):

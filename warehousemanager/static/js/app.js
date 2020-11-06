@@ -347,7 +347,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     nonWorkField[0].style.textAlign = 'center'
                 }
             }
-            })
+            console.log(data[2])
+            for (let z=0; z < data[2].length; z++){
+            console.log(data[2][z])
+                    worker_id = 'worker' + String(data[2][z][0])
+                    day_id = 'day' + String(data[2][z][1])
+                    query_text = worker_id + ' ' + day_id
+                    let extraHours = document.getElementsByClassName(query_text)
+                    if (extraHours.length > 0) {
+                    extraHours[0].innerText = data[2][z][2]
+                    extraHours[0].style.backgroundColor = 'blue'
+                    extraHours[0].style.color = 'red'
+                    extraHours[0].style.textAlign = 'center'
+                    }
+            }})
         monthSelect.addEventListener('click', function () {
             $.ajax({
             url: '/get-local-var/PAKER_MAIN/',
