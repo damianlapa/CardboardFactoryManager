@@ -317,11 +317,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     worker_text = 'worker' + data[0][i][0]
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
-                    absenceField[0].innerText = data[0][i][2]
-                    absenceField[0].style.backgroundColor = 'red'
-                    absenceField[0].style.color = 'white'
-                    absenceField[0].style.textAlign = 'center'
-                    }
+                    if (absenceField.length > 0) {
+                        absenceField[0].innerText = data[0][i][2]
+                        absenceField[0].style.backgroundColor = 'red'
+                        absenceField[0].style.color = 'white'
+                        absenceField[0].style.textAlign = 'center'
+                    }}
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)
                     holidayFields[0].colSpan = holidayFields.length

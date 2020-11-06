@@ -459,6 +459,15 @@ class AbsencesList(View):
 
         workers = Person.objects.all().filter(
             job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
+        workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+        print(workers)
+        '''to_delete = []
+        for worker in workers:
+            if worker.job_end:
+                if worker.job_end < datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
+                    to_delete.append(worker.id)
+                    print(worker.first_name, worker.last_name)
+        workers.filter(id__in=to_delete).delete()'''
         absences = Absence.objects.all()
 
         a = datetime.datetime.strftime(month_date, '%d-%m-%Y')
@@ -521,10 +530,10 @@ class AbsencesAndHolidays(View):
 
             result_days = []
 
-            if start.month == month__.month:
+            if start.month == month__.month and start.year == month__.year:
                 result_days = [x for x in range(1, start.day)]
             if end:
-                if end.month == month__.month:
+                if end.month == month__.month and end.year == month__.year:
                     for y in range(end.day, days + 1):
                         result_days.append(y)
 
