@@ -307,3 +307,30 @@ input[type=button], input[type=submit], input[type=reset] {
     flex-wrap: wrap;
     flex-basis: 33%;
 }
+
+.dimension-filters {
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 33%;
+}
+
+.fefco-type {
+    background:linear-gradient(to bottom, #ffc477 5%, #fb9e25 100%);
+	background-color:#ffc477;
+	border-radius:6px;
+	border:1px solid #eeb44f;
+	display:inline-block;
+	cursor:pointer;
+	color:#000000;
+	font-family:Verdana;
+	font-size:15px;
+	font-weight:bold;
+	padding:6px 12px;
+	text-decoration:none;
+	margin: 1px;
+}
+
+.fefco-type-click {
+    background:linear-gradient(to bottom, white 5%, yellow 100%);
+    background-color: yellow;
+}

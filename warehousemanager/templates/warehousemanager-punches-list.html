@@ -11,6 +11,10 @@
     <div id="punch-filters" class="punch-filters" style="display: none">
         <br />
         <div class="type-buttons">
+            <div>
+               <button class='fefco-type' value="all">All</button>
+            </div>
+
             {% for pt in punch_types %}
 
                 <div>
@@ -18,7 +22,17 @@
                 </div>
             {% endfor %}
         </div>
-        <div></div>
+        <div class="dimension-filters">
+            <label>Dimension #1
+                <input type="number">
+            </label>
+            <label>Dimension #2
+                <input type="number">
+            </label>
+            <label>Dimension #3
+                <input type="number">
+            </label>
+        </div>
         <div></div>
         <br />
     </div>

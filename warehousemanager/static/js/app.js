@@ -414,8 +414,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         for (let i=0; i < fefcoTypesBtns.length; i++){
             fefcoTypesBtns[i].addEventListener('click', function () {
+                for (let x=0; x < fefcoTypesBtns.length; x++){
+                    if (fefcoTypesBtns[x].classList.contains('fefco-type-click')) {
+                        fefcoTypesBtns[x].classList.toggle('fefco-type-click')
+                    }
+                }
+                fefcoTypesBtns[i].classList.toggle('fefco-type-click')
+
                 for (let j=0; j < typeCells.length; j++){
                     if (fefcoTypesBtns[i].value === typeCells[j].innerText){
+                        typeCells[j].parentElement.style.display = 'table-row'
+                    }
+                    else if (fefcoTypesBtns[i].value === 'all'){
                         typeCells[j].parentElement.style.display = 'table-row'
                     }
                     else {
