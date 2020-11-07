@@ -3,7 +3,56 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
-{% for p in punches %}
-    {{ p }}
-{% endfor %}
+<div class="punches-list">
+    <h1>WYKROJNIKI</h1>
+
+    <button id="punch-filters-button">Filtry</button>
+    <br />
+    <div id="punch-filters" class="punch-filters" style="display: none">
+        <br />
+        <div class="type-buttons">
+            {% for pt in punch_types %}
+
+                <div>
+                    <button class='fefco-type' value="{{ pt.0 }}">{{ pt.1 }}</button>
+                </div>
+            {% endfor %}
+        </div>
+        <div></div>
+        <div></div>
+        <br />
+    </div>
+
+    <br />
+
+    <table>
+        <tr>
+            <th>TYP</th>
+            <th>IDENTYFIKATOR</th>
+            <th>SZEROKOŚĆ</th>
+            <th>DŁUGOŚĆ</th>
+            <th>WYSOKOŚĆ</th>
+            <th>FALA</th>
+            <th>FORMAT</th>
+        </tr>
+        {% for p in punches %}
+        <tr id="row{{ p.id }}">
+            <td class="punch-type">{{ p.type }}</td>
+            <td>{{ p.punch_name }}</td>
+            <td>{{ p.dimension_one }}</td>
+            <td>{{ p.dimension_two }}</td>
+            <td>{% if p.dimension_three %}{{ p.dimension_three }}{% else %}-{% endif %}</td>
+            <td>{{ p.cardboard }}</td>
+            {% if p.wave_direction %}
+                <td>{{ p.size_one }}x{{ p.size_two }}</td>
+            {% else %}
+                <td>{{ p.size_two }}x{{ p.size_one }}</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+
 {% endblock %}

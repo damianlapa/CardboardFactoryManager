@@ -394,4 +394,36 @@ document.addEventListener("DOMContentLoaded", function () {
     const prevBtn = document.getElementById('prevBtn')
     const nextBtn = document.getElementById('nextBtn')
 
+    const filterPunchesBtn = document.getElementById('punch-filters-button')
+
+    if (filterPunchesBtn !== null) {
+        const filterContainer = document.getElementById('punch-filters')
+        filterPunchesBtn.addEventListener('click', function () {
+            if (filterContainer.style.display === 'none') {
+                filterContainer.style.display = 'flex'
+                filterPunchesBtn.style.backgroundColor = 'pink'
+            }
+            else {
+                filterContainer.style.display = 'none'
+                filterPunchesBtn.style.backgroundColor = 'red'
+            }
+        })
+
+        const fefcoTypesBtns = document.getElementsByClassName('fefco-type')
+        const typeCells = document.getElementsByClassName('punch-type')
+
+        for (let i=0; i < fefcoTypesBtns.length; i++){
+            fefcoTypesBtns[i].addEventListener('click', function () {
+                for (let j=0; j < typeCells.length; j++){
+                    if (fefcoTypesBtns[i].value === typeCells[j].innerText){
+                        typeCells[j].parentElement.style.display = 'table-row'
+                    }
+                    else {
+                        typeCells[j].parentElement.style.display = 'none'
+                    }
+                }
+            })
+        }
+    }
+
 })
