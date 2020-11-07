@@ -18,7 +18,7 @@ from django.urls import path
 from warehousemanager.views import index, Orders, OrdersDetails, AllOrdersDetails, NewOrder, NextOrderNumber, \
     ProviderForm, NewOrderAdd, NewItemAdd, NextItemNumber, CompleteOrder, DeleteOrder, GetItemDetails, PrintTest, \
     OpenFile, NewAllOrders, StartPage, LogoutView, ManageView, AllProvidersView, FormatConverter, DeliveriesManagement, \
-    DeliveryDetails, NoteAdd, AllNotes, AbsencesList, AbsencesAndHolidays, GetLocalVar, AbsenceAdd
+    DeliveryDetails, NoteAdd, AllNotes, AbsencesList, AbsencesAndHolidays, GetLocalVar, AbsenceAdd, PunchesList
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -50,5 +50,6 @@ urlpatterns = [
     path('absences-list/', AbsencesList.as_view(), name='absence-list'),
     path('absences/', AbsencesAndHolidays.as_view(), name='absences'),
     path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
-    path('add-absence', AbsenceAdd.as_view(), name='add-absence')
+    path('add-absence', AbsenceAdd.as_view(), name='add-absence'),
+    path('punches', PunchesList.as_view(), name='punches')
 ]

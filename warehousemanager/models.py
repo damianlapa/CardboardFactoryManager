@@ -159,6 +159,7 @@ class ExtraHour(models.Model):
 
 class Punch(models.Model):
     type = models.CharField(max_length=8, choices=PUNCH_TYPES)
+    type_num = models.IntegerField()
     dimension_one = models.IntegerField(blank=True, null=True)
     dimension_two = models.IntegerField(blank=True, null=True)
     dimension_three = models.IntegerField(blank=True, null=True)
@@ -172,10 +173,13 @@ class Punch(models.Model):
     customers = models.ManyToManyField(Buyer, blank=True)
 
     def __str__(self):
-        if not self.dimension_one or self.dimension_two:
-            return f'{self.type}: {self.size_one}x{self.size_two}'
-        else:
+        if self.dimension_one and self.dimension_two:
             if self.dimension_three:
                 return f'{self.type}: {self.dimension_one}x{self.dimension_two}x{self.dimension_three}'
             else:
                 return f'{self.type}: {self.dimension_one}x{self.dimension_two}'
+        else:
+            return f'{self.type}: {self.size_one}x{self.size_two}'
+
+    def punch_name(self):
+        return f'{self.type}-{self.type_num}'

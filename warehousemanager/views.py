@@ -654,6 +654,10 @@ class AbsenceAdd(View):
             return redirect('absence-list')
 
 
-class ThisMonth(View):
+class PunchesList(LoginRequiredMixin, View):
+    login_url = '/'
+
     def get(self, request):
-        month = request.POST.get('month')
+        punches = Punch.objects.all()
+
+        return render(request, 'warehousemanager-punches-list.html', locals())
