@@ -37,6 +37,19 @@ ABSENCE_TYPES = (
     ('UZ', 'Urlop zdrowotny')
 )
 
+PUNCH_TYPES = (
+    ('427', 'FEFCO 427'),
+    ('426', 'FEFCO 426'),
+    ('421', 'FEFCO 421'),
+    ('201', 'FEFCO 201'),
+    ('SWT', 'Spody, wieka, tacki'),
+    ('KR', 'Krata'),
+    ('NR', 'Narożnik'),
+    ('PDK', 'Pozostałe do klejenia'),
+    ('WK', 'Wkład'),
+    ('INNE', 'Inne')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -142,3 +155,27 @@ class ExtraHour(models.Model):
 
     def __str__(self):
         return f'{self.worker} {self.extras_date} {self.quantity}'
+
+
+class Punch(models.Model):
+    type = models.CharField(max_length=8, choices=PUNCH_TYPES)
+    dimension_one = models.IntegerField(blank=True, null=True)
+    dimension_two = models.IntegerField(blank=True, null=True)
+    dimension_three = models.IntegerField(blank=True, null=True)
+    quantity = models.IntegerField(default=1)
+    size_one = models.IntegerField()
+    size_two = models.IntegerField()
+    cardboard = models.CharField(max_length=4, choices=CARDBOARD_TYPES)
+    pressure_large = models.IntegerField(default=0)
+    pressure_small = models.IntegerField(default=0)
+    wave_direction = models.BooleanField(default=True)
+    customers = models.ManyToManyField(Buyer, blank=True)
+
+    def __str__(self):
+        if not self.dimension_one or self.dimension_two:
+            return f'{self.type}: {self.size_one}x{self.size_two}'
+        else:
+            if self.dimension_three:
+                return f'{self.type}: {self.dimension_one}x{self.dimension_two}x{self.dimension_three}'
+            else:
+                return f'{self.type}: {self.dimension_one}x{self.dimension_two}'

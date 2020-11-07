@@ -357,7 +357,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (extraHours.length > 0) {
                     extraHours[0].innerText = data[2][z][2]
                     extraHours[0].style.backgroundColor = 'blue'
-                    extraHours[0].style.color = 'red'
+                    extraHours[0].style.color = 'white'
                     extraHours[0].style.textAlign = 'center'
                     }
             }})
