@@ -655,10 +655,47 @@ class AbsenceAdd(View):
 
 
 class PunchesList(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_punch'
+    permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
         punches = Punch.objects.all().order_by('type').order_by('type_num')
         punch_types = PUNCH_TYPES
 
         return render(request, 'warehousemanager-punches-list.html', locals())
+
+
+class PunchAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punch'
+
+    def get(self, request):
+        punch_form = PunchForm()
+
+        return render(request, 'warehousemanager-punch-add.html', locals())
+
+    def post(self, request):
+        punch_form = PunchForm(request.POST)
+
+        if punch_form.is_valid():
+            punch_type = punch_form.cleaned_data['type']
+            type_num = punch_form.cleaned_data['type_num']
+            dimension_one = punch_form.cleaned_data['dimension_one']
+            dimension_two = punch_form.cleaned_data['dimension_two']
+            dimension_three = punch_form.cleaned_data['dimension_three']
+            quantity = punch_form.cleaned_data['quantity']
+            size_one = punch_form.cleaned_data['size_one']
+            size_two = punch_form.cleaned_data['size_two']
+            cardboard = punch_form.cleaned_data['cardboard']
+            pressure_large = punch_form.cleaned_data['pressure_large']
+            pressure_small = punch_form.cleaned_data['pressure_small']
+            wave_direction = punch_form.cleaned_data['wave_direction']
+            customers = punch_form.cleaned_data['customers']
+
+            new_punch = Punch.objects.create(type=punch_type, type_num=type_num, dimension_one=dimension_one,
+                                             dimension_two=dimension_two, dimension_three=dimension_three,
+                                             quantity=quantity, size_one=size_one, size_two=size_two,
+                                             cardboard=cardboard, pressure_large=pressure_large,
+                                             pressure_small=pressure_small, wave_direction=wave_direction)
+
+            new_punch.save()
+
+            return redirect('punches')
