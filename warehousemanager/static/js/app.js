@@ -318,6 +318,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
+                        if (data[0][i][2] === 'UZ') {
+                            console.log(data[0][i])
+                        }
                         absenceField[0].innerText = data[0][i][2]
                         absenceField[0].style.backgroundColor = 'red'
                         absenceField[0].style.color = 'white'
@@ -341,15 +344,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     day_id = 'day' + String(data[1][x][1][y])
                     query_text = worker_id + ' ' + day_id
                     let nonWorkField = document.getElementsByClassName(query_text)
+                    if (nonWorkField.length < 0) {
                     nonWorkField[0].innerText = ''
                     nonWorkField[0].style.backgroundColor = 'white'
                     nonWorkField[0].style.color = 'white'
                     nonWorkField[0].style.textAlign = 'center'
+                    }
                 }
             }
-            console.log(data[2])
             for (let z=0; z < data[2].length; z++){
-            console.log(data[2][z])
                     worker_id = 'worker' + String(data[2][z][0])
                     day_id = 'day' + String(data[2][z][1])
                     query_text = worker_id + ' ' + day_id

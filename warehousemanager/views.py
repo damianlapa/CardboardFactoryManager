@@ -4,8 +4,9 @@ from django.http import HttpResponse
 from django.views import View
 from django.contrib import messages
 from django.http import FileResponse
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import permission_required
 import io
 import os
 import shutil
@@ -460,7 +461,6 @@ class AbsencesList(View):
         workers = Person.objects.all().filter(
             job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
         workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
-        print(workers)
         '''to_delete = []
         for worker in workers:
             if worker.job_end:
@@ -549,14 +549,14 @@ class AbsencesAndHolidays(View):
         month_ = months.index(div_date[0]) + 1
         if month_ != 12:
             absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
-                                                            absence_date__lte=datetime.date(int(year), month_ + 1, 1))
+                                                            absence_date__lt=datetime.date(int(year), month_ + 1, 1))
             holiday_objects = Holiday.objects.all().filter(holiday_date__gte=datetime.date(int(year), month_, 1),
-                                                           holiday_date__lte=datetime.date(int(year), month_ + 1, 1))
+                                                           holiday_date__lt=datetime.date(int(year), month_ + 1, 1))
         else:
             absences_objects = Absence.objects.all().filter(absence_date__gte=datetime.date(int(year), month_, 1),
-                                                            absence_date__lte=datetime.date(int(year) + 1, 1, 1))
+                                                            absence_date__lt=datetime.date(int(year) + 1, 1, 1))
             holiday_objects = Holiday.objects.all().filter(holiday_date__gte=datetime.date(int(year), month_, 1),
-                                                           holiday_date__lte=datetime.date(int(year) + 1, 1, 1))
+                                                           holiday_date__lt=datetime.date(int(year) + 1, 1, 1))
 
         # deleting vacations on holidays
         for h in holiday_objects:
@@ -654,8 +654,8 @@ class AbsenceAdd(View):
             return redirect('absence-list')
 
 
-class PunchesList(LoginRequiredMixin, View):
-    login_url = '/'
+class PunchesList(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_punch'
 
     def get(self, request):
         punches = Punch.objects.all().order_by('type').order_by('type_num')
