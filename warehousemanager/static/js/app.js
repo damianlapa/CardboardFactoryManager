@@ -344,7 +344,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     day_id = 'day' + String(data[1][x][1][y])
                     query_text = worker_id + ' ' + day_id
                     let nonWorkField = document.getElementsByClassName(query_text)
-                    if (nonWorkField.length < 0) {
+                    if (nonWorkField.length > 0) {
                     nonWorkField[0].innerText = ''
                     nonWorkField[0].style.backgroundColor = 'white'
                     nonWorkField[0].style.color = 'white'
