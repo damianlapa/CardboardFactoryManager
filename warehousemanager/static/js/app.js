@@ -431,9 +431,120 @@ document.addEventListener("DOMContentLoaded", function () {
                     else {
                         typeCells[j].parentElement.style.display = 'none'
                     }
+                filterByDimension(true)
                 }
             })
         }
     }
 
+    const dimOne = document.getElementById('dim1')
+    const dimTwo = document.getElementById('dim2')
+    const dimThree = document.getElementById('dim3')
+
+    const widthFormat = document.getElementsByClassName('dim1')
+    const lengthFormat = document.getElementsByClassName('dim2')
+    const heightFormat = document.getElementsByClassName('dim3')
+
+    const allRows = document.getElementsByClassName('punch-row')
+
+    /*
+    if (dimOne !== null){
+
+        dimensionFilters = [dimOne, dimTwo, dimThree]
+
+        for (let i=0; i < dimensionFilters.length; i++){
+            dimensionFilters[i].addEventListener('keyup', function () {
+                if (i === 0){
+                    console.log(dimensionFilters[i].value)
+                    for (let j=0; j < widthFormat.length; j++){
+                        if (parseInt(widthFormat[j].innerText) > parseInt(dimensionFilters[i].value)){
+                            widthFormat[j].parentElement.style.display = 'table-row'
+                        }
+                        else if (dimensionFilters[i].value === '') {
+                            console.log('ok')
+                        }
+                        else {
+                            widthFormat[j].parentElement.style.display = 'none'
+                        }
+                    }
+                }
+            })
+        }
+    }
+    */
+
+    function filterByDimension(onlyDisplayed) {
+        var widthValue = dimOne.value
+        var lengthValue = dimTwo.value
+        var heightValue = dimThree.value
+
+        for (let i=0; i < allRows.length; i++){
+            if (onlyDisplayed === true) {
+                console.log(allRows[i].style.display)
+                console.log(allRows[i])
+                if (allRows[i].style.display === 'table-row') {
+                    if (widthValue !== ''){
+                        if (widthValue === allRows[i].children[2].innerText) {
+                            allRows[i].style.display = 'table-row'
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
+                    }
+                    if (lengthValue !== ''){
+                        if (lengthValue === allRows[i].children[3].innerText) {
+                            allRows[i].style.display = 'table-row'
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
+                    }
+                    if (heightValue !== ''){
+                        if (heightValue === allRows[i].children[4].innerText) {
+                            allRows[i].style.display = 'table-row'
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
+                    }
+                }
+            }
+            else {
+                console.log('filter go')
+                if (widthValue !== ''){
+                    if (widthValue === allRows[i].children[2].innerText) {
+                        allRows[i].style.display = 'table-row'
+                    }
+                    else {
+                        allRows[i].style.display = 'none'
+                    }
+                }
+                if (lengthValue !== ''){
+                    if (lengthValue === allRows[i].children[3].innerText) {
+                        allRows[i].style.display = 'table-row'
+                    }
+                    else {
+                        allRows[i].style.display = 'none'
+                    }
+                }
+                if (heightValue !== ''){
+                    if (heightValue === allRows[i].children[4].innerText) {
+                        allRows[i].style.display = 'table-row'
+                    }
+                    else {
+                        allRows[i].style.display = 'none'
+                    }
+                }
+            }
+        }
+
+    }
+
+    const filterDimBtn = document.getElementById('dim-filter-btn')
+
+    if (filterDimBtn !== null) {
+        filterDimBtn.addEventListener('click', function() {
+        filterByDimension(false)
+    })
+    }
 })

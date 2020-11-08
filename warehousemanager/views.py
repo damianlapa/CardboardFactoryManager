@@ -658,7 +658,7 @@ class PunchesList(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        punches = Punch.objects.all().order_by('type')
+        punches = Punch.objects.all().order_by('type').order_by('type_num')
         punch_types = PUNCH_TYPES
 
         return render(request, 'warehousemanager-punches-list.html', locals())

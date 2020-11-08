@@ -24,16 +24,18 @@
         </div>
         <div class="dimension-filters">
             <label>Dimension #1
-                <input type="number">
+                <input type="number" id="dim1">
             </label>
             <label>Dimension #2
-                <input type="number">
+                <input type="number" id="dim2">
             </label>
             <label>Dimension #3
-                <input type="number">
+                <input type="number" id="dim3">
             </label>
+            <button id="dim-filter-btn" class="dim-filter-btn">Filtruj</button>
         </div>
-        <div></div>
+        <div>
+        </div>
         <br />
     </div>
 
@@ -50,12 +52,12 @@
             <th>FORMAT</th>
         </tr>
         {% for p in punches %}
-        <tr id="row{{ p.id }}">
+        <tr id="row{{ p.id }}" class="punch-row">
             <td class="punch-type">{{ p.type }}</td>
             <td>{{ p.punch_name }}</td>
-            <td>{{ p.dimension_one }}</td>
-            <td>{{ p.dimension_two }}</td>
-            <td>{% if p.dimension_three %}{{ p.dimension_three }}{% else %}-{% endif %}</td>
+            <td class="dim1">{{ p.dimension_one }}</td>
+            <td class="dim2">{{ p.dimension_two }}</td>
+            <td class="dim3">{% if p.dimension_three %}{{ p.dimension_three }}{% else %}-{% endif %}</td>
             <td>{{ p.cardboard }}</td>
             {% if p.wave_direction %}
                 <td>{{ p.size_one }}x{{ p.size_two }}</td>
