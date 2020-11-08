@@ -27,7 +27,7 @@ def index(request):
 
 # view displays all orders
 class Orders(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_order')
+    permission_required = 'warehousemanager.view_order'
 
     def get(self, request):
         orders_all = Order.objects.all()
@@ -35,7 +35,7 @@ class Orders(PermissionRequiredMixin, View):
 
 
 class OrdersDetails(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_order')
+    permission_required = 'warehousemanager.view_order'
 
     def get(self, request, order_id):
         order = Order.objects.get(id=order_id)
@@ -45,7 +45,7 @@ class OrdersDetails(PermissionRequiredMixin, View):
 
 class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
     login_url = '/'
-    permission_required('warehousemanager.view_order')
+    permission_required = 'warehousemanager.view_order'
 
     def get(self, request):
         orders = Order.objects.all()
@@ -55,7 +55,7 @@ class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 
 class NewOrder(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_order')
+    permission_required = 'warehousemanager.view_order'
     def get(self, request):
         providers = CardboardProvider.objects.all()
         form = NewOrderForm()
@@ -97,7 +97,7 @@ class NewOrder(PermissionRequiredMixin, View):
 
 
 class DeleteOrder(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.delete_order')
+    permission_required = 'warehousemanager.delete_order'
     def get(self, request):
         order_id = request.GET.get('order_id')
         Order.objects.get(id=order_id).delete()
@@ -106,7 +106,7 @@ class DeleteOrder(PermissionRequiredMixin, View):
 
 
 class NewOrderAdd(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_order')
+    permission_required = 'warehousemanager.view_order'
     def get(self, request):
         provider_num = request.GET.get('provider_num')
         provider = CardboardProvider.objects.get(id=int(provider_num))
@@ -120,7 +120,7 @@ class NewOrderAdd(PermissionRequiredMixin, View):
 
 
 class NewItemAdd(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_orderitem')
+    permission_required = 'warehousemanager.view_orderitem'
     def get(self, request, order_id):
         form = NewOrderItemForm()
         order = Order.objects.get(id=order_id)
@@ -158,7 +158,7 @@ class NextOrderNumber(View):
 
 
 class ProviderForm(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_cardboardprovider')
+    permission_required = 'warehousemanager.view_cardboardprovider'
     def get(self, request):
         form = CardboardProviderForm()
         return render(request, 'new_provider.html', locals())
@@ -194,7 +194,7 @@ class CompleteOrder(View):
 
 
 class GetItemDetails(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_orderitem')
+    permission_required = 'warehousemanager.view_orderitem'
     def get(self, request):
         item_id = int(request.GET.get('item_id'))
         item = OrderItem.objects.get(id=item_id)
@@ -278,7 +278,7 @@ class OpenFile(View):
 
 
 class NewAllOrders(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_order')
+    permission_required = 'warehousemanager.view_order'
     def get(self, request):
         orders = Order.objects.all()
         providers = CardboardProvider.objects.all()
@@ -356,7 +356,7 @@ class DeliveryDetails(LoginRequiredMixin, View):
 
 # dodawanie notatek
 class NoteAdd(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_note')
+    permission_required = 'warehousemanager.view_note'
 
     def get(self, request):
         note_form = NoteForm()
@@ -378,7 +378,7 @@ class NoteAdd(PermissionRequiredMixin, View):
 
 # wszystkie notatki
 class AllNotes(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_note')
+    permission_required = 'warehousemanager.view_note'
 
     def get(self, request):
         all_notes = Note.objects.all()
