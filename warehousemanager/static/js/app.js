@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", function () {
+
+    function getLocalLink() {
+        let localLinkURL = ''
+        $.ajax({
+            url: '/get-local-var/PAKER_MAIN/',
+            data: {},
+            type: 'GET',
+            dataType: 'json'
+            }).done(function (data) {
+                localLink = data
+            })
+
+        return localLinkURL
+    }
+
+    let localLink = getLocalLink()
+
     const NewOrderForm = document.querySelectorAll('.new-order')
     const NewItem = document.querySelectorAll('new-order-item')
     if (NewOrderForm !== null) {
@@ -549,5 +566,15 @@ document.addEventListener("DOMContentLoaded", function () {
         filterDimBtn.addEventListener('click', function() {
         filterByDimension(false)
     })
+    }
+
+    if (allRows.length > 0) {
+        for (let i=0; i < allRows.length; i++) {
+            allRows[i].addEventListener('click', function () {
+                console.log(allRows[i])
+                link = localLink + 'punch/' + allRows[i].dataset.punch_id
+                window.location.replace(link)
+            })
+        }
     }
 })

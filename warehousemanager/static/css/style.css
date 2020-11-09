@@ -408,3 +408,8 @@ input[type=button], input[type=submit], input[type=reset] {
 	text-shadow:0px 1px 0px #cc9f52;
 	margin-top: 10px;
 }
+
+.punch-row:hover {
+    background: orange;
+    cursor: pointer;
+}

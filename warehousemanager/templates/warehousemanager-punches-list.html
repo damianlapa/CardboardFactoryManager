@@ -55,7 +55,7 @@
             <th>FORMAT</th>
         </tr>
         {% for p in punches %}
-        <tr id="row{{ p.id }}" class="punch-row">
+        <tr id="row{{ p.id }}" class="punch-row" data-punch_id="{{ p.id }}">
             <td class="punch-type">{{ p.type }}</td>
             <td>{{ p.punch_name }}</td>
             <td class="dim1">{{ p.dimension_one }}</td>
