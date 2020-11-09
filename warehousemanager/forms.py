@@ -1,5 +1,5 @@
 from django import forms
-from warehousemanager.models import CardboardProvider, OrderItem, Order, Note, Absence, Punch
+from warehousemanager.models import *
 
 
 class CardboardProviderForm(forms.ModelForm):
@@ -35,4 +35,10 @@ class AbsenceForm(forms.ModelForm):
 class PunchForm(forms.ModelForm):
     class Meta:
         model = Punch
+        fields = '__all__'
+
+
+class BuyerForm(forms.ModelForm):
+    class Meta:
+        model = Buyer
         fields = '__all__'

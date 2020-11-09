@@ -723,3 +723,22 @@ class PunchDetails(PermissionRequiredMixin, View):
         punch = get_object_or_404(Punch, id=punch_id)
 
         return render(request, 'warehousemanager-punch-details.html', locals())
+
+
+class AddBuyer(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_buyer'
+
+    def get(self, request):
+        buyer_form = BuyerForm()
+
+        return render(request, 'warehousemanager-add-buyer.html', locals())
+
+    def post(self, request):
+        buyer_form = BuyerForm(request.POST)
+
+        if buyer_form.is_valid():
+            name = buyer_form.cleaned_data['name']
+            new_buyer = Buyer.objects.create(name=name)
+            new_buyer.save()
+
+            return redirect('manage')
