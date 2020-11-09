@@ -187,5 +187,5 @@ class Punch(models.Model):
     def punch_name(self):
         z = float(self.type_num)
         if ((z * 10) % 10) != 0.0:
-            return f'{z}'
-        return f'{int(z)}'
+            return f'{self.type}||{self.type_letter}{z}'
+        return f'{self.type}||{self.type_letter}{int(z)}'
