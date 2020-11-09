@@ -1,0 +1,32 @@
+{% extends '__base2__.html' %}
+
+{% block title %}All Customers{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div class='all-buyers-container'>
+
+    <h1>Wszyscy Klienci:</h1>
+
+    <table class="all-providers-list">
+
+        <tr>
+            <th>Nr</th>
+            <th>Nazwa</th>
+        </tr>
+        {% for b in buyers %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ b.name }}</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}

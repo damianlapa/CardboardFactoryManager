@@ -742,3 +742,12 @@ class AddBuyer(PermissionRequiredMixin, View):
             new_buyer.save()
 
             return redirect('manage')
+
+
+class BuyersList(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_buyer'
+
+    def get(self, request):
+        buyers = Buyer.objects.all()
+
+        return render(request, 'warehousemanager-buyers-list.html', locals())
