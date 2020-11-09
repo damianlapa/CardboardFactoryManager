@@ -17,7 +17,7 @@ CARDBOARD_TYPES = (
     ('C', 'C'),
     ('E', 'E'),
     ('BC', 'BC'),
-    ('BE', 'BE')
+    ('EB', 'EB')
 )
 
 
@@ -189,3 +189,15 @@ class Punch(models.Model):
         if ((z * 10) % 10) != 0.0:
             return f'{self.type}||{self.type_letter}{z}'
         return f'{self.type}||{self.type_letter}{int(z)}'
+
+
+class PunchProduction(models.Model):
+    punch = models.ForeignKey(Punch, on_delete=models.PROTECT)
+    worker = models.ForeignKey(Person, on_delete=models.PROTECT, blank=True, null=True)
+    date_start = models.DateField()
+    date_end = models.DateField()
+    quantity = models.IntegerField()
+    comments = models.CharField(max_length=128, blank=True)
+
+    def __str__(self):
+        return f'{self.punch}/{self.date_end}/{self.quantity}'

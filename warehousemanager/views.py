@@ -720,7 +720,12 @@ class PunchDetails(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request, punch_id):
-        punch = get_object_or_404(Punch, id=punch_id)
+        p = get_object_or_404(Punch, id=punch_id)
+        production = PunchProduction.objects.filter(punch=p)
+
+        wear = 0
+        for pr in production:
+            wear += pr.quantity
 
         return render(request, 'warehousemanager-punch-details.html', locals())
 

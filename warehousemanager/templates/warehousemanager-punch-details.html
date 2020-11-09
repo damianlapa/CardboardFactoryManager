@@ -3,9 +3,77 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+<div class="punch-details">
+    <div>
+        <table>
+            <tr>
+                <th>TYP</th>
+                <th>IDENTYFIKATOR</th>
+                <th>SZEROKOŚĆ</th>
+                <th>DŁUGOŚĆ</th>
+                <th>WYSOKOŚĆ</th>
+                <th>NAZWA</th>
+                <th>FALA</th>
+                <th>FORMAT</th>
+            </tr>
+            <tr>
+                <td>{{ p.type }}</td>
+                <td>{{ p.punch_name }}</td>
+                <td>{{ p.dimension_one }}</td>
+                <td>{{ p.dimension_two }}</td>
+                <td>{% if p.dimension_three %}{{ p.dimension_three }}{% else %}-{% endif %}</td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.cardboard }}</td>
+                {% if p.wave_direction %}
+                <td>{{ p.size_one }}x{{ p.size_two }}</td>
+                {% else %}
+                <td>{{ p.size_two }}x{{ p.size_one }}</td>
+                {% endif %}
+            </tr>
+        </table>
+    </div>
+    <div>
+        <h2>Klienci:</h2>
+        {% for b in p.customers.all %}
+        <list>
+            <li>{{ b }}</li>
+        </list>
+        {% empty %}
 
-{{ punch }}
+        Na razie żaden klient nie jest przypisany do tego wykrojnika
 
+        {% endfor %}
+
+    </div>
+
+    <div>
+
+        <h2>ZUŻYCIE</h2>
+
+        <h3>Suma odbitych wykrojów: {{ wear }}</h3>
+
+        <table>
+            <tr>
+                <th>Ilość</th>
+                <th>Start</th>
+                <th>Koniec</th>
+                <th>Pracownik</th>
+                <th>Uwagi</th>
+            </tr>
+            {% for pp in production %}
+            <tr>
+                <td>{{ pp.quantity }}</td>
+                <td>{{ pp.date_start }}</td>
+                <td>{{ pp.date_end }}</td>
+
+                <td>{{ pp.worker }}</td>
+                <td>{{ pp.comments }}</td>
+            </tr>
+            {% endfor %}
+
+        </table>
+
+    </div>
+</div>
 {% endblock %}
-
 {% block footer %}{% endblock %}
