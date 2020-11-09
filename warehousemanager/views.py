@@ -56,6 +56,7 @@ class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 class NewOrder(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
+
     def get(self, request):
         providers = CardboardProvider.objects.all()
         form = NewOrderForm()
@@ -98,6 +99,7 @@ class NewOrder(PermissionRequiredMixin, View):
 
 class DeleteOrder(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_order'
+
     def get(self, request):
         order_id = request.GET.get('order_id')
         Order.objects.get(id=order_id).delete()
@@ -107,6 +109,7 @@ class DeleteOrder(PermissionRequiredMixin, View):
 
 class NewOrderAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
+
     def get(self, request):
         provider_num = request.GET.get('provider_num')
         provider = CardboardProvider.objects.get(id=int(provider_num))
@@ -121,6 +124,7 @@ class NewOrderAdd(PermissionRequiredMixin, View):
 
 class NewItemAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_orderitem'
+
     def get(self, request, order_id):
         form = NewOrderItemForm()
         order = Order.objects.get(id=order_id)
@@ -159,6 +163,7 @@ class NextOrderNumber(View):
 
 class ProviderForm(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_cardboardprovider'
+
     def get(self, request):
         form = CardboardProviderForm()
         return render(request, 'new_provider.html', locals())
@@ -195,6 +200,7 @@ class CompleteOrder(View):
 
 class GetItemDetails(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_orderitem'
+
     def get(self, request):
         item_id = int(request.GET.get('item_id'))
         item = OrderItem.objects.get(id=item_id)
@@ -279,6 +285,7 @@ class OpenFile(View):
 
 class NewAllOrders(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
+
     def get(self, request):
         orders = Order.objects.all()
         providers = CardboardProvider.objects.all()
@@ -691,6 +698,7 @@ class PunchAdd(PermissionRequiredMixin, View):
 
         if punch_form.is_valid():
             punch_type = punch_form.cleaned_data['type']
+            type_letter = type_num = punch_form.cleaned_data['type_letter']
             type_num = punch_form.cleaned_data['type_num']
             name = punch_form.cleaned_data['name']
             dimension_one = punch_form.cleaned_data['dimension_one']
@@ -709,7 +717,8 @@ class PunchAdd(PermissionRequiredMixin, View):
                                              dimension_two=dimension_two, dimension_three=dimension_three,
                                              quantity=quantity, size_one=size_one, size_two=size_two,
                                              cardboard=cardboard, pressure_large=pressure_large,
-                                             pressure_small=pressure_small, wave_direction=wave_direction, name=name)
+                                             pressure_small=pressure_small, wave_direction=wave_direction, name=name,
+                                             type_letter=type_letter)
 
             new_punch.save()
 

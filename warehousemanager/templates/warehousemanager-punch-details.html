@@ -53,6 +53,7 @@
         <h3>Suma odbitych wykrojów: {{ wear }}</h3>
 
         <table>
+            {% if production %}
             <tr>
                 <th>Ilość</th>
                 <th>Start</th>
@@ -60,6 +61,7 @@
                 <th>Pracownik</th>
                 <th>Uwagi</th>
             </tr>
+            {% endif %}
             {% for pp in production %}
             <tr>
                 <td>{{ pp.quantity }}</td>
@@ -69,6 +71,8 @@
                 <td>{{ pp.worker }}</td>
                 <td>{{ pp.comments }}</td>
             </tr>
+            {% empty %}
+            Brak historii produkcji dla tego wykrojnika
             {% endfor %}
 
         </table>
