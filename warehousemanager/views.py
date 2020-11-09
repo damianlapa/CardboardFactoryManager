@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponse
 from django.views import View
@@ -713,3 +713,12 @@ class PunchAdd(PermissionRequiredMixin, View):
             new_punch.save()
 
             return redirect('punches')
+
+
+class PunchDetails(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punch'
+
+    def get(self, request, punch_id):
+        punch = get_object_or_404(Punch, id=punch_id)
+
+        return render(request, 'warehousemanager-punch-details.html', locals())
