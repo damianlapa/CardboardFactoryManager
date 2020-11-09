@@ -692,6 +692,7 @@ class PunchAdd(PermissionRequiredMixin, View):
         if punch_form.is_valid():
             punch_type = punch_form.cleaned_data['type']
             type_num = punch_form.cleaned_data['type_num']
+            name = punch_form.cleaned_data['name']
             dimension_one = punch_form.cleaned_data['dimension_one']
             dimension_two = punch_form.cleaned_data['dimension_two']
             dimension_three = punch_form.cleaned_data['dimension_three']
@@ -708,7 +709,7 @@ class PunchAdd(PermissionRequiredMixin, View):
                                              dimension_two=dimension_two, dimension_three=dimension_three,
                                              quantity=quantity, size_one=size_one, size_two=size_two,
                                              cardboard=cardboard, pressure_large=pressure_large,
-                                             pressure_small=pressure_small, wave_direction=wave_direction)
+                                             pressure_small=pressure_small, wave_direction=wave_direction, name=name)
 
             new_punch.save()
 

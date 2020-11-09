@@ -160,6 +160,7 @@ class ExtraHour(models.Model):
 class Punch(models.Model):
     type = models.CharField(max_length=8, choices=PUNCH_TYPES)
     type_num = models.CharField(max_length=8)
+    name = models.CharField(max_length=24, default='')
     dimension_one = models.IntegerField(blank=True, null=True)
     dimension_two = models.IntegerField(blank=True, null=True)
     dimension_three = models.IntegerField(blank=True, null=True)

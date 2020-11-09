@@ -51,6 +51,7 @@
             <th>SZEROKOŚĆ</th>
             <th>DŁUGOŚĆ</th>
             <th>WYSOKOŚĆ</th>
+            <th>NAZWA</th>
             <th>FALA</th>
             <th>FORMAT</th>
         </tr>
@@ -61,6 +62,7 @@
             <td class="dim1">{{ p.dimension_one }}</td>
             <td class="dim2">{{ p.dimension_two }}</td>
             <td class="dim3">{% if p.dimension_three %}{{ p.dimension_three }}{% else %}-{% endif %}</td>
+            <td>{{ p.name }}</td>
             <td>{{ p.cardboard }}</td>
             {% if p.wave_direction %}
                 <td>{{ p.size_one }}x{{ p.size_two }}</td>
