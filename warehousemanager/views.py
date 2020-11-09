@@ -672,7 +672,7 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
-        punches = Punch.objects.all().order_by('type').order_by('type_num')
+        punches = Punch.objects.all().order_by('type', 'type_num')
         punch_types = PUNCH_TYPES
 
         return render(request, 'warehousemanager-punches-list.html', locals())

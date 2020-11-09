@@ -413,3 +413,7 @@ input[type=button], input[type=submit], input[type=reset] {
     background: orange;
     cursor: pointer;
 }
+
+.punches-list table{
+    text-align: center;
+}

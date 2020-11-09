@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models.functions import ExtractYear
+import decimal
 import datetime
 
 
@@ -159,7 +160,8 @@ class ExtraHour(models.Model):
 
 class Punch(models.Model):
     type = models.CharField(max_length=8, choices=PUNCH_TYPES)
-    type_num = models.CharField(max_length=8)
+    type_letter = models.CharField(max_length=4, default='', blank=True)
+    type_num = models.DecimalField(max_digits=4, decimal_places=1)
     name = models.CharField(max_length=24, default='', blank=True)
     dimension_one = models.IntegerField(blank=True, null=True)
     dimension_two = models.IntegerField(blank=True, null=True)
@@ -183,4 +185,7 @@ class Punch(models.Model):
             return f'{self.type}: {self.size_one}x{self.size_two}'
 
     def punch_name(self):
-        return f'{self.type}-{self.type_num}'
+        z = float(self.type_num)
+        if ((z * 10) % 10) != 0.0:
+            return f'{z}'
+        return f'{int(z)}'
