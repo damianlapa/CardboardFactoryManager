@@ -765,3 +765,12 @@ class BuyersList(PermissionRequiredMixin, View):
         buyers = Buyer.objects.all()
 
         return render(request, 'warehousemanager-buyers-list.html', locals())
+
+
+class PunchProductions(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punchproduction'
+
+    def get(self, request):
+        production = PunchProduction.objects.all()
+
+        return render(request, 'warehousemanager-punch-production.html', locals())
