@@ -1,0 +1,19 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div style="display: inline-block" class="punch-form-container">
+
+    <form method="post" class="punch-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Add" class="punch-form-btn">
+    </form>
+
+</div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}
