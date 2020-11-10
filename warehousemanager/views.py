@@ -774,3 +774,29 @@ class PunchProductions(PermissionRequiredMixin, View):
         production = PunchProduction.objects.all()
 
         return render(request, 'warehousemanager-punch-production.html', locals())
+
+
+class PunchProductionAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punchproduction'
+
+    def get(self, request):
+        form = PunchProductionForm()
+
+        return render(request, 'warehousemanager-punch-production-add.html', locals())
+
+    def post(self, request):
+        form = PunchProductionForm(request.POST)
+
+        if form.is_valid():
+            punch = form.cleaned_data['punch']
+            worker = form.cleaned_data['worker']
+            date_start = form.cleaned_data['date_start']
+            date_end = form.cleaned_data['date_end']
+            quantity = form.cleaned_data['quantity']
+            comments = form.cleaned_data['comments']
+
+            production = PunchProduction.objects.create(punch=punch, worker=worker, date_start=date_start,
+                                                        date_end=date_end, quantity=quantity, comments=comments)
+            production.save()
+
+            return redirect('punch-production')
