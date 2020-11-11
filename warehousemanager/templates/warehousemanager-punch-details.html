@@ -33,6 +33,9 @@
         </table>
     </div>
     <div>
+        <a href="{% url 'punches' %}"><h4>Wszystkie wykrojniki</h4></a>
+    </div>
+    <div>
         <h2>Klienci:</h2>
         {% for b in p.customers.all %}
         <list>
