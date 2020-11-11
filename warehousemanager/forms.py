@@ -31,6 +31,10 @@ class AbsenceForm(forms.ModelForm):
         model = Absence
         fields = '__all__'
 
+        widgets = {
+            'absence_date': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
+        }
+
 
 class PunchForm(forms.ModelForm):
     class Meta:
@@ -48,3 +52,8 @@ class PunchProductionForm(forms.ModelForm):
     class Meta:
         model = PunchProduction
         fields = '__all__'
+
+        widgets = {
+            'date_end': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
+            'date_start': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
+        }

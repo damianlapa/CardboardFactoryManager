@@ -201,3 +201,7 @@ class PunchProduction(models.Model):
 
     def __str__(self):
         return f'{self.punch}/{self.date_end}/{self.quantity}'
+
+    class Meta:
+
+        ordering = ['date_end']
