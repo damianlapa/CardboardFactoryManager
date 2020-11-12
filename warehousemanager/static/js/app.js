@@ -555,7 +555,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
                 link = localLink + 'punch/' + allRows[i].dataset.punch_id
-                window.location.replace(link)
+                window.open(link, '_blank')
             })
         }
     }
