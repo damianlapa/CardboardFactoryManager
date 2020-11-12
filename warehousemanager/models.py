@@ -84,6 +84,9 @@ class Order(models.Model):
     date_of_order = models.DateTimeField()
     is_completed = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ['order_provider_number']
+
     def __str__(self):
         return '{} {}'.format(self.provider, self.order_provider_number)
 

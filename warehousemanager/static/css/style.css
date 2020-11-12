@@ -1,10 +1,15 @@
-.Convert {
+.CONVERT {
     color: blue;
     font-size: 20px;
 }
 
-.Aquila {
+.AQUILA {
     color: red;
+    font-size: 20px;
+}
+
+.WERNER {
+    color: purple;
     font-size: 20px;
 }
 
