@@ -176,16 +176,6 @@ input[type=button], input[type=submit], input[type=reset] {
     display: inline-block;
 }
 
-#footer {
-    background-color: grey;
-    border: 2px solid orange;
-    text-align: right;
-    position: absolute;
-    bottom: 0;
-    width: 99%;
-    height: 2.5rem;            /* Footer height */
-}
-
 .dimension-container input, select{
     width: 40%;
     padding: 8px 12px;

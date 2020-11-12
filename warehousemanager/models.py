@@ -57,6 +57,9 @@ class Person(models.Model):
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
 
+    class Meta:
+        ordering = ['last_name', 'first_name']
+
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
@@ -64,6 +67,9 @@ class Person(models.Model):
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=6, blank=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         if self.shortcut:
@@ -73,6 +79,9 @@ class CardboardProvider(models.Model):
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -107,7 +116,7 @@ class OrderItem(models.Model):
     scores = models.CharField(max_length=64)
 
     class Meta:
-        ordering = ['item_number']
+        ordering = ['order__provider__name', 'order__order_provider_number', 'item_number']
 
     def __str__(self):
         return '{}/{}'.format(self.order, self.item_number)
