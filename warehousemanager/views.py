@@ -815,3 +815,13 @@ class CardboardUsed(View):
             return HttpResponse(json.dumps(True))
         else:
             return HttpResponse(json.dumps(False))
+
+
+class StockManagement(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punchproduction'
+
+    def get(self, request):
+        stocks = OrderItemQuantity.objects.all()
+
+        return render(request, 'warehousemanager-stock-management.html', locals())
+
