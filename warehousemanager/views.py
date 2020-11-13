@@ -191,8 +191,9 @@ class NextItemNumber(View):
 class CompleteOrder(View):
     def get(self, request):
         order_id = int(request.GET.get('order_id'))
+        state = request.GET.get('state')
         order = Order.objects.get(id=order_id)
-        order.is_completed = True
+        order.is_completed = True if state == 'c' else False
         order.save()
 
         return redirect('all-orders-details')

@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
         completeOrderButton.addEventListener('click', function() {
             $.ajax({
             url: '/complete-order/',
-            data: {'order_id': parseInt(this.value)},
+            data: {'order_id': parseInt(this.value), 'state': 'c'},
             type: 'GET',
             dataType: 'json'
             })
@@ -124,6 +124,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // marking an order as uncompleted
     const uncompletedOrderButton = document.querySelector('.save')
+
+    if (uncompletedOrderButton !== null) {
+        uncompletedOrderButton.addEventListener('click', function() {
+            $.ajax({
+            url: '/complete-order/',
+            data: {'order_id': parseInt(this.value), 'state': 'uc'},
+            type: 'GET',
+            dataType: 'json'
+            })
+        })
+    }
 
     // canceling an order
     const cancelButton = document.querySelector('.cancel-order')

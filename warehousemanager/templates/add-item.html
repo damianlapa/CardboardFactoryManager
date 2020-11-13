@@ -61,15 +61,16 @@ Add Items to an Order
                     <td>{{ o.scores }}</td>
                 </tr>
                 {% empty %}
-                <br/>
                 Nie ma tu jeszcze żadnych pozycji. Dodaj je przez formularz!
                 {% endfor %}
             </table>
             <p class="order-buttons">
-                <a href="{% url 'new-order' %}">
+                <a href="{% url 'all-orders-details' %}">
                     <button class="save-and-end" value="{{ order.id }}">ZATWIERDŹ I ZAKOŃCZ</button>
                 </a>
-                <button class="save" value="{{ order.id }}">ZAPISZ</button>
+                <a href="{% url 'new-order' %}">
+                    <button class="save" value="{{ order.id }}">ZAPISZ</button>
+                </a>
                 <a href="{% url 'new-order' %}">
                     <button class="cancel-order" value="{{ order.id }}">ANULUJ ZAMÓWIENIE</button>
                 </a>
