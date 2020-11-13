@@ -821,7 +821,8 @@ class StockManagement(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punchproduction'
 
     def get(self, request):
-        stocks = OrderItemQuantity.objects.all()
+        stocks = OrderItemQuantity.objects.filter(is_used=False)
+        history_stocks = OrderItemQuantity.objects.filter(is_used=True)
 
         return render(request, 'warehousemanager-stock-management.html', locals())
 

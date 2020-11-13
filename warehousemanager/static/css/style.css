@@ -438,3 +438,9 @@ input[type=button], input[type=submit], input[type=reset] {
 	position:relative;
 	top:1px;
 }
+
+#add-orders input {
+    background: orange;
+    padding: 2px;
+    margin: 1px;
+}
