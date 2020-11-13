@@ -780,7 +780,13 @@ class PunchProductionAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punchproduction'
 
     def get(self, request):
-        form = PunchProductionForm()
+        punch_id = request.GET.get('punch_id')
+        if punch_id:
+            punch = Punch.objects.get(id=int(punch_id))
+            form = PunchProductionForm(initial={'punch': punch})
+
+        else:
+            form = PunchProductionForm()
 
         return render(request, 'warehousemanager-punch-production-add.html', locals())
 
@@ -799,4 +805,23 @@ class PunchProductionAdd(PermissionRequiredMixin, View):
                                                         date_end=date_end, quantity=quantity, comments=comments)
             production.save()
 
-            return redirect('punch-production')
+            return redirect('punches')
+
+
+class CardboardUsed(View):
+    def get(self, request, cardboard_id):
+        cardboard = OrderItemQuantity.objects.get(id=cardboard_id)
+        if cardboard.is_used:
+            return HttpResponse(json.dumps(True))
+        else:
+            return HttpResponse(json.dumps(False))
+
+
+class StockManagement(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punchproduction'
+
+    def get(self, request):
+        stocks = OrderItemQuantity.objects.all()
+
+        return render(request, 'warehousemanager-stock-management.html', locals())
+

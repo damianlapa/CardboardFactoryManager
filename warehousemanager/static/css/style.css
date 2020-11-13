@@ -1,10 +1,15 @@
-.Convert {
+.CONVERT {
     color: blue;
     font-size: 20px;
 }
 
-.Aquila {
+.AQUILA {
     color: red;
+    font-size: 20px;
+}
+
+.WERNER {
+    color: purple;
     font-size: 20px;
 }
 
@@ -169,16 +174,6 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .converter-div {
     display: inline-block;
-}
-
-#footer {
-    background-color: grey;
-    border: 2px solid orange;
-    text-align: right;
-    position: absolute;
-    bottom: 0;
-    width: 99%;
-    height: 2.5rem;            /* Footer height */
 }
 
 .dimension-container input, select{
@@ -416,4 +411,30 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .punches-list table{
     text-align: center;
+}
+
+.production-add-btn {
+	box-shadow:inset 0px 1px 0px 0px #fce2c1;
+	background:linear-gradient(to bottom, #ffc477 5%, #fb9e25 100%);
+	background-color:#ffc477;
+	border-radius:42px;
+	border:1px solid #eeb44f;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:16px;
+	font-weight:bold;
+	padding:10px 13px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #cc9f52;
+	margin: 5px;
+}
+.production-add-btn:hover {
+	background:linear-gradient(to bottom, #fb9e25 5%, #ffc477 100%);
+	background-color:#fb9e25;
+}
+.production-add-btn:active {
+	position:relative;
+	top:1px;
 }

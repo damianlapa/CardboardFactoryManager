@@ -55,4 +55,6 @@ urlpatterns = [
     path('buyers/', BuyersList.as_view(), name='buyers'),
     path('punch-production/', PunchProductions.as_view(), name='punch-production'),
     path('punch-production-add/', PunchProductionAdd.as_view(), name='punch-production-add'),
+    path('cardboard-availability/<int:cardboard_id>', CardboardUsed.as_view(), name='cardboard-used'),
+    path('stock-management/', StockManagement.as_view(), name='stock-management')
 ]

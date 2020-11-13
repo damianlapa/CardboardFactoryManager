@@ -73,10 +73,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }).done(function (data) {
                     if (NewItem !== null) {
                     const OrderId = document.getElementById('id_order')
-                    console.log(OrderId)
                     let LastValue = OrderId.options[OrderId.options.length - 1].value
                     OrderId.value = LastValue
-                    console.log(LastValue)
                     // OrderId.disabled = true
                     }
                     })
@@ -114,7 +112,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const completeOrderButton = document.querySelector('.save-and-end')
 
     if (completeOrderButton !== null) {
-        console.log(completeOrderButton)
         completeOrderButton.addEventListener('click', function() {
             $.ajax({
             url: '/complete-order/',
@@ -152,7 +149,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const rows = allRows[0].rows
         const tableDescription = document.querySelector('.order-table-description')
         for (let i=0; i < rows.length; i++) {
-            console.log(rows[i].classList.value)
             if (rows[i].classList.value === filterByProvider.value) {
                 rows[i].style.display = 'table-row'
             }
@@ -182,14 +178,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const newOrderScores = document.querySelector('#id_scores')
         for (let i=0; i < listElements.length; i++) {
             listElements[i].addEventListener('click', function() {
-                console.log(this.id)
                 $.ajax({
                     url: '/gid/',
                     data: {'item_id': listElements[i].id},
                     type: 'GET',
                     dataType: 'json'
                 }).done(function (data) {
-                console.log(data)
                     newOrderHeight.value = data.height
                     newOrderWidth.value = data.width
                     newOrderDimOne.value = data.dimension_one
@@ -230,9 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
             for (let i=0; i < buyerSelector.options.length; i++){
                 if (buyerSelector.options[i].selected === true){
                     selectedOption = buyerSelector.options[i].innerText
-                    console.log(selectedOption)
                     for (let j=0; j < allFormats.length; j++){
-                        console.log(allFormats[j].classList.value)
                         if (allFormats[j].classList.value === selectedOption) {
                             allFormats[j].style.display = 'block'
                         }
@@ -303,12 +295,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const result = document.querySelector('#cardboard-format')
 
         converterDiv.addEventListener('click', function () {
-            console.log(boxType.value)
-            console.log(cardboardType.value)
-            console.log(boxWidth.value)
-            console.log(boxLength.value)
-            console.log(boxHeight.value)
-            console.log(result.innerText)
 
             re = FormatConverter(boxWidth.value, boxLength.value, boxHeight.value, boxType.value, cardboardType.value)
 
@@ -500,8 +486,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         for (let i=0; i < allRows.length; i++){
             if (onlyDisplayed === true) {
-                console.log(allRows[i].style.display)
-                console.log(allRows[i])
                 if (allRows[i].style.display === 'table-row') {
                     if (widthValue !== ''){
                         if (widthValue === allRows[i].children[2].innerText) {
@@ -530,7 +514,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             else {
-                console.log('filter go')
                 if (widthValue !== ''){
                     if (widthValue === allRows[i].children[2].innerText) {
                         allRows[i].style.display = 'table-row'
@@ -571,10 +554,30 @@ document.addEventListener("DOMContentLoaded", function () {
     if (allRows.length > 0) {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
-                console.log(allRows[i])
                 link = localLink + 'punch/' + allRows[i].dataset.punch_id
-                window.location.replace(link)
+                window.open(link, '_blank')
             })
         }
+    }
+
+    const cardboardChoice = document.getElementById('id_cardboard')
+
+    if (cardboardChoice !== null) {
+
+        for (let i=0; i < cardboardChoice.children.length; i++){
+            let slug = '/cardboard-availability/' + String(cardboardChoice[i].value)
+            $.ajax({
+            url: slug,
+            data: {},
+            type: 'GET',
+            dataType: 'json'
+            }).done(function (data) {
+                if (data === true) {
+                    cardboardChoice.children[i].style.display = 'none'
+                }
+            })
+
+        }
+
     }
 })
