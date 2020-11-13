@@ -1,0 +1,37 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<div>
+
+    <table>
+        <tr>
+            <th>x</th>
+            <th>x</th>
+            <th>x</th>
+            <th>x</th>
+        </tr>
+
+        {% for s in stocks %}
+
+         <tr>
+             <td>{{ s.delivery }}</td>
+             <td>{{ s.order_item }}</td>
+             <td>{{ s.quantity }}</td>
+             <td>
+                 {% if s.is_used %}
+                 <span>Used</span>
+                 {% else %}
+                    <span>Not used</span>
+                 {% endif %}
+             </td>
+         </tr>
+
+        {% endfor %}
+    </table>
+
+</div>
+{% endblock %}
+
+{% block footer %} {% endblock %}

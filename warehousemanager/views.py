@@ -806,3 +806,22 @@ class PunchProductionAdd(PermissionRequiredMixin, View):
             production.save()
 
             return redirect('punches')
+
+
+class CardboardUsed(View):
+    def get(self, request, cardboard_id):
+        cardboard = OrderItemQuantity.objects.get(id=cardboard_id)
+        if cardboard.is_used:
+            return HttpResponse(json.dumps(True))
+        else:
+            return HttpResponse(json.dumps(False))
+
+
+class StockManagement(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punchproduction'
+
+    def get(self, request):
+        stocks = OrderItemQuantity.objects.all()
+
+        return render(request, 'warehousemanager-stock-management.html', locals())
+

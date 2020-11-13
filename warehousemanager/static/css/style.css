@@ -1,10 +1,15 @@
-.Convert {
+.CONVERT {
     color: blue;
     font-size: 20px;
 }
 
-.Aquila {
+.AQUILA {
     color: red;
+    font-size: 20px;
+}
+
+.WERNER {
+    color: purple;
     font-size: 20px;
 }
 
@@ -169,16 +174,6 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .converter-div {
     display: inline-block;
-}
-
-#footer {
-    background-color: grey;
-    border: 2px solid orange;
-    text-align: right;
-    position: absolute;
-    bottom: 0;
-    width: 99%;
-    height: 2.5rem;            /* Footer height */
 }
 
 .dimension-container input, select{

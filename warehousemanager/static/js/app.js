@@ -555,8 +555,29 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
                 link = localLink + 'punch/' + allRows[i].dataset.punch_id
-                window.location.replace(link)
+                window.open(link, '_blank')
             })
         }
+    }
+
+    const cardboardChoice = document.getElementById('id_cardboard')
+
+    if (cardboardChoice !== null) {
+
+        for (let i=0; i < cardboardChoice.children.length; i++){
+            let slug = '/cardboard-availability/' + String(cardboardChoice[i].value)
+            $.ajax({
+            url: slug,
+            data: {},
+            type: 'GET',
+            dataType: 'json'
+            }).done(function (data) {
+                if (data === true) {
+                    cardboardChoice.children[i].style.display = 'none'
+                }
+            })
+
+        }
+
     }
 })

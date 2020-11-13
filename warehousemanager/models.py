@@ -3,7 +3,6 @@ from django.db.models.functions import ExtractYear
 import decimal
 import datetime
 
-
 ITEM_SORTS = (
     ('201', 'FEFCO 201'),
     ('202', 'FEFCO 202'),
@@ -20,14 +19,12 @@ CARDBOARD_TYPES = (
     ('EB', 'EB')
 )
 
-
 GENRES = (
     ('Ordinary', 'Ordinary'),
     ('To Do List', 'To Do List'),
     ('Journal', 'Journal'),
     ('Notice', 'Notice')
 )
-
 
 ABSENCE_TYPES = (
     ('NN', 'Nieobecność nieusprawiedliwiona'),
@@ -60,19 +57,31 @@ class Person(models.Model):
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
 
+    class Meta:
+        ordering = ['last_name', 'first_name']
+
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
+    shortcut = models.CharField(max_length=6, blank=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
-        return self.name
+        if self.shortcut:
+            return f'{self.name}({self.shortcut})'
+        return f'{self.name}'
 
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -83,6 +92,9 @@ class Order(models.Model):
     order_provider_number = models.IntegerField()
     date_of_order = models.DateTimeField()
     is_completed = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['order_provider_number']
 
     def __str__(self):
         return '{} {}'.format(self.provider, self.order_provider_number)
@@ -104,8 +116,7 @@ class OrderItem(models.Model):
     scores = models.CharField(max_length=64)
 
     class Meta:
-
-        ordering = ['item_number']
+        ordering = ['order__provider__name', 'order__order_provider_number', 'item_number']
 
     def __str__(self):
         return '{}/{}'.format(self.order, self.item_number)
@@ -116,11 +127,18 @@ class Delivery(models.Model):
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     date_of_delivery = models.DateField()
 
+    def __str__(self):
+        return f'{self.provider}|{self.date_of_delivery}'
+
 
 class OrderItemQuantity(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+    is_used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.order_item.order}/{self.order_item.item_number} - {self.order_item.format_width} x {self.order_item.format_height}'
 
 
 class Machine(models.Model):
@@ -194,6 +212,7 @@ class Punch(models.Model):
 class PunchProduction(models.Model):
     punch = models.ForeignKey(Punch, on_delete=models.PROTECT)
     worker = models.ForeignKey(Person, on_delete=models.PROTECT, blank=True, null=True)
+    cardboard = models.ManyToManyField(OrderItemQuantity, blank=True)
     date_start = models.DateField()
     date_end = models.DateField()
     quantity = models.IntegerField()
@@ -203,5 +222,4 @@ class PunchProduction(models.Model):
         return f'{self.punch}/{self.date_end}/{self.quantity}'
 
     class Meta:
-
         ordering = ['date_end']
