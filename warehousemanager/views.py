@@ -146,6 +146,16 @@ class NewItemAdd(PermissionRequiredMixin, View):
             return HttpResponse(form.errors)
 
 
+class OrderItemDelete(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_orderitem'
+
+    def get(self, request, order_id, item_id):
+        item_object = OrderItem.objects.get(id=int(item_id))
+        item_object.delete()
+
+        return redirect('/add-items/{}'.format(order_id))
+
+
 class NextOrderNumber(View):
     def get(self, request):
         provider_num = request.GET.get('provider_num')

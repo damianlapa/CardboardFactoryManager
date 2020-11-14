@@ -7,6 +7,7 @@ Add Items to an Order
 {% block navigation %}{% endblock %}
 
 {% block content %}
+{% load static %}
 
 <div class="test">
 
@@ -59,6 +60,11 @@ Add Items to an Order
                     <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}
                     </td>
                     <td>{{ o.scores }}</td>
+                    <td>
+                        <a href="{% url 'delete-item' order_id=order.id item_id=o.id %}">
+                            <img src="{% static 'images/delete-btn-small.png' %}" alt="">
+                        </a>
+                    </td>
                 </tr>
                 {% empty %}
                 Nie ma tu jeszcze żadnych pozycji. Dodaj je przez formularz!

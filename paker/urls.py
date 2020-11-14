@@ -30,6 +30,7 @@ urlpatterns = [
     path('new-provider/', ProviderForm.as_view(), name='new-provider'),
     path('add-items/<int:order_id>', NewItemAdd.as_view(), name='new-item'),
     path('nin/', NextItemNumber.as_view(), name='next-tem-number'),
+    path('del-item/<int:order_id>/<int:item_id>', OrderItemDelete.as_view(), name='delete-item'),
     path('complete-order/', CompleteOrder.as_view(), name='complete-order'),
     path('delete-order/', DeleteOrder.as_view(), name='delete-order'),
     path('gid/', GetItemDetails.as_view(), name='get-item-details'),
