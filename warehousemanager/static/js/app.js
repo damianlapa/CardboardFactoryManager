@@ -612,11 +612,17 @@ document.addEventListener("DOMContentLoaded", function () {
             case '201':
                 switch(cardboard){
                     case 'B':
-                    return ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
+                    condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 12 ));
+                    return condition1 || condition2;
                     case 'C':
-                    return ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
+                    condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 13 ));
+                    return condition1 || condition2;
                     case 'BC':
-                    return ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
+                    condition1 = ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 22 ));
+                    return condition1 || condition2;
                 }
             case '202':
                 return true;
