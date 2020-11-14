@@ -607,14 +607,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // function checking correctness
 
-    function FormatCorrectness(type, cardboard, fDim1, fDim2, dim1, dim2, dim3){
+    function ScoresCorrectness(scores) {
+        if (scores[0] !== scores[scores.length - 1]){
+            return false
+        }
+        return true
+    }
+
+    function FormatCorrectness(type, cardboard, fDim1, fDim2, dim1, dim2, dim3, scores){
         switch(type){
             case '201':
                 switch(cardboard){
                     case 'B':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 12 ));
-                    return condition1 || condition2;
+                    scoresCorrectness = ScoresCorrectness(scores)
+                    return (condition1 || condition2) && scoresCorrectness;
                     case 'C':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 13 ));
@@ -650,6 +658,11 @@ document.addEventListener("DOMContentLoaded", function () {
             width = parseInt(allOrderedItems[i].children[2].innerText)
             height = parseInt(allOrderedItems[i].children[3].innerText)
             boxDimensions = allOrderedItems[i].children[7].innerText.split(/([0-9]+)/)
+            scores = allOrderedItems[i].children[8].innerText.split(/([0-9]+)/)
+
+            scores_result = scores.filter(score => score.length > 1)
+
+            console.log(scores_result)
 
             if (boxDimensions.length > 5){
                 dim1 = parseInt(boxDimensions[1])
@@ -661,7 +674,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 dim3 = 0
             }
 
-            if (FormatCorrectness(type, cardboard_type, width, height, dim1, dim2, dim3) === false){
+            if (FormatCorrectness(type, cardboard_type, width, height, dim1, dim2, dim3, scores_result) === false){
                 allOrderedItems[i].style.backgroundColor = 'red'
             }
 
