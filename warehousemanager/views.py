@@ -85,7 +85,7 @@ class NewOrder(PermissionRequiredMixin, View):
             provider_object = CardboardProvider.objects.get(name=provider)
 
             new_order = Order.objects.create(provider=provider_object, order_provider_number=int(order_provider_number),
-                                             date_of_order=datetime.datetime.now())
+                                             date_of_order=date_of_order)
 
             new_order.save()
 
