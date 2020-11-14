@@ -48,7 +48,7 @@ class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
 
     def get(self, request):
-        orders = Order.objects.all()
+        orders = Order.objects.filter(is_completed=True)
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
         return render(request, 'warehousemanager-all-orders-details.html', locals())
@@ -101,10 +101,10 @@ class DeleteOrder(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_order'
 
     def get(self, request):
-        order_id = request.GET.get('order_id')
+        order_id = int(request.GET.get('order_id'))
         Order.objects.get(id=order_id).delete()
 
-        return redirect('/orders')
+        return redirect('uncompleted-orders')
 
 
 class NewOrderAdd(PermissionRequiredMixin, View):
@@ -197,6 +197,15 @@ class CompleteOrder(View):
         order.save()
 
         return redirect('all-orders-details')
+
+
+class UncompletedOrders(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_order'
+
+    def get(self, request):
+        orders = Order.objects.filter(is_completed=False)
+        providers = CardboardProvider.objects.all()
+        return render(request, 'warehousemanager-all-orders-details.html', locals())
 
 
 class GetItemDetails(PermissionRequiredMixin, View):

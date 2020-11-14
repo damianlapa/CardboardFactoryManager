@@ -591,4 +591,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
     }
+
+    // warning about uncompleted orders before add a new one
+
+    const warningBtn = document.getElementById('continue-with-uc')
+    const addOrderDiv = document.getElementsByClassName('add-order')
+    const warningDiv = document.getElementsByClassName('uc-orders')
+
+    if (warningBtn !== null) {
+        warningBtn.addEventListener('click', function () {
+            warningDiv[0].style.display = 'none'
+            addOrderDiv[0].style.display = 'block'
+        })
+    }
 })

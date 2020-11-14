@@ -1,13 +1,28 @@
 {% extends '__base2__.html' %}
-
 {% block title %}
 New Order
 {% endblock %}
-
 {% block navigation %}{% endblock %}
-
 {% block content %}
-<div style="display: inline-block">
+{% if messages %}
+    <div class="uc-orders">
+        You have uncompleted orders. Are you sure you want to continue?
+        <p>
+            <button
+                    id="continue-with-uc">
+                CONTINUE
+            </button>
+            <a href="{% url 'uncompleted-orders' %}">
+                <button>
+                    MANAGE UNCOMPLETED ORDERS
+                </button>
+            </a>
+        </p>
+    </div>
+<div class='add-order' style="display: none">
+{% else %}
+<div>
+{% endif %}
     <form class="new-order" method="post">
         {% csrf_token %}
         {{ form.as_p }}

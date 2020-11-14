@@ -24,6 +24,7 @@ urlpatterns = [
     path('order/<int:order_id>', OrdersDetails.as_view(), name='order-details'),
     path('orders-details/', AllOrdersDetails.as_view(), name='all-orders-details'),
     path('new-order/', NewOrder.as_view(), name='new-order'),
+    path('uncompleted-orders', UncompletedOrders.as_view(), name='uncompleted-orders'),
     path('non/', NextOrderNumber.as_view(), name='next-order-number'),
     path('create-new-order/', NewOrderAdd.as_view(), name='new-order-create'),
     path('new-provider/', ProviderForm.as_view(), name='new-provider'),

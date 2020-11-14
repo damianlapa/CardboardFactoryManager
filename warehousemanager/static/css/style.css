@@ -444,3 +444,25 @@ input[type=button], input[type=submit], input[type=reset] {
     padding: 2px;
     margin: 1px;
 }
+
+.uc-orders {
+    background:red;
+    color: white;
+    font-size: 40px;
+    text-align: center;
+}
+
+#continue-with-uc {
+    background-color: black;
+	border-radius:10px;
+	border:1px solid black;
+	display:inline-block;
+	cursor:pointer;
+	color:white;
+	font-family:Arial;
+	font-size:32px;
+	font-weight:bold;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #cc9f52;
+	margin: 5px;
+}

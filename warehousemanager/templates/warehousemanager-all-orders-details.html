@@ -20,6 +20,7 @@
     </div>
 
     <div>
+        {% load static %}
         <table class="zamowienie">
 
             <tr class="order-table-description">
@@ -54,6 +55,16 @@
                 <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}
                 </td>
                 <td>{{ o.scores }}</td>
+                {% if not order.is_completed %}
+                    {% if forloop.first %}
+                        <td rowspan="{{ order.orderitem_set.all|length }}">
+                            <a href="{% url 'delete-order' %}?order_id={{ order.id }}">
+                                <img src="{% static 'images/delete-btn.png' %}" alt="">
+                            </a>
+                            <img src="{% static 'images/edit-btn.png' %}" alt="">
+                        </td>
+                    {% endif %}
+                {% endif %}
             </tr>
             {% endfor %}
             <tr class="***">
@@ -61,6 +72,7 @@
             </tr>
             {% endfor %}
         </table>
+
     </div>
 </div>
 {% endblock %}
