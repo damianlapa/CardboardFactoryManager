@@ -61,7 +61,9 @@
                             <a href="{% url 'delete-order' %}?order_id={{ order.id }}">
                                 <img src="{% static 'images/delete-btn.png' %}" alt="">
                             </a>
-                            <img src="{% static 'images/edit-btn.png' %}" alt="">
+                            <a href="{% url 'new-item' order_id=order.id %}">
+                                <img src="{% static 'images/edit-btn.png' %}" alt="">
+                            </a>
                         </td>
                     {% endif %}
                 {% endif %}
