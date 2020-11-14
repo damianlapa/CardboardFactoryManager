@@ -9,7 +9,7 @@ Add Items to an Order
 {% block content %}
 {% load static %}
 
-<div class="test">
+<div class="test" id="add-items-container">
 
     <div id="order-id-number" style="display:none">
         {{ order_id }}
@@ -49,7 +49,7 @@ Add Items to an Order
                 </tr>
 
                 {% for o in items %}
-                <tr>
+                <tr class="order-item-add">
                     <td>{{ o.item_number }}</td>
                     <td>{{ o.sort }}</td>
                     <td>{{ o.format_width }}</td>

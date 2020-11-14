@@ -177,8 +177,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (lastOrderedItems !== null) {
         const listElements = lastOrderedItems.getElementsByTagName('ol')
-        const newOrderHeight = document.querySelector('#id_format_width')
-        const newOrderWidth = document.querySelector('#id_format_height')
+        const newOrderWidth = document.querySelector('#id_format_width')
+        const newOrderHeight = document.querySelector('#id_format_height')
         const newOrderDimOne = document.querySelector('#id_dimension_one')
         const newOrderDimTwo = document.querySelector('#id_dimension_two')
         const newOrderDimThree = document.querySelector('#id_dimension_three')
@@ -603,5 +603,63 @@ document.addEventListener("DOMContentLoaded", function () {
             warningDiv[0].style.display = 'none'
             addOrderDiv[0].style.display = 'block'
         })
+    }
+
+    // function checking correctness
+
+    function FormatCorrectness(type, cardboard, fDim1, fDim2, dim1, dim2, dim3){
+        switch(type){
+            case '201':
+                switch(cardboard){
+                    case 'B':
+                    return ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
+                    case 'C':
+                    return ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
+                    case 'BC':
+                    return ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
+                }
+            case '202':
+                return true;
+            case '203':
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    // checking correctness ordered item
+
+    const formAddContainer = document.getElementById('add-items-container')
+    const allOrderedItems = document.getElementsByClassName('order-item-add')
+
+    if (formAddContainer !== null) {
+        for (let i=0; i<allOrderedItems.length; i++){
+            if (allOrderedItems[i].children[1].innerText === '203'){
+                allOrderedItems[i].style.backgroundColor = 'pink'
+            }
+
+            type = allOrderedItems[i].children[1].innerText
+            cardboard = allOrderedItems[i].children[6].innerText
+            cardboard_type = cardboard.split(/([0-9]+)/)[0]
+            width = parseInt(allOrderedItems[i].children[2].innerText)
+            height = parseInt(allOrderedItems[i].children[3].innerText)
+            boxDimensions = allOrderedItems[i].children[7].innerText.split(/([0-9]+)/)
+
+            if (boxDimensions.length > 5){
+                dim1 = parseInt(boxDimensions[1])
+                dim2 = parseInt(boxDimensions[3])
+                dim3 = parseInt(boxDimensions[5])
+            }else {
+                dim1 = parseInt(boxDimensions[1])
+                dim2 = parseInt(boxDimensions[3])
+                dim3 = 0
+            }
+
+            if (FormatCorrectness(type, cardboard_type, width, height, dim1, dim2, dim3) === false){
+                allOrderedItems[i].style.backgroundColor = 'red'
+            }
+
+            // result = FormatCorrectness(type, cardboard_type, 1, 1, 1, 1, 1)
+        }
     }
 })
