@@ -341,6 +341,7 @@ class ManageView(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
+        title = 'MANAGEMENT'
         return render(request, 'warehousemanager-manage.html', locals())
 
 

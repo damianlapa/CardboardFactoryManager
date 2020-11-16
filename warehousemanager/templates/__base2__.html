@@ -15,22 +15,52 @@
 </head>
 
 <body>
-{% block header %}
-<div class="header">
-    <p>
-        <a href="{% url 'manage' %}">
-            <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
-        </a>
-    </p>
-    <p class="welcome-text">
-        WELCOME <a href="">{{ user }}</a>! | <a href="{% url 'logout' %}">LOGOUT</a>
-    </p>
+<div id="main-container">
+    {% block header %}
+    <div class="header">
+        <p>
+            <a href="{% url 'manage' %}">
+                <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
+            </a>
+        </p>
+        <p id="page-title">
+            {{ title }}
+        </p>
+        <p class="welcome-text">
+            WELCOME <a href="">{{ user }}</a>! | <a href="{% url 'logout' %}">LOGOUT</a>
+        </p>
+    </div>
+    {% endblock %}
+    <div class="nav-bar">
+        <div class="nav-item">
+            MAIN
+        </div>
+        <div class="nav-item">
+            ORDERS
+        </div>
+        <div class="nav-item">
+            DELIVERIES
+        </div>
+        <div class="nav-item">
+            PERSONS
+        </div>
+        <div class="nav-item">
+            ABSENCES
+        </div>
+        <div class="nav-item">
+            PUNCHES
+        </div>
+        <div class="nav-item">
+            PRODUCTION
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+    <div class="content-div">
+    {% block content %}{% endblock %}
+        </div>
+    {% block footer %}
+    {% endblock %}
 </div>
-{% endblock %}
-{% block navigation %}{% endblock %}
-{% block content %}{% endblock %}
-{% block footer %}
-{% endblock %}
 <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

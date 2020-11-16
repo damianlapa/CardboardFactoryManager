@@ -625,11 +625,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     return (condition1 || condition2) && scoresCorrectness;
                     case 'C':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
-                    condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 13 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 13 ));
                     return condition1 || condition2;
                     case 'BC':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
-                    condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 22 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 22 ));
                     return condition1 || condition2;
                 }
             case '202':

@@ -1,3 +1,60 @@
+body {
+    background-color: #222222;
+}
+
+#main-container {
+    background-color: #2B2522;
+    width: 1410px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.header {
+    background-color: #150C06;
+    color: white;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#page-title{
+    font-size: 48px;
+    color: pink;
+    letter-spacing: 3px;
+}
+
+div.header > p {
+    padding: 20px;
+}
+
+.content-div {
+    width: 1000px;
+    min-height: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.nav-bar {
+    color: white;
+    background: #924F22;
+    margin: 5px;
+}
+
+.nav-item {
+    float: left;
+    width: 200px;
+    min-height: 50px;
+    padding: 20px;
+    border-right: 3px dotted #2A4465;
+    box-sizing: border-box;
+}
+
+.nav-item:hover {
+    background: #813E11;
+    cursor: pointer;
+}
+
 .CONVERT {
     color: blue;
     font-size: 20px;
@@ -95,14 +152,7 @@ input[type=button], input[type=submit], input[type=reset] {
     border: 2px solid orange;
 }
 
-.header {
-    background-color: black;
-    color: white;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-}
+
 
 .header img {
     border: 2px solid orange;
@@ -272,6 +322,7 @@ input[type=button], input[type=submit], input[type=reset] {
 	padding:6px 24px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #b23e35;
+	margin-top: 15px;
 }
 
 #punch-filters-button:hover {
@@ -286,28 +337,29 @@ input[type=button], input[type=submit], input[type=reset] {
 }
 
 .punch-filters {
-    border: 2px solid grey;
+    border: 2px solid black;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;;
     align-items: center;
-    background-color: grey;
-    padding: 3px;
-    margin: 10px;
-    flex-basis: 33%;
+    background-color: #2C2C2C;
+    padding: 20px;
 }
 
 .type-buttons {
     display: flex;
     flex-wrap: wrap;
-    flex-basis: 33%;
+    flex-basis: 45%;
 }
 
 .dimension-filters {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    flex-basis: 33%;
+    flex-basis: 45%;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .fefco-type {
@@ -346,7 +398,8 @@ input[type=button], input[type=submit], input[type=reset] {
 	padding:6px 24px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #ffee66;
-	margin-left: 10px%;
+	margin-left: auto;
+    margin-right: auto;
 	width: 50%;
 }
 .dim-filter-btn:hover {
@@ -368,6 +421,7 @@ input[type=button], input[type=submit], input[type=reset] {
     background-color: #ffd59e;
     flex-basis: 50%;
     text-align: center;
+    color: black;
 }
 
 .punch-form input {
@@ -404,14 +458,45 @@ input[type=button], input[type=submit], input[type=reset] {
 	margin-top: 10px;
 }
 
-.punch-row:hover {
-    background: orange;
-    cursor: pointer;
+
+
+.punches-list a, div, table, h1{
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+    text-align: center;
 }
 
 .punches-list table{
     text-align: center;
+    background-color: #FFDEAD;
+    border: solid black 5px ;
+    border-style: double;
+    color: black;
 }
+
+.punches-list table th {
+    font-size: 18px;
+    background-color: #FF7206;
+    color: white;
+    padding: 3px;
+}
+
+.punches-list table tr:nth-of-type(2n + 2){
+    background-color: #f5b461;
+}
+
+.punch-row:hover {
+    background: orange;
+    cursor: pointer;
+    color: #800000;
+}
+
+.punches-list table tr:nth-of-type(2n + 2):hover{
+    background: orange;
+    cursor: pointer;
+}
+
 
 .production-add-btn {
 	box-shadow:inset 0px 1px 0px 0px #fce2c1;

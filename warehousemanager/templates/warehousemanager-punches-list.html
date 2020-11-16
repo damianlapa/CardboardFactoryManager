@@ -5,13 +5,15 @@
 {% block content %}
 <div class="punches-list">
 
-    <a href="{% url 'punch-add' %}"><button class="punch-form-btn">Add Punch</button></a>
-
     <h1>WYKROJNIKI</h1>
 
-    <button id="punch-filters-button">Filtry</button>
+    <div>
+    <a href="{% url 'punch-add' %}"><button class="punch-form-btn">Add Punch</button></a>
+        </div>
+<div>
+    <button id="punch-filters-button">Filtry</button></div>
     <br />
-    <div id="punch-filters" class="punch-filters" style="display: none">
+    <div id="punch-filters" class="punch-filters">
         <br />
         <div class="type-buttons">
             <div>
@@ -44,7 +46,7 @@
 
     <br />
 
-    <table class="punches-list">
+    <table class="punches-list-table">
         <tr>
             <th>TYP</th>
             <th>IDENTYFIKATOR</th>
