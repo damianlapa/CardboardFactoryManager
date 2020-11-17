@@ -341,8 +341,9 @@ class ManageView(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        title = 'MANAGEMENT'
-        return render(request, 'warehousemanager-manage.html', locals())
+        # title = 'MANAGEMENT'
+        # return render(request, 'warehousemanager-manage.html', locals())
+        return redirect('punches')
 
 
 # wszyscy dostawcy
@@ -702,6 +703,7 @@ class PunchesList(PermissionRequiredMixin, View):
     def get(self, request):
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
         punch_types = PUNCH_TYPES
+        title = 'PUNCHES'
 
         return render(request, 'warehousemanager-punches-list.html', locals())
 
@@ -759,6 +761,29 @@ class PunchDetails(PermissionRequiredMixin, View):
 
         return render(request, 'warehousemanager-punch-details.html', locals())
 
+
+class PunchEdit(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punch'
+
+    def get(self, request, punch_id):
+        p = get_object_or_404(Punch, id=punch_id)
+        punch_form = PunchForm(instance=p)
+        edit = True
+
+        return render(request, 'warehousemanager-punch-add.html', locals())
+
+
+class PunchDelete(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.delete_punch'
+
+    def get(self, request, punch_id):
+        p = get_object_or_404(Punch, id=punch_id)
+        production = PunchProduction.objects.filter(punch=p)
+        if production:
+            return redirect('announcement')
+        p.delete()
+
+        return redirect('punches')
 
 class AddBuyer(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_buyer'
@@ -846,4 +871,11 @@ class StockManagement(PermissionRequiredMixin, View):
         history_stocks = OrderItemQuantity.objects.filter(is_used=True)
 
         return render(request, 'warehousemanager-stock-management.html', locals())
+
+
+class Announcement(View):
+    def get(self, request):
+        return render(request, 'warehousemanager-announcement.html')
+
+
 

@@ -30,7 +30,7 @@ div.header > p {
 
 .content-div {
     width: 1000px;
-    min-height: 600px;
+    min-height: 1000px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -338,7 +338,7 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .punch-filters {
     border: 2px solid black;
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     justify-content: space-between;;
     align-items: center;
@@ -350,6 +350,8 @@ input[type=button], input[type=submit], input[type=reset] {
     display: flex;
     flex-wrap: wrap;
     flex-basis: 45%;
+    justify-content: center;
+    margin: 2px;
 }
 
 .dimension-filters {
@@ -375,12 +377,14 @@ input[type=button], input[type=submit], input[type=reset] {
 	font-weight:bold;
 	padding:6px 12px;
 	text-decoration:none;
-	margin: 1px;
+	margin: 5px;
 }
 
 .fefco-type-click {
-    background:linear-gradient(to bottom, white 5%, yellow 100%);
-    background-color: yellow;
+    background:linear-gradient(to bottom, white 5%, #FF6F00 100%);
+    background-color: #FF6F00;
+    border: solid 2px red;
+
 }
 
 .dim-filter-btn {
@@ -460,14 +464,22 @@ input[type=button], input[type=submit], input[type=reset] {
 
 
 
-.punches-list a, div, table, h1{
+.punches-list a, div, table{
     margin-left: auto;
     margin-right: auto;
     color: white;
     text-align: center;
 }
 
-.punches-list table{
+.punches-list h1{
+    margin-left: auto;
+    margin-right: auto;
+    color: #FFCEA8;
+    text-align: center;
+    font-size: 66px;
+}
+
+.punches-list table, .punch-details table{
     text-align: center;
     background-color: #FFDEAD;
     border: solid black 5px ;
@@ -475,7 +487,7 @@ input[type=button], input[type=submit], input[type=reset] {
     color: black;
 }
 
-.punches-list table th {
+.punches-list table th, .punch-details table th {
     font-size: 18px;
     background-color: #FF7206;
     color: white;
@@ -550,4 +562,26 @@ input[type=button], input[type=submit], input[type=reset] {
 	text-decoration:none;
 	text-shadow:0px 1px 0px #cc9f52;
 	margin: 5px;
+}
+
+.delete-punch {
+	box-shadow:inset 0px 1px 0px 0px #fce2c1;
+	background:linear-gradient(to bottom, #ffc477 5%, red 100%);
+	background-color:#ffc477;
+	border-radius:42px;
+	border:1px solid #eeb44f;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:16px;
+	font-weight:bold;
+	padding:10px 13px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #cc9f52;
+	margin: 5px;
+}
+
+.punch-form-container > a {
+    color: green;
 }

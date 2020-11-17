@@ -53,10 +53,13 @@ urlpatterns = [
     path('punches/', PunchesList.as_view(), name='punches'),
     path('punch-add/', PunchAdd.as_view(), name='punch-add'),
     path('punch/<str:punch_id>', PunchDetails.as_view(), name='punch-details'),
+    path('punch-edit/<int:punch_id>', PunchEdit.as_view(), name='punch-edit'),
+    path('punch-delete/<int:punch_id>', PunchDelete.as_view(), name='punch-delete'),
     path('buyer-add/', AddBuyer.as_view(), name='buyer-add'),
     path('buyers/', BuyersList.as_view(), name='buyers'),
     path('punch-production/', PunchProductions.as_view(), name='punch-production'),
     path('punch-production-add/', PunchProductionAdd.as_view(), name='punch-production-add'),
     path('cardboard-availability/<int:cardboard_id>', CardboardUsed.as_view(), name='cardboard-used'),
-    path('stock-management/', StockManagement.as_view(), name='stock-management')
+    path('stock-management/', StockManagement.as_view(), name='stock-management'),
+    path('announcement/', Announcement.as_view(), name='announcement'),
 ]

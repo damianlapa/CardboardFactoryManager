@@ -5,6 +5,9 @@
 {% block content %}
 <div class="punch-details">
     <div>
+        <a href="{% url 'punch-edit' punch_id=p.id %}">
+            <button class="delete-punch" id="edit-delete-punch">EDIT</button>
+        </a>
         <table>
             <tr>
                 <th>TYP</th>

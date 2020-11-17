@@ -6,12 +6,21 @@
 
 <div style="display: inline-block" class="punch-form-container">
 
+
+
     <form method="post" class="punch-form">
+
         {% csrf_token %}
         {{ punch_form.as_p }}
+        {% if edit %}
+        <input type="submit" value="Edit" class="punch-form-btn">
+        {% else %}
         <input type="submit" value="Add" class="punch-form-btn">
+        {% endif %}
     </form>
-
+<a href="{% url 'punch-delete' punch_id=p.id %}">
+        <button class="delete-punch">DELETE</button>
+        </a>
 </div>
 
 {% endblock %}

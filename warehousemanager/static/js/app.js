@@ -416,7 +416,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (filterPunchesBtn !== null) {
         const filterContainer = document.getElementById('punch-filters')
         filterPunchesBtn.addEventListener('click', function () {
-            if (filterContainer.style.display === 'none') {
+        console.log(filterContainer.style.display)
+            if (filterContainer.style.display === 'none' || filterContainer.style.display === '') {
+                console.log('click')
                 filterContainer.style.display = 'flex'
                 filterPunchesBtn.style.backgroundColor = 'pink'
             }
@@ -566,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
                 link = localLink + 'punch/' + allRows[i].dataset.punch_id
-                window.open(link, '_blank')
+                window.location.replace(link)
             })
         }
     }
