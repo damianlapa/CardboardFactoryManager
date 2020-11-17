@@ -492,6 +492,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     */
 
+    function filterWhenExists(input, comparator, element, input2, comparator2) {
+        if (input !== null) {
+            if (input === comparator) {
+                element.style.display = 'table-row'
+                if (input2 !== '') {
+                    if (input2 === comparator2) {
+                        element.style.display = 'table-row'
+                    }
+                    else {
+                        element.style.display = 'none'
+                    }
+                }
+            } else {
+                element.style.display = 'none'
+            }
+        }
+    }
+
     function filterByDimension(onlyDisplayed) {
         var widthValue = dimOne.value
         var lengthValue = dimTwo.value
@@ -503,11 +521,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (widthValue !== ''){
                         if (widthValue === allRows[i].children[2].innerText) {
                             allRows[i].style.display = 'table-row'
+                            filterWhenExists(lengthValue, allRows[i].children[3].innerText, allRows[i], heightValue, allRows[i].children[4].innerText)
                         }
                         else {
                             allRows[i].style.display = 'none'
                         }
                     }
+                    /*
                     if (lengthValue !== ''){
                         if (lengthValue === allRows[i].children[3].innerText) {
                             allRows[i].style.display = 'table-row'
@@ -524,6 +544,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             allRows[i].style.display = 'none'
                         }
                     }
+                    */
                 }
             }
             else {
