@@ -526,6 +526,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         else {
                             allRows[i].style.display = 'none'
                         }
+                    }else if (lengthValue !== ''){
+                        if (lengthValue === allRows[i].children[3].innerText) {
+                            allRows[i].style.display = 'table-row'
+                            filterWhenExists(widthValue, allRows[i].children[2].innerText, allRows[i], heightValue, allRows[i].children[4].innerText)
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
+                    }else if (heightValue !== ''){
+                        if (heightValue === allRows[i].children[4].innerText) {
+                            allRows[i].style.display = 'table-row'
+                            filterWhenExists(widthValue, allRows[i].children[2].innerText, allRows[i], lengthValue, allRows[i].children[3].innerText)
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
                     }
                     /*
                     if (lengthValue !== ''){

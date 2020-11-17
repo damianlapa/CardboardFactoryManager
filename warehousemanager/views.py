@@ -772,6 +772,47 @@ class PunchEdit(PermissionRequiredMixin, View):
 
         return render(request, 'warehousemanager-punch-add.html', locals())
 
+    def post(self, request, punch_id):
+        punch_form = PunchForm(request.POST)
+
+        if punch_form.is_valid():
+            punch_type = punch_form.cleaned_data['type']
+            type_letter = type_num = punch_form.cleaned_data['type_letter']
+            type_num = punch_form.cleaned_data['type_num']
+            name = punch_form.cleaned_data['name']
+            dimension_one = punch_form.cleaned_data['dimension_one']
+            dimension_two = punch_form.cleaned_data['dimension_two']
+            dimension_three = punch_form.cleaned_data['dimension_three']
+            quantity = punch_form.cleaned_data['quantity']
+            size_one = punch_form.cleaned_data['size_one']
+            size_two = punch_form.cleaned_data['size_two']
+            cardboard = punch_form.cleaned_data['cardboard']
+            pressure_large = punch_form.cleaned_data['pressure_large']
+            pressure_small = punch_form.cleaned_data['pressure_small']
+            wave_direction = punch_form.cleaned_data['wave_direction']
+            customers = punch_form.cleaned_data['customers']
+
+            edited_punch = Punch.objects.get(id=punch_id)
+
+            edited_punch.type = punch_type
+            edited_punch.type_num = type_num
+            edited_punch.dimension_one = dimension_one
+            edited_punch.dimension_two = dimension_two
+            edited_punch.dimension_three = dimension_three
+            edited_punch.quantity = quantity
+            edited_punch.size_one = size_one
+            edited_punch.size_two = size_two
+            edited_punch.cardboard = cardboard
+            edited_punch.pressure_small = pressure_small
+            edited_punch.pressure_large = pressure_large
+            edited_punch.wave_direction = wave_direction
+            edited_punch.name = name
+            edited_punch.type_letter = type_letter
+
+            edited_punch.save()
+
+            return redirect('punches')
+
 
 class PunchDelete(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_punch'
@@ -784,6 +825,7 @@ class PunchDelete(PermissionRequiredMixin, View):
         p.delete()
 
         return redirect('punches')
+
 
 class AddBuyer(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_buyer'
@@ -876,6 +918,3 @@ class StockManagement(PermissionRequiredMixin, View):
 class Announcement(View):
     def get(self, request):
         return render(request, 'warehousemanager-announcement.html')
-
-
-
