@@ -615,6 +615,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (cardboardChoice !== null) {
 
         for (let i=0; i < cardboardChoice.children.length; i++){
+            if ( isNaN(cardboardChoice.children[i]) ) {
+
+            }else {
             let slug = '/cardboard-availability/' + String(cardboardChoice[i].value)
             $.ajax({
             url: slug,
@@ -626,6 +629,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     cardboardChoice.children[i].style.display = 'none'
                 }
             })
+            }
 
         }
 
@@ -719,5 +723,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // result = FormatCorrectness(type, cardboard_type, 1, 1, 1, 1, 1)
         }
+    }
+
+    // usuwanie wykrojnika
+
+    const deletePunchBtn = document.getElementById('delete-punch')
+    console.log(deletePunchBtn)
+
+    if (deletePunchBtn !== null) {
+        deletePunchBtn.addEventListener('click', function () {
+        console.log('ok')
+            return confirm('Are you sure you want to delete this?');
+        })
     }
 })

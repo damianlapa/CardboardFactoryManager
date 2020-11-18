@@ -811,6 +811,8 @@ class PunchEdit(PermissionRequiredMixin, View):
 
             edited_punch.save()
 
+            print(customers)
+
             return redirect('punches')
 
 
@@ -897,8 +899,8 @@ class PunchProductionAdd(PermissionRequiredMixin, View):
 
 
 class CardboardUsed(View):
-    def get(self, request, cardboard_id):
-        cardboard = OrderItemQuantity.objects.get(id=cardboard_id)
+    def get(self, request, cardboard_stock_id):
+        cardboard = OrderItemQuantity.objects.get(id=cardboard_stock_id)
         if cardboard.is_used:
             return HttpResponse(json.dumps(True))
         else:

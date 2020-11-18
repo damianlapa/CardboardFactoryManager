@@ -31,13 +31,15 @@
         </p>
     </div>
     {% endblock %}
-    <div class="nav-bar">
+    <a class="nav-bar">
         <div class="nav-item">
             MAIN
         </div>
-        <div class="nav-item">
-            ORDERS
-        </div>
+        <a href="{% url 'new-all-orders' %}">
+            <div class="nav-item">
+                ORDERS
+            </div>
+        </a>
         <div class="nav-item">
             DELIVERIES
         </div>
