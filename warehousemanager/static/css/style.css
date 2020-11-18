@@ -87,7 +87,26 @@ table {
 }
 
 .zamowienie table, th, td {
-  border: 1px solid black;
+  border: 1px solid white;
+}
+
+table.zamowienie, .zamowienie th{
+    background: #1A1313;
+    text-align: center;
+    border: 5px solid white;
+}
+
+.zamowienie th {
+    color: white;
+    border: 3px solid white;
+}
+
+.zamowienie-row {
+    background: orange;
+}
+
+.zamowienie .quantity {
+    color: darkgreen;
 }
 
 .blackrow {
