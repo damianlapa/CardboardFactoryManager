@@ -1,27 +1,38 @@
-{% extends '__base__.html' %}
+{% extends '__base2__.html' %}
 
-{% block title %}Orders{% endblock %}
-
-{% block navigation %}
-{% endblock %}
-
-
+{% block title %}Orders Management{% endblock %}
 {% block content %}
-<list>
-{% for o in orders_all %}
+<div class="left-bar-manage" style="float: left;">
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+    <div class="left-bar-manage-item">123</div>
+</div>
+<div class="page-content" style="float: left;">
+    <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam ornare nec est eget volutpat. Maecenas sit amet
+        neque congue, volutpat nunc id, venenatis tellus. Proin quis enim et nisl dapibus posuere. Ut nisi augue,
+        convallis vitae bibendum at, sollicitudin vitae orci. Donec ac commodo mauris, et blandit elit. Maecenas mollis,
+        arcu nec efficitur sollicitudin, tortor urna pretium urna, eu placerat urna justo id nibh. Morbi at felis nunc.
+        Phasellus blandit libero sed bibendum consequat.
 
-    {% if o.provider == 'Convert' %}
+        Aliquam fermentum posuere justo, eu finibus erat dignissim quis. Morbi congue, odio eget bibendum auctor, velit
+        justo cursus libero, id lacinia est elit non tortor. Proin sed nunc nec tortor finibus ullamcorper vitae et
+        orci. Donec imperdiet, est quis vestibulum viverra, nisl felis vulputate tortor, et pulvinar orci libero
+        pharetra elit. Vestibulum arcu odio, finibus sit amet eleifend nec, pellentesque quis turpis. Fusce rhoncus enim
+        id sem cursus, quis finibus est venenatis. Phasellus ac erat id ante euismod fringilla.
 
-        <li class="convert">
-
-    {% else %}
-
-        <li class="{{ o.provider }}">
-
-    {% endif %}
-
-    <a href="{% url 'order-details' order_id=o.id %}">{{ o }}//{{ o.provider }}</a></li>
-
-{% endfor %}
-</list>
+        Mauris est lacus, elementum eu suscipit ac, dictum a est. Pellentesque convallis, neque sit amet euismod auctor,
+        purus libero rutrum enim, a commodo nisi purus non mi. Cras sodales felis odio, sit amet mollis mi efficitur at.
+        Duis eu turpis augue. Praesent egestas, enim id posuere ullamcorper, lacus massa fringilla nisl, quis interdum
+        neque orci a massa. In aliquam felis condimentum eros elementum, pretium hendrerit quam varius. Vestibulum
+        libero sapien, mollis ac pellentesque quis, tempor at mi. Sed euismod massa enim, commodo venenatis nunc aliquam
+        ac.
+    </p>
+</div>
+<div style="clear: both;"></div>
 {% endblock %}

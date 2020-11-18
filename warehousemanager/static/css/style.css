@@ -10,6 +10,7 @@ body {
 }
 
 .header {
+    width: 100%;
     background-color: #150C06;
     color: white;
     display: flex;
@@ -41,6 +42,13 @@ div.header > p {
     margin: 5px;
 }
 
+.nav-bar a {
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+    text-align: center;
+}
+
 .nav-item {
     float: left;
     width: 200px;
@@ -48,6 +56,10 @@ div.header > p {
     padding: 20px;
     border-right: 3px dotted #2A4465;
     box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+    text-align: center;
 }
 
 .nav-item:hover {
@@ -464,7 +476,7 @@ input[type=button], input[type=submit], input[type=reset] {
 
 
 
-.punches-list a, div, table{
+.punches-list{
     margin-left: auto;
     margin-right: auto;
     color: white;
@@ -485,6 +497,8 @@ input[type=button], input[type=submit], input[type=reset] {
     border: solid black 5px ;
     border-style: double;
     color: black;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .punches-list table th, .punch-details table th {
@@ -584,4 +598,29 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .punch-form-container > a {
     color: green;
+}
+
+/* Orders management section */
+.left-bar-manage {
+    float: left;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: stretch;
+}
+
+.left-bar-manage-item {
+    background: #924F22;
+    width: 76px;
+    height: 55px;
+    padding: 10px;
+    border-bottom: 2px dotted yellow;
+    text-align: center;
+
+}
+
+.page-content {
+    float: left;
+    width: 800px;
+    padding: 20px;
 }

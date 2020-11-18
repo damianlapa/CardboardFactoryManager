@@ -31,10 +31,10 @@
         </p>
     </div>
     {% endblock %}
-    <a class="nav-bar">
-        <div class="nav-item">
-            MAIN
-        </div>
+    <div class="nav-bar">
+            <div class="nav-item">
+                MAIN
+            </div>
         <a href="{% url 'new-all-orders' %}">
             <div class="nav-item">
                 ORDERS
@@ -50,18 +50,18 @@
             ABSENCES
         </div>
         <a href="{% url 'punches' %}">
-        <div class="nav-item">
-            PUNCHES
-        </div>
-            </a>
+            <div class="nav-item">
+                PUNCHES
+            </div>
+        </a>
         <div class="nav-item">
             PRODUCTION
         </div>
         <div style="clear: both;"></div>
     </div>
     <div class="content-div">
-    {% block content %}{% endblock %}
-        </div>
+        {% block content %}{% endblock %}
+    </div>
     {% block footer %}
     {% endblock %}
 </div>
