@@ -413,6 +413,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const filterPunchesBtn = document.getElementById('punch-filters-button')
 
+    const fefcoTypesBtns = document.getElementsByClassName('fefco-type')
+    const typeCells = document.getElementsByClassName('punch-type')
+
     if (filterPunchesBtn !== null) {
         const filterContainer = document.getElementById('punch-filters')
         filterPunchesBtn.addEventListener('click', function () {
@@ -427,9 +430,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 filterPunchesBtn.style.backgroundColor = 'red'
             }
         })
-
-        const fefcoTypesBtns = document.getElementsByClassName('fefco-type')
-        const typeCells = document.getElementsByClassName('punch-type')
 
         for (let i=0; i < fefcoTypesBtns.length; i++){
             fefcoTypesBtns[i].addEventListener('click', function () {
@@ -465,6 +465,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const heightFormat = document.getElementsByClassName('dim3')
 
     const allRows = document.getElementsByClassName('punch-row')
+
+    const nameFilter = document.getElementById('name-filter')
+
+    if (nameFilter) {
+        nameFilter.addEventListener('keyup', function () {
+            for (let f=0; f < allRows.length; f++) {
+                if (nameFilter.value.length === 0) {
+                    allRows[f].style.display = 'table-row';
+                    for (let x=0; x < fefcoTypesBtns.length; x++) {
+                        if (fefcoTypesBtns[x].classList.contains('fefco-type-click')) {
+                            if (fefcoTypesBtns[x].value !== 'all'){
+                            fefcoTypesBtns[x].classList.remove('fefco-type-click')
+                            }
+                        }else {
+                            if (fefcoTypesBtns[x].value === 'all'){
+                            fefcoTypesBtns[x].classList.add('fefco-type-click')
+                            }
+                        }
+                    }
+                }else if (allRows[f].style.display === 'table-row' || allRows[f].style.display === '') {
+                    if (allRows[f].children[5].innerText.toLowerCase().includes(nameFilter.value.toLowerCase())) {
+                        allRows[f].style.display = 'table-row'
+                    }else {
+                        allRows[f].style.display = 'none'
+                    }
+                }
+            }
+        })
+    }
 
     /*
     if (dimOne !== null){
@@ -732,8 +761,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (deletePunchBtn !== null) {
         deletePunchBtn.addEventListener('click', function () {
-        console.log('ok')
-            return confirm('Are you sure you want to delete this?');
+            if (!confirm('Are you sure that you want to delete this punch?')) {
+                event.preventDefault(); }
         })
     }
 })

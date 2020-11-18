@@ -17,7 +17,7 @@
         <br />
         <div class="type-buttons">
             <div>
-               <button class='fefco-type' value="all">All</button>
+               <button class='fefco-type fefco-type-click' value="all" id="all-punches-filter-btn">All</button>
             </div>
 
             {% for pt in punch_types %}
@@ -39,7 +39,11 @@
             </label>
             <button id="dim-filter-btn" class="dim-filter-btn">Filtruj</button>
         </div>
-        <div>
+        <div class="other-filters">
+            <label>Nazwa
+                <input type="text" id="name-filter">
+            </label>
+
         </div>
         <br />
     </div>
