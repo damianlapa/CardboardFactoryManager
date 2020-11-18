@@ -55,7 +55,7 @@
         <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
         <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
         <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
-        <td>{{ o.scores }}</td>
+        <td class="scores">{{ o.scores }}</td>
     </tr>
     {% endfor %}
     <tr class="***">
