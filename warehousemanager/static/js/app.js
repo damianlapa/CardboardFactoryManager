@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const rows = allRows[0].rows
         const tableDescription = document.querySelector('.order-table-description')
         for (let i=0; i < rows.length; i++) {
-            if (rows[i].classList.value === filterByProvider.value) {
+            if (rows[i].classList.contains(filterByProvider.value)) {
                 rows[i].style.display = 'table-row'
             }
             else {

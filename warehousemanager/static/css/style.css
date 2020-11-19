@@ -91,6 +91,10 @@ table {
   border: 1px solid white;
 }
 
+.zamowienie td {
+    padding: 1px;
+}
+
 table.zamowienie, .zamowienie th{
     background: #1A1313;
     text-align: center;
@@ -104,6 +108,10 @@ table.zamowienie, .zamowienie th{
 
 .zamowienie-row {
     background: orange;
+}
+
+.zamowienie-row:hover {
+    background: #9BFF58;
 }
 
 .zamowienie .quantity {
