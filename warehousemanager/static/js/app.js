@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
         completeOrderButton.addEventListener('click', function() {
             $.ajax({
             url: '/complete-order/',
-            data: {'order_id': parseInt(this.value)},
+            data: {'order_id': parseInt(this.value), 'state': 'c'},
             type: 'GET',
             dataType: 'json'
             })
@@ -124,6 +124,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // marking an order as uncompleted
     const uncompletedOrderButton = document.querySelector('.save')
+
+    if (uncompletedOrderButton !== null) {
+        uncompletedOrderButton.addEventListener('click', function() {
+            $.ajax({
+            url: '/complete-order/',
+            data: {'order_id': parseInt(this.value), 'state': 'uc'},
+            type: 'GET',
+            dataType: 'json'
+            })
+        })
+    }
 
     // canceling an order
     const cancelButton = document.querySelector('.cancel-order')
@@ -149,11 +160,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const rows = allRows[0].rows
         const tableDescription = document.querySelector('.order-table-description')
         for (let i=0; i < rows.length; i++) {
-            if (rows[i].classList.value === filterByProvider.value) {
+            if (rows[i].classList.contains(filterByProvider.value)) {
                 rows[i].style.display = 'table-row'
             }
             else {
                 rows[i].style.display = 'none'
+
             }
         }
         tableDescription.style.display = 'table-row'
@@ -166,8 +178,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (lastOrderedItems !== null) {
         const listElements = lastOrderedItems.getElementsByTagName('ol')
-        const newOrderHeight = document.querySelector('#id_format_width')
-        const newOrderWidth = document.querySelector('#id_format_height')
+        const newOrderWidth = document.querySelector('#id_format_width')
+        const newOrderHeight = document.querySelector('#id_format_height')
         const newOrderDimOne = document.querySelector('#id_dimension_one')
         const newOrderDimTwo = document.querySelector('#id_dimension_two')
         const newOrderDimThree = document.querySelector('#id_dimension_three')
@@ -402,10 +414,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const filterPunchesBtn = document.getElementById('punch-filters-button')
 
+    const fefcoTypesBtns = document.getElementsByClassName('fefco-type')
+    const typeCells = document.getElementsByClassName('punch-type')
+
     if (filterPunchesBtn !== null) {
         const filterContainer = document.getElementById('punch-filters')
         filterPunchesBtn.addEventListener('click', function () {
-            if (filterContainer.style.display === 'none') {
+        console.log(filterContainer.style.display)
+            if (filterContainer.style.display === 'none' || filterContainer.style.display === '') {
+                console.log('click')
                 filterContainer.style.display = 'flex'
                 filterPunchesBtn.style.backgroundColor = 'pink'
             }
@@ -414,9 +431,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 filterPunchesBtn.style.backgroundColor = 'red'
             }
         })
-
-        const fefcoTypesBtns = document.getElementsByClassName('fefco-type')
-        const typeCells = document.getElementsByClassName('punch-type')
 
         for (let i=0; i < fefcoTypesBtns.length; i++){
             fefcoTypesBtns[i].addEventListener('click', function () {
@@ -453,6 +467,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const allRows = document.getElementsByClassName('punch-row')
 
+    const nameFilter = document.getElementById('name-filter')
+
+    if (nameFilter) {
+        nameFilter.addEventListener('keyup', function () {
+            for (let f=0; f < allRows.length; f++) {
+                if (nameFilter.value.length === 0) {
+                    allRows[f].style.display = 'table-row';
+                    for (let x=0; x < fefcoTypesBtns.length; x++) {
+                        if (fefcoTypesBtns[x].classList.contains('fefco-type-click')) {
+                            if (fefcoTypesBtns[x].value !== 'all'){
+                            fefcoTypesBtns[x].classList.remove('fefco-type-click')
+                            }
+                        }else {
+                            if (fefcoTypesBtns[x].value === 'all'){
+                            fefcoTypesBtns[x].classList.add('fefco-type-click')
+                            }
+                        }
+                    }
+                }else if (allRows[f].style.display === 'table-row' || allRows[f].style.display === '') {
+                    if (allRows[f].children[5].innerText.toLowerCase().includes(nameFilter.value.toLowerCase())) {
+                        allRows[f].style.display = 'table-row'
+                    }else {
+                        allRows[f].style.display = 'none'
+                    }
+                }
+            }
+        })
+    }
+
     /*
     if (dimOne !== null){
 
@@ -479,6 +522,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     */
 
+    function filterWhenExists(input, comparator, element, input2, comparator2) {
+        if (input !== null) {
+            if (input === comparator) {
+                element.style.display = 'table-row'
+                if (input2 !== '') {
+                    if (input2 === comparator2) {
+                        element.style.display = 'table-row'
+                    }
+                    else {
+                        element.style.display = 'none'
+                    }
+                }
+            } else {
+                element.style.display = 'none'
+            }
+        }
+    }
+
     function filterByDimension(onlyDisplayed) {
         var widthValue = dimOne.value
         var lengthValue = dimTwo.value
@@ -490,11 +551,29 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (widthValue !== ''){
                         if (widthValue === allRows[i].children[2].innerText) {
                             allRows[i].style.display = 'table-row'
+                            filterWhenExists(lengthValue, allRows[i].children[3].innerText, allRows[i], heightValue, allRows[i].children[4].innerText)
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
+                    }else if (lengthValue !== ''){
+                        if (lengthValue === allRows[i].children[3].innerText) {
+                            allRows[i].style.display = 'table-row'
+                            filterWhenExists(widthValue, allRows[i].children[2].innerText, allRows[i], heightValue, allRows[i].children[4].innerText)
+                        }
+                        else {
+                            allRows[i].style.display = 'none'
+                        }
+                    }else if (heightValue !== ''){
+                        if (heightValue === allRows[i].children[4].innerText) {
+                            allRows[i].style.display = 'table-row'
+                            filterWhenExists(widthValue, allRows[i].children[2].innerText, allRows[i], lengthValue, allRows[i].children[3].innerText)
                         }
                         else {
                             allRows[i].style.display = 'none'
                         }
                     }
+                    /*
                     if (lengthValue !== ''){
                         if (lengthValue === allRows[i].children[3].innerText) {
                             allRows[i].style.display = 'table-row'
@@ -511,6 +590,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             allRows[i].style.display = 'none'
                         }
                     }
+                    */
                 }
             }
             else {
@@ -555,7 +635,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
                 link = localLink + 'punch/' + allRows[i].dataset.punch_id
-                window.open(link, '_blank')
+                window.location.replace(link)
             })
         }
     }
@@ -565,6 +645,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (cardboardChoice !== null) {
 
         for (let i=0; i < cardboardChoice.children.length; i++){
+            if ( isNaN(cardboardChoice.children[i]) ) {
+
+            }else {
             let slug = '/cardboard-availability/' + String(cardboardChoice[i].value)
             $.ajax({
             url: slug,
@@ -576,8 +659,122 @@ document.addEventListener("DOMContentLoaded", function () {
                     cardboardChoice.children[i].style.display = 'none'
                 }
             })
+            }
 
         }
 
+    }
+
+    // warning about uncompleted orders before add a new one
+
+    const warningBtn = document.getElementById('continue-with-uc')
+    const addOrderDiv = document.getElementsByClassName('add-order')
+    const warningDiv = document.getElementsByClassName('uc-orders')
+
+    if (warningBtn !== null) {
+        warningBtn.addEventListener('click', function () {
+            warningDiv[0].style.display = 'none'
+            addOrderDiv[0].style.display = 'block'
+        })
+    }
+
+    // function checking correctness
+
+    function ScoresCorrectness(scores) {
+        if (scores[0] !== scores[scores.length - 1]){
+            return false
+        }
+        return true
+    }
+
+    function FormatCorrectness(type, cardboard, fDim1, fDim2, dim1, dim2, dim3, scores){
+        switch(type){
+            case '201':
+                switch(cardboard){
+                    case 'B':
+                    condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 12 ));
+                    scoresCorrectness = ScoresCorrectness(scores)
+                    return (condition1 || condition2) && scoresCorrectness;
+                    case 'C':
+                    condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 13 ));
+                    return condition1 || condition2;
+                    case 'BC':
+                    condition1 = ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
+                    condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 22 ));
+                    return condition1 || condition2;
+                }
+            case '202':
+                return true;
+            case '203':
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    // checking correctness ordered item
+
+    const formAddContainer = document.getElementById('add-items-container')
+    const allOrderedItems = document.getElementsByClassName('order-item-add')
+
+    if (formAddContainer !== null) {
+        for (let i=0; i<allOrderedItems.length; i++){
+            if (allOrderedItems[i].children[1].innerText === '203'){
+                allOrderedItems[i].style.backgroundColor = 'pink'
+            }
+
+            type = allOrderedItems[i].children[1].innerText
+            cardboard = allOrderedItems[i].children[6].innerText
+            cardboard_type = cardboard.split(/([0-9]+)/)[0]
+            width = parseInt(allOrderedItems[i].children[2].innerText)
+            height = parseInt(allOrderedItems[i].children[3].innerText)
+            boxDimensions = allOrderedItems[i].children[7].innerText.split(/([0-9]+)/)
+            scores = allOrderedItems[i].children[8].innerText.split(/([0-9]+)/)
+
+            scores_result = scores.filter(score => score.length > 1)
+
+            console.log(scores_result)
+
+            if (boxDimensions.length > 5){
+                dim1 = parseInt(boxDimensions[1])
+                dim2 = parseInt(boxDimensions[3])
+                dim3 = parseInt(boxDimensions[5])
+            }else {
+                dim1 = parseInt(boxDimensions[1])
+                dim2 = parseInt(boxDimensions[3])
+                dim3 = 0
+            }
+
+            if (FormatCorrectness(type, cardboard_type, width, height, dim1, dim2, dim3, scores_result) === false){
+                allOrderedItems[i].style.backgroundColor = 'red'
+            }
+
+            // result = FormatCorrectness(type, cardboard_type, 1, 1, 1, 1, 1)
+        }
+    }
+
+    // usuwanie wykrojnika
+
+    const deletePunchBtn = document.getElementById('delete-punch')
+    console.log(deletePunchBtn)
+
+    if (deletePunchBtn !== null) {
+        deletePunchBtn.addEventListener('click', function () {
+            if (!confirm('Are you sure that you want to delete this punch?')) {
+                event.preventDefault(); }
+        })
+    }
+
+    const deliveriesRows = document.getElementsByClassName('delivery-row')
+
+    if (deliveriesRows.length > 0) {
+        for (let i=0; i < deliveriesRows.length; i++) {
+            deliveriesRows[i].addEventListener('click', function () {
+                link = localLink + 'delivery/' + deliveriesRows[i].dataset.delivery
+                window.location.replace(link)
+            })
+        }
     }
 })

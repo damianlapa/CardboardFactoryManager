@@ -1,4 +1,4 @@
-{% extends '__base__.html' %}
+{% extends '__base2__.html' %}
 
 {% block title %}Order {{ order }} {% endblock %}
 
@@ -42,7 +42,7 @@
 
     {% for order in orders %}
     {% for o in order.orderitem_set.all %}
-    <tr class="{{ order.provider }}">
+    <tr class="{{ order.provider }} zamowienie-row">
         {% if forloop.first %}
         <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
         {% endif %}
@@ -51,11 +51,11 @@
         <td>{{ o.format_width }}</td>
         <td>{{ o.format_height }}</td>
         <td>{{ o.ordered_quantity }}</td>
-        <td>{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}{% endfor %}</td>
+        <td class="quantity">{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}{% endfor %}</td>
         <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
         <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
         <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
-        <td>{{ o.scores }}</td>
+        <td class="scores">{{ o.scores }}</td>
     </tr>
     {% endfor %}
     <tr class="***">

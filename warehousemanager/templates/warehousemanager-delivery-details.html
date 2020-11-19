@@ -6,17 +6,19 @@
 
     <h1>Delivery Details:</h1>
 
-    <h2>{{ delivery.provider }} / {{ deliver.date_of_provide }}</h2>
+    <h2>{{ delivery.provider }} / {{ delivery.date_of_delivery }}</h2>
 
     <table class="all-deliveries-list">
 
         <tr>
+            <th>#</th>
             <th>Format</th>
             <th>Quantity</th>
         </tr>
         {% for q in quantities %}
         <tr>
-            <td>{{ q.order_item }}</td>
+            <td>{{ q.order_item.order.order_provider_number }}/{{ q.order_item.item_number }}</td>
+            <td>{{ q.order_item.format_width }} x {{ q.order_item.format_height }}</td>
             <td>{{ q.quantity }}</td>
         </tr>
         {% endfor %}

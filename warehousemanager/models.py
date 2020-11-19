@@ -90,11 +90,11 @@ class Buyer(models.Model):
 class Order(models.Model):
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     order_provider_number = models.IntegerField()
-    date_of_order = models.DateTimeField()
+    date_of_order = models.DateField()
     is_completed = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['order_provider_number']
+        ordering = ['date_of_order', 'order_provider_number']
 
     def __str__(self):
         return '{} {}'.format(self.provider, self.order_provider_number)

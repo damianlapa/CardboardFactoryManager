@@ -48,7 +48,7 @@ class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
 
     def get(self, request):
-        orders = Order.objects.all()
+        orders = Order.objects.filter(is_completed=True)
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
         return render(request, 'warehousemanager-all-orders-details.html', locals())
@@ -85,7 +85,7 @@ class NewOrder(PermissionRequiredMixin, View):
             provider_object = CardboardProvider.objects.get(name=provider)
 
             new_order = Order.objects.create(provider=provider_object, order_provider_number=int(order_provider_number),
-                                             date_of_order=datetime.datetime.now())
+                                             date_of_order=date_of_order)
 
             new_order.save()
 
@@ -101,10 +101,10 @@ class DeleteOrder(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_order'
 
     def get(self, request):
-        order_id = request.GET.get('order_id')
+        order_id = int(request.GET.get('order_id'))
         Order.objects.get(id=order_id).delete()
 
-        return redirect('/orders')
+        return redirect('uncompleted-orders')
 
 
 class NewOrderAdd(PermissionRequiredMixin, View):
@@ -144,6 +144,16 @@ class NewItemAdd(PermissionRequiredMixin, View):
             return redirect('/add-items/{}'.format(order_id))
         else:
             return HttpResponse(form.errors)
+
+
+class OrderItemDelete(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_orderitem'
+
+    def get(self, request, order_id, item_id):
+        item_object = OrderItem.objects.get(id=int(item_id))
+        item_object.delete()
+
+        return redirect('/add-items/{}'.format(order_id))
 
 
 class NextOrderNumber(View):
@@ -191,11 +201,21 @@ class NextItemNumber(View):
 class CompleteOrder(View):
     def get(self, request):
         order_id = int(request.GET.get('order_id'))
+        state = request.GET.get('state')
         order = Order.objects.get(id=order_id)
-        order.is_completed = True
+        order.is_completed = True if state == 'c' else False
         order.save()
 
         return redirect('all-orders-details')
+
+
+class UncompletedOrders(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_order'
+
+    def get(self, request):
+        orders = Order.objects.filter(is_completed=False)
+        providers = CardboardProvider.objects.all()
+        return render(request, 'warehousemanager-all-orders-details.html', locals())
 
 
 class GetItemDetails(PermissionRequiredMixin, View):
@@ -321,7 +341,9 @@ class ManageView(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        return render(request, 'warehousemanager-manage.html', locals())
+        # title = 'MANAGEMENT'
+        # return render(request, 'warehousemanager-manage.html', locals())
+        return redirect('punches')
 
 
 # wszyscy dostawcy
@@ -346,6 +368,7 @@ class DeliveriesManagement(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
+        title = 'DELIVERIES'
         all_deliveries = Delivery.objects.all()
         return render(request, 'warehousemanager-all-deliveries.html', locals())
 
@@ -681,6 +704,7 @@ class PunchesList(PermissionRequiredMixin, View):
     def get(self, request):
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
         punch_types = PUNCH_TYPES
+        title = 'PUNCHES'
 
         return render(request, 'warehousemanager-punches-list.html', locals())
 
@@ -737,6 +761,73 @@ class PunchDetails(PermissionRequiredMixin, View):
             wear += pr.quantity
 
         return render(request, 'warehousemanager-punch-details.html', locals())
+
+
+class PunchEdit(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_punch'
+
+    def get(self, request, punch_id):
+        p = get_object_or_404(Punch, id=punch_id)
+        punch_form = PunchForm(instance=p)
+        edit = True
+
+        return render(request, 'warehousemanager-punch-add.html', locals())
+
+    def post(self, request, punch_id):
+        punch_form = PunchForm(request.POST)
+
+        if punch_form.is_valid():
+            punch_type = punch_form.cleaned_data['type']
+            type_letter = type_num = punch_form.cleaned_data['type_letter']
+            type_num = punch_form.cleaned_data['type_num']
+            name = punch_form.cleaned_data['name']
+            dimension_one = punch_form.cleaned_data['dimension_one']
+            dimension_two = punch_form.cleaned_data['dimension_two']
+            dimension_three = punch_form.cleaned_data['dimension_three']
+            quantity = punch_form.cleaned_data['quantity']
+            size_one = punch_form.cleaned_data['size_one']
+            size_two = punch_form.cleaned_data['size_two']
+            cardboard = punch_form.cleaned_data['cardboard']
+            pressure_large = punch_form.cleaned_data['pressure_large']
+            pressure_small = punch_form.cleaned_data['pressure_small']
+            wave_direction = punch_form.cleaned_data['wave_direction']
+            customers = punch_form.cleaned_data['customers']
+
+            edited_punch = Punch.objects.get(id=punch_id)
+
+            edited_punch.type = punch_type
+            edited_punch.type_num = type_num
+            edited_punch.dimension_one = dimension_one
+            edited_punch.dimension_two = dimension_two
+            edited_punch.dimension_three = dimension_three
+            edited_punch.quantity = quantity
+            edited_punch.size_one = size_one
+            edited_punch.size_two = size_two
+            edited_punch.cardboard = cardboard
+            edited_punch.pressure_small = pressure_small
+            edited_punch.pressure_large = pressure_large
+            edited_punch.wave_direction = wave_direction
+            edited_punch.name = name
+            edited_punch.type_letter = type_letter
+
+            edited_punch.save()
+
+            print(customers)
+
+            return redirect('punches')
+
+
+class PunchDelete(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.delete_punch'
+
+    def get(self, request, punch_id):
+        p = get_object_or_404(Punch, id=punch_id)
+        production = PunchProduction.objects.filter(punch=p)
+        if production:
+            return redirect('announcement')
+        p.delete()
+
+        return redirect('punches')
 
 
 class AddBuyer(PermissionRequiredMixin, View):
@@ -809,8 +900,8 @@ class PunchProductionAdd(PermissionRequiredMixin, View):
 
 
 class CardboardUsed(View):
-    def get(self, request, cardboard_id):
-        cardboard = OrderItemQuantity.objects.get(id=cardboard_id)
+    def get(self, request, cardboard_stock_id):
+        cardboard = OrderItemQuantity.objects.get(id=cardboard_stock_id)
         if cardboard.is_used:
             return HttpResponse(json.dumps(True))
         else:
@@ -821,7 +912,12 @@ class StockManagement(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punchproduction'
 
     def get(self, request):
-        stocks = OrderItemQuantity.objects.all()
+        stocks = OrderItemQuantity.objects.filter(is_used=False)
+        history_stocks = OrderItemQuantity.objects.filter(is_used=True)
 
         return render(request, 'warehousemanager-stock-management.html', locals())
 
+
+class Announcement(View):
+    def get(self, request):
+        return render(request, 'warehousemanager-announcement.html')
