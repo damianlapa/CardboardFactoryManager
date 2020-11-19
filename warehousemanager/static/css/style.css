@@ -34,6 +34,7 @@ div.header > p {
     min-height: 1000px;
     margin-left: auto;
     margin-right: auto;
+    text-align: center;
 }
 
 .nav-bar {
@@ -278,6 +279,21 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .all-deliveries-container {
     display: inline-block;
+}
+
+.absence-list {
+    background: white;
+}
+
+.absence-list table, th, td {
+    border: solid 1px black;
+}
+
+.absence-list th {
+    font-weight: bold;
+    font-size: 18px;
+    background: orange;
+    border-bottom: 5px solid grey;
 }
 
 .absence-button {
