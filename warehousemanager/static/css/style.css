@@ -289,6 +289,16 @@ input[type=button], input[type=submit], input[type=reset] {
     display: inline-block;
 }
 
+.all-deliveries-list {
+    background: orange;
+    font-weight: bold;
+}
+
+.delivery-row:hover {
+    background: #5A900A;
+    cursor: pointer;
+}
+
 .absence-list {
     background: white;
 }

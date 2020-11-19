@@ -9,15 +9,15 @@
     <table class="all-deliveries-list">
 
         <tr>
-            <th>Dostawca</th>
             <th>Data</th>
+            <th>Dostawca</th>
+
         </tr>
         {% for d in all_deliveries %}
-        <a href="{% url 'delivery-details' delivery_id=d.id %}">x
-        </a>
-        <tr>
-            <td>{{ d.provider }}</td>
+        <tr data-delivery="{{ d.id }}" class="delivery-row">
             <td>{{ d.date_of_delivery }}</td>
+            <td>{{ d.provider }}</td>
+
         </tr>
         {% endfor %}
 

@@ -368,6 +368,7 @@ class DeliveriesManagement(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
+        title = 'DELIVERIES'
         all_deliveries = Delivery.objects.all()
         return render(request, 'warehousemanager-all-deliveries.html', locals())
 

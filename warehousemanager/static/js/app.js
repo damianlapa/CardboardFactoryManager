@@ -165,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             else {
                 rows[i].style.display = 'none'
+
             }
         }
         tableDescription.style.display = 'table-row'
@@ -764,5 +765,16 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!confirm('Are you sure that you want to delete this punch?')) {
                 event.preventDefault(); }
         })
+    }
+
+    const deliveriesRows = document.getElementsByClassName('delivery-row')
+
+    if (deliveriesRows.length > 0) {
+        for (let i=0; i < deliveriesRows.length; i++) {
+            deliveriesRows[i].addEventListener('click', function () {
+                link = localLink + 'delivery/' + deliveriesRows[i].dataset.delivery
+                window.location.replace(link)
+            })
+        }
     }
 })
