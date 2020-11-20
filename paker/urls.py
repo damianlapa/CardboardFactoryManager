@@ -44,6 +44,7 @@ urlpatterns = [
     path('format-converter', FormatConverter.as_view(), name='format-converter'),
     path('deliveries-management', DeliveriesManagement.as_view(), name='deliveries-management'),
     path('delivery/<int:delivery_id>', DeliveryDetails.as_view(), name='delivery-details'),
+    path('delivery-add/', DeliveryAdd.as_view(), name='delivery-add'),
     path('add-note/', NoteAdd.as_view(), name='add-note'),
     path('notes/', AllNotes.as_view(), name='notes'),
     path('absences-list/', AbsencesList.as_view(), name='absence-list'),

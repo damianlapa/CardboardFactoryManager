@@ -104,16 +104,17 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     item_number = models.IntegerField()
     sort = models.CharField(max_length=15, choices=ITEM_SORTS)
+    dimension_one = models.IntegerField()
+    dimension_two = models.IntegerField()
+    dimension_three = models.IntegerField(blank=True, null=True)
+    scores = models.CharField(max_length=64)
     format_width = models.IntegerField()
     format_height = models.IntegerField()
     ordered_quantity = models.IntegerField()
     buyer = models.ManyToManyField(Buyer, blank=True)
     cardboard_type = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     cardboard_weight = models.IntegerField()
-    dimension_one = models.IntegerField()
-    dimension_two = models.IntegerField()
-    dimension_three = models.IntegerField(blank=True, null=True)
-    scores = models.CharField(max_length=64)
+    is_completed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order__provider__name', 'order__order_provider_number', 'item_number']
@@ -126,6 +127,9 @@ class Delivery(models.Model):
     items = models.ManyToManyField(OrderItem, through='OrderItemQuantity')
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     date_of_delivery = models.DateField()
+
+    class Meta:
+        ordering = ['date_of_delivery']
 
     def __str__(self):
         return f'{self.provider}|{self.date_of_delivery}'

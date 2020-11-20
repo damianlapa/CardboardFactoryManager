@@ -381,7 +381,34 @@ class DeliveryDetails(LoginRequiredMixin, View):
         delivery = Delivery.objects.get(id=delivery_id)
         quantities = OrderItemQuantity.objects.filter(delivery=delivery)
 
+        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery, 'quantity': 200}, provider=delivery.provider)
+
         return render(request, 'warehousemanager-delivery-details.html', locals())
+
+
+# dodawanie dostawy
+class DeliveryAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_delivery'
+
+    def get(self, request):
+        delivery_form = DeliveryForm()
+
+        return render(request, 'warehousemanager-delivery-add.html', locals())
+
+    def post(self, request):
+        delivery_form = DeliveryForm(request.POST)
+        if delivery_form.is_valid():
+            provider = delivery_form.cleaned_data['provider']
+            date_of_delivery = delivery_form.cleaned_data['date_of_delivery']
+
+            new_delivery = Delivery.objects.create(provider=provider, date_of_delivery=date_of_delivery)
+
+            new_delivery.save()
+
+            return redirect('deliveries-management')
+
+        else:
+            return HttpResponse('fail')
 
 
 # dodawanie notatek
