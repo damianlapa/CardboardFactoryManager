@@ -74,10 +74,11 @@ class OrderItemQuantityForm(forms.ModelForm):
         model = OrderItemQuantity
         fields = ('delivery', 'order_item', 'quantity')
 
-    def __init__(self, provider, *args, **kwargs):
+    def __init__(self, provider=None, *args, **kwargs):
         super(OrderItemQuantityForm, self).__init__(*args, **kwargs)
-        all_orders = Order.objects.filter(provider=provider)
-        all_items = OrderItem.objects.filter(order__provider=provider)
-        uncompleted_items = all_items.filter(is_completed=False)
+        uncompleted_items = []
+        if provider:
+            all_items = OrderItem.objects.filter(order__provider=provider)
+            uncompleted_items = all_items.filter(is_completed=False)
 
         self.fields['order_item'].queryset = uncompleted_items

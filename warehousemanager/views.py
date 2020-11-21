@@ -381,9 +381,27 @@ class DeliveryDetails(LoginRequiredMixin, View):
         delivery = Delivery.objects.get(id=delivery_id)
         quantities = OrderItemQuantity.objects.filter(delivery=delivery)
 
-        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery, 'quantity': 200}, provider=delivery.provider)
+        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery, 'quantity': 200},
+                                                  provider=delivery.provider)
 
         return render(request, 'warehousemanager-delivery-details.html', locals())
+
+    def post(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        order_item_q_form = OrderItemQuantityForm(delivery.provider, request.POST)
+
+        if order_item_q_form.is_valid():
+            delivery = request.POST.get('delivery')
+            order_item = request.POST.get('order_item')
+            quantity = request.POST.get('quantity')
+
+            new_oiq = OrderItemQuantity.objects.create(delivery=Delivery.objects.get(id=int(delivery)),
+                                                       order_item=OrderItem.objects.get(id=int(order_item)),
+                                                       quantity=int(quantity))
+
+            new_oiq.save()
+
+            return redirect('/delivery/{}'.format(delivery_id))
 
 
 # dodawanie dostawy
