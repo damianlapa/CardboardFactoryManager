@@ -120,7 +120,7 @@ class OrderItem(models.Model):
         ordering = ['order__provider__name', 'order__order_provider_number', 'item_number']
 
     def __str__(self):
-        return '{}/{}'.format(self.order, self.item_number)
+        return '{}/{}: {}x{}'.format(self.order, self.item_number, self.format_width, self.format_height)
 
 
 class Delivery(models.Model):

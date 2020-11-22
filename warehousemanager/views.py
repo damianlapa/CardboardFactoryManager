@@ -381,8 +381,7 @@ class DeliveryDetails(LoginRequiredMixin, View):
         delivery = Delivery.objects.get(id=delivery_id)
         quantities = OrderItemQuantity.objects.filter(delivery=delivery)
 
-        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery, 'quantity': 200},
-                                                  provider=delivery.provider)
+        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery}, provider=delivery.provider)
 
         return render(request, 'warehousemanager-delivery-details.html', locals())
 
