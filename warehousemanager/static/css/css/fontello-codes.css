@@ -1,0 +1,4 @@
+
+.icon-circle:before { content: '\f111'; } /* '' */
+.icon-toggle-off:before { content: '\f204'; } /* '' */
+.icon-toggle-on:before { content: '\f205'; } /* '' */

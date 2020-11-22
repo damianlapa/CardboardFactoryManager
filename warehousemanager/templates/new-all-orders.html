@@ -45,7 +45,7 @@
     {% for o in order.orderitem_set.all %}
     <tr class="{{ order.provider }} zamowienie-row" data-orderitemid="{{ o.id }}">
         {% if forloop.first %}
-        <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
+        <td rowspan="{{ order.orderitem_set.all|length }}" class="order-num">{{ order.order_provider_number }}</td>
         {% endif %}
         <td>{{ o.item_number }}</td>
         <td>{{ o.sort }}</td>
@@ -58,11 +58,11 @@
         <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
         <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
         <td class="scores">{{ o.scores }}</td>
-        <td class="state-cell">{% if o.is_completed %}x{% else %}o{% endif %}</td>
+        <td class="state-cell">{% if o.is_completed %}<i class="demo-icon icon-circle" style="color: green"></i>{% else %}<i class="demo-icon icon-circle" style="color: red"></i>{% endif %}</td>
     </tr>
     {% endfor %}
     <tr class="***">
-        <td colspan="11" class="black_row"> *** </td>
+        <td colspan="12" class="black_row"> *** </td>
     </tr>
     {% endfor %}
 </table>

@@ -790,9 +790,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     dataType: 'json'
                 }).done(function (data) {
                     if (data === true) {
-                        stateCells[i].innerText = 'x'
+                        stateCells[i].children[0].style.color = 'green'
                     }else {
-                        stateCells[i].innerText = 'o'
+                        stateCells[i].children[0].style.color = 'red'
                     }
                     })
             })

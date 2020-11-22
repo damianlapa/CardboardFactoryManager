@@ -96,7 +96,7 @@ table {
 }
 
 table.zamowienie, .zamowienie th{
-    background: #1A1313;
+    background: #111111;
     text-align: center;
     border: 5px solid white;
 }
@@ -107,11 +107,11 @@ table.zamowienie, .zamowienie th{
 }
 
 .zamowienie-row {
-    background: orange;
+    background: #CCCCCC;
 }
 
 .zamowienie-row:hover {
-    background: #9BFF58;
+    background: #eeeeee;
 }
 
 .zamowienie .quantity {
@@ -692,4 +692,9 @@ input[type=button], input[type=submit], input[type=reset] {
 .add-form-container {
     padding: 10px;
     margin: 10px;
+}
+
+.state-cell:hover {
+    background: white;
+    cursor: pointer;
 }
