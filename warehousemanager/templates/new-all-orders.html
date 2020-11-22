@@ -37,12 +37,13 @@
         <th>Rodzaj tektury</th>
         <th>Wymiar pudełka</th>
         <th>Bigi</th>
+        <th>Całość</th>
 
     </tr>
 
     {% for order in orders %}
     {% for o in order.orderitem_set.all %}
-    <tr class="{{ order.provider }} zamowienie-row">
+    <tr class="{{ order.provider }} zamowienie-row" data-orderitemid="{{ o.id }}">
         {% if forloop.first %}
         <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
         {% endif %}
@@ -57,6 +58,7 @@
         <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
         <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
         <td class="scores">{{ o.scores }}</td>
+        <td class="state-cell">{% if o.is_completed %}x{% else %}o{% endif %}</td>
     </tr>
     {% endfor %}
     <tr class="***">

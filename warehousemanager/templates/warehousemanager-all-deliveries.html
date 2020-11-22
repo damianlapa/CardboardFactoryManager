@@ -19,12 +19,14 @@
         <tr>
             <th>Data</th>
             <th>Dostawca</th>
+            <th>Ilość pozycji</th>
 
         </tr>
         {% for d in all_deliveries %}
         <tr data-delivery="{{ d.id }}" class="delivery-row">
             <td>{{ d.date_of_delivery }}</td>
             <td>{{ d.provider }}</td>
+            <td>{{ d.orderitemquantity_set.all|length }}</td>
 
         </tr>
         {% endfor %}

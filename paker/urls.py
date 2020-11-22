@@ -63,4 +63,6 @@ urlpatterns = [
     path('cardboard-availability/<int:cardboard_id>', CardboardUsed.as_view(), name='cardboard-used'),
     path('stock-management/', StockManagement.as_view(), name='stock-management'),
     path('announcement/', Announcement.as_view(), name='announcement'),
+    path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
+
 ]

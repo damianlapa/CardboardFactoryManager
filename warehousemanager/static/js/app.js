@@ -777,4 +777,25 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
     }
+
+    const stateCells = document.getElementsByClassName('state-cell')
+
+    if (stateCells.length > 0) {
+        for (let i=0; i < stateCells.length; i++) {
+            stateCells[i].addEventListener('click', function () {
+                $.ajax({
+                    url: '/oic/',
+                    data: {'order_item_id': stateCells[i].parentElement.dataset.orderitemid},
+                    type: 'GET',
+                    dataType: 'json'
+                }).done(function (data) {
+                    if (data === true) {
+                        stateCells[i].innerText = 'x'
+                    }else {
+                        stateCells[i].innerText = 'o'
+                    }
+                    })
+            })
+        }
+    }
 })

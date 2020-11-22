@@ -423,7 +423,7 @@ class DeliveryAdd(PermissionRequiredMixin, View):
 
             new_delivery.save()
 
-            return redirect('deliveries-management')
+            return redirect('/delivery/{}'.format(new_delivery.id))
 
         else:
             return HttpResponse('fail')
@@ -966,3 +966,18 @@ class StockManagement(PermissionRequiredMixin, View):
 class Announcement(View):
     def get(self, request):
         return render(request, 'warehousemanager-announcement.html')
+
+
+class ChangeOrderState(View):
+    def get(self, request):
+        order_item_id = request.GET.get('order_item_id')
+        order_item = OrderItem.objects.get(id=int(order_item_id))
+        print(order_item)
+        if order_item.is_completed:
+            order_item.is_completed = False
+        else:
+            order_item.is_completed = True
+
+        order_item.save()
+
+        return HttpResponse(json.dumps(order_item.is_completed))
