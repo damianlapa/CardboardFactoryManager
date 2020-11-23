@@ -42,6 +42,7 @@
             <th>Rodzaj tektury</th>
             <th>Wymiar pudełka</th>
             <th>Bigi</th>
+            <th>Nazwa</th>
             <th>Całość</th>
 
         </tr>
@@ -65,6 +66,7 @@
             <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
             <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
             <td class="scores">{{ o.scores }}</td>
+            <td class="name">{{ o.name }}</td>
             <td class="state-cell">{% if o.is_completed %}<i class="demo-icon icon-toggle-on" style="color: green"></i>{% else %}<i class="demo-icon icon-toggle-off" style="color: red;"></i>{% endif %}</td>
         </tr>
         {% endfor %}

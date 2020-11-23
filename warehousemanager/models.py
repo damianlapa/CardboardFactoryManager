@@ -114,6 +114,7 @@ class OrderItem(models.Model):
     buyer = models.ManyToManyField(Buyer, blank=True)
     cardboard_type = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     cardboard_weight = models.IntegerField()
+    name = models.CharField(max_length=16, blank=True)
     is_completed = models.BooleanField(default=False)
 
     class Meta:

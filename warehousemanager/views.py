@@ -240,6 +240,7 @@ class GetItemDetails(PermissionRequiredMixin, View):
             'buyer': buyer,
             'weight': item.cardboard_weight,
             'cardboard_type': item.cardboard_type,
+            'name': item.name,
             'scores': item.scores
         }
 

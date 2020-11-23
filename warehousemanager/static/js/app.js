@@ -173,10 +173,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // filling a form from last orders list
-
     const lastOrderedItems = document.querySelector('.last-ordered-items')
 
-    const listElements = lastOrderedItems.getElementsByTagName('ol')
+
     const newOrderWidth = document.querySelector('#id_format_width')
     const newOrderHeight = document.querySelector('#id_format_height')
     const newOrderDimOne = document.querySelector('#id_dimension_one')
@@ -186,6 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const newOrderWeight = document.querySelector('#id_cardboard_weight')
     const newOrderType = document.querySelector('#id_cardboard_type')
     const newOrderBuyer = document.querySelector('#id_buyer')
+    const newOrderName = document.querySelector('#id_name')
     const newOrderScores = document.querySelector('#id_scores')
 
     function autoFillNewOrder (listElements) {
@@ -222,10 +222,16 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         }
                     }
+                    newOrderName.value = data.name
                     newOrderScores.value = data.scores
                     })
             })
         }
+    }
+
+    if (lastOrderedItems !== null) {
+        const listElements = lastOrderedItems.getElementsByTagName('ol')
+        autoFillNewOrder(listElements)
     }
 
     const buyerSelector = document.querySelector('#id_buyer')
@@ -760,7 +766,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // usuwanie wykrojnika
 
     const deletePunchBtn = document.getElementById('delete-punch')
-    console.log(deletePunchBtn)
 
     if (deletePunchBtn !== null) {
         deletePunchBtn.addEventListener('click', function () {
