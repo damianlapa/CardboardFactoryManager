@@ -176,18 +176,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const lastOrderedItems = document.querySelector('.last-ordered-items')
 
-    if (lastOrderedItems !== null) {
-        const listElements = lastOrderedItems.getElementsByTagName('ol')
-        const newOrderWidth = document.querySelector('#id_format_width')
-        const newOrderHeight = document.querySelector('#id_format_height')
-        const newOrderDimOne = document.querySelector('#id_dimension_one')
-        const newOrderDimTwo = document.querySelector('#id_dimension_two')
-        const newOrderDimThree = document.querySelector('#id_dimension_three')
-        const newOrderSort = document.querySelector('#id_sort')
-        const newOrderWeight = document.querySelector('#id_cardboard_weight')
-        const newOrderType = document.querySelector('#id_cardboard_type')
-        const newOrderBuyer = document.querySelector('#id_buyer')
-        const newOrderScores = document.querySelector('#id_scores')
+    const listElements = lastOrderedItems.getElementsByTagName('ol')
+    const newOrderWidth = document.querySelector('#id_format_width')
+    const newOrderHeight = document.querySelector('#id_format_height')
+    const newOrderDimOne = document.querySelector('#id_dimension_one')
+    const newOrderDimTwo = document.querySelector('#id_dimension_two')
+    const newOrderDimThree = document.querySelector('#id_dimension_three')
+    const newOrderSort = document.querySelector('#id_sort')
+    const newOrderWeight = document.querySelector('#id_cardboard_weight')
+    const newOrderType = document.querySelector('#id_cardboard_type')
+    const newOrderBuyer = document.querySelector('#id_buyer')
+    const newOrderScores = document.querySelector('#id_scores')
+
+    function autoFillNewOrder (listElements) {
         for (let i=0; i < listElements.length; i++) {
             listElements[i].addEventListener('click', function() {
                 $.ajax({
@@ -233,6 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
         buyerSelector.addEventListener('click', function () {
             let selectedOption = ''
             const allFormats = document.querySelector('.right-column-1').querySelectorAll('p')
+            autoFillNewOrder(allFormats)
             for (let i=0; i < buyerSelector.options.length; i++){
                 if (buyerSelector.options[i].selected === true){
                     selectedOption = buyerSelector.options[i].innerText
@@ -790,8 +792,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     dataType: 'json'
                 }).done(function (data) {
                     if (data === true) {
+                        stateCells[i].innerHTML = '<i class="demo-icon icon-toggle-on">'
                         stateCells[i].children[0].style.color = 'green'
                     }else {
+                        stateCells[i].innerHTML = '<i class="demo-icon icon-toggle-off">'
                         stateCells[i].children[0].style.color = 'red'
                     }
                     })

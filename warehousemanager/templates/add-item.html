@@ -89,7 +89,7 @@ Add Items to an Order
                 Formaty klienta:
                 {% for item in all_items %}
                 {% for b in item.buyer.all %}
-                <p class="{{ b.name }}" style="display: none">{{ item.dimension_one }}</p>
+                <p class="{{ b.name }}" id="{{ item.id }}" style="display: none">{{ item.dimension_one }}x{{ item.dimension_two }}{% if item.dimension_three %}{{ item.dimension_three }}{% endif %}</p>
                 {% endfor %}
                 {% endfor %}
             </div>
