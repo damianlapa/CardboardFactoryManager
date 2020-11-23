@@ -1,0 +1,24 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+<div class="workstations-container">
+    <div class="workstation">
+        SLOTER
+    </div>
+    <div class="workstation">
+        ROTACJA
+    </div>
+    <div class="workstation">
+        SKLEJARKA
+    </div>
+    <div class="workstation">
+        TYGIEL
+    </div>
+</div>
+<div class="production-div">
+    {% for i in items_to_do %}
+    <div class="production-item">{{ i }}</div>
+
+    {% endfor %}
+</div>
+{% endblock %}

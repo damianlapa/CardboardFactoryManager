@@ -30,7 +30,7 @@ div.header > p {
 }
 
 .content-div {
-    width: 1000px;
+    width: 1300px;
     min-height: 1000px;
     margin-left: auto;
     margin-right: auto;
@@ -697,4 +697,43 @@ input[type=button], input[type=submit], input[type=reset] {
 .state-cell:hover {
     background: white;
     cursor: pointer;
+}
+
+.table-zamowienie-container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.production-div {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1300px;
+    display: flex;
+}
+
+.production-item {
+    font-size: 12px;
+    width: 62px;
+    height: 62x;
+    background: white;
+    border: 2px solid darkgreen;
+    padding: 5px;
+    margin: 5px;
+    overflow: hidden;
+}
+
+.workstations-container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1300px;
+    display: flex;
+}
+
+.workstation {
+    width: 200px;
+    height: 200px;
+    background: grey;
+    border: solid 5px white;
+    padding: 10px;
+    margin: 10px;
 }

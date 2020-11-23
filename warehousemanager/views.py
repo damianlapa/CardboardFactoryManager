@@ -981,3 +981,9 @@ class ChangeOrderState(View):
         order_item.save()
 
         return HttpResponse(json.dumps(order_item.is_completed))
+
+
+class ProductionView(View):
+    def get(self, request):
+        items_to_do = OrderItem.objects.filter(is_completed=True)
+        return render(request, 'warehousemanager-production-status.html', locals())
