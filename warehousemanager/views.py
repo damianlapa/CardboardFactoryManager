@@ -7,6 +7,7 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
+from django.core.paginator import Paginator
 import io
 import os
 import shutil
@@ -49,6 +50,9 @@ class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def get(self, request):
         orders = Order.objects.filter(is_completed=True)
+        provider = request.GET.get('provider')
+        if provider:
+            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
         return render(request, 'warehousemanager-all-orders-details.html', locals())
@@ -309,6 +313,13 @@ class NewAllOrders(PermissionRequiredMixin, View):
 
     def get(self, request):
         orders = Order.objects.all()
+        provider = request.GET.get('provider')
+        if provider:
+            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
+        paginator = Paginator(orders, 3)
+        page_number = request.GET.get('page')
+        print(page_number)
+        page_obj = paginator.get_page(page_number)
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
         return render(request, 'new-all-orders.html', locals())

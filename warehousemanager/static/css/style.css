@@ -741,3 +741,29 @@ input[type=button], input[type=submit], input[type=reset] {
     display: flex;
     flex-wrap: wrap;
 }
+
+/* BUTTONS */
+
+.add-button-1 {
+	background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
+	background-color:#768d87;
+	border-radius:42px;
+	border:3px solid #566963;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+	padding:11px 23px;
+	text-decoration:none;
+	margin: 30px;
+}
+.add-button-1:hover {
+	background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
+	background-color:#6c7c7c;
+}
+.add-button-1:active {
+	position:relative;
+	top:1px;
+}
