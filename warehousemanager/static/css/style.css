@@ -709,10 +709,11 @@ input[type=button], input[type=submit], input[type=reset] {
     margin-right: auto;
     width: 1300px;
     display: flex;
+    flex-wrap: wrap;
 }
 
 .production-item {
-    font-size: 12px;
+    font-size: 10px;
     width: 62px;
     height: 62x;
     background: white;
@@ -727,6 +728,7 @@ input[type=button], input[type=submit], input[type=reset] {
     margin-right: auto;
     width: 1300px;
     display: flex;
+    flex-wrap: wrap;
 }
 
 .workstation {
@@ -736,4 +738,6 @@ input[type=button], input[type=submit], input[type=reset] {
     border: solid 5px white;
     padding: 10px;
     margin: 10px;
+    display: flex;
+    flex-wrap: wrap;
 }

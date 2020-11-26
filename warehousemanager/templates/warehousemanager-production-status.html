@@ -2,22 +2,18 @@
 
 {% block content %}
 <div class="workstations-container">
-    <div class="workstation">
-        SLOTER
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
     </div>
-    <div class="workstation">
-        ROTACJA
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
     </div>
-    <div class="workstation">
-        SKLEJARKA
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
     </div>
-    <div class="workstation">
-        TYGIEL
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
     </div>
 </div>
 <div class="production-div">
     {% for i in items_to_do %}
-    <div class="production-item">{{ i }}</div>
+    <div class="production-item" draggable="true" ondragstart="drag(event)" id="{{ i.id }}">{{ i }}</div>
 
     {% endfor %}
 </div>
