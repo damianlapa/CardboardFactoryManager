@@ -790,6 +790,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (stateCells.length > 0) {
         for (let i=0; i < stateCells.length; i++) {
             stateCells[i].addEventListener('click', function () {
+                event.preventDefault();
                 $.ajax({
                     url: '/oic/',
                     data: {'order_item_id': stateCells[i].parentElement.dataset.orderitemid},
@@ -805,6 +806,27 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     })
             })
+        }
+    }
+
+    const orderItems = document.getElementsByClassName('zamowienie-row')
+
+    for (let i=0; i < orderItems.length; i++) {
+
+        for (let j=0; j < orderItems[i].children.length; j++) {
+            if (!(orderItems[i].children[j].classList.contains('state-cell'))) {
+                    orderItems[i].children[j].addEventListener('click', function () {
+                    $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'order-item-details/' + orderItems[i].dataset.orderitemid + '/'
+                        window.location.replace(link)
+                        })
+                    })
+                }
         }
     }
 

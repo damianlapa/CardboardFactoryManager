@@ -65,5 +65,6 @@ urlpatterns = [
     path('announcement/', Announcement.as_view(), name='announcement'),
     path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
     path('production-status/', ProductionView.as_view(), name='production-status'),
+    path('order-item-details/<int:order_item_id>/', OrderItemDetails.as_view(), name='order-item-details'),
 
 ]

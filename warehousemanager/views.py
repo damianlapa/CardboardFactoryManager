@@ -998,3 +998,10 @@ class ProductionView(View):
     def get(self, request):
         items_to_do = OrderItem.objects.filter(is_completed=True)
         return render(request, 'warehousemanager-production-status.html', locals())
+
+
+class OrderItemDetails(View):
+    def get(self, request, order_item_id):
+        order_item = OrderItem.objects.get(id=order_item_id)
+        return render(request, 'warehousemanager-order-item-details.html', locals())
+
