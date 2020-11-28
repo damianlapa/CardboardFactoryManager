@@ -151,6 +151,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // all orders filters
+    const ordersFilterBtn = document.getElementById('order-filters')
+
+    if (ordersFilterBtn !== null) {
+        const orderFiltersContainer = document.getElementById('order-filters-container')
+        ordersFilterBtn.addEventListener('click', function () {
+            state = orderFiltersContainer.style.display
+            if (state === 'none' || state === ''){
+                orderFiltersContainer.style.display = 'block'}
+            else{
+                 orderFiltersContainer.style.display = 'none'
+            }
+        })
+    }
+
     const filterByProvider = document.querySelector('#filter-by-provider')
 
     if (filterByProvider !== null) {

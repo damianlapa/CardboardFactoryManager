@@ -8,18 +8,20 @@
 
 {% block content %}
 <div class="order-filters">
-    <h2>Filtry</h2>
-    <h3>Dostawca</h3>
-        <select id="filter-by-provider">
-        {% for provider in providers %}
-            <option value="{{ provider.name }}">{{ provider.name }}</option>
-        {% endfor %}
-        </select>
-    <h3>Data Zamówienia</h3>
-    <h4 style="display: inline;">Od:</h4>
-    <input type="date" style="display: inline;" id="from">
-    <h4 style="display: inline;">Do:</h4>
-    <input type="date" style="display: inline;" id="to">
+    <h2 id="order-filters">Filtry</h2>
+    <div id="order-filters-container" style="display: none">
+        <h3 >Dostawca</h3>
+            <select id="filter-by-provider">
+            {% for provider in providers %}
+                <option value="{{ provider.name }}">{{ provider.name }}</option>
+            {% endfor %}
+            </select>
+        <h3>Data Zamówienia</h3>
+        <h4 style="display: inline;">Od:</h4>
+        <input type="date" style="display: inline;" id="from">
+        <h4 style="display: inline;">Do:</h4>
+        <input type="date" style="display: inline;" id="to">
+    </div>
 </div>
 
 <div>

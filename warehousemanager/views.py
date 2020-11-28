@@ -316,7 +316,7 @@ class NewAllOrders(PermissionRequiredMixin, View):
         provider = request.GET.get('provider')
         if provider:
             orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
-        paginator = Paginator(orders, 3)
+        paginator = Paginator(orders, 10)
         page_number = request.GET.get('page')
         print(page_number)
         page_obj = paginator.get_page(page_number)
@@ -1003,6 +1003,7 @@ class ProductionView(View):
 class OrderItemDetails(View):
     def get(self, request, order_item_id):
         order_item = OrderItem.objects.get(id=order_item_id)
+        productions = ProductionProcess.objects.filter(order_item=order_item)
         quantity_delivered = 0
         for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
             quantity_delivered += oiq.quantity

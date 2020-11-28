@@ -48,6 +48,19 @@ PUNCH_TYPES = (
     ('INNE', 'Inne')
 )
 
+PRODUCTION_TYPES = (
+    ('KLSD', 'KLEJENIE-SKLEJARKA-DUŻA'),
+    ('KLSM', 'KLEJENIE-SKLEJARKA-MAŁA'),
+    ('KLR', 'KLEJENIE-RĘCZNE'),
+    ('DR', 'DRUKOWANIE'),
+    ('WY', 'WYCINANIE'),
+    ('WY+DR', 'WYCINANIE Z NADRUKIEM'),
+    ('SZ', 'SZTANCOWANIE'),
+    ('OB', 'OBRYWANIE'),
+    ('PK', 'PAKOWANIE'),
+    ('INNE', 'INNE')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -228,3 +241,22 @@ class PunchProduction(models.Model):
 
     class Meta:
         ordering = ['date_end']
+
+
+class ProductionProcess(models.Model):
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
+    production = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
+    stock = models.ManyToManyField(OrderItemQuantity)
+    type = models.CharField(max_length=8, choices=PRODUCTION_TYPES)
+    worker = models.ManyToManyField(Person, blank=True)
+    machine = models.ForeignKey(Machine, blank=True, null=True, on_delete=models.PROTECT)
+    quantity_start = models.IntegerField()
+    quantity_end = models.IntegerField()
+    date_start = models.DateField()
+    date_end = models.DateField()
+    punch = models.ForeignKey(Punch, blank=True, null=True, on_delete=models.PROTECT)
+
+    def __str__(self):
+        order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
+
+        return order_name

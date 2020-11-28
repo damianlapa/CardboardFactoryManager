@@ -29,6 +29,11 @@
         <br />
         DOSTARCZONO: {{ quantity_delivered }}
     </p>
+    <hr>
+    <hr>
+    {% for p in productions %}
+    {{ p }}<br />
+    {% endfor %}
 </div>
 
 {% endblock %}
