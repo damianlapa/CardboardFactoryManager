@@ -1003,5 +1003,8 @@ class ProductionView(View):
 class OrderItemDetails(View):
     def get(self, request, order_item_id):
         order_item = OrderItem.objects.get(id=order_item_id)
+        quantity_delivered = 0
+        for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
+            quantity_delivered += oiq.quantity
         return render(request, 'warehousemanager-order-item-details.html', locals())
 

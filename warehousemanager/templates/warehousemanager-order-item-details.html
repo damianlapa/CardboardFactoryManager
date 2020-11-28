@@ -2,8 +2,33 @@
 
 {% block content %}
 
-<div>
-    {{ order_item }}
+<div style="color: white;">
+    <p>
+        ORDER: {{ order_item.order }}
+    </p>
+    <p>
+        ORDER ITEM NO: {{ order_item.item_number }}
+    </p>
+    <p>
+        SORT: {{ order_item.sort }}
+    </p>
+    <p>
+        DIMENSIONS: {{ order_item.dimension_one }}x{{ order_item.dimension_two }}
+        {% if order_item.dimension_three %}x{{ order_item.dimension_three }}{% endif %}
+    </p>
+    <p>
+        BUYER: {% for b in order_item.buyer.all %}{{ b }}{% endfor %}
+    </p>
+    <p>
+        CARDBOARD: {{ order_item.cardboard_type }}{{ order_item.cardboard_weight }}
+    </p>
+    <p>
+        {% if order_item.is_completed %}<span style="color: green">ZAMÓWIENIE KOMPLETNE</span>
+        {% else %}<span style="color: red">ZAMÓWIENIE NIEKOMPLETNE</span>
+        {% endif %}
+        <br />
+        DOSTARCZONO: {{ quantity_delivered }}
+    </p>
 </div>
 
 {% endblock %}
