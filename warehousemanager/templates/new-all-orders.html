@@ -30,7 +30,9 @@
     <span class="step-links">
         {% if page_obj.has_previous %}
             <a href="?page=1">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if provider %}&provider={{ provider }}{% endif %}">
+                previous
+            </a>
         {% endif %}
 
         <span class="current">
@@ -38,8 +40,8 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            <a href="?page={{ page_obj.next_page_number }}{% if provider %}&provider={{ provider }}{% endif %}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if provider %}&provider={{ provider }}{% endif %}">last &raquo;</a>
         {% endif %}
     </span>
 </div>
