@@ -21,9 +21,30 @@ import subprocess
 from warehousemanager.models import *
 from warehousemanager.forms import *
 
+# exporting content to pdf
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
 def index(request):
     return HttpResponse('first view')
+
+def render_pdf_view(request):
+    template_path = 'user_printer.html'
+    context = {'myvar': 'this is your template context'}
+    # Create a Django response object, and specify content_type as pdf
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+    # find the template and render it.
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response)
+    # if error then show some funy view
+    if pisa_status.err:
+        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
 
 
 # view displays all orders
@@ -1009,3 +1030,50 @@ class OrderItemDetails(View):
             quantity_delivered += oiq.quantity
         return render(request, 'warehousemanager-order-item-details.html', locals())
 
+
+# printing tests
+class OrderItemPrint(View):
+    def get(self, request, order_item_id):
+        order_item = OrderItem.objects.get(id=order_item_id)
+        productions = ProductionProcess.objects.filter(order_item=order_item)
+        quantity_delivered = 0
+        user = request.user
+        orders = OrderItem.objects.all()
+        for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
+            quantity_delivered += oiq.quantity
+
+        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
+
+        delta_date = order_item.order.date_of_order + datetime.timedelta(days=14)
+
+        date_end = delta_date.strftime('%d.%m.%Y')
+
+        now = datetime.date.today().strftime('%d.%m.%Y')
+
+        buyer_list = order_item.buyer.all()
+
+        buyer = ''
+
+        for b in buyer_list:
+            if buyer != '':
+                buyer += ', '
+            buyer += str(b)
+
+        # return render(request, 'warehousemanager-printtest.html', locals())
+
+        template_path = 'warehousemanager-printtest.html'
+        context = locals()
+        # Create a Django response object, and specify content_type as pdf
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'filename="report.pdf"'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+            html, dest=response)
+        # if error then show some funy view
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response

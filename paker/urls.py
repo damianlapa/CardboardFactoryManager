@@ -66,5 +66,6 @@ urlpatterns = [
     path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
     path('production-status/', ProductionView.as_view(), name='production-status'),
     path('order-item-details/<int:order_item_id>/', OrderItemDetails.as_view(), name='order-item-details'),
+    path('order-item-print/<int:order_item_id>/', OrderItemPrint.as_view(), name='order-item-print'),
 
 ]
