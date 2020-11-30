@@ -8,6 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 import io
 import os
 import shutil
@@ -1036,9 +1037,11 @@ class OrderItemPrint(View):
     def get(self, request, order_item_id):
         order_item = OrderItem.objects.get(id=order_item_id)
         productions = ProductionProcess.objects.filter(order_item=order_item)
+
+        productions_cutting = productions.filter(Q(type='WY') | Q(type='WY+DR') | Q(type='DR') | Q(type='SZ'))
+
         quantity_delivered = 0
-        user = request.user
-        orders = OrderItem.objects.all()
+
         for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
             quantity_delivered += oiq.quantity
 
@@ -1058,6 +1061,19 @@ class OrderItemPrint(View):
             if buyer != '':
                 buyer += ', '
             buyer += str(b)
+
+        machine = ''
+
+        if order_item.sort in ('201', '202', '203'):
+            machine = 'SLO'
+        elif order_item.sort == 'SZTANCA':
+            machine = 'TYG'
+        elif order_item.sort == 'PRZEKLADKA':
+            machine = 'MAG'
+            if order_item.dimension_one != order_item.format_width:
+                machine = 'KRA'
+            elif order_item.dimension_two != order_item.format_height:
+                machine = 'KRA'
 
         # return render(request, 'warehousemanager-printtest.html', locals())
 

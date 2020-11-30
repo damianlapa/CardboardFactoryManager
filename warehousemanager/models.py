@@ -76,6 +76,9 @@ class Person(models.Model):
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
+    def get_initials(self):
+        return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
+
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
