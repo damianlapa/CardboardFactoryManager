@@ -78,7 +78,9 @@
     </tr>
     <tr>
         <td style="font-weight: bold; font-size: 10px; border: 1px solid black;">NR WYKROJNIKA</td>
-        <td colspan="2" style="background-color: orange; border: 1px solid black;"></td>
+        <td colspan="2" style="background-color: orange; border: 1px solid black;">
+            {% if punch_id != '.' %}<span style="font-weight: bold; font-size: 14px;">{{ punch_id }}</span>{% else %}{% endif %}
+        </td>
         <td colspan="2" style="font-weight: bold; font-size: 12px; color: red; border: 1px solid black;">DATA DOSTAWY:</td>
         <td colspan="2" style="border: 1px solid black;"></td>
     </tr>
@@ -99,7 +101,8 @@
     </tr>
     <tr>
         <td rowspan="2"><span style="color: white">.</span></td>
-        <td>{{ quantity_delivered }} </td>
+        <td>{% if quantity_delivered == 0 %}<span style="color: white">.</span>{% else %}
+            <span style="color: black; font-weight: bold; font-size: 14px">{{ quantity_delivered }}</span>{% endif %}</td>
         <td> </td>
         <td> </td>
         <td> </td>

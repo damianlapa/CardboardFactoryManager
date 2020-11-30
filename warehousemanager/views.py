@@ -1075,6 +1075,14 @@ class OrderItemPrint(View):
             elif order_item.dimension_two != order_item.format_height:
                 machine = 'KRA'
 
+        punch_id = '.'
+
+        punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(dimension_two=order_item.dimension_two)
+
+        if punches[0]:
+            if order_item.sort == 'SZTANCA':
+                punch_id = punches[0].punch_name()
+
         # return render(request, 'warehousemanager-printtest.html', locals())
 
         template_path = 'warehousemanager-printtest.html'
