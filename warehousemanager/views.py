@@ -1081,8 +1081,9 @@ class OrderItemPrint(View):
             punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
                 dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
             if punches.count() > 0:
+                punch_id = ''
                 for p in punches:
-                    if punch_id != '.':
+                    if punch_id != '':
                         punch_id += ', '
                     punch_id += p.punch_name()
 
