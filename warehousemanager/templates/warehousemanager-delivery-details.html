@@ -25,6 +25,14 @@
 
     </table>
 
+    <div class="add-form-container">
+        <form method="post">
+            {% csrf_token %}
+            {{ order_item_q_form.as_p }}
+            <input type="submit" value="Add">
+        </form>
+    </div>
+
 </div>
 
 {% endblock %}

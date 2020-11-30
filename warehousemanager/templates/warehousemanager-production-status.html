@@ -1,0 +1,20 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+<div class="workstations-container">
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
+    </div>
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
+    </div>
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
+    </div>
+    <div class="workstation" ondragover="allowDrop(event)" ondrop="drop(event)">
+    </div>
+</div>
+<div class="production-div">
+    {% for i in items_to_do %}
+    <div class="production-item" draggable="true" ondragstart="drag(event)" id="{{ i.id }}">{{ i }}</div>
+
+    {% endfor %}
+</div>
+{% endblock %}

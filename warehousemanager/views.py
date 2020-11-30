@@ -7,6 +7,8 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
+from django.core.paginator import Paginator
+from django.db.models import Q
 import io
 import os
 import shutil
@@ -20,9 +22,30 @@ import subprocess
 from warehousemanager.models import *
 from warehousemanager.forms import *
 
+# exporting content to pdf
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
 def index(request):
     return HttpResponse('first view')
+
+def render_pdf_view(request):
+    template_path = 'user_printer.html'
+    context = {'myvar': 'this is your template context'}
+    # Create a Django response object, and specify content_type as pdf
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+    # find the template and render it.
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response)
+    # if error then show some funy view
+    if pisa_status.err:
+        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
 
 
 # view displays all orders
@@ -49,6 +72,9 @@ class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def get(self, request):
         orders = Order.objects.filter(is_completed=True)
+        provider = request.GET.get('provider')
+        if provider:
+            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
         return render(request, 'warehousemanager-all-orders-details.html', locals())
@@ -240,6 +266,7 @@ class GetItemDetails(PermissionRequiredMixin, View):
             'buyer': buyer,
             'weight': item.cardboard_weight,
             'cardboard_type': item.cardboard_type,
+            'name': item.name,
             'scores': item.scores
         }
 
@@ -308,6 +335,13 @@ class NewAllOrders(PermissionRequiredMixin, View):
 
     def get(self, request):
         orders = Order.objects.all()
+        provider = request.GET.get('provider')
+        if provider:
+            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
+        paginator = Paginator(orders, 10)
+        page_number = request.GET.get('page')
+        print(page_number)
+        page_obj = paginator.get_page(page_number)
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
         return render(request, 'new-all-orders.html', locals())
@@ -381,7 +415,51 @@ class DeliveryDetails(LoginRequiredMixin, View):
         delivery = Delivery.objects.get(id=delivery_id)
         quantities = OrderItemQuantity.objects.filter(delivery=delivery)
 
+        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery}, provider=delivery.provider)
+
         return render(request, 'warehousemanager-delivery-details.html', locals())
+
+    def post(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        order_item_q_form = OrderItemQuantityForm(delivery.provider, request.POST)
+
+        if order_item_q_form.is_valid():
+            delivery = request.POST.get('delivery')
+            order_item = request.POST.get('order_item')
+            quantity = request.POST.get('quantity')
+
+            new_oiq = OrderItemQuantity.objects.create(delivery=Delivery.objects.get(id=int(delivery)),
+                                                       order_item=OrderItem.objects.get(id=int(order_item)),
+                                                       quantity=int(quantity))
+
+            new_oiq.save()
+
+            return redirect('/delivery/{}'.format(delivery_id))
+
+
+# dodawanie dostawy
+class DeliveryAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_delivery'
+
+    def get(self, request):
+        delivery_form = DeliveryForm()
+
+        return render(request, 'warehousemanager-delivery-add.html', locals())
+
+    def post(self, request):
+        delivery_form = DeliveryForm(request.POST)
+        if delivery_form.is_valid():
+            provider = delivery_form.cleaned_data['provider']
+            date_of_delivery = delivery_form.cleaned_data['date_of_delivery']
+
+            new_delivery = Delivery.objects.create(provider=provider, date_of_delivery=date_of_delivery)
+
+            new_delivery.save()
+
+            return redirect('/delivery/{}'.format(new_delivery.id))
+
+        else:
+            return HttpResponse('fail')
 
 
 # dodawanie notatek
@@ -921,3 +999,108 @@ class StockManagement(PermissionRequiredMixin, View):
 class Announcement(View):
     def get(self, request):
         return render(request, 'warehousemanager-announcement.html')
+
+
+class ChangeOrderState(View):
+    def get(self, request):
+        order_item_id = request.GET.get('order_item_id')
+        order_item = OrderItem.objects.get(id=int(order_item_id))
+        print(order_item)
+        if order_item.is_completed:
+            order_item.is_completed = False
+        else:
+            order_item.is_completed = True
+
+        order_item.save()
+
+        return HttpResponse(json.dumps(order_item.is_completed))
+
+
+class ProductionView(View):
+    def get(self, request):
+        items_to_do = OrderItem.objects.filter(is_completed=True)
+        return render(request, 'warehousemanager-production-status.html', locals())
+
+
+class OrderItemDetails(View):
+    def get(self, request, order_item_id):
+        order_item = OrderItem.objects.get(id=order_item_id)
+        productions = ProductionProcess.objects.filter(order_item=order_item)
+        quantity_delivered = 0
+        for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
+            quantity_delivered += oiq.quantity
+        return render(request, 'warehousemanager-order-item-details.html', locals())
+
+
+# printing tests
+class OrderItemPrint(View):
+    def get(self, request, order_item_id):
+        order_item = OrderItem.objects.get(id=order_item_id)
+        productions = ProductionProcess.objects.filter(order_item=order_item)
+
+        productions_cutting = productions.filter(Q(type='WY') | Q(type='WY+DR') | Q(type='DR') | Q(type='SZ'))
+
+        quantity_delivered = 0
+
+        for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
+            quantity_delivered += oiq.quantity
+
+        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
+
+        delta_date = order_item.order.date_of_order + datetime.timedelta(days=14)
+
+        date_end = delta_date.strftime('%d.%m.%Y')
+
+        now = datetime.date.today().strftime('%d.%m.%Y')
+
+        buyer_list = order_item.buyer.all()
+
+        buyer = ''
+
+        for b in buyer_list:
+            if buyer != '':
+                buyer += ', '
+            buyer += str(b)
+
+        machine = ''
+
+        if order_item.sort in ('201', '202', '203'):
+            machine = 'SLO'
+        elif order_item.sort == 'SZTANCA':
+            machine = 'TYG'
+        elif order_item.sort == 'PRZEKLADKA':
+            machine = 'MAG'
+            if order_item.dimension_one != order_item.format_width:
+                machine = 'KRA'
+            elif order_item.dimension_two != order_item.format_height:
+                machine = 'KRA'
+
+        punch_id = '.'
+
+        if order_item.sort == 'SZTANCA':
+            punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
+                dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
+            if punches.count() > 0:
+                for p in punches:
+                    if punch_id != '.':
+                        punch_id += ', '
+                    punch_id += p.punch_name()
+
+        # return render(request, 'warehousemanager-printtest.html', locals())
+
+        template_path = 'warehousemanager-printtest.html'
+        context = locals()
+        # Create a Django response object, and specify content_type as pdf
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'filename="report.pdf"'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+            html, dest=response)
+        # if error then show some funy view
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response

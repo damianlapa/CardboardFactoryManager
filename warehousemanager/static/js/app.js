@@ -151,6 +151,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // all orders filters
+    const ordersFilterBtn = document.getElementById('order-filters')
+
+    if (ordersFilterBtn !== null) {
+        const orderFiltersContainer = document.getElementById('order-filters-container')
+        ordersFilterBtn.addEventListener('click', function () {
+            state = orderFiltersContainer.style.display
+            if (state === 'none' || state === ''){
+                orderFiltersContainer.style.display = 'block'}
+            else{
+                 orderFiltersContainer.style.display = 'none'
+            }
+        })
+    }
+
     const filterByProvider = document.querySelector('#filter-by-provider')
 
     if (filterByProvider !== null) {
@@ -173,21 +187,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // filling a form from last orders list
-
     const lastOrderedItems = document.querySelector('.last-ordered-items')
 
-    if (lastOrderedItems !== null) {
-        const listElements = lastOrderedItems.getElementsByTagName('ol')
-        const newOrderWidth = document.querySelector('#id_format_width')
-        const newOrderHeight = document.querySelector('#id_format_height')
-        const newOrderDimOne = document.querySelector('#id_dimension_one')
-        const newOrderDimTwo = document.querySelector('#id_dimension_two')
-        const newOrderDimThree = document.querySelector('#id_dimension_three')
-        const newOrderSort = document.querySelector('#id_sort')
-        const newOrderWeight = document.querySelector('#id_cardboard_weight')
-        const newOrderType = document.querySelector('#id_cardboard_type')
-        const newOrderBuyer = document.querySelector('#id_buyer')
-        const newOrderScores = document.querySelector('#id_scores')
+
+    const newOrderWidth = document.querySelector('#id_format_width')
+    const newOrderHeight = document.querySelector('#id_format_height')
+    const newOrderDimOne = document.querySelector('#id_dimension_one')
+    const newOrderDimTwo = document.querySelector('#id_dimension_two')
+    const newOrderDimThree = document.querySelector('#id_dimension_three')
+    const newOrderSort = document.querySelector('#id_sort')
+    const newOrderWeight = document.querySelector('#id_cardboard_weight')
+    const newOrderType = document.querySelector('#id_cardboard_type')
+    const newOrderBuyer = document.querySelector('#id_buyer')
+    const newOrderName = document.querySelector('#id_name')
+    const newOrderScores = document.querySelector('#id_scores')
+
+    function autoFillNewOrder (listElements) {
         for (let i=0; i < listElements.length; i++) {
             listElements[i].addEventListener('click', function() {
                 $.ajax({
@@ -221,10 +236,16 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         }
                     }
+                    newOrderName.value = data.name
                     newOrderScores.value = data.scores
                     })
             })
         }
+    }
+
+    if (lastOrderedItems !== null) {
+        const listElements = lastOrderedItems.getElementsByTagName('ol')
+        autoFillNewOrder(listElements)
     }
 
     const buyerSelector = document.querySelector('#id_buyer')
@@ -233,6 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
         buyerSelector.addEventListener('click', function () {
             let selectedOption = ''
             const allFormats = document.querySelector('.right-column-1').querySelectorAll('p')
+            autoFillNewOrder(allFormats)
             for (let i=0; i < buyerSelector.options.length; i++){
                 if (buyerSelector.options[i].selected === true){
                     selectedOption = buyerSelector.options[i].innerText
@@ -485,7 +507,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         }
                     }
-                }else if (allRows[f].style.display === 'table-row' || allRows[f].style.display === '') {
+                }else if (allRows[f].style.display === 'table-row' || allRows[f].style.display === '' || allRows[f].style.display === 'none') {
                     if (allRows[f].children[5].innerText.toLowerCase().includes(nameFilter.value.toLowerCase())) {
                         allRows[f].style.display = 'table-row'
                     }else {
@@ -758,7 +780,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // usuwanie wykrojnika
 
     const deletePunchBtn = document.getElementById('delete-punch')
-    console.log(deletePunchBtn)
 
     if (deletePunchBtn !== null) {
         deletePunchBtn.addEventListener('click', function () {
@@ -777,4 +798,86 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
     }
+
+    const stateCells = document.getElementsByClassName('state-cell')
+
+    if (stateCells.length > 0) {
+        for (let i=0; i < stateCells.length; i++) {
+            stateCells[i].addEventListener('click', function () {
+                event.preventDefault();
+                $.ajax({
+                    url: '/oic/',
+                    data: {'order_item_id': stateCells[i].parentElement.dataset.orderitemid},
+                    type: 'GET',
+                    dataType: 'json'
+                }).done(function (data) {
+                    if (data === true) {
+                        stateCells[i].innerHTML = '<i class="demo-icon icon-toggle-on">'
+                        stateCells[i].children[0].style.color = 'green'
+                    }else {
+                        stateCells[i].innerHTML = '<i class="demo-icon icon-toggle-off">'
+                        stateCells[i].children[0].style.color = 'red'
+                    }
+                    })
+            })
+        }
+    }
+
+
+    const printCells = document.getElementsByClassName('print-icon')
+
+    if (printCells.length > 0) {
+        for (let i=0; i < printCells.length; i++) {
+            printCells[i].addEventListener('click', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'order-item-print/' + printCells[i].parentElement.dataset.orderitemid + '/'
+                        window.location.replace(link)
+                        })
+            })
+        }
+    }
+
+    const orderItems = document.getElementsByClassName('zamowienie-row')
+
+    for (let i=0; i < orderItems.length; i++) {
+
+        for (let j=0; j < orderItems[i].children.length; j++) {
+            if (!(orderItems[i].children[j].classList.contains('state-cell') || orderItems[i].children[j].classList.contains('print-icon'))) {
+                    orderItems[i].children[j].addEventListener('click', function () {
+                    $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'order-item-details/' + orderItems[i].dataset.orderitemid + '/'
+                        window.location.replace(link)
+                        })
+                    })
+                }
+        }
+    }
+
+
 })
+
+function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+      console.log('ok')
+    }
+
+function allowDrop(ev) {
+  ev.preventDefault();
+}
+
+function drop(ev) {
+  ev.preventDefault();
+  var data = ev.dataTransfer.getData("text");
+  console.log(data)
+  ev.target.appendChild(document.getElementById(data));
+}

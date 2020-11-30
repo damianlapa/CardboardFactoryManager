@@ -44,6 +44,7 @@ urlpatterns = [
     path('format-converter', FormatConverter.as_view(), name='format-converter'),
     path('deliveries-management', DeliveriesManagement.as_view(), name='deliveries-management'),
     path('delivery/<int:delivery_id>', DeliveryDetails.as_view(), name='delivery-details'),
+    path('delivery-add/', DeliveryAdd.as_view(), name='delivery-add'),
     path('add-note/', NoteAdd.as_view(), name='add-note'),
     path('notes/', AllNotes.as_view(), name='notes'),
     path('absences-list/', AbsencesList.as_view(), name='absence-list'),
@@ -62,4 +63,9 @@ urlpatterns = [
     path('cardboard-availability/<int:cardboard_id>', CardboardUsed.as_view(), name='cardboard-used'),
     path('stock-management/', StockManagement.as_view(), name='stock-management'),
     path('announcement/', Announcement.as_view(), name='announcement'),
+    path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
+    path('production-status/', ProductionView.as_view(), name='production-status'),
+    path('order-item-details/<int:order_item_id>/', OrderItemDetails.as_view(), name='order-item-details'),
+    path('order-item-print/<int:order_item_id>/', OrderItemPrint.as_view(), name='order-item-print'),
+
 ]

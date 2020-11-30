@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>
+        ZLECENIE {{ order_item }}
+    </title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @frame content_frame {
+                left: 50pt;
+                width: 500pt;
+                top: 50pt;
+                height: 692pt;
+            }
+        }
+
+        td {
+            padding: 1px;
+            text-align: center;
+        }
+    </style>
+
+</head>
+<body>
+<table>
+    <tr>
+
+        <td  colspan="2" style="vertical-align: bottom; text-align: center; font-size: 30px; font-weight: bold; text-decoration: underline; text-decoration-color: orange;">
+            {{ order_item.order }}/{{ order_item.item_number }} {{ buyer }}
+        </td>
+        <td>
+            <img src="{{ logo_url }}">
+        </td>
+    </tr>
+</table>
+<hr>
+<table>
+    <tr>
+        <td style="border: 1px red solid; text-align: center; vertical-align: center; font-size: 12px;">CZAS REALIZACJI ZLECENIA DO:</td>
+        <td style="color: white; text-align: center;">
+            <div style="background-color: red; font-size: 22px; margin: 50px; padding-top: 15px;">{{ date_end }}</div>
+        </td>
+        <td style="color: blue; font-size: 40px; text-align: center; vertical-align: bottom; font-weight: bold;">
+            <div style="margin: 50px; padding-top: 25px;">
+                {% if machine %}{{ machine }}{% else %}-{% endif %}
+            </div>
+        </td>
+    </tr>
+</table>
+<hr>
+<div style="color: blue;"><span>DATA WYSTAWIENIA ZLECENIA:</span><span>   {{ now }}</span></div>
+<table style="text-align: center; vertical-align: middle;">
+    <tr>
+        <td colspan="3" style="font-weight: bold;">WYMIAR OPAKOWANIA</td>
+        <td colspan="3" style="font-weight: bold;">TEKTURA</td>
+        <td style="text-align: center; vertical-align: middle; font-weight: bold;">PODPIS ZAM. TEKTURE</td>
+    </tr>
+    <tr>
+        <td rowspan="2" style="text-align: center; vertical-align: middle; font-weight: bold; font-size: 16px; border: 1px solid black;">
+            {{ order_item.dimension_one }}</td>
+        <td rowspan="2" style="text-align: center; vertical-align: middle; font-weight: bold; font-size: 16px; border: 1px solid black;">
+            {{ order_item.dimension_two }}</td>
+        <td rowspan="2" style="text-align: center; vertical-align: middle; font-weight: bold; font-size: 16px; border: 1px solid black;">
+            {% if order_item.dimension_three %}{{ order_item.dimension_three }}{% else %} {% endif %}</td>
+        <td>TEKTURA</td>
+        <td>ILOSC</td>
+        <td>FORMAT</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold;">{{ order_item.cardboard_type }}{{ order_item.cardboard_weight }}</td>
+        <td style="font-weight: bold;">{{ order_item.ordered_quantity }}</td>
+        <td style="font-weight: bold;">{{ order_item.format_width }}x{{ order_item.format_height }}</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; font-size: 10px; border: 1px solid black;">NR WYKROJNIKA</td>
+        <td colspan="2" style="background-color: orange; border: 1px solid black;">
+            {% if punch_id != '.' %}<span style="font-weight: bold; font-size: 14px;">{{ punch_id }}</span>{% else %}{% endif %}
+        </td>
+        <td colspan="2" style="font-weight: bold; font-size: 12px; color: red; border: 1px solid black;">DATA DOSTAWY:</td>
+        <td colspan="2" style="border: 1px solid black;"></td>
+    </tr>
+</table>
+<hr>
+<table style="border: solid 1px blue;">
+    <tr>
+        <td rowspan="2" style="background-color: #8293CB; font-weight: bold; font-size: 14px;">MAGAZYN</td>
+        <td colspan="2">PRZYJETO</td>
+        <td colspan="2">WYDANO</td>
+        <td colspan="4" rowspan="4"><span style="color: white">.</span></td>
+    </tr>
+    <tr>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><span style="color: white">.</span></td>
+        <td>{% if quantity_delivered == 0 %}<span style="color: white">.</span>{% else %}
+            <span style="color: black; font-weight: bold; font-size: 14px">{{ quantity_delivered }}</span>{% endif %}</td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+    </tr>
+    <tr>
+        <td colspan="2"> </td>
+        <td colspan="2"> </td>
+    </tr>
+</table>
+<hr>
+{% for pr in productions_cutting %}
+<table style="border: solid 1px #E9D945;">
+    <tr>
+        <td rowspan="2" style="background-color: #FAEA56; font-weight: bold; font-size: 14px;">PROD.</td>
+        <td colspan="2">PRZYJETO</td>
+        <td colspan="2">WYDANO</td>
+        <td colspan="4" rowspan="4"><span style="color: white">.</span></td>
+    </tr>
+    <tr>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><span style="color: black">{{ pr.type }}</span></td>
+        <td>{{ pr.quantity_start }}</td>
+        <td>{% for w in pr.worker.all %}{{ w.get_initials }}{% empty %}NN{% endfor %}</td>
+        <td>{{ pr.quantity_end }}</td>
+        <td>{% for w in pr.worker.all %}{{ w.get_initials }}{% empty %}NN{% endfor %}</td>
+    </tr>
+    <tr>
+        <td colspan="2"> </td>
+        <td colspan="2"> </td>
+    </tr>
+</table>
+{% empty %}
+<table style="border: solid 1px #E9D945;">
+    <tr>
+        <td rowspan="2" style="background-color: #FAEA56; font-weight: bold; font-size: 14px;">PROD.</td>
+        <td colspan="2">PRZYJETO</td>
+        <td colspan="2">WYDANO</td>
+        <td colspan="4" rowspan="4"><span style="color: white">.</span></td>
+    </tr>
+    <tr>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><span style="color: white">.</span></td>
+        <td><span style="color: white">.</span></td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+    </tr>
+    <tr>
+        <td colspan="2"> </td>
+        <td colspan="2"> </td>
+    </tr>
+</table>
+{% endfor %}
+<hr>
+<table style="border: solid 1px #459D4B;">
+    <tr>
+        <td rowspan="2" style="background-color: #67AE5C; font-weight: bold; font-size: 14px;">KLEJ. / OBRYW.</td>
+        <td colspan="2">PRZYJETO</td>
+        <td colspan="2">WYDANO</td>
+        <td colspan="4" rowspan="4"><span style="color: white">.</span></td>
+    </tr>
+    <tr>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><span style="color: white">.</span></td>
+        <td><span style="color: white">.</span></td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+    </tr>
+    <tr>
+        <td colspan="2"> </td>
+        <td colspan="2"> </td>
+    </tr>
+</table>
+<hr>
+<table style="border: solid 1px #D4482C;">
+    <tr>
+        <td rowspan="2" style="background-color: #E5593D; font-weight: bold; font-size: 14px;">PAK. / PAL.</td>
+        <td colspan="2">PRZYJETO</td>
+        <td colspan="2">WYDANO</td>
+        <td colspan="4" rowspan="4"><span style="color: white">.</span></td>
+    </tr>
+    <tr>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+        <td>ILOSC</td>
+        <td>PODPIS</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><span style="color: white">.</span></td>
+        <td><span style="color: white">.</span></td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+    </tr>
+    <tr>
+        <td colspan="2"> </td>
+        <td colspan="2"> </td>
+    </tr>
+</table>
+<hr>
+<table>
+    <tr>
+        <td>PALETÓWKA</td>
+        <td><div style="margin: 0px 30px; border: solid black 1px; color: white;">.</div></td>
+        <td>MAGAZYN</td>
+        <td><div style="margin: 0px 30px; border: solid black 1px; color: white;">.</div></td>
+        <td colspan="4"><span style="color: white;">.</span></td>
+    </tr>
+</table>
+</body>
+</html>

@@ -57,3 +57,28 @@ class PunchProductionForm(forms.ModelForm):
             'date_end': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
             'date_start': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
         }
+
+
+class DeliveryForm(forms.ModelForm):
+    class Meta:
+        model = Delivery
+        fields = ('provider', 'date_of_delivery')
+
+        widgets = {
+            'date_of_delivery': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'})
+        }
+
+
+class OrderItemQuantityForm(forms.ModelForm):
+    class Meta:
+        model = OrderItemQuantity
+        fields = ('delivery', 'order_item', 'quantity')
+
+    def __init__(self, provider=None, *args, **kwargs):
+        super(OrderItemQuantityForm, self).__init__(*args, **kwargs)
+        uncompleted_items = []
+        if provider:
+            all_items = OrderItem.objects.filter(order__provider=provider)
+            uncompleted_items = all_items.filter(is_completed=False)
+
+        self.fields['order_item'].queryset = uncompleted_items

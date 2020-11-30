@@ -48,6 +48,19 @@ PUNCH_TYPES = (
     ('INNE', 'Inne')
 )
 
+PRODUCTION_TYPES = (
+    ('KLSD', 'KLEJENIE-SKLEJARKA-DUŻA'),
+    ('KLSM', 'KLEJENIE-SKLEJARKA-MAŁA'),
+    ('KLR', 'KLEJENIE-RĘCZNE'),
+    ('DR', 'DRUKOWANIE'),
+    ('WY', 'WYCINANIE'),
+    ('WY+DR', 'WYCINANIE Z NADRUKIEM'),
+    ('SZ', 'SZTANCOWANIE'),
+    ('OB', 'OBRYWANIE'),
+    ('PK', 'PAKOWANIE'),
+    ('INNE', 'INNE')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -62,6 +75,9 @@ class Person(models.Model):
 
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
+
+    def get_initials(self):
+        return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
 
 
 class CardboardProvider(models.Model):
@@ -104,28 +120,33 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     item_number = models.IntegerField()
     sort = models.CharField(max_length=15, choices=ITEM_SORTS)
+    dimension_one = models.IntegerField()
+    dimension_two = models.IntegerField()
+    dimension_three = models.IntegerField(blank=True, null=True)
+    scores = models.CharField(max_length=64)
     format_width = models.IntegerField()
     format_height = models.IntegerField()
     ordered_quantity = models.IntegerField()
     buyer = models.ManyToManyField(Buyer, blank=True)
     cardboard_type = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     cardboard_weight = models.IntegerField()
-    dimension_one = models.IntegerField()
-    dimension_two = models.IntegerField()
-    dimension_three = models.IntegerField(blank=True, null=True)
-    scores = models.CharField(max_length=64)
+    name = models.CharField(max_length=16, blank=True)
+    is_completed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order__provider__name', 'order__order_provider_number', 'item_number']
 
     def __str__(self):
-        return '{}/{}'.format(self.order, self.item_number)
+        return '{}/{}: {}x{}'.format(self.order, self.item_number, self.format_width, self.format_height)
 
 
 class Delivery(models.Model):
     items = models.ManyToManyField(OrderItem, through='OrderItemQuantity')
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     date_of_delivery = models.DateField()
+
+    class Meta:
+        ordering = ['date_of_delivery']
 
     def __str__(self):
         return f'{self.provider}|{self.date_of_delivery}'
@@ -223,3 +244,22 @@ class PunchProduction(models.Model):
 
     class Meta:
         ordering = ['date_end']
+
+
+class ProductionProcess(models.Model):
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
+    production = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
+    stock = models.ManyToManyField(OrderItemQuantity)
+    type = models.CharField(max_length=8, choices=PRODUCTION_TYPES)
+    worker = models.ManyToManyField(Person, blank=True)
+    machine = models.ForeignKey(Machine, blank=True, null=True, on_delete=models.PROTECT)
+    quantity_start = models.IntegerField()
+    quantity_end = models.IntegerField()
+    date_start = models.DateField()
+    date_end = models.DateField()
+    punch = models.ForeignKey(Punch, blank=True, null=True, on_delete=models.PROTECT)
+
+    def __str__(self):
+        order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
+
+        return order_name

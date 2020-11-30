@@ -30,7 +30,7 @@ div.header > p {
 }
 
 .content-div {
-    width: 1000px;
+    width: 1300px;
     min-height: 1000px;
     margin-left: auto;
     margin-right: auto;
@@ -39,7 +39,7 @@ div.header > p {
 
 .nav-bar {
     color: white;
-    background: #924F22;
+    background: #193214;
     margin: 5px;
 }
 
@@ -55,7 +55,7 @@ div.header > p {
     width: 200px;
     min-height: 50px;
     padding: 20px;
-    border-right: 3px dotted #2A4465;
+    border-right: 3px dotted #cccc11;
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
@@ -64,7 +64,7 @@ div.header > p {
 }
 
 .nav-item:hover {
-    background: #813E11;
+    background: #082103;
     cursor: pointer;
 }
 
@@ -96,7 +96,7 @@ table {
 }
 
 table.zamowienie, .zamowienie th{
-    background: #1A1313;
+    background: #111111;
     text-align: center;
     border: 5px solid white;
 }
@@ -107,11 +107,11 @@ table.zamowienie, .zamowienie th{
 }
 
 .zamowienie-row {
-    background: orange;
+    background: #CCCCCC;
 }
 
 .zamowienie-row:hover {
-    background: #9BFF58;
+    background: #eeeeee;
 }
 
 .zamowienie .quantity {
@@ -195,7 +195,7 @@ input[type=button], input[type=submit], input[type=reset] {
 
 
 .header img {
-    border: 2px solid orange;
+    border: 2px solid #193214;
 }
 
 .header a:link {
@@ -687,4 +687,83 @@ input[type=button], input[type=submit], input[type=reset] {
     float: left;
     width: 800px;
     padding: 20px;
+}
+
+.add-form-container {
+    padding: 10px;
+    margin: 10px;
+}
+
+.state-cell:hover {
+    background: white;
+    cursor: pointer;
+}
+
+.table-zamowienie-container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.production-div {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1300px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.production-item {
+    font-size: 10px;
+    width: 62px;
+    height: 62x;
+    background: white;
+    border: 2px solid darkgreen;
+    padding: 5px;
+    margin: 5px;
+    overflow: hidden;
+}
+
+.workstations-container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1300px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.workstation {
+    width: 200px;
+    height: 200px;
+    background: grey;
+    border: solid 5px white;
+    padding: 10px;
+    margin: 10px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* BUTTONS */
+
+.add-button-1 {
+	background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
+	background-color:#768d87;
+	border-radius:42px;
+	border:3px solid #566963;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+	padding:11px 23px;
+	text-decoration:none;
+	margin: 30px;
+}
+.add-button-1:hover {
+	background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
+	background-color:#6c7c7c;
+}
+.add-button-1:active {
+	position:relative;
+	top:1px;
 }

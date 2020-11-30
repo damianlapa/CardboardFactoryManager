@@ -12,6 +12,7 @@
             crossorigin="anonymous">
     </script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/css/fontello.css' %}">
 </head>
 
 <body>
@@ -58,9 +59,11 @@
                 PUNCHES
             </div>
         </a>
+        <a href="{% url 'production-status' %}">
         <div class="nav-item">
             PRODUCTION
         </div>
+        </a>
         <div style="clear: both;"></div>
     </div>
     <div class="content-div">

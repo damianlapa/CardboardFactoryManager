@@ -8,60 +8,96 @@
 
 {% block content %}
 <div class="order-filters">
-    <h2>Filtry</h2>
-    <h3>Dostawca</h3>
-        <select id="filter-by-provider">
-        {% for provider in providers %}
-            <option value="{{ provider.name }}">{{ provider.name }}</option>
-        {% endfor %}
-        </select>
-    <h3>Data Zamówienia</h3>
-    <h4 style="display: inline;">Od:</h4>
-    <input type="date" style="display: inline;" id="from">
-    <h4 style="display: inline;">Do:</h4>
-    <input type="date" style="display: inline;" id="to">
+    <h2 id="order-filters">Filtry</h2>
+    <div id="order-filters-container" style="display: none">
+        <h3 >Dostawca</h3>
+            <select id="filter-by-provider">
+            {% for provider in providers %}
+                <option value="{{ provider.name }}">{{ provider.name }}</option>
+            {% endfor %}
+            </select>
+        <h3>Data Zamówienia</h3>
+        <h4 style="display: inline;">Od:</h4>
+        <input type="date" style="display: inline;" id="from">
+        <h4 style="display: inline;">Do:</h4>
+        <input type="date" style="display: inline;" id="to">
+    </div>
 </div>
 
 <div>
-<table class="zamowienie">
+    <a href="{% url 'new-order' %}"><button class="add-button-1">Dodaj Zamówienie</button></a>
+</div>
 
-    <tr class="order-table-description">
-        <th>Nr zamówienia</th>
-        <th>Nr pozycji</th>
-        <th>Typ</th>
-        <th>Szerokość</th>
-        <th>Długość</th>
-        <th>Ilość zamówiona</th>
-        <th>Ilość dostarczona</th>
-        <th>Klient</th>
-        <th>Rodzaj tektury</th>
-        <th>Wymiar pudełka</th>
-        <th>Bigi</th>
-
-    </tr>
-
-    {% for order in orders %}
-    {% for o in order.orderitem_set.all %}
-    <tr class="{{ order.provider }} zamowienie-row">
-        {% if forloop.first %}
-        <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.order_provider_number }}</td>
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if provider %}&provider={{ provider }}{% endif %}">
+                previous
+            </a>
         {% endif %}
-        <td>{{ o.item_number }}</td>
-        <td>{{ o.sort }}</td>
-        <td>{{ o.format_width }}</td>
-        <td>{{ o.format_height }}</td>
-        <td>{{ o.ordered_quantity }}</td>
-        <td class="quantity">{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}{% endfor %}</td>
-        <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
-        <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
-        <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
-        <td class="scores">{{ o.scores }}</td>
-    </tr>
-    {% endfor %}
-    <tr class="***">
-        <td colspan="11" class="black_row"> *** </td>
-    </tr>
-    {% endfor %}
-</table>
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if provider %}&provider={{ provider }}{% endif %}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if provider %}&provider={{ provider }}{% endif %}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+<div class="table-zamowienie-container">
+    <table class="zamowienie">
+
+        <tr class="order-table-description">
+            <th>Nr zamówienia</th>
+            <th>Data</th>
+            <th>Nr pozycji</th>
+            <th>Typ</th>
+            <th>Szerokość</th>
+            <th>Długość</th>
+            <th>Ilość zamówiona</th>
+            <th>Ilość dostarczona</th>
+            <th>Klient</th>
+            <th>Rodzaj tektury</th>
+            <th>Wymiar pudełka</th>
+            <th>Bigi</th>
+            <th>Nazwa</th>
+            <th>Całość</th>
+            <th>Druk</th>
+
+        </tr>
+
+        {% for order in page_obj %}
+        {% for o in order.orderitem_set.all %}
+        <tr class="{{ order.provider }} zamowienie-row" data-orderitemid="{{ o.id }}">
+            {% if forloop.first %}
+            <td rowspan="{{ order.orderitem_set.all|length }}" class="order-num">{{ order.order_provider_number }}</td>
+            <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.date_of_order }}</td>
+            {% endif %}
+
+            <td>{{ o.item_number }}</td>
+            <td>{{ o.sort }}</td>
+            <td>{{ o.format_width }}</td>
+            <td>{{ o.format_height }}</td>
+            <td>{{ o.ordered_quantity }}</td>
+            <td class="quantity">{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}
+                {% endfor %}</td>
+            <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
+            <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
+            <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
+            <td class="scores">{{ o.scores }}</td>
+            <td class="name">{{ o.name }}</td>
+            <td class="state-cell">{% if o.is_completed %}<i class="demo-icon icon-toggle-on" style="color: green"></i>{% else %}<i class="demo-icon icon-toggle-off" style="color: red;"></i>{% endif %}</td>
+            <td class="print-icon" style="color: black;"><i class="demo-icon icon-print"></i></td>
+        </tr>
+        {% endfor %}
+        <tr class="***">
+            <td colspan="15" class="black_row"> *** </td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
 {% endblock %}
