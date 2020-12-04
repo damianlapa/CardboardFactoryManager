@@ -11,6 +11,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 import io
 import os
+import sys
 import shutil
 from django.conf import settings
 import docx
@@ -26,8 +27,15 @@ from warehousemanager.forms import *
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 
+# coworking with google sheets
+from django.contrib.staticfiles import finders
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+
 def index(request):
     return HttpResponse('first view')
+
 
 def render_pdf_view(request):
     template_path = 'user_printer.html'
@@ -41,7 +49,7 @@ def render_pdf_view(request):
 
     # create a pdf
     pisa_status = pisa.CreatePDF(
-       html, dest=response)
+        html, dest=response)
     # if error then show some funy view
     if pisa_status.err:
         return HttpResponse('We had some errors <pre>' + html + '</pre>')
@@ -1105,3 +1113,90 @@ class OrderItemPrint(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+# connecting with google sheets
+class GoogleSheetTest(View):
+    def get(self, request):
+        order_item_id = request.GET.get('orderitemid')
+
+        order_item = OrderItem.objects.get(id=int(order_item_id))
+
+        delta_date = order_item.order.date_of_order + datetime.timedelta(days=14)
+
+        date_end = delta_date.strftime('%d.%m.%Y')
+
+        now = datetime.date.today().strftime('%d.%m.%Y')
+
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds = ServiceAccountCredentials.from_json_keyfile_name('warehousemanager/paker-creds.json', scope)
+
+        client = gspread.authorize(creds)
+
+        sheet = client.open('zlecenie produkcyjne').sheet1
+
+        sheet.update_cell(18, 21, order_item.ordered_quantity)
+
+        sheet.update_cell(12, 16, date_end)
+
+        sheet.update_cell(15, 9, now)
+
+        buyer_list = order_item.buyer.all()
+
+        buyer = ''
+
+        for b in buyer_list:
+            if buyer != '':
+                buyer += ', '
+            buyer += str(b.shortcut)
+
+        machine = ''
+
+        if order_item.sort in ('201', '202', '203'):
+            machine = 'SLO'
+        elif order_item.sort == 'SZTANCA':
+            machine = 'TYG'
+        elif order_item.sort == 'PRZEKLADKA':
+            machine = 'MAG'
+            if order_item.dimension_one != order_item.format_width:
+                machine = 'KRA'
+            elif order_item.dimension_two != order_item.format_height:
+                machine = 'KRA'
+
+        punch_id = ''
+
+        if order_item.sort == 'SZTANCA':
+            punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
+                dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
+            if punches.count() > 0:
+                punch_id = ''
+                for p in punches:
+                    if punch_id != '':
+                        punch_id += ', '
+                    punch_id += p.punch_name()
+
+        sheet.update_cell(12, 21, machine)
+
+        sheet.update_cell(20, 6, punch_id)
+
+        sheet.update_cell(18, 24, f'{order_item.format_width}x{order_item.format_height}')
+
+        sheet.update_cell(17, 1, order_item.dimension_one)
+
+        sheet.update_cell(17, 6, order_item.dimension_two)
+
+        sheet.update_cell(17, 11, order_item.dimension_three)
+
+        provider_lower = str(order_item.order.provider).lower()
+
+        if provider_lower == 'convert':
+            prov_shortcut = 'CN'
+        elif provider_lower == 'aquila':
+            prov_shortcut = 'AQ'
+        else:
+            prov_shortcut = 'NN'
+
+        sheet.update_cell(6, 11, f'{prov_shortcut} {order_item.order.order_provider_number}/{order_item.item_number} {buyer}')
+
+        return redirect('https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')

@@ -835,7 +835,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     type: 'GET',
                     dataType: 'json'
                     }).done(function (data) {
-                        link = data + 'order-item-print/' + printCells[i].parentElement.dataset.orderitemid + '/'
+                        link = data + 'gst/?orderitemid=' + printCells[i].parentElement.dataset.orderitemid
                         window.location.replace(link)
                         })
             })
