@@ -1130,18 +1130,35 @@ class GoogleSheetTest(View):
 
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-        creds_dict ={
-                "type": "service_account",
-                "project_id": os.environ['PROJECT_ID'],
-                "private_key_id": os.environ['PRIVATE_KEY_ID'],
-                "private_key": os.environ['PRIVATE_KEY_GS'],
-                "client_email": os.environ['CLIENT_EMAIL'],
-                "client_id": "104232893114756436399",
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "client_x509_cert_url": os.environ['CLIENT_CERT_URL'],
-            }
+        key_parts_tuple = ('-----BEGIN PRIVATE KEY-----', os.environ['PRIVATE_KEY_1'], os.environ['PRIVATE_KEY_2'],
+                           os.environ['PRIVATE_KEY_3'],
+                           os.environ['PRIVATE_KEY_4'], os.environ['PRIVATE_KEY_5'], os.environ['PRIVATE_KEY_6'],
+                           os.environ['PRIVATE_KEY_7'], os.environ['PRIVATE_KEY_8'], os.environ['PRIVATE_KEY_9'],
+                           os.environ['PRIVATE_KEY_10'], os.environ['PRIVATE_KEY_11'], os.environ['PRIVATE_KEY_12'],
+                           os.environ['PRIVATE_KEY_13'], os.environ['PRIVATE_KEY_14'], os.environ['PRIVATE_KEY_15'],
+                           os.environ['PRIVATE_KEY_16'], os.environ['PRIVATE_KEY_17'], os.environ['PRIVATE_KEY_18'],
+                           os.environ['PRIVATE_KEY_19'], os.environ['PRIVATE_KEY_20'], os.environ['PRIVATE_KEY_21'],
+                           os.environ['PRIVATE_KEY_22'], os.environ['PRIVATE_KEY_23'], os.environ['PRIVATE_KEY_24'],
+                           os.environ['PRIVATE_KEY_25'], os.environ['PRIVATE_KEY_26'], '-----END PRIVATE KEY-----')
+
+        key_ = ''
+
+        for part in key_parts_tuple:
+            key_ += part
+            key_ += '\n'
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": key_,
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
 
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
@@ -1210,6 +1227,8 @@ class GoogleSheetTest(View):
         else:
             prov_shortcut = 'NN'
 
-        sheet.update_cell(6, 11, f'{prov_shortcut} {order_item.order.order_provider_number}/{order_item.item_number} {buyer}')
+        sheet.update_cell(6, 11,
+                          f'{prov_shortcut} {order_item.order.order_provider_number}/{order_item.item_number} {buyer}')
 
-        return redirect('https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
+        return redirect(
+            'https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
