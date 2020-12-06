@@ -68,5 +68,6 @@ urlpatterns = [
     path('order-item-details/<int:order_item_id>/', OrderItemDetails.as_view(), name='order-item-details'),
     path('order-item-print/<int:order_item_id>/', OrderItemPrint.as_view(), name='order-item-print'),
     path('gst/', GoogleSheetTest.as_view(), name='gstest'),
+    path('import-order-items/', ImportOrderItems.as_view(), name='import-order-items'),
 
 ]

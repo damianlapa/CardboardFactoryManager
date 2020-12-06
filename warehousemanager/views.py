@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
 import io
 import os
 import sys
@@ -17,6 +18,8 @@ from django.conf import settings
 import docx
 import json
 import datetime
+
+from warehousemanager.functions import google_key
 
 import subprocess
 # import models from warehousemanager app
@@ -1130,28 +1133,11 @@ class GoogleSheetTest(View):
 
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-        key_parts_tuple = ('-----BEGIN PRIVATE KEY-----', os.environ['PRIVATE_KEY_1'], os.environ['PRIVATE_KEY_2'],
-                           os.environ['PRIVATE_KEY_3'],
-                           os.environ['PRIVATE_KEY_4'], os.environ['PRIVATE_KEY_5'], os.environ['PRIVATE_KEY_6'],
-                           os.environ['PRIVATE_KEY_7'], os.environ['PRIVATE_KEY_8'], os.environ['PRIVATE_KEY_9'],
-                           os.environ['PRIVATE_KEY_10'], os.environ['PRIVATE_KEY_11'], os.environ['PRIVATE_KEY_12'],
-                           os.environ['PRIVATE_KEY_13'], os.environ['PRIVATE_KEY_14'], os.environ['PRIVATE_KEY_15'],
-                           os.environ['PRIVATE_KEY_16'], os.environ['PRIVATE_KEY_17'], os.environ['PRIVATE_KEY_18'],
-                           os.environ['PRIVATE_KEY_19'], os.environ['PRIVATE_KEY_20'], os.environ['PRIVATE_KEY_21'],
-                           os.environ['PRIVATE_KEY_22'], os.environ['PRIVATE_KEY_23'], os.environ['PRIVATE_KEY_24'],
-                           os.environ['PRIVATE_KEY_25'], os.environ['PRIVATE_KEY_26'], '-----END PRIVATE KEY-----')
-
-        key_ = ''
-
-        for part in key_parts_tuple:
-            key_ += part
-            key_ += '\n'
-
         creds_dict = {
             "type": "service_account",
             "project_id": os.environ['PROJECT_ID'],
             "private_key_id": os.environ['PRIVATE_KEY_ID'],
-            "private_key": key_,
+            "private_key": google_key(),
             "client_email": os.environ['CLIENT_EMAIL'],
             "client_id": os.environ['CLIENT_ID'],
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -1171,6 +1157,13 @@ class GoogleSheetTest(View):
         sheet.update_cell(12, 16, date_end)
 
         sheet.update_cell(15, 9, now)
+
+        if order_item.name:
+            sheet.update_cell(12, 28, order_item.name)
+        else:
+            sheet.update_cell(12, 28, '')
+
+        sheet.update_cell(18, 16, f'{order_item.cardboard_type}{order_item.cardboard_weight}')
 
         buyer_list = order_item.buyer.all()
 
@@ -1232,3 +1225,66 @@ class GoogleSheetTest(View):
 
         return redirect(
             'https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
+
+
+class ImportOrderItems(View):
+
+    def get(self, request):
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": google_key(),
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+        client = gspread.authorize(creds)
+
+        sheet = client.open('tekt zam').sheet1
+
+        test_const = 255
+
+        new_rows = []
+
+        result = ''
+
+        for x in range(test_const + 1, len(sheet.get_all_values()) + 1):
+            new_rows.append(sheet.row_values(x))
+
+        for row in new_rows:
+            # provider
+            provider_shortcut = row[2]
+            if provider_shortcut == 'AQ':
+                provider = 'Aquila'
+            elif provider_shortcut == 'CV':
+                provider = 'Convertt'
+            else:
+                provider = 'OTHER'
+
+            # order number
+            order_num = int(row[0])
+
+            try:
+                provider_object = CardboardProvider.objects.get(name=provider)
+            except ObjectDoesNotExist:
+                return HttpResponse('There is no such a provider in row #')
+
+            order = Order.objects.filter(provider=provider_object)
+
+            if len(order) > 0:
+                result += '+'
+            else:
+                result += '-'
+
+            result += '<br>'
+
+        return HttpResponse(result)
