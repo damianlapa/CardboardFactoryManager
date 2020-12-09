@@ -88,8 +88,6 @@ class CardboardProvider(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        if self.shortcut:
-            return f'{self.name}({self.shortcut})'
         return f'{self.name}'
 
 

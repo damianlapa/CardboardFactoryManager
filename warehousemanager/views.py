@@ -1230,6 +1230,7 @@ class GoogleSheetTest(View):
 class ImportOrderItems(View):
 
     def get(self, request):
+        # connecting to spreadsheet
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
         creds_dict = {
@@ -1253,6 +1254,23 @@ class ImportOrderItems(View):
 
         test_const = 255
 
+        aq_orders = \
+        Order.objects.filter(provider=CardboardProvider.objects.get(name='AQUILA')).order_by('-order_provider_number')
+        cv_orders = \
+        Order.objects.filter(provider=CardboardProvider.objects.get(name='CONVERT')).order_by('-order_provider_number')
+        ep_orders = \
+        Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='EP')).order_by('-order_provider_number')
+        mk_orders = \
+        Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='MK')).order_by('-order_provider_number')
+        wr_orders = \
+        Order.objects.filter(provider=CardboardProvider.objects.get(name='WERNER')).order_by('-order_provider_number')
+
+        last_aq_order = aq_orders[0].order_provider_number if len(aq_orders) > 0 else 0
+        last_cv_order = cv_orders[0].order_provider_number if len(cv_orders) > 0 else 0
+        last_ep_order = ep_orders[0].order_provider_number if len(ep_orders) > 0 else 0
+        last_mk_order = mk_orders[0].order_provider_number if len(mk_orders) > 0 else 0
+        last_wr_order = wr_orders[0].order_provider_number if len(wr_orders) > 0 else 0
+
         new_rows = []
 
         result = ''
@@ -1264,27 +1282,37 @@ class ImportOrderItems(View):
             # provider
             provider_shortcut = row[2]
             if provider_shortcut == 'AQ':
-                provider = 'Aquila'
+                provider = 'AQUILA'
             elif provider_shortcut == 'CV':
-                provider = 'Convertt'
+                provider = 'CONVERT'
             else:
                 provider = 'OTHER'
 
             # order number
             order_num = int(row[0])
 
+            # order date
+            order_date = row[4]
+
+            # order item width
+            width = row[8]
+
+            # order item height
+            height = row[9]
+
+            order = ()
+
             try:
                 provider_object = CardboardProvider.objects.get(name=provider)
+                order = Order.objects.filter(provider=provider_object).filter(order_provider_number=order_num)
             except ObjectDoesNotExist:
-                return HttpResponse('There is no such a provider in row #')
-
-            order = Order.objects.filter(provider=provider_object)
+                result += 'provider name error'
 
             if len(order) > 0:
                 result += '+'
             else:
                 result += '-'
-
+            result += f' {width}x{height}'
             result += '<br>'
 
         return HttpResponse(result)
