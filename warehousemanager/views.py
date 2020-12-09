@@ -1252,18 +1252,23 @@ class ImportOrderItems(View):
 
         sheet = client.open('tekt zam').sheet1
 
-        test_const = 255
+        test_const = 215 if not request.GET.get('record') else int(request.GET.get('record'))
 
         aq_orders = \
-        Order.objects.filter(provider=CardboardProvider.objects.get(name='AQUILA')).order_by('-order_provider_number')
+            Order.objects.filter(provider=CardboardProvider.objects.get(name='AQUILA')).order_by(
+                '-order_provider_number')
         cv_orders = \
-        Order.objects.filter(provider=CardboardProvider.objects.get(name='CONVERT')).order_by('-order_provider_number')
+            Order.objects.filter(provider=CardboardProvider.objects.get(name='CONVERT')).order_by(
+                '-order_provider_number')
         ep_orders = \
-        Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='EP')).order_by('-order_provider_number')
+            Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='EP')).order_by(
+                '-order_provider_number')
         mk_orders = \
-        Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='MK')).order_by('-order_provider_number')
+            Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='MK')).order_by(
+                '-order_provider_number')
         wr_orders = \
-        Order.objects.filter(provider=CardboardProvider.objects.get(name='WERNER')).order_by('-order_provider_number')
+            Order.objects.filter(provider=CardboardProvider.objects.get(name='WERNER')).order_by(
+                '-order_provider_number')
 
         last_aq_order = aq_orders[0].order_provider_number if len(aq_orders) > 0 else 0
         last_cv_order = cv_orders[0].order_provider_number if len(cv_orders) > 0 else 0
@@ -1283,13 +1288,56 @@ class ImportOrderItems(View):
             provider_shortcut = row[2]
             if provider_shortcut == 'AQ':
                 provider = 'AQUILA'
-            elif provider_shortcut == 'CV':
+            elif provider_shortcut == 'CV' or provider_shortcut == 'CN':
                 provider = 'CONVERT'
+            elif provider_shortcut == 'WER':
+                provider = 'WERNER'
             else:
                 provider = 'OTHER'
 
             # order number
             order_num = int(row[0])
+
+            # order_item_number
+            order_item_num = int(row[1])
+
+            # sort
+            sheet_value = row[6]
+            if sheet_value in('ROT F201', 'SLO F201'):
+                sort = '201'
+            elif sheet_value in('ROT F203', 'SLO F203'):
+                sort = '203'
+            elif sheet_value == 'TYGIEL':
+                sort = 'SZTANCA'
+            else:
+                sort = 'PRZEKLADKA'
+
+            # order_dimensions
+            dimensions = row[24]
+            dimensions_split = dimensions.split('x')
+            if len(dimensions_split) > 1:
+                dim1 = dimensions_split[0]
+                dim2 = dimensions_split[1]
+            else:
+                dim1 = 0
+                dim2 = 0
+            if len(dimensions_split) > 2:
+                dim3 = dimensions_split[2]
+                dim3 = dim3.split()[0]
+            else:
+                dim3 = 0
+
+            # scores
+            scores = row[23]
+            if scores == '':
+                scores = '-'
+
+            # quantity
+            quantity = row[10]
+            if quantity != '':
+                quantity = int(quantity)
+            else:
+                quantity = 0
 
             # order date
             order_date = row[4]
@@ -1300,19 +1348,56 @@ class ImportOrderItems(View):
             # order item height
             height = row[9]
 
-            order = ()
-
             try:
                 provider_object = CardboardProvider.objects.get(name=provider)
-                order = Order.objects.filter(provider=provider_object).filter(order_provider_number=order_num)
+                provider_orders = Order.objects.filter(provider=provider_object).order_by('-order_provider_number')
+                last_provider_order = provider_orders[0].order_provider_number if len(provider_orders) > 0 else 0
+                result += f'{provider} {order_num}'
+                in_database = True
+                if provider == 'AQUILA':
+                    if order_num > last_provider_order:
+                        in_database = False
+                        result += 'brak w bazie - dodać'
+                elif provider == 'CONVERT':
+                    if order_num > last_provider_order:
+                        in_database = False
+                        result += 'brak w bazie - dodać'
+                elif provider == 'TWOJE OPAKOWANIA':
+                    if order_num > last_provider_order:
+                        in_database = False
+                        result += 'brak w bazie - dodać'
+                elif provider == 'WERNER':
+                    if order_num > last_provider_order:
+                        in_database = False
+                        result += 'brak w bazie - dodać'
+                elif provider == 'MULTIKARTON':
+                    if order_num > last_provider_order:
+                        in_database = False
+                        result += 'brak w bazie - dodać'
+                else:
+                    pass
+
+                if not in_database:
+                    new_order = Order.objects.create(provider=provider_object, order_provider_number=order_num,
+                                                     date_of_order=datetime.datetime.strptime(order_date,
+                                                                                              '%Y-%m-%d'),
+                                                     is_completed=True)
+                    new_order.save()
+
+                    new_order_item = OrderItem.objects.create(order=new_order, item_number=order_item_num, sort=sort,
+                                                              dimension_one=int(dim1), dimension_two=int(dim2), dimension_three=int(dim3), scores=scores, format_width=int(width),
+                                                              format_height=height, ordered_quantity=quantity, cardboard_type='B', cardboard_weight=500)
+
+                    new_order_item.save()
+
+                    result += f'<br>ADDING {new_order.provider} {new_order.order_provider_number}<br>'
+
             except ObjectDoesNotExist:
                 result += 'provider name error'
 
-            if len(order) > 0:
-                result += '+'
-            else:
-                result += '-'
-            result += f' {width}x{height}'
+            result += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]'
             result += '<br>'
+
+            # adding rows
 
         return HttpResponse(result)
