@@ -7,16 +7,22 @@ ITEM_SORTS = (
     ('201', 'FEFCO 201'),
     ('202', 'FEFCO 202'),
     ('203', 'FEFCO 203'),
+    ('301', 'FEFCO 301'),
     ('SZTANCA', 'Sztanca'),
-    ('PRZEKLADKA', 'Przekładka')
+    ('PRZEKLADKA', 'Przekładka'),
+    ('MAG', 'Magazyn'),
+    ('ROT/TYG', 'Rotacja/Tygiel')
 )
 
 CARDBOARD_TYPES = (
-    ('B', 'B'),
-    ('C', 'C'),
-    ('E', 'E'),
-    ('BC', 'BC'),
-    ('EB', 'EB')
+    ('3B', '3B'),
+    ('3C', '3C'),
+    ('3E', '3E'),
+    ('5BC', '5BC'),
+    ('5EB', '5EB'),
+    ('BB', 'BB'),
+    ('BCS', 'BCS'),
+    ('BS', 'BS')
 )
 
 GENRES = (
@@ -93,7 +99,7 @@ class CardboardProvider(models.Model):
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
-    shortcut = models.CharField(max_length=32, default=name)
+    shortcut = models.CharField(max_length=8)
 
     class Meta:
         ordering = ['name']
@@ -129,6 +135,7 @@ class OrderItem(models.Model):
     buyer = models.ManyToManyField(Buyer, blank=True)
     cardboard_type = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     cardboard_weight = models.IntegerField()
+    cardboard_additional_info = models.CharField(max_length=32, default='', blank=True)
     name = models.CharField(max_length=16, blank=True)
     is_completed = models.BooleanField(default=False)
 

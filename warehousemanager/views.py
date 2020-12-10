@@ -1217,6 +1217,8 @@ class GoogleSheetTest(View):
             prov_shortcut = 'CN'
         elif provider_lower == 'aquila':
             prov_shortcut = 'AQ'
+        elif provider_lower == 'werner':
+            prov_shortcut = 'WER'
         else:
             prov_shortcut = 'NN'
 
@@ -1252,38 +1254,21 @@ class ImportOrderItems(View):
 
         sheet = client.open('tekt zam').sheet1
 
-        test_const = 215 if not request.GET.get('record') else int(request.GET.get('record'))
-
-        aq_orders = \
-            Order.objects.filter(provider=CardboardProvider.objects.get(name='AQUILA')).order_by(
-                '-order_provider_number')
-        cv_orders = \
-            Order.objects.filter(provider=CardboardProvider.objects.get(name='CONVERT')).order_by(
-                '-order_provider_number')
-        ep_orders = \
-            Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='EP')).order_by(
-                '-order_provider_number')
-        mk_orders = \
-            Order.objects.filter(provider=CardboardProvider.objects.get(shortcut='MK')).order_by(
-                '-order_provider_number')
-        wr_orders = \
-            Order.objects.filter(provider=CardboardProvider.objects.get(name='WERNER')).order_by(
-                '-order_provider_number')
-
-        last_aq_order = aq_orders[0].order_provider_number if len(aq_orders) > 0 else 0
-        last_cv_order = cv_orders[0].order_provider_number if len(cv_orders) > 0 else 0
-        last_ep_order = ep_orders[0].order_provider_number if len(ep_orders) > 0 else 0
-        last_mk_order = mk_orders[0].order_provider_number if len(mk_orders) > 0 else 0
-        last_wr_order = wr_orders[0].order_provider_number if len(wr_orders) > 0 else 0
+        test_const = 260 if not request.GET.get('record') else int(request.GET.get('record'))
 
         new_rows = []
 
         result = ''
 
-        for x in range(test_const + 1, len(sheet.get_all_values()) + 1):
-            new_rows.append(sheet.row_values(x))
+        # collecting data
 
-        for row in new_rows:
+        for x in range(test_const, len(sheet.get_all_values()) + 1):
+            new_rows.append((sheet.row_values(x), x))
+
+        for row, row_num in new_rows:
+            break_condition = False
+            provider_object = None
+
             # provider
             provider_shortcut = row[2]
             if provider_shortcut == 'AQ':
@@ -1295,109 +1280,198 @@ class ImportOrderItems(View):
             else:
                 provider = 'OTHER'
 
-            # order number
-            order_num = int(row[0])
-
-            # order_item_number
-            order_item_num = int(row[1])
-
-            # sort
-            sheet_value = row[6]
-            if sheet_value in('ROT F201', 'SLO F201'):
-                sort = '201'
-            elif sheet_value in('ROT F203', 'SLO F203'):
-                sort = '203'
-            elif sheet_value == 'TYGIEL':
-                sort = 'SZTANCA'
-            else:
-                sort = 'PRZEKLADKA'
-
-            # order_dimensions
-            dimensions = row[24]
-            dimensions_split = dimensions.split('x')
-            if len(dimensions_split) > 1:
-                dim1 = dimensions_split[0]
-                dim2 = dimensions_split[1]
-            else:
-                dim1 = 0
-                dim2 = 0
-            if len(dimensions_split) > 2:
-                dim3 = dimensions_split[2]
-                dim3 = dim3.split()[0]
-            else:
-                dim3 = 0
-
-            # scores
-            scores = row[23]
-            if scores == '':
-                scores = '-'
-
-            # quantity
-            quantity = row[10]
-            if quantity != '':
-                quantity = int(quantity)
-            else:
-                quantity = 0
-
-            # order date
-            order_date = row[4]
-
-            # order item width
-            width = row[8]
-
-            # order item height
-            height = row[9]
-
             try:
                 provider_object = CardboardProvider.objects.get(name=provider)
-                provider_orders = Order.objects.filter(provider=provider_object).order_by('-order_provider_number')
-                last_provider_order = provider_orders[0].order_provider_number if len(provider_orders) > 0 else 0
-                result += f'{provider} {order_num}'
-                in_database = True
-                if provider == 'AQUILA':
-                    if order_num > last_provider_order:
-                        in_database = False
-                        result += 'brak w bazie - dodać'
-                elif provider == 'CONVERT':
-                    if order_num > last_provider_order:
-                        in_database = False
-                        result += 'brak w bazie - dodać'
-                elif provider == 'TWOJE OPAKOWANIA':
-                    if order_num > last_provider_order:
-                        in_database = False
-                        result += 'brak w bazie - dodać'
-                elif provider == 'WERNER':
-                    if order_num > last_provider_order:
-                        in_database = False
-                        result += 'brak w bazie - dodać'
-                elif provider == 'MULTIKARTON':
-                    if order_num > last_provider_order:
-                        in_database = False
-                        result += 'brak w bazie - dodać'
-                else:
-                    pass
-
-                if not in_database:
-                    new_order = Order.objects.create(provider=provider_object, order_provider_number=order_num,
-                                                     date_of_order=datetime.datetime.strptime(order_date,
-                                                                                              '%Y-%m-%d'),
-                                                     is_completed=True)
-                    new_order.save()
-
-                    new_order_item = OrderItem.objects.create(order=new_order, item_number=order_item_num, sort=sort,
-                                                              dimension_one=int(dim1), dimension_two=int(dim2), dimension_three=int(dim3), scores=scores, format_width=int(width),
-                                                              format_height=height, ordered_quantity=quantity, cardboard_type='B', cardboard_weight=500)
-
-                    new_order_item.save()
-
-                    result += f'<br>ADDING {new_order.provider} {new_order.order_provider_number}<br>'
-
             except ObjectDoesNotExist:
-                result += 'provider name error'
+                result += '!# PROVIDER DOES NOT EXISTS !!! ERROR ###<br>'
+                break_condition = True
 
-            result += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]'
-            result += '<br>'
+            if not break_condition:
+                break_condition2 = False
+                order_num = None
 
-            # adding rows
+                # collecting data from rows
+
+                try:
+                    order_num = int(row[0])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER NUMBER)<br>'
+                    break_condition2 = True
+
+                try:
+                    order_item_num = int(row[1])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER ITEM NUMBER)<br>'
+                    break_condition2 = True
+
+                try:
+                    width = int(row[8])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT WIDTH)<br>'
+                    break_condition2 = True
+
+                try:
+                    height = int(row[9])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT HEIGHT)<br>'
+                    break_condition2 = True
+
+                try:
+                    height = int(row[9])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT HEIGHT)<br>'
+                    break_condition2 = True
+
+                # sort
+                sheet_value = row[6]
+                if sheet_value in ('ROT F201', 'SLO F201'):
+                    sort = '201'
+                elif sheet_value in ('ROT F200', 'SLO F200'):
+                    sort = '200'
+                elif sheet_value in ('ROT F203', 'SLO F203'):
+                    sort = '203'
+                elif sheet_value in ('SLO 301 WIEKO', 'SLO 301 DNO'):
+                    sort = '301'
+                elif sheet_value == 'TYGIEL':
+                    sort = 'SZTANCA'
+                elif sheet_value == 'ROT/TYG':
+                    sort = 'ROT/TYG'
+                elif sheet_value == 'MAG':
+                    sort = 'MAG'
+                elif sheet_value == 'KRA':
+                    sort = 'PRZEKLADKA'
+                else:
+                    sort = 'PRZEKLADKA'
+
+                # quantity handling
+
+                try:
+                    quantity_cell = row[10]
+                    if quantity_cell == '':
+                        quantity_cell = 0
+                    quantity = int(quantity_cell)
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG QUANTITY)<br>'
+                    break_condition2 = True
+
+                # order_dimensions
+                dimensions = row[24]
+                dim1 = 0
+                dim2 = 0
+                dim3 = 0
+                name = ''
+                dimensions_split = dimensions.split('x')
+
+                if len(dimensions_split) == 0:
+                    result += f'NO DIMENSIONS ERROR IN ROW: {row_num}'
+                elif len(dimensions_split) == 1:
+                    try:
+                        print(row_num, '############################3')
+                        if dimensions_split[0] != '':
+                            punch = Punch.objects.get(name=dimensions_split[0])
+                            dim1 = punch.dimension_one
+                            dim2 = punch.dimension_two
+                            dim3 = punch.dimension_three
+                            name = punch.name
+                        else:
+                            result += f'NO DIMENSIONS ERROR IN ROW: {row_num}'
+                    except ObjectDoesNotExist:
+                        name = dimensions_split[0]
+                        result += f'DIMENSIONS ERROR {dimensions_split[0]}'
+                elif len(dimensions_split) == 2:
+                    dim1 = dimensions_split[0]
+                    dim2 = dimensions_split[1].split()[0]
+                    if len(dimensions_split[1].split()) > 1:
+                        name = dimensions_split[1].split()[1]
+                else:
+                    dim1 = dimensions_split[0]
+                    dim2 = dimensions_split[1]
+                    dim3 = dimensions_split[2].split()[0]
+
+                    if len(dimensions_split[2].split()) > 1:
+                        name = dimensions_split[2].split()[1]
+
+                try:
+                    dim1 = int(dim1) if dim1 else 0
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FIRST DIMENSION)<br>'
+                    break_condition2 = True
+
+                try:
+                    dim2 = int(dim2) if dim2 else 0
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG SECOND DIMENSION)<br>'
+                    break_condition2 = True
+
+                try:
+                    if dim3 != '':
+                        dim3 = int(dim3) if dim3 else None
+                    else:
+                        dim3 = None
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG THIRD DIMENSION)<br>'
+                    break_condition2 = True
+
+                # scores
+                scores = row[23]
+                if scores == '':
+                    scores = '-'
+
+                # cardboard
+                cardboard_type = row[14]
+                if len(cardboard_type) > 6:
+                    cardboard_type = 'BB'
+                cardboard_weight = row[15]
+                if cardboard_weight == '':
+                    cardboard_weight = 0
+                cardboard_extra = row[16]
+
+                # customer
+                customer = row[13]
+                customer_object = None
+                if customer != '':
+                    customer = customer.upper()
+
+                    try:
+                        customer_object = Buyer.objects.get(name=customer)
+                    except ObjectDoesNotExist:
+                        customer_object = Buyer.objects.create(name=customer, shortcut=customer[:5])
+
+
+                if not break_condition2:
+                    if len(name) > 15:
+                        name = 'too long'
+                    def add_order_item_object(function_order):
+                        new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
+                                                                  sort=sort,
+                                                                  dimension_one=dim1, dimension_two=dim2,
+                                                                  dimension_three=dim3, scores=scores,
+                                                                  format_width=width,
+                                                                  format_height=height, ordered_quantity=quantity,
+                                                                  cardboard_type=cardboard_type,
+                                                                  cardboard_weight=cardboard_weight,
+                                                                  cardboard_additional_info=cardboard_extra, name=name)
+                        if customer_object:
+                            new_order_item.buyer.add(customer_object)
+
+                    try:
+                        order = Order.objects.get(provider=provider_object, order_provider_number=order_num)
+                        add_order_item_object(order)
+                    except ObjectDoesNotExist:
+                        # order date
+                        order_date = row[4]
+
+                        new_order = Order.objects.create(provider=provider_object, order_provider_number=order_num,
+                                                         date_of_order=datetime.datetime.strptime(order_date,
+                                                                                                  '%Y-%m-%d'),
+                                                         is_completed=True)
+
+                        new_order.save()
+
+                        add_order_item_object(new_order)
+
+                        result += f'ORDER {new_order} CREATED<br>'
+
+                    result += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]/{name}<br>'
 
         return HttpResponse(result)

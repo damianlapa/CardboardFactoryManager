@@ -86,7 +86,7 @@
             <td class="quantity">{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}
                 {% endfor %}</td>
             <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
-            <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}</td>
+            <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}{{ o.cardboard_additional_info }}</td>
             <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
             <td class="scores">{{ o.scores }}</td>
             <td class="name">{{ o.name }}</td>
