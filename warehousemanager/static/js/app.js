@@ -828,6 +828,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (printCells.length > 0) {
         for (let i=0; i < printCells.length; i++) {
+            printCells[i].addEventListener('auxclick', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'gst/?orderitemid=' + printCells[i].parentElement.dataset.orderitemid
+                        window.open(link, '_blank')
+                        })
+            })
             printCells[i].addEventListener('click', function () {
             $.ajax({
                     url: '/get-local-var/PAKER_MAIN/',
@@ -836,7 +847,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     dataType: 'json'
                     }).done(function (data) {
                         link = data + 'gst/?orderitemid=' + printCells[i].parentElement.dataset.orderitemid
-                        window.location.replace(link)
+                        window.open(link, '_blank')
                         })
             })
         }

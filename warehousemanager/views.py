@@ -1163,7 +1163,7 @@ class GoogleSheetTest(View):
         else:
             sheet.update_cell(12, 28, '')
 
-        sheet.update_cell(18, 16, f'{order_item.cardboard_type}{order_item.cardboard_weight}')
+        sheet.update_cell(18, 16, f'{order_item.cardboard_type}{order_item.cardboard_weight}{order_item.cardboard_additional_info}')
 
         buyer_list = order_item.buyer.all()
 
@@ -1209,7 +1209,10 @@ class GoogleSheetTest(View):
 
         sheet.update_cell(17, 6, order_item.dimension_two)
 
-        sheet.update_cell(17, 11, order_item.dimension_three)
+        if order_item.dimension_three:
+            sheet.update_cell(17, 11, order_item.dimension_three)
+        else:
+            sheet.update_cell(17, 11, '')
 
         provider_lower = str(order_item.order.provider).lower()
 
@@ -1437,22 +1440,29 @@ class ImportOrderItems(View):
                     except ObjectDoesNotExist:
                         customer_object = Buyer.objects.create(name=customer, shortcut=customer[:5])
 
+                if sort == 'PRZEKLADKA':
+                    dim1 = width
+                    dim2 = height
 
                 if not break_condition2:
                     if len(name) > 15:
                         name = 'too long'
                     def add_order_item_object(function_order):
-                        new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
-                                                                  sort=sort,
-                                                                  dimension_one=dim1, dimension_two=dim2,
-                                                                  dimension_three=dim3, scores=scores,
-                                                                  format_width=width,
-                                                                  format_height=height, ordered_quantity=quantity,
-                                                                  cardboard_type=cardboard_type,
-                                                                  cardboard_weight=cardboard_weight,
-                                                                  cardboard_additional_info=cardboard_extra, name=name)
-                        if customer_object:
-                            new_order_item.buyer.add(customer_object)
+                        order_item_exists = False
+                        try:
+                            order_item = OrderItem.objects.get(order=function_order, item_number=order_item_num)
+                        except ObjectDoesNotExist:
+                            new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
+                                                                      sort=sort,
+                                                                      dimension_one=dim1, dimension_two=dim2,
+                                                                      dimension_three=dim3, scores=scores,
+                                                                      format_width=width,
+                                                                      format_height=height, ordered_quantity=quantity,
+                                                                      cardboard_type=cardboard_type,
+                                                                      cardboard_weight=cardboard_weight,
+                                                                      cardboard_additional_info=cardboard_extra, name=name)
+                            if customer_object:
+                                new_order_item.buyer.add(customer_object)
 
                     try:
                         order = Order.objects.get(provider=provider_object, order_provider_number=order_num)
