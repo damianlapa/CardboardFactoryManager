@@ -874,6 +874,25 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    const manySheetsForm = document.getElementById('many-sheets')
+
+    if (manySheetsForm !== null) {
+        const allItems = manySheetsForm.children[1]
+        const pickedItems = manySheetsForm.children[2].children[1]
+
+        const allListItems = document.getElementsByClassName('order-item')
+
+        for (let i=0; i < allListItems.length; i++) {
+            allListItems[i].addEventListener('click', function () {
+                console.log(allListItems[i])
+                allListItems[i].style.display = 'none'
+                let element = document.createElement('li')
+                element.innerText = allListItems[i].innerText
+                pickedItems.appendChild(element)
+
+            })
+        }
+    }
 
 })
 

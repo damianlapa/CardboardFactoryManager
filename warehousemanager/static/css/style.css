@@ -767,3 +767,21 @@ input[type=button], input[type=submit], input[type=reset] {
 	position:relative;
 	top:1px;
 }
+
+.picking-form {
+    color: white;
+    display: flex;
+}
+
+.picking-form div.form-window {
+    border: 2px solid white;
+    text-align: left;
+}
+
+.picking-form div.form-window li:hover {
+    color: red;
+}
+
+.picking-form div.form-window ul:hover {
+    color: yellow;
+}
