@@ -269,3 +269,11 @@ class ProductionProcess(models.Model):
         order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
 
         return order_name
+
+
+class SpreadsheetCopy(models.Model):
+    gs_id = models.CharField(max_length=48)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.created)

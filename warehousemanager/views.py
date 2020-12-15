@@ -7,6 +7,7 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
+from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
@@ -1150,7 +1151,24 @@ class GoogleSheetTest(View):
 
         client = gspread.authorize(creds)
 
-        sheet = client.open('zlecenie produkcyjne').sheet1
+        sheet_zam = client.open('zlecenie produkcyjne')
+
+        sheet = sheet_zam.sheet1
+
+        all_sheets = SpreadsheetCopy.objects.all()
+
+        for s in all_sheets:
+            print('utworzono', s.created)
+            if timezone.now() > s.created + datetime.timedelta(minutes=30):
+                client.del_spreadsheet(s.gs_id)
+                s.delete()
+
+        new_title = f'{order_item}'
+
+        new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
+                             copy_permissions=True)
+
+        SpreadsheetCopy.objects.create(gs_id=new_gs.id)
 
         sheet.update_cell(18, 21, order_item.ordered_quantity)
 
@@ -1163,7 +1181,8 @@ class GoogleSheetTest(View):
         else:
             sheet.update_cell(12, 28, '')
 
-        sheet.update_cell(18, 16, f'{order_item.cardboard_type}{order_item.cardboard_weight}{order_item.cardboard_additional_info}')
+        sheet.update_cell(18, 16,
+                          f'{order_item.cardboard_type}{order_item.cardboard_weight}{order_item.cardboard_additional_info}')
 
         buyer_list = order_item.buyer.all()
 
@@ -1377,10 +1396,10 @@ class ImportOrderItems(View):
                             dim3 = punch.dimension_three
                             name = punch.name
                         else:
-                            result += f'NO DIMENSIONS ERROR IN ROW: {row_num}'
+                            result += f'NO DIMENSIONS ERROR IN ROW: {row_num}<br>'
                     except ObjectDoesNotExist:
                         name = dimensions_split[0]
-                        result += f'DIMENSIONS ERROR {dimensions_split[0]}'
+                        result += f'DIMENSIONS ERROR {dimensions_split[0]}<br>'
                 elif len(dimensions_split) == 2:
                     dim1 = dimensions_split[0]
                     dim2 = dimensions_split[1].split()[0]
@@ -1447,10 +1466,12 @@ class ImportOrderItems(View):
                 if not break_condition2:
                     if len(name) > 15:
                         name = 'too long'
+
                     def add_order_item_object(function_order):
-                        order_item_exists = False
+                        statement = ''
                         try:
                             order_item = OrderItem.objects.get(order=function_order, item_number=order_item_num)
+                            statement += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]/{name} <span style="color: red;">ALREADY EXISTS</span><br>'
                         except ObjectDoesNotExist:
                             new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
                                                                       sort=sort,
@@ -1460,13 +1481,16 @@ class ImportOrderItems(View):
                                                                       format_height=height, ordered_quantity=quantity,
                                                                       cardboard_type=cardboard_type,
                                                                       cardboard_weight=cardboard_weight,
-                                                                      cardboard_additional_info=cardboard_extra, name=name)
+                                                                      cardboard_additional_info=cardboard_extra,
+                                                                      name=name)
                             if customer_object:
                                 new_order_item.buyer.add(customer_object)
 
+                        return statement
+
                     try:
                         order = Order.objects.get(provider=provider_object, order_provider_number=order_num)
-                        add_order_item_object(order)
+                        result += add_order_item_object(order)
                     except ObjectDoesNotExist:
                         # order date
                         order_date = row[4]
@@ -1477,11 +1501,8 @@ class ImportOrderItems(View):
                                                          is_completed=True)
 
                         new_order.save()
-
-                        add_order_item_object(new_order)
-
                         result += f'ORDER {new_order} CREATED<br>'
 
-                    result += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]/{name}<br>'
+                        result += add_order_item_object(new_order)
 
         return HttpResponse(result)
