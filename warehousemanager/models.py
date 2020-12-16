@@ -99,7 +99,7 @@ class CardboardProvider(models.Model):
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
-    shortcut = models.CharField(max_length=8)
+    shortcut = models.CharField(max_length=32)
 
     class Meta:
         ordering = ['name']
@@ -170,7 +170,7 @@ class OrderItemQuantity(models.Model):
 
 class Machine(models.Model):
     name = models.CharField(max_length=32)
-    shortcut = models.CharField(max_length=8)
+    shortcut = models.CharField(max_length=16)
 
 
 class Note(models.Model):
