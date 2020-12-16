@@ -99,7 +99,7 @@ class CardboardProvider(models.Model):
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
-    shortcut = models.CharField(max_length=32, blank=True)
+    shortcut = models.CharField(max_length=32)
 
     class Meta:
         ordering = ['name']
