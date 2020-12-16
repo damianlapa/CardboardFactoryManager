@@ -8,40 +8,37 @@ Prepare Many Spreadsheets
 
 {% block content %}
 <div style="display: inline-block">
-    <form method="post">
+    <div class="pick-form" id="many-sheets">
         {% csrf_token %}
-        <select name="order_items" multiple>
-            {% for i in all_items %}
-                <option value="{{ i.id }}">{{ i }}</option>
-            {% endfor %}
-        </select>
-        <p><input type="submit"></p>
-    </form>
-    <form method="post" class="picking-form" id="many-sheets">
-        {% csrf_token %}
-        <div class="form-window">
-            <h2>ITEMS:</h2>
-            {% for o in all_orders %}
-            <li>{{ o }}
-                <ol>
-                {% for i in all_items %}
+        <div class="form-window"><button value="PRZYGOTUJ" id="prepare-sheets" class="add-button-1">PRZYGOTUJ</button></div>
+        <div class="picking-form">
+            <div class="form-window">
+                <h2>ITEMS:</h2>
+                {% for o in all_orders %}
+                <span class="order-name">{{ o }}</span>
+                    <ol>
+                    {% for i in all_items %}
 
-                    {% if i.order == o %}<ul class="order-item">{{ i }}</ul>{% endif %}
+                        {% if i.order == o %}
+                        <ul class="order-item" data-itemid="{{i.id}}">
+                            {{ i }}
+                        </ul>
+                        {% endif %}
 
+                    {% endfor %}
+                </ol>
                 {% endfor %}
-            </ol>
-            </li>
-            {% endfor %}
-        </div>
-        <div class="form-window">
-            <h2>PICKED ITEMS:</h2>
-            <ul>
+            </div>
+            <div class="form-window">
+                <h2>PICKED ITEMS:</h2>
+                <ol id="picked-items">
 
-            </ul>
+                </ol>
+            </div>
         </div>
 
-        <p><input type="submit"></p>
-    </form>
+
+    </div>
 </div>
 
 {% endblock %}

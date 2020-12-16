@@ -785,3 +785,12 @@ input[type=button], input[type=submit], input[type=reset] {
 .picking-form div.form-window ul:hover {
     color: yellow;
 }
+
+.order-name {
+    font-size: 16px;
+    color: moccasin;
+}
+
+.order-name:hover {
+    color: tomato;
+}

@@ -878,20 +878,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (manySheetsForm !== null) {
         const allItems = manySheetsForm.children[1]
-        const pickedItems = manySheetsForm.children[2].children[1]
+        const pickedItems = document.getElementById('picked-items')
+        const prepareBtn = document.getElementById('prepare-sheets')
+
+        const orderNames = document.getElementsByClassName('order-name')
+
+        const picked = document.getElementsByClassName('picked')
 
         const allListItems = document.getElementsByClassName('order-item')
 
+        for (let i=0; i < orderNames.length; i++){
+            orderNames[i].addEventListener('click', function () {
+                var order = orderNames[i].cloneNode(true)
+                pickedItems.appendChild(order)
+                orderNames[i].style.display = 'none'
+            })
+        }
+
         for (let i=0; i < allListItems.length; i++) {
             allListItems[i].addEventListener('click', function () {
-                console.log(allListItems[i])
+                var element = allListItems[i].cloneNode(true)
+                element.classList.toggle('picked')
                 allListItems[i].style.display = 'none'
-                let element = document.createElement('li')
-                element.innerText = allListItems[i].innerText
                 pickedItems.appendChild(element)
 
             })
         }
+
+        prepareBtn.addEventListener('click', function () {
+            let allItemsText = ''
+            for (let i=0; i < picked.length; i++) {
+                allItemsText += picked[i].dataset.itemid
+                allItemsText += '*'
+            }
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'prepared-gs/?items_nums=' + allItemsText
+                        window.open(link, '_blank')
+                        })
+        })
     }
 
 })

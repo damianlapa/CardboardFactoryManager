@@ -1508,7 +1508,7 @@ class ImportOrderItems(View):
         return HttpResponse(result)
 
 
-class PrepareManySpreadsheets(View):
+class PrepareManySpreadsheetsForm(View):
 
     def get(self, request):
         all_orders = Order.objects.all()
@@ -1549,3 +1549,43 @@ class PrepareManySpreadsheets(View):
             SpreadsheetCopy.objects.create(gs_id=new_gs.id)'''
 
         return HttpResponse('CREATED', order_items)
+
+
+class PrepareManySpreadsheets(View):
+
+    def get(self, request):
+        nums = []
+        items_nums = request.GET.get('items_nums')
+        split_nums = items_nums.split('*')
+        for s in split_nums:
+            if s != '':
+                nums.append(int(s))
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": google_key(),
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+        client = gspread.authorize(creds)
+
+        for n in nums:
+            o = OrderItem.objects.get(id=n)
+            new_title = f'{o}'
+
+            new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
+                                 copy_permissions=True)
+
+            SpreadsheetCopy.objects.create(gs_id=new_gs.id)
+
+        return HttpResponse('Orders prepared!')
