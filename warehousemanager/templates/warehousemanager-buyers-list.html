@@ -15,11 +15,13 @@
         <tr>
             <th>Nr</th>
             <th>Nazwa</th>
+            <th>Skrót</th>
         </tr>
         {% for b in buyers %}
         <tr>
             <td>{{ forloop.counter }}</td>
             <td>{{ b.name }}</td>
+            <td>{{ b.shortcut }}</td>
         </tr>
         {% endfor %}
 
