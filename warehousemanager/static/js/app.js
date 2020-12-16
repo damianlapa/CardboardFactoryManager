@@ -923,6 +923,20 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 
+    const printLinks = document.getElementsByClassName('print-link')
+    console.log(printLinks)
+
+    if (printLinks.length > 0) {
+        for (let i=0; i < printLinks.length; i++) {
+            printLinks[i].addEventListener('click', function () {
+
+                link = 'https://docs.google.com/spreadsheets/d/' + printLinks[i].dataset.printlink + '/edit#gid=1727884471'
+                window.open(link, '_blank')
+            })
+
+        }
+    }
+
 })
 
 function drag(ev) {

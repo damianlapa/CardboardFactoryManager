@@ -20,7 +20,7 @@ import docx
 import json
 import datetime
 
-from warehousemanager.functions import google_key
+from warehousemanager.functions import google_key, create_spreadsheet_copy
 
 import subprocess
 # import models from warehousemanager app
@@ -1457,7 +1457,7 @@ class ImportOrderItems(View):
                     try:
                         customer_object = Buyer.objects.get(name=customer)
                     except ObjectDoesNotExist:
-                        customer_object = Buyer.objects.create(name=customer, shortcut=customer[:5])
+                        customer_object = Buyer.objects.create(name=customer, shortcut=customer[:7])
 
                 if sort == 'PRZEKLADKA':
                     dim1 = width
@@ -1555,6 +1555,7 @@ class PrepareManySpreadsheets(View):
 
     def get(self, request):
         nums = []
+        prepared_gs = []
         items_nums = request.GET.get('items_nums')
         split_nums = items_nums.split('*')
         for s in split_nums:
@@ -1580,12 +1581,8 @@ class PrepareManySpreadsheets(View):
         client = gspread.authorize(creds)
 
         for n in nums:
-            o = OrderItem.objects.get(id=n)
-            new_title = f'{o}'
+            order_name = f'{OrderItem.objects.get(id=n)}'
+            prepared_gs.append((order_name, create_spreadsheet_copy(n)))
 
-            new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
-                                 copy_permissions=True)
-
-            SpreadsheetCopy.objects.create(gs_id=new_gs.id)
-
-        return HttpResponse('Orders prepared!')
+        prepared_gs = zip(prepared_gs)
+        return render(request, 'warehousemanager-print-orders.html', locals())
