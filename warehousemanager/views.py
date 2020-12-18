@@ -1584,5 +1584,4 @@ class PrepareManySpreadsheets(View):
             order_name = f'{OrderItem.objects.get(id=n)}'
             prepared_gs.append((order_name, create_spreadsheet_copy(n)))
 
-        prepared_gs = zip(prepared_gs)
-        return render(request, 'warehousemanager-print-orders.html', locals())
+        return HttpResponse(json.dumps(prepared_gs))

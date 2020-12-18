@@ -912,14 +912,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 allItemsText += '*'
             }
             $.ajax({
-                    url: '/get-local-var/PAKER_MAIN/',
-                    data: {},
-                    type: 'GET',
-                    dataType: 'json'
-                    }).done(function (data) {
-                        link = data + 'prepared-gs/?items_nums=' + allItemsText
-                        window.open(link, '_blank')
-                        })
+                url: '/prepared-gs/',
+                data: {'items_nums': allItemsText},
+                type: 'GET',
+                dataType: 'json'
+                }).done(function (data) {
+                    console.log(data)
+                })
+
+            manySheetsForm.style.display = 'none'
         })
     }
 
