@@ -7,16 +7,22 @@ ITEM_SORTS = (
     ('201', 'FEFCO 201'),
     ('202', 'FEFCO 202'),
     ('203', 'FEFCO 203'),
+    ('301', 'FEFCO 301'),
     ('SZTANCA', 'Sztanca'),
-    ('PRZEKLADKA', 'Przekładka')
+    ('PRZEKLADKA', 'Przekładka'),
+    ('MAG', 'Magazyn'),
+    ('ROT/TYG', 'Rotacja/Tygiel')
 )
 
 CARDBOARD_TYPES = (
-    ('B', 'B'),
-    ('C', 'C'),
-    ('E', 'E'),
-    ('BC', 'BC'),
-    ('EB', 'EB')
+    ('3B', '3B'),
+    ('3C', '3C'),
+    ('3E', '3E'),
+    ('5BC', '5BC'),
+    ('5EB', '5EB'),
+    ('BB', 'BB'),
+    ('BCS', 'BCS'),
+    ('BS', 'BS')
 )
 
 GENRES = (
@@ -88,13 +94,12 @@ class CardboardProvider(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        if self.shortcut:
-            return f'{self.name}({self.shortcut})'
         return f'{self.name}'
 
 
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
+    shortcut = models.CharField(max_length=32)
 
     class Meta:
         ordering = ['name']
@@ -130,6 +135,7 @@ class OrderItem(models.Model):
     buyer = models.ManyToManyField(Buyer, blank=True)
     cardboard_type = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     cardboard_weight = models.IntegerField()
+    cardboard_additional_info = models.CharField(max_length=32, default='', blank=True)
     name = models.CharField(max_length=16, blank=True)
     is_completed = models.BooleanField(default=False)
 
@@ -164,7 +170,7 @@ class OrderItemQuantity(models.Model):
 
 class Machine(models.Model):
     name = models.CharField(max_length=32)
-    shortcut = models.CharField(max_length=8)
+    shortcut = models.CharField(max_length=16)
 
 
 class Note(models.Model):
@@ -263,3 +269,11 @@ class ProductionProcess(models.Model):
         order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
 
         return order_name
+
+
+class SpreadsheetCopy(models.Model):
+    gs_id = models.CharField(max_length=48)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.created)

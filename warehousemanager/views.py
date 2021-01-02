@@ -7,15 +7,20 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
+from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
 import io
 import os
+import sys
 import shutil
 from django.conf import settings
 import docx
 import json
 import datetime
+
+from warehousemanager.functions import google_key, create_spreadsheet_copy
 
 import subprocess
 # import models from warehousemanager app
@@ -26,8 +31,15 @@ from warehousemanager.forms import *
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 
+# coworking with google sheets
+from django.contrib.staticfiles import finders
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+
 def index(request):
     return HttpResponse('first view')
+
 
 def render_pdf_view(request):
     template_path = 'user_printer.html'
@@ -41,7 +53,7 @@ def render_pdf_view(request):
 
     # create a pdf
     pisa_status = pisa.CreatePDF(
-       html, dest=response)
+        html, dest=response)
     # if error then show some funy view
     if pisa_status.err:
         return HttpResponse('We had some errors <pre>' + html + '</pre>')
@@ -1081,8 +1093,9 @@ class OrderItemPrint(View):
             punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
                 dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
             if punches.count() > 0:
+                punch_id = ''
                 for p in punches:
-                    if punch_id != '.':
+                    if punch_id != '':
                         punch_id += ', '
                     punch_id += p.punch_name()
 
@@ -1104,3 +1117,471 @@ class OrderItemPrint(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+# connecting with google sheets
+class GoogleSheetTest(View):
+    def get(self, request):
+        order_item_id = request.GET.get('orderitemid')
+
+        order_item = OrderItem.objects.get(id=int(order_item_id))
+
+        delta_date = order_item.order.date_of_order + datetime.timedelta(days=14)
+
+        date_end = delta_date.strftime('%d.%m.%Y')
+
+        now = datetime.date.today().strftime('%d.%m.%Y')
+
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": google_key(),
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+        client = gspread.authorize(creds)
+
+        sheet_zam = client.open('zlecenie produkcyjne')
+
+        sheet = sheet_zam.sheet1
+
+        all_sheets = SpreadsheetCopy.objects.all()
+
+        for s in all_sheets:
+            print('utworzono', s.created)
+            if timezone.now() > s.created + datetime.timedelta(minutes=30):
+                client.del_spreadsheet(s.gs_id)
+                s.delete()
+
+        new_title = f'{order_item}'
+
+        new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
+                             copy_permissions=True)
+
+        SpreadsheetCopy.objects.create(gs_id=new_gs.id)
+
+        sheet.update_cell(18, 21, order_item.ordered_quantity)
+
+        sheet.update_cell(12, 16, date_end)
+
+        sheet.update_cell(15, 9, now)
+
+        if order_item.name:
+            sheet.update_cell(12, 28, order_item.name)
+        else:
+            sheet.update_cell(12, 28, '')
+
+        sheet.update_cell(18, 16,
+                          f'{order_item.cardboard_type}{order_item.cardboard_weight}{order_item.cardboard_additional_info}')
+
+        buyer_list = order_item.buyer.all()
+
+        buyer = ''
+
+        for b in buyer_list:
+            if buyer != '':
+                buyer += ', '
+            buyer += str(b.shortcut)
+
+        machine = ''
+
+        if order_item.sort in ('201', '202', '203'):
+            machine = 'SLO'
+        elif order_item.sort == 'SZTANCA':
+            machine = 'TYG'
+        elif order_item.sort == 'PRZEKLADKA':
+            machine = 'MAG'
+            if order_item.dimension_one != order_item.format_width:
+                machine = 'KRA'
+            elif order_item.dimension_two != order_item.format_height:
+                machine = 'KRA'
+
+        punch_id = ''
+
+        if order_item.sort == 'SZTANCA':
+            punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
+                dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
+            if punches.count() > 0:
+                punch_id = ''
+                for p in punches:
+                    if punch_id != '':
+                        punch_id += ', '
+                    punch_id += p.punch_name()
+
+        sheet.update_cell(12, 21, machine)
+
+        sheet.update_cell(20, 6, punch_id)
+
+        sheet.update_cell(18, 24, f'{order_item.format_width}x{order_item.format_height}')
+
+        sheet.update_cell(17, 1, order_item.dimension_one)
+
+        sheet.update_cell(17, 6, order_item.dimension_two)
+
+        if order_item.dimension_three:
+            sheet.update_cell(17, 11, order_item.dimension_three)
+        else:
+            sheet.update_cell(17, 11, '')
+
+        provider_lower = str(order_item.order.provider).lower()
+
+        if provider_lower == 'convert':
+            prov_shortcut = 'CN'
+        elif provider_lower == 'aquila':
+            prov_shortcut = 'AQ'
+        elif provider_lower == 'werner':
+            prov_shortcut = 'WER'
+        else:
+            prov_shortcut = 'NN'
+
+        sheet.update_cell(6, 11,
+                          f'{prov_shortcut} {order_item.order.order_provider_number}/{order_item.item_number} {buyer}')
+
+        return redirect(
+            'https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
+
+
+class ImportOrderItems(View):
+
+    def get(self, request):
+        # connecting to spreadsheet
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": google_key(),
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+        client = gspread.authorize(creds)
+
+        sheet = client.open('tekt zam').sheet1
+
+        test_const = 260 if not request.GET.get('record') else int(request.GET.get('record'))
+
+        new_rows = []
+
+        result = ''
+
+        # collecting data
+
+        for x in range(test_const, len(sheet.get_all_values()) + 1):
+            new_rows.append((sheet.row_values(x), x))
+
+        for row, row_num in new_rows:
+            break_condition = False
+            provider_object = None
+
+            # provider
+            provider_shortcut = row[2]
+            if provider_shortcut == 'AQ':
+                provider = 'AQUILA'
+            elif provider_shortcut == 'CV' or provider_shortcut == 'CN':
+                provider = 'CONVERT'
+            elif provider_shortcut == 'WER':
+                provider = 'WERNER'
+            else:
+                provider = 'OTHER'
+
+            try:
+                provider_object = CardboardProvider.objects.get(name=provider)
+            except ObjectDoesNotExist:
+                result += '!# PROVIDER DOES NOT EXISTS !!! ERROR ###<br>'
+                break_condition = True
+
+            if not break_condition:
+                break_condition2 = False
+                order_num = None
+
+                # collecting data from rows
+
+                try:
+                    order_num = int(row[0])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER NUMBER)<br>'
+                    break_condition2 = True
+
+                try:
+                    order_item_num = int(row[1])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER ITEM NUMBER)<br>'
+                    break_condition2 = True
+
+                try:
+                    width = int(row[8])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT WIDTH)<br>'
+                    break_condition2 = True
+
+                try:
+                    height = int(row[9])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT HEIGHT)<br>'
+                    break_condition2 = True
+
+                try:
+                    height = int(row[9])
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT HEIGHT)<br>'
+                    break_condition2 = True
+
+                # sort
+                sheet_value = row[6]
+                if sheet_value in ('ROT F201', 'SLO F201'):
+                    sort = '201'
+                elif sheet_value in ('ROT F200', 'SLO F200'):
+                    sort = '200'
+                elif sheet_value in ('ROT F203', 'SLO F203'):
+                    sort = '203'
+                elif sheet_value in ('SLO 301 WIEKO', 'SLO 301 DNO'):
+                    sort = '301'
+                elif sheet_value == 'TYGIEL':
+                    sort = 'SZTANCA'
+                elif sheet_value == 'ROT/TYG':
+                    sort = 'ROT/TYG'
+                elif sheet_value == 'MAG':
+                    sort = 'MAG'
+                elif sheet_value == 'KRA':
+                    sort = 'PRZEKLADKA'
+                else:
+                    sort = 'PRZEKLADKA'
+
+                # quantity handling
+
+                try:
+                    quantity_cell = row[10]
+                    if quantity_cell == '':
+                        quantity_cell = 0
+                    quantity = int(quantity_cell)
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG QUANTITY)<br>'
+                    break_condition2 = True
+
+                # order_dimensions
+                dimensions = row[24]
+                dim1 = 0
+                dim2 = 0
+                dim3 = 0
+                name = ''
+                dimensions_split = dimensions.split('x')
+
+                if len(dimensions_split) == 0:
+                    result += f'NO DIMENSIONS ERROR IN ROW: {row_num}'
+                elif len(dimensions_split) == 1:
+                    try:
+                        print(row_num, '############################3')
+                        if dimensions_split[0] != '':
+                            punch = Punch.objects.get(name=dimensions_split[0])
+                            dim1 = punch.dimension_one
+                            dim2 = punch.dimension_two
+                            dim3 = punch.dimension_three
+                            name = punch.name
+                        else:
+                            result += f'NO DIMENSIONS ERROR IN ROW: {row_num}<br>'
+                    except ObjectDoesNotExist:
+                        name = dimensions_split[0]
+                        result += f'DIMENSIONS ERROR {dimensions_split[0]}<br>'
+                elif len(dimensions_split) == 2:
+                    dim1 = dimensions_split[0]
+                    dim2 = dimensions_split[1].split()[0]
+                    if len(dimensions_split[1].split()) > 1:
+                        name = dimensions_split[1].split()[1]
+                else:
+                    dim1 = dimensions_split[0]
+                    dim2 = dimensions_split[1]
+                    dim3 = dimensions_split[2].split()[0]
+
+                    if len(dimensions_split[2].split()) > 1:
+                        name = dimensions_split[2].split()[1]
+
+                try:
+                    dim1 = int(dim1) if dim1 else 0
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FIRST DIMENSION)<br>'
+                    break_condition2 = True
+
+                try:
+                    dim2 = int(dim2) if dim2 else 0
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG SECOND DIMENSION)<br>'
+                    break_condition2 = True
+
+                try:
+                    if dim3 != '':
+                        dim3 = int(dim3) if dim3 else None
+                    else:
+                        dim3 = None
+                except ValueError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG THIRD DIMENSION)<br>'
+                    break_condition2 = True
+
+                # scores
+                scores = row[23]
+                if scores == '':
+                    scores = '-'
+
+                # cardboard
+                cardboard_type = row[14]
+                if len(cardboard_type) > 6:
+                    cardboard_type = 'BB'
+                cardboard_weight = row[15]
+                if cardboard_weight == '':
+                    cardboard_weight = 0
+                cardboard_extra = row[16]
+
+                # customer
+                customer = row[13]
+                customer_object = None
+                if customer != '':
+                    customer = customer.upper()
+
+                    try:
+                        customer_object = Buyer.objects.get(name=customer)
+                    except ObjectDoesNotExist:
+                        customer_object = Buyer.objects.create(name=customer, shortcut=customer[:7])
+
+                if sort == 'PRZEKLADKA':
+                    dim1 = width
+                    dim2 = height
+
+                if not break_condition2:
+                    if len(name) > 15:
+                        name = 'too long'
+
+                    def add_order_item_object(function_order):
+                        statement = ''
+                        try:
+                            order_item = OrderItem.objects.get(order=function_order, item_number=order_item_num)
+                            statement += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]/{name} <span style="color: red;">ALREADY EXISTS</span><br>'
+                        except ObjectDoesNotExist:
+                            new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
+                                                                      sort=sort,
+                                                                      dimension_one=dim1, dimension_two=dim2,
+                                                                      dimension_three=dim3, scores=scores,
+                                                                      format_width=width,
+                                                                      format_height=height, ordered_quantity=quantity,
+                                                                      cardboard_type=cardboard_type,
+                                                                      cardboard_weight=cardboard_weight,
+                                                                      cardboard_additional_info=cardboard_extra,
+                                                                      name=name)
+                            if customer_object:
+                                new_order_item.buyer.add(customer_object)
+
+                        return statement
+
+                    try:
+                        order = Order.objects.get(provider=provider_object, order_provider_number=order_num)
+                        result += add_order_item_object(order)
+                    except ObjectDoesNotExist:
+                        # order date
+                        order_date = row[4]
+
+                        new_order = Order.objects.create(provider=provider_object, order_provider_number=order_num,
+                                                         date_of_order=datetime.datetime.strptime(order_date,
+                                                                                                  '%Y-%m-%d'),
+                                                         is_completed=True)
+
+                        new_order.save()
+                        result += f'ORDER {new_order} CREATED<br>'
+
+                        result += add_order_item_object(new_order)
+
+        return HttpResponse(result)
+
+
+class PrepareManySpreadsheetsForm(View):
+
+    def get(self, request):
+        all_orders = Order.objects.all()
+        all_items = OrderItem.objects.all()
+
+        return render(request, 'warehousemanager-prepare-gs.html', locals())
+
+    def post(self, request):
+        order_items = request.POST.get('order_items')
+
+        print(order_items)
+
+        '''scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": google_key(),
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+        client = gspread.authorize(creds)'''
+
+        '''for o in order_items:
+            new_title = f'{o}'
+
+            new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
+                                 copy_permissions=True)
+
+            SpreadsheetCopy.objects.create(gs_id=new_gs.id)'''
+
+        return HttpResponse('CREATED', order_items)
+
+
+class PrepareManySpreadsheets(View):
+
+    def get(self, request):
+        nums = []
+        prepared_gs = []
+        items_nums = request.GET.get('items_nums')
+        split_nums = items_nums.split('*')
+        for s in split_nums:
+            if s != '':
+                nums.append(int(s))
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+        creds_dict = {
+            "type": "service_account",
+            "project_id": os.environ['PROJECT_ID'],
+            "private_key_id": os.environ['PRIVATE_KEY_ID'],
+            "private_key": google_key(),
+            "client_email": os.environ['CLIENT_EMAIL'],
+            "client_id": os.environ['CLIENT_ID'],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
+        }
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+        client = gspread.authorize(creds)
+
+        for n in nums:
+            order_name = f'{OrderItem.objects.get(id=n)}'
+            prepared_gs.append((order_name, create_spreadsheet_copy(n)))
+
+        return HttpResponse(json.dumps(prepared_gs))

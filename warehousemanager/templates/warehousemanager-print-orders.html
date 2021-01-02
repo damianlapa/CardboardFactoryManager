@@ -1,0 +1,21 @@
+{% extends '__base2__.html' %}
+
+{% block title %}
+{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div>
+    {% for gs in prepared_gs %}
+        {% for name, link in gs %}
+            <p class="print-link" data-printlink="{{ link }}">{{ name }}</p>
+        {% endfor %}
+    {% endfor %}
+
+</div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}

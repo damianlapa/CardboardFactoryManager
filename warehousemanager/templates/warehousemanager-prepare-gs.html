@@ -1,0 +1,47 @@
+{% extends '__base2__.html' %}
+
+{% block title %}
+Prepare Many Spreadsheets
+{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <div class="pick-form" id="many-sheets">
+        {% csrf_token %}
+        <div class="form-window"><button value="PRZYGOTUJ" id="prepare-sheets" class="add-button-1">PRZYGOTUJ</button></div>
+        <div class="picking-form">
+            <div class="form-window">
+                <h2>ITEMS:</h2>
+                {% for o in all_orders %}
+                <span class="order-name">{{ o }}</span>
+                    <ol>
+                    {% for i in all_items %}
+
+                        {% if i.order == o %}
+                        <ul class="order-item" data-itemid="{{i.id}}">
+                            {{ i }}
+                        </ul>
+                        {% endif %}
+
+                    {% endfor %}
+                </ol>
+                {% endfor %}
+            </div>
+            <div class="form-window">
+                <h2>PICKED ITEMS:</h2>
+                <ol id="picked-items">
+
+                </ol>
+            </div>
+        </div>
+
+
+    </div>
+    <div id="prepared-sheets"></div>
+</div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}

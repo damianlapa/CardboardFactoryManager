@@ -828,6 +828,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (printCells.length > 0) {
         for (let i=0; i < printCells.length; i++) {
+            printCells[i].addEventListener('auxclick', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'gst/?orderitemid=' + printCells[i].parentElement.dataset.orderitemid
+                        window.open(link, '_blank')
+                        })
+            })
             printCells[i].addEventListener('click', function () {
             $.ajax({
                     url: '/get-local-var/PAKER_MAIN/',
@@ -835,8 +846,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     type: 'GET',
                     dataType: 'json'
                     }).done(function (data) {
-                        link = data + 'order-item-print/' + printCells[i].parentElement.dataset.orderitemid + '/'
-                        window.location.replace(link)
+                        link = data + 'gst/?orderitemid=' + printCells[i].parentElement.dataset.orderitemid
+                        window.open(link, '_blank')
                         })
             })
         }
@@ -863,6 +874,69 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    const manySheetsForm = document.getElementById('many-sheets')
+
+    if (manySheetsForm !== null) {
+        const allItems = manySheetsForm.children[1]
+        const pickedItems = document.getElementById('picked-items')
+        const prepareBtn = document.getElementById('prepare-sheets')
+
+        const orderNames = document.getElementsByClassName('order-name')
+
+        const picked = document.getElementsByClassName('picked')
+
+        const allListItems = document.getElementsByClassName('order-item')
+
+        for (let i=0; i < orderNames.length; i++){
+            orderNames[i].addEventListener('click', function () {
+                var order = orderNames[i].cloneNode(true)
+                pickedItems.appendChild(order)
+                orderNames[i].style.display = 'none'
+            })
+        }
+
+        for (let i=0; i < allListItems.length; i++) {
+            allListItems[i].addEventListener('click', function () {
+                var element = allListItems[i].cloneNode(true)
+                element.classList.toggle('picked')
+                allListItems[i].style.display = 'none'
+                pickedItems.appendChild(element)
+
+            })
+        }
+
+        prepareBtn.addEventListener('click', function () {
+            let allItemsText = ''
+            for (let i=0; i < picked.length; i++) {
+                allItemsText += picked[i].dataset.itemid
+                allItemsText += '*'
+            }
+            $.ajax({
+                url: '/prepared-gs/',
+                data: {'items_nums': allItemsText},
+                type: 'GET',
+                dataType: 'json'
+                }).done(function (data) {
+                    console.log(data)
+                })
+
+            manySheetsForm.style.display = 'none'
+        })
+    }
+
+    const printLinks = document.getElementsByClassName('print-link')
+    console.log(printLinks)
+
+    if (printLinks.length > 0) {
+        for (let i=0; i < printLinks.length; i++) {
+            printLinks[i].addEventListener('click', function () {
+
+                link = 'https://docs.google.com/spreadsheets/d/' + printLinks[i].dataset.printlink + '/edit#gid=1727884471'
+                window.open(link, '_blank')
+            })
+
+        }
+    }
 
 })
 
