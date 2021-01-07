@@ -1276,7 +1276,9 @@ class ImportOrderItems(View):
 
         sheet = client.open('tz2021').sheet1
 
-        test_const = 4 if not request.GET.get('record') else int(request.GET.get('record'))
+        record = 4 if not request.GET.get('record') else int(request.GET.get('record'))
+
+        final_record = len(sheet.get_all_values()) + 1 if not request.GET.get('final_record') else int(request.GET.get('final_record'))
 
         new_rows = []
 
@@ -1284,7 +1286,7 @@ class ImportOrderItems(View):
 
         # collecting data
 
-        for x in range(test_const, len(sheet.get_all_values()) + 1):
+        for x in range(record, final_record):
             new_rows.append((sheet.row_values(x), x))
 
         for row, row_num in new_rows:
@@ -1373,12 +1375,16 @@ class ImportOrderItems(View):
                     break_condition2 = True
 
                 # order_dimensions
-                dimensions = row[18]
-                dim1 = 0
-                dim2 = 0
-                dim3 = 0
-                name = ''
-                dimensions_split = dimensions.split('x')
+                try:
+                    dimensions = row[18]
+                    dim1 = 0
+                    dim2 = 0
+                    dim3 = 0
+                    name = ''
+                    dimensions_split = dimensions.split('x')
+                except IndexError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(NO DIMENSIONS)<br>'
+                    break_condition2 = True
 
                 if len(dimensions_split) == 0:
                     result += f'NO DIMENSIONS ERROR IN ROW: {row_num}'
