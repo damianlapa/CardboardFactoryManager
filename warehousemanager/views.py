@@ -1375,16 +1375,19 @@ class ImportOrderItems(View):
                     break_condition2 = True
 
                 # order_dimensions
+                dimensions = ''
                 try:
                     dimensions = row[18]
                     dim1 = 0
                     dim2 = 0
                     dim3 = 0
                     name = ''
-                    dimensions_split = dimensions.split('x')
+
                 except IndexError:
                     result += f'VALUE ERROR IN ROW: {row_num}(NO DIMENSIONS)<br>'
                     break_condition2 = True
+
+                dimensions_split = dimensions.split('x')
 
                 if len(dimensions_split) == 0:
                     result += f'NO DIMENSIONS ERROR IN ROW: {row_num}'
