@@ -8,6 +8,7 @@ ITEM_SORTS = (
     ('202', 'FEFCO 202'),
     ('203', 'FEFCO 203'),
     ('301', 'FEFCO 301'),
+    ('409', 'FEFCO 409'),
     ('SZTANCA', 'Sztanca'),
     ('PRZEKLADKA', 'Przekładka'),
     ('MAG', 'Magazyn'),
@@ -277,3 +278,11 @@ class SpreadsheetCopy(models.Model):
 
     def __str__(self):
         return str(self.created)
+
+
+class DailyReport(models.Model):
+    date = models.DateField()
+    add_date = models.DateField(auto_created=True)
+    last_modification = models.DateField(auto_now=True)
+    workers = models.ManyToManyField(Person)
+    description = models.TextField()

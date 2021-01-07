@@ -710,17 +710,32 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function FormatCorrectness(type, cardboard, fDim1, fDim2, dim1, dim2, dim3, scores){
+        fDim1 = parseInt(fDim1)
+        fDim2 = parseInt(fDim2)
+
+        dim1 = parseInt(dim1)
+        dim2 = parseInt(dim2)
+        if (dim3 !== null){
+            dim3 = parseInt(dim3)
+        }
         switch(type){
             case '201':
                 switch(cardboard){
                     case 'B':
+
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 12 ));
+                    console.log(condition1, condition2)
+                    console.log(dim1, dim2, dim3)
+                    console.log(dim1 + dim2)
                     scoresCorrectness = ScoresCorrectness(scores)
                     return (condition1 || condition2) && scoresCorrectness;
                     case 'C':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 13 ));
+                    console.log(condition1, condition2)
+                    console.log(dim1, dim2, dim3)
+                    console.log(dim1 + dim2)
                     return condition1 || condition2;
                     case 'BC':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
@@ -857,6 +872,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
     for (let i=0; i < orderItems.length; i++) {
 
+        let nf = 0
+
+        if (orderItems[i].children[0].classList.contains('order-num')) {
+            nf = 2
+        }
+
+        let dimensions = orderItems[i].children[8 + nf].innerText.split('x')
+        let cardboard_full = orderItems[i].children[7 + nf].innerText
+        let cardboard = ''
+
+        if (cardboard_full.charAt(0) === '3') {
+            cardboard = cardboard_full.charAt(1)
+        }
+        else if (cardboard_full.charAt(0) === '5') {
+            cardboard = cardboard_full.charAt(1) + cardboard_full.charAt(2)
+        }
+
+        let type = orderItems[i].children[1 + nf].innerText
+        // let cardboard = orderItems[i].children[9]
+        let format_width = orderItems[i].children[2 + nf].innerText
+        let format_height = orderItems[i].children[3 + nf].innerText
+        let dimension1 = dimensions[0]
+        let dimension2 = dimensions[1]
+        let dimension3 = dimensions[2]
+        let scores = orderItems[i].children[10 + nf]
+
+        if (FormatCorrectness(type, cardboard, format_width, format_height, dimension1, dimension2, dimension3, scores)) {
+        }else {
+            orderItems[i].style.backgroundColor = 'orange'
+        }
+
         for (let j=0; j < orderItems[i].children.length; j++) {
             if (!(orderItems[i].children[j].classList.contains('state-cell') || orderItems[i].children[j].classList.contains('print-icon'))) {
                     orderItems[i].children[j].addEventListener('click', function () {
@@ -925,7 +971,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const printLinks = document.getElementsByClassName('print-link')
-    console.log(printLinks)
 
     if (printLinks.length > 0) {
         for (let i=0; i < printLinks.length; i++) {

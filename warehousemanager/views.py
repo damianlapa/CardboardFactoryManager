@@ -897,7 +897,7 @@ class PunchEdit(PermissionRequiredMixin, View):
             edited_punch.pressure_small = pressure_small
             edited_punch.pressure_large = pressure_large
             edited_punch.wave_direction = wave_direction
-            edited_punch.name = name
+            edited_punch.   name = name
             edited_punch.type_letter = type_letter
 
             edited_punch.save()
@@ -1274,9 +1274,9 @@ class ImportOrderItems(View):
 
         client = gspread.authorize(creds)
 
-        sheet = client.open('tekt zam').sheet1
+        sheet = client.open('tz2021').sheet1
 
-        test_const = 260 if not request.GET.get('record') else int(request.GET.get('record'))
+        test_const = 4 if not request.GET.get('record') else int(request.GET.get('record'))
 
         new_rows = []
 
@@ -1292,7 +1292,7 @@ class ImportOrderItems(View):
             provider_object = None
 
             # provider
-            provider_shortcut = row[2]
+            provider_shortcut = row[0]
             if provider_shortcut == 'AQ':
                 provider = 'AQUILA'
             elif provider_shortcut == 'CV' or provider_shortcut == 'CN':
@@ -1315,13 +1315,13 @@ class ImportOrderItems(View):
                 # collecting data from rows
 
                 try:
-                    order_num = int(row[0])
+                    order_num = int(row[1])
                 except ValueError:
                     result += f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER NUMBER)<br>'
                     break_condition2 = True
 
                 try:
-                    order_item_num = int(row[1])
+                    order_item_num = int(row[2])
                 except ValueError:
                     result += f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER ITEM NUMBER)<br>'
                     break_condition2 = True
@@ -1330,12 +1330,6 @@ class ImportOrderItems(View):
                     width = int(row[8])
                 except ValueError:
                     result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT WIDTH)<br>'
-                    break_condition2 = True
-
-                try:
-                    height = int(row[9])
-                except ValueError:
-                    result += f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT HEIGHT)<br>'
                     break_condition2 = True
 
                 try:
@@ -1354,6 +1348,8 @@ class ImportOrderItems(View):
                     sort = '203'
                 elif sheet_value in ('SLO 301 WIEKO', 'SLO 301 DNO'):
                     sort = '301'
+                elif sheet_value in ('ROT F409', 'SLO F409'):
+                    sort = '409'
                 elif sheet_value == 'TYGIEL':
                     sort = 'SZTANCA'
                 elif sheet_value == 'ROT/TYG':
@@ -1377,7 +1373,7 @@ class ImportOrderItems(View):
                     break_condition2 = True
 
                 # order_dimensions
-                dimensions = row[24]
+                dimensions = row[18]
                 dim1 = 0
                 dim2 = 0
                 dim3 = 0
@@ -1403,15 +1399,15 @@ class ImportOrderItems(View):
                 elif len(dimensions_split) == 2:
                     dim1 = dimensions_split[0]
                     dim2 = dimensions_split[1].split()[0]
-                    if len(dimensions_split[1].split()) > 1:
-                        name = dimensions_split[1].split()[1]
                 else:
                     dim1 = dimensions_split[0]
                     dim2 = dimensions_split[1]
                     dim3 = dimensions_split[2].split()[0]
 
-                    if len(dimensions_split[2].split()) > 1:
-                        name = dimensions_split[2].split()[1]
+                try:
+                    name = row[19]
+                except IndexError:
+                    name = ''
 
                 try:
                     dim1 = int(dim1) if dim1 else 0
@@ -1435,21 +1431,21 @@ class ImportOrderItems(View):
                     break_condition2 = True
 
                 # scores
-                scores = row[23]
+                scores = row[13]
                 if scores == '':
                     scores = '-'
 
                 # cardboard
-                cardboard_type = row[14]
+                cardboard_type = row[15]
                 if len(cardboard_type) > 6:
                     cardboard_type = 'BB'
-                cardboard_weight = row[15]
+                cardboard_weight = row[16]
                 if cardboard_weight == '':
                     cardboard_weight = 0
-                cardboard_extra = row[16]
+                cardboard_extra = row[17]
 
                 # customer
-                customer = row[13]
+                customer = row[14]
                 customer_object = None
                 if customer != '':
                     customer = customer.upper()
@@ -1471,7 +1467,7 @@ class ImportOrderItems(View):
                         statement = ''
                         try:
                             order_item = OrderItem.objects.get(order=function_order, item_number=order_item_num)
-                            statement += f' {width}x{height} :: {dimensions}[{dim1}x{dim2}x{dim3}]/{name} <span style="color: red;">ALREADY EXISTS</span><br>'
+                            statement += f'{order_item} || {width}x{height} :: {dimensions}({name}) <span style="color: red;">ALREADY EXISTS</span><br>'
                         except ObjectDoesNotExist:
                             new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
                                                                       sort=sort,
@@ -1483,6 +1479,7 @@ class ImportOrderItems(View):
                                                                       cardboard_weight=cardboard_weight,
                                                                       cardboard_additional_info=cardboard_extra,
                                                                       name=name)
+                            statement += f'{new_order_item} || {width}x{height} :: {dimensions}({name}) <span style="color: green;">CREATED</span><br>'
                             if customer_object:
                                 new_order_item.buyer.add(customer_object)
 
