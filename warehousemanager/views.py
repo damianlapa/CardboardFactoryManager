@@ -1376,12 +1376,12 @@ class ImportOrderItems(View):
 
                 # order_dimensions
                 dimensions = ''
+                dim1 = 0
+                dim2 = 0
+                dim3 = 0
+                name = ''
                 try:
                     dimensions = row[18]
-                    dim1 = 0
-                    dim2 = 0
-                    dim3 = 0
-                    name = ''
 
                 except IndexError:
                     result += f'VALUE ERROR IN ROW: {row_num}(NO DIMENSIONS)<br>'
