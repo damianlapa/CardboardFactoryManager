@@ -1,0 +1,32 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<form method="get">
+    <p>
+    <label>Date:
+        <input type="date" name="date" value="{{ date }}">
+    </label>
+    </p>
+    <p>
+        <label>Date range:
+            <input type="date" name="date_range" value="{{ date_range }}">
+        </label>
+    </p>
+    <input type="submit" value="SELECT">
+</form>
+
+<div>
+    {% if items %}
+
+        {% for i in items %}
+            <p>
+                <span style="color: orange">{{ i.planned_delivery }}</span>
+                <span style="color: white">{{ i }} [{{ i.ordered_quantity }}]</span>
+            </p>
+        {% endfor %}
+
+    {% endif %}
+</div>
+
+{% endblock %}

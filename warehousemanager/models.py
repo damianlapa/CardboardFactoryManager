@@ -139,9 +139,10 @@ class OrderItem(models.Model):
     cardboard_additional_info = models.CharField(max_length=32, default='', blank=True)
     name = models.CharField(max_length=16, blank=True)
     is_completed = models.BooleanField(default=False)
+    planned_delivery = models.DateField(blank=True, null=True)
 
     class Meta:
-        ordering = ['order__provider__name', 'order__order_provider_number', 'item_number']
+        ordering = ['order__date_of_order', 'order__provider__name', 'order__order_provider_number', 'item_number']
 
     def __str__(self):
         return '{}/{}: {}x{}'.format(self.order, self.item_number, self.format_width, self.format_height)

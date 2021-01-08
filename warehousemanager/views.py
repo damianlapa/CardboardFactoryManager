@@ -347,6 +347,7 @@ class NewAllOrders(PermissionRequiredMixin, View):
 
     def get(self, request):
         orders = Order.objects.all()
+        only_uncompleted = False if not request.GET.get('only_u') else True
         provider = request.GET.get('provider')
         if provider:
             orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
@@ -1276,7 +1277,9 @@ class ImportOrderItems(View):
 
         sheet = client.open('tz2021').sheet1
 
-        test_const = 4 if not request.GET.get('record') else int(request.GET.get('record'))
+        record = 4 if not request.GET.get('record') else int(request.GET.get('record'))
+
+        final_record = len(sheet.get_all_values()) + 1 if not request.GET.get('final_record') else int(request.GET.get('final_record'))
 
         new_rows = []
 
@@ -1284,7 +1287,7 @@ class ImportOrderItems(View):
 
         # collecting data
 
-        for x in range(test_const, len(sheet.get_all_values()) + 1):
+        for x in range(record, final_record):
             new_rows.append((sheet.row_values(x), x))
 
         for row, row_num in new_rows:
@@ -1373,11 +1376,18 @@ class ImportOrderItems(View):
                     break_condition2 = True
 
                 # order_dimensions
-                dimensions = row[18]
+                dimensions = ''
                 dim1 = 0
                 dim2 = 0
                 dim3 = 0
                 name = ''
+                try:
+                    dimensions = row[18]
+
+                except IndexError:
+                    result += f'VALUE ERROR IN ROW: {row_num}(NO DIMENSIONS)<br>'
+                    break_condition2 = True
+
                 dimensions_split = dimensions.split('x')
 
                 if len(dimensions_split) == 0:
@@ -1455,6 +1465,12 @@ class ImportOrderItems(View):
                     except ObjectDoesNotExist:
                         customer_object = Buyer.objects.create(name=customer, shortcut=customer[:7])
 
+                # delivery date
+                delivery_date = ''
+                if row[5] != '':
+                    delivery_date = row[5]
+                    print('delivery_date: ', delivery_date)
+
                 if sort == 'PRZEKLADKA':
                     dim1 = width
                     dim2 = height
@@ -1467,6 +1483,11 @@ class ImportOrderItems(View):
                         statement = ''
                         try:
                             order_item = OrderItem.objects.get(order=function_order, item_number=order_item_num)
+
+                            if delivery_date != '':
+                                order_item.planned_delivery = datetime.datetime.strptime(delivery_date, '%Y-%m-%d')
+                                order_item.save()
+
                             statement += f'{order_item} || {width}x{height} :: {dimensions}({name}) <span style="color: red;">ALREADY EXISTS</span><br>'
                         except ObjectDoesNotExist:
                             new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
@@ -1479,6 +1500,9 @@ class ImportOrderItems(View):
                                                                       cardboard_weight=cardboard_weight,
                                                                       cardboard_additional_info=cardboard_extra,
                                                                       name=name)
+                            if delivery_date != '':
+                                new_order_item.planned_delivery = datetime.datetime.strptime(delivery_date, '%Y-%m-%d')
+                                new_order_item.save()
                             statement += f'{new_order_item} || {width}x{height} :: {dimensions}({name}) <span style="color: green;">CREATED</span><br>'
                             if customer_object:
                                 new_order_item.buyer.add(customer_object)
@@ -1582,3 +1606,21 @@ class PrepareManySpreadsheets(View):
             prepared_gs.append((order_name, create_spreadsheet_copy(n)))
 
         return HttpResponse(json.dumps(prepared_gs))
+
+
+class ScheduledDelivery(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_delivery'
+
+    def get(self, request):
+        date = request.GET.get('date')
+        date_range = request.GET.get('date_range')
+
+        items = None
+
+        if date and not date_range:
+            items = OrderItem.objects.filter(planned_delivery=datetime.datetime.strptime(date, '%Y-%m-%d'))
+        elif date and date_range:
+            items = OrderItem.objects.filter(planned_delivery__gte=datetime.datetime.strptime(date, '%Y-%m-%d'))
+            items = items.filter(planned_delivery__lte=datetime.datetime.strptime(date_range, '%Y-%m-%d')).order_by('planned_delivery')
+
+        return render(request, 'warehousemanager-scheduled-delivery.html', locals())
