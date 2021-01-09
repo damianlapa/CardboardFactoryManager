@@ -1,0 +1,35 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+{% if statement %}
+<p style="color: red;">{{ statement }}</p>
+{% endif %}
+
+<form method="get">
+    <p>
+    <label>First row:
+        <input type="number" name="record" value="{{ val_1 }}">
+    </label>
+    </p>
+    <p>
+        <label>Last row:
+            <input type="number" name="final_record" value="{{ val_2 }}">
+        </label>
+    </p>
+    <input type="submit" value="SELECT">
+</form>
+
+<div>
+    {% if result %}
+
+        {% for r in result %}
+                <div style="color: orange">
+                    {{ r }}
+                </div>
+        {% endfor %}
+
+    {% endif %}
+</div>
+
+{% endblock %}
