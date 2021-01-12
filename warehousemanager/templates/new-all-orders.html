@@ -14,7 +14,15 @@
             <p>
                 <label>
                     Klient:
-                    <input type="text" name="customer" value="{{ customer }}">
+                    <select name="customer">
+                        {% for c in all_customers %}
+                        {% if c.name == customer %}
+                        <option value="{{ c.name }}" selected>{{ c.name }}</option>
+                        {% else %}
+                        <option value="{{ c.name }}">{{ c.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
                 </label>
             </p>
             <input type="submit" value="Filtruj">
@@ -83,11 +91,34 @@
 
         {% for order in page_obj %}
         {% for o in order.orderitem_set.all %}
+        {% if customer %}
+            {% for b in o.buyer.all %}
+                {% if b.name == customer %}
+                    <tr class="{{ order.provider }} zamowienie-row" data-orderitemid="{{ o.id }}">
+                        <td class="order-num">{{ order.order_provider_number }}</td>
+                        <td>{{ order.date_of_order }}</td>
+
+                        <td>{{ o.item_number }}</td>
+                        <td>{{ o.sort }}</td>
+                        <td>{{ o.format_width }}</td>
+                        <td>{{ o.format_height }}</td>
+                        <td>{{ o.ordered_quantity }}</td>
+                        <td class="quantity">{% for q in quantities %}{% if q.order_item == o %}{{ q.quantity }}{% endif %}
+                            {% endfor %}</td>
+                        <td>{% for b in o.buyer.all %}{{ b.name }}{% endfor %}</td>
+                        <td>{{ o.cardboard_type }}{{ o.cardboard_weight }}{{ o.cardboard_additional_info }}</td>
+                        <td>{{ o.dimension_one }}x{{ o.dimension_two }}{% if o.dimension_three %}x{{ o.dimension_three }}{% endif %}</td>
+                        <td class="scores">{{ o.scores }}</td>
+                        <td class="name">{{ o.name }}</td>
+                        <td class="state-cell">{% if o.is_completed %}<i class="demo-icon icon-toggle-on" style="color: green"></i>{% else %}<i class="demo-icon icon-toggle-off" style="color: red;"></i>{% endif %}</td>
+                        <td class="print-icon" style="color: black;"><i class="demo-icon icon-print"></i></td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        {% else %}
         <tr class="{{ order.provider }} zamowienie-row" data-orderitemid="{{ o.id }}">
-            {% if forloop.first %}
-            <td rowspan="{{ order.orderitem_set.all|length }}" class="order-num">{{ order.order_provider_number }}</td>
-            <td rowspan="{{ order.orderitem_set.all|length }}">{{ order.date_of_order }}</td>
-            {% endif %}
+            <td class="order-num">{{ order.order_provider_number }}</td>
+            <td>{{ order.date_of_order }}</td>
 
             <td>{{ o.item_number }}</td>
             <td>{{ o.sort }}</td>
@@ -104,10 +135,13 @@
             <td class="state-cell">{% if o.is_completed %}<i class="demo-icon icon-toggle-on" style="color: green"></i>{% else %}<i class="demo-icon icon-toggle-off" style="color: red;"></i>{% endif %}</td>
             <td class="print-icon" style="color: black;"><i class="demo-icon icon-print"></i></td>
         </tr>
+        {% endif %}
         {% endfor %}
+        <!--
         <tr class="***">
             <td colspan="15" class="black_row"> *** </td>
         </tr>
+        -->
         {% endfor %}
     </table>
 
