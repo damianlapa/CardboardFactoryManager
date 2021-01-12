@@ -346,11 +346,18 @@ class NewAllOrders(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
 
     def get(self, request):
+        customer = request.GET.get('customer')
         orders = Order.objects.all()
         only_uncompleted = False if not request.GET.get('only_u') else True
         provider = request.GET.get('provider')
         if provider:
             orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
+        if customer:
+            orders = []
+            orders_ = OrderItem.objects.filter(buyer__name__icontains=customer)
+            for o in orders_:
+                if o.order not in orders:
+                    orders.append(o.order)
         paginator = Paginator(orders, 10)
         page_number = request.GET.get('page')
         print(page_number)

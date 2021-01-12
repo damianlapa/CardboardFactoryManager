@@ -718,6 +718,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (dim3 !== null){
             dim3 = parseInt(dim3)
         }
+
+        if (dim2 % 2 === 1){
+            dim2 += 1
+        }
+
         switch(type){
             case '201':
                 switch(cardboard){
