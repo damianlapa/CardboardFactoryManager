@@ -16,7 +16,7 @@ import os
 import sys
 import shutil
 from django.conf import settings
-import docx
+# import docx
 import json
 import datetime
 

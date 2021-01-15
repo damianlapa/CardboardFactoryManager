@@ -297,6 +297,7 @@ class DailyReport(models.Model):
 
 class Photopolymer(models.Model):
     producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
+    project = models.FileField(upload_to='projects', null=True)
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     delivery_date = models.DateField(blank=True, null=True)
