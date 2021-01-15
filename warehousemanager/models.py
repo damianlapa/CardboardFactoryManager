@@ -69,6 +69,12 @@ PRODUCTION_TYPES = (
 )
 
 
+POLYMERS_PRODUCERS = (
+    ('AMBR', 'AMBR'),
+    ('CHESPA', 'CHESPA')
+)
+
+
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
@@ -287,3 +293,17 @@ class DailyReport(models.Model):
     last_modification = models.DateField(auto_now=True)
     workers = models.ManyToManyField(Person)
     description = models.TextField()
+
+
+class Photopolymer(models.Model):
+    producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
+    identification_number = models.IntegerField()
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    delivery_date = models.DateField(blank=True, null=True)
+
+
+class PhotopolymerService(models.Model):
+    photopolymer = models.ForeignKey(Photopolymer, on_delete=models.PROTECT)
+    send_date = models.DateField()
+    service_description = models.CharField(max_length=200)
+    return_date = models.DateField(blank=True, null=True)
