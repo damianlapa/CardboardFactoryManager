@@ -1653,3 +1653,11 @@ class ScheduledDelivery(View, PermissionRequiredMixin):
             items = items.filter(planned_delivery__lte=datetime.datetime.strptime(date_range, '%Y-%m-%d')).order_by('planned_delivery')
 
         return render(request, 'warehousemanager-scheduled-delivery.html', locals())
+
+
+class PhotoPolymers(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_photopolymer'
+
+    def get(self, request):
+        polymers = Photopolymer.objects.all()
+        return render(request, 'warehousemanager-photopolymers.html', locals())

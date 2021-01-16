@@ -72,8 +72,8 @@ urlpatterns = [
     path('import-order-items/', ImportOrderItems.as_view(), name='import-order-items'),
     path('prepare-many-gs/', PrepareManySpreadsheetsForm.as_view(), name='prepare-many-gs'),
     path('prepared-gs/', PrepareManySpreadsheets.as_view(), name='prepared-gs'),
-    path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery')
-
+    path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
+    path('polymers/', PhotoPolymers.as_view(), name='photopolymers')
 ]
 
 if settings.DEBUG:

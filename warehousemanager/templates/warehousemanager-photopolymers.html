@@ -1,0 +1,18 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div>
+    {% for p in polymers %}
+        <p>
+            {{ p }}
+        </p>
+    {% endfor %}
+</div>
+
+
+{% endblock %}
+
+{% block footer %} {% endblock %}
