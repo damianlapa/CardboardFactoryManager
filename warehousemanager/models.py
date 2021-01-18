@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models.functions import ExtractYear
+from django.core.exceptions import ObjectDoesNotExist
 import decimal
 import datetime
 
@@ -297,14 +298,47 @@ class DailyReport(models.Model):
 
 class Photopolymer(models.Model):
     producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
-    project = models.FileField(upload_to='projects', null=True)
+    project = models.FileField(upload_to='projects', null=True, blank=True)
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    delivery_date = models.DateField(blank=True, null=True)
+    name = models.CharField(max_length=32)
+    delivery_date = models.DateField(blank=True, null=True, default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
+
+    class Meta:
+        ordering = ['-delivery_date']
+
+    def __str__(self):
+        return f'{self.identification_number}/{self.customer}'
+
+    def presence(self):
+        if not self.delivery_date or self.delivery_date > datetime.date.today():
+            return False
+        else:
+            if datetime.date.today() > self.delivery_date:
+                return True
+            else:
+
+                services = PhotopolymerService.objects.filter(photopolymer=self)
+
+                if len(services) == 0:
+                    return True
+                else:
+                    for s in services:
+                        if not s.status:
+                            return False
+
+
 
 
 class PhotopolymerService(models.Model):
     photopolymer = models.ForeignKey(Photopolymer, on_delete=models.PROTECT)
     send_date = models.DateField()
+    company = models.CharField(max_length=16, default='')
     service_description = models.CharField(max_length=200)
     return_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.photopolymer.identification_number}|{self.photopolymer.producer} {self.photopolymer.customer}'
+
+    def status(self):
+        return False if not self.return_date or self.return_date > datetime.date.today() else True

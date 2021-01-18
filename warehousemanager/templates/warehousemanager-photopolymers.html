@@ -3,14 +3,65 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+{% if services|length > 0 %}
+<div>
+    <h1> WYSYŁKI </h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>POLIMER</td>
+                <td>KURIER</td>
+                <td>DATA WYSŁANIA</td>
+                <td>DATA ZWROTU</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in services %}
+                <tr>
+                    <td>{{ s.photopolymer }}</td>
+                    <td>{{ s.company }}</td>
+                    <td>{{ s.send_date }}</td>
+                    <td>{{ s.return_date }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 <div>
-    {% for p in polymers %}
-        <p>
-            {{ p }}
-        </p>
-    {% endfor %}
+    <h1>KLISZE</h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>PRODUCENT</td>
+                <td>KLIENT</td>
+                <td>NAZWA</td>
+                <td>DATA DOSTARCZENIA</td>
+                <td>STATUS</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in polymers %}
+                <tr>
+                    <td>{{ p.producer }}</td>
+                    <td>{{ p.customer }}</td>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.delivery_date }}</td>
+                    <td>
+                        {% if p.presence %}
+                            <span style="color: green">NA MIEJSCU</span>
+                        {% else %}
+                            <span style="color: red">WYSŁANA</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </div>
+
 
 
 {% endblock %}

@@ -1660,4 +1660,5 @@ class PhotoPolymers(View, PermissionRequiredMixin):
 
     def get(self, request):
         polymers = Photopolymer.objects.all()
+        services = PhotopolymerService.objects.all()
         return render(request, 'warehousemanager-photopolymers.html', locals())
