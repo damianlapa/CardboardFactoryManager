@@ -3,7 +3,7 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
-<h1>{{ polymer }}</h1>
+<h1 style="color: #6B8E23;">{{ polymer }}</h1>
 <div>
     <p>
         PRODUCENT: <span style="color: yellow">{{ polymer.producer }}</span>
@@ -20,7 +20,49 @@
     <p>
         DATA DOSTARCZENIA: <span style="color: yellow">{{ polymer.delivery_date }}</span>
     </p>
+    <p>
+        STATUS:
+        {% if polymer.presence %}
+            <span style="color: green">NA MIEJSCU</span>
+        {% else %}
+            {% if not polymer.delivery_date %}
+                <span style="color: red">NIE DOSTARCZONO</span>
+            {% else %}
+                <span style="color: red">WYSŁANA</span>
+            {% endif %}
+        {% endif %}
+    </p>
 </div>
+
+{% if services|length > 0 %}
+
+<div>
+    <h1 style="color: #6B8E23;"> HISTORIA WYSYŁEK </h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>POLIMER</td>
+                <td>KURIER</td>
+                <td>DATA WYSŁANIA</td>
+                <td>DATA ZWROTU</td>
+                <td>OPIS</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in services %}
+                <tr>
+                    <td>{{ s.photopolymer }}</td>
+                    <td>{{ s.company }}</td>
+                    <td>{{ s.send_date }}</td>
+                    <td>{{ s.return_date }}</td>
+                    <td>{{ s.service_description }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
 
 {% endblock %}
 

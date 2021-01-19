@@ -1665,13 +1665,10 @@ class PhotoPolymers(View, PermissionRequiredMixin):
         history_services = []
 
         for s in services:
-            print(s.status())
             if s.status():
                 current_services.append(s)
             else:
                 history_services.append(s)
-
-        print(current_services, 'xxxxxx', history_services)
         return render(request, 'warehousemanager-photopolymers.html', locals())
 
 
@@ -1680,5 +1677,6 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
 
     def get(self, request, polymer_id):
         polymer = Photopolymer.objects.get(id=polymer_id)
+        services = PhotopolymerService.objects.filter(photopolymer=polymer)
 
         return render(request, 'warehousemanager-polymer-detail.html', locals())
