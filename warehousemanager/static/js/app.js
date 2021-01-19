@@ -988,6 +988,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    const polymerRows = document.getElementsByClassName('polymer-row')
+
+    if (polymerRows.length > 0) {
+        for (let i=0; i < polymerRows.length; i++){
+            polymerRows[i].addEventListener('click', function () {
+
+                link = localLink + 'polymer/' + polymerRows[i].dataset.polymerid + '/'
+                window.open(link, '_blank')
+            })
+        }
+    }
+
 })
 
 function drag(ev) {

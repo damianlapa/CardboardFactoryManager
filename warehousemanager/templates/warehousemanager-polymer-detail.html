@@ -1,0 +1,27 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<h1>{{ polymer }}</h1>
+<div>
+    <p>
+        PRODUCENT: <span style="color: yellow">{{ polymer.producer }}</span>
+    </p>
+    <p>
+        NUMER: <span style="color: yellow">{{ polymer.identification_number }}</span>
+    </p>
+    <p>
+        KLIENT: <span style="color: yellow">{{ polymer.customer }}</span>
+    </p>
+    <p>
+        NAZWA: <span style="color: yellow">{{ polymer.name }}</span>
+    </p>
+    <p>
+        DATA DOSTARCZENIA: <span style="color: yellow">{{ polymer.delivery_date }}</span>
+    </p>
+</div>
+
+{% endblock %}
+
+{% block footer %} {% endblock %}

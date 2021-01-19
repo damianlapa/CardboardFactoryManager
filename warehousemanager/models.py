@@ -301,33 +301,30 @@ class Photopolymer(models.Model):
     project = models.FileField(upload_to='projects', null=True, blank=True)
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    name = models.CharField(max_length=32)
+    name = models.CharField(max_length=32, default='')
     delivery_date = models.DateField(blank=True, null=True, default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
 
     class Meta:
         ordering = ['-delivery_date']
 
     def __str__(self):
-        return f'{self.identification_number}/{self.customer}'
+        result = f'{self.identification_number}/{self.customer}'
+        if self.name != '':
+            result += f' {self.name}'
+        return result
 
     def presence(self):
         if not self.delivery_date or self.delivery_date > datetime.date.today():
             return False
         else:
-            if datetime.date.today() > self.delivery_date:
+            services = PhotopolymerService.objects.filter(photopolymer=self)
+
+            if len(services) == 0:
                 return True
             else:
-
-                services = PhotopolymerService.objects.filter(photopolymer=self)
-
-                if len(services) == 0:
-                    return True
-                else:
-                    for s in services:
-                        if not s.status:
-                            return False
-
-
+                for s in services:
+                    if not s.status:
+                        return False
 
 
 class PhotopolymerService(models.Model):
@@ -341,4 +338,10 @@ class PhotopolymerService(models.Model):
         return f'{self.photopolymer.identification_number}|{self.photopolymer.producer} {self.photopolymer.customer}'
 
     def status(self):
-        return False if not self.return_date or self.return_date > datetime.date.today() else True
+        if not self.return_date:
+            return False
+        else:
+            if self.return_date < datetime.date.today():
+                return False
+            else:
+                return True

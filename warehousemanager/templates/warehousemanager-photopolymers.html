@@ -3,7 +3,7 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
-{% if services|length > 0 %}
+{% if current_services|length > 0 %}
 <div>
     <h1> WYSYŁKI </h1>
     <table class="polymers">
@@ -16,7 +16,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for s in services %}
+            {% for s in current_services %}
                 <tr>
                     <td>{{ s.photopolymer }}</td>
                     <td>{{ s.company }}</td>
@@ -43,7 +43,7 @@
         </thead>
         <tbody>
             {% for p in polymers %}
-                <tr>
+                <tr class="polymer-row" data-polymerid="{{ p.id }}">
                     <td>{{ p.producer }}</td>
                     <td>{{ p.customer }}</td>
                     <td>{{ p.name }}</td>
@@ -52,7 +52,11 @@
                         {% if p.presence %}
                             <span style="color: green">NA MIEJSCU</span>
                         {% else %}
-                            <span style="color: red">WYSŁANA</span>
+                            {% if not p.delivery_date %}
+                                <span style="color: red">NIE DOSTARCZONO</span>
+                            {% else %}
+                                <span style="color: red">WYSŁANA</span>
+                            {% endif %}
                         {% endif %}
                     </td>
                 </tr>
@@ -62,7 +66,31 @@
 
 </div>
 
-
+{% if history_services|length > 0 %}
+<div>
+    <h1> HISTORIA WYSYŁEK </h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>POLIMER</td>
+                <td>KURIER</td>
+                <td>DATA WYSŁANIA</td>
+                <td>DATA ZWROTU</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in history_services %}
+                <tr>
+                    <td>{{ s.photopolymer }}</td>
+                    <td>{{ s.company }}</td>
+                    <td>{{ s.send_date }}</td>
+                    <td>{{ s.return_date }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 {% endblock %}
 

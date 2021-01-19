@@ -73,7 +73,13 @@ urlpatterns = [
     path('prepare-many-gs/', PrepareManySpreadsheetsForm.as_view(), name='prepare-many-gs'),
     path('prepared-gs/', PrepareManySpreadsheets.as_view(), name='prepared-gs'),
     path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
-    path('polymers/', PhotoPolymers.as_view(), name='photopolymers')
+
+]
+
+# polymers
+urlpatterns += [
+    path('polymers/', PhotoPolymers.as_view(), name='photopolymers'),
+    path('polymer/<int:polymer_id>/', PhotoPolymerDetail.as_view(), name='polymer-details'),
 ]
 
 if settings.DEBUG:

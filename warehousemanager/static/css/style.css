@@ -806,3 +806,8 @@ input[type=button], input[type=submit], input[type=reset] {
     color: yellow;
     font-weight: bold;
 }
+
+.polymer-row:hover {
+    background: dimgray;
+    cursor: pointer;
+}
