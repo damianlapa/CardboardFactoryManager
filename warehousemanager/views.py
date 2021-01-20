@@ -20,7 +20,7 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy
+from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter
 
 import subprocess
 # import models from warehousemanager app
@@ -371,6 +371,7 @@ class NewAllOrders(PermissionRequiredMixin, View):
 class StartPage(View):
     def get(self, request):
         user = request.user
+        visit_counter(user, 'index')
         return render(request, 'start-page.html', locals())
 
     def post(self, request):
@@ -518,6 +519,10 @@ class AbsencesList(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
+
+        user = request.user
+        visit_counter(user, 'absences')
+
         def month_days_function(month_and_year):
             if month_and_year.month in (1, 3, 5, 7, 8, 10, 12):
                 days_num = 31
@@ -801,6 +806,10 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+
+        user = request.user
+        visit_counter(user, 'punches')
+
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
         punch_types = PUNCH_TYPES
         title = 'PUNCHES'
@@ -812,6 +821,9 @@ class PunchAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+        user = request.user
+        visit_counter(user, 'punch_add')
+
         punch_form = PunchForm()
 
         return render(request, 'warehousemanager-punch-add.html', locals())
@@ -1659,6 +1671,10 @@ class PhotoPolymers(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_photopolymer'
 
     def get(self, request):
+
+        user = request.user
+        visit_counter(user, 'polymer_list')
+
         polymers = Photopolymer.objects.all()
         services = PhotopolymerService.objects.all()
         current_services = []

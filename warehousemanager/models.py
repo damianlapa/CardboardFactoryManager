@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.functions import ExtractYear
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.models import User
 import decimal
 import datetime
 
@@ -339,9 +340,18 @@ class PhotopolymerService(models.Model):
 
     def status(self):
         if not self.return_date:
-            return False
+            return True
         else:
             if self.return_date < datetime.date.today():
                 return False
             else:
                 return True
+
+
+class UserVisitCounter(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    page = models.CharField(max_length=32)
+    counter = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.user}/{self.page}: {self.counter}'

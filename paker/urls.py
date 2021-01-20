@@ -73,7 +73,6 @@ urlpatterns = [
     path('prepare-many-gs/', PrepareManySpreadsheetsForm.as_view(), name='prepare-many-gs'),
     path('prepared-gs/', PrepareManySpreadsheets.as_view(), name='prepared-gs'),
     path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
-
 ]
 
 # polymers
