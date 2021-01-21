@@ -324,9 +324,11 @@ class Photopolymer(models.Model):
             if len(services) == 0:
                 return True
             else:
+                result = True
                 for s in services:
-                    if s.status:
-                        return False
+                    if s.status():
+                        result = None
+                return result
 
     def get_absolute_url(self):
         return reverse('polymer-details', kwargs={'polymer_id': self.pk})
