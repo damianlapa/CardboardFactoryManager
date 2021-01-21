@@ -29,6 +29,14 @@ CARDBOARD_TYPES = (
     ('BS', 'BS')
 )
 
+CARDBOARD_SORT = (
+    ('B', 'B'),
+    ('C', 'C'),
+    ('E', 'E'),
+    ('BC', 'BC'),
+    ('EB', 'EB')
+)
+
 GENRES = (
     ('Ordinary', 'Ordinary'),
     ('To Do List', 'To Do List'),
@@ -225,7 +233,7 @@ class Punch(models.Model):
     quantity = models.IntegerField(default=1)
     size_one = models.IntegerField()
     size_two = models.IntegerField()
-    cardboard = models.CharField(max_length=4, choices=CARDBOARD_TYPES)
+    cardboard = models.CharField(max_length=4, choices=CARDBOARD_SORT)
     pressure_large = models.IntegerField(default=0)
     pressure_small = models.IntegerField(default=0)
     wave_direction = models.BooleanField(default=True)
@@ -316,7 +324,7 @@ class Photopolymer(models.Model):
         return result
 
     def presence(self):
-        if not self.delivery_date or self.delivery_date > datetime.date.today():
+        if not self.delivery_date or self.delivery_date >= datetime.date.today():
             return False
         else:
             services = PhotopolymerService.objects.filter(photopolymer=self)
