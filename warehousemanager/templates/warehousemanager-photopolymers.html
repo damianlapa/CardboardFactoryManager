@@ -3,6 +3,8 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+<a href="{% url 'polymer-create' %}"><button class="punch-form-btn">Dodaj Polimer</button></a>
+<br/>
 {% if current_services|length > 0 %}
 <div>
     <h1> WYSYŁKI </h1>
@@ -39,6 +41,8 @@
                 <td>NAZWA</td>
                 <td>DATA DOSTARCZENIA</td>
                 <td>STATUS</td>
+                <td>EDYCJA</td>
+                <td>USUNIECIE</td>
             </tr>
         </thead>
         <tbody>
@@ -59,6 +63,8 @@
                             {% endif %}
                         {% endif %}
                     </td>
+                    <td class="edit-polymer"><i class="demo-icon icon-pencil"></i></td>
+                    <td class="delete-polymer"><i class="demo-icon icon-trash-empty"></i></td>
                 </tr>
             {% endfor %}
         </tbody>

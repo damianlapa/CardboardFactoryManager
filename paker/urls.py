@@ -79,6 +79,9 @@ urlpatterns = [
 urlpatterns += [
     path('polymers/', PhotoPolymers.as_view(), name='photopolymers'),
     path('polymer/<int:polymer_id>/', PhotoPolymerDetail.as_view(), name='polymer-details'),
+    path('polymer-create/', PolymerCreate.as_view(), name='polymer-create'),
+    path('polymer-update/<int:pk>/', PolymerUpdate.as_view(), name='polymer-update'),
+    path('polymer-delete/<int:pk>/', PolymerDelete.as_view(), name='polymer-delete'),
 ]
 
 if settings.DEBUG:

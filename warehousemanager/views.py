@@ -11,6 +11,8 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
 import io
 import os
 import sys
@@ -1696,3 +1698,19 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         services = PhotopolymerService.objects.filter(photopolymer=polymer)
 
         return render(request, 'warehousemanager-polymer-detail.html', locals())
+
+
+class PolymerCreate(CreateView):
+    model = Photopolymer
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+
+
+class PolymerUpdate(UpdateView):
+    model = Photopolymer
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+    template_name_suffix = '_update_form'
+
+
+class PolymerDelete(DeleteView):
+    model = Photopolymer
+    success_url = reverse_lazy('photopolymers')

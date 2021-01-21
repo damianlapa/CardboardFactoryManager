@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models.functions import ExtractYear
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
+from django.urls import reverse
 import decimal
 import datetime
 
@@ -324,12 +325,15 @@ class Photopolymer(models.Model):
                 return True
             else:
                 for s in services:
-                    if not s.status:
+                    if s.status:
                         return False
+
+    def get_absolute_url(self):
+        return reverse('polymer-details', kwargs={'polymer_id': self.pk})
 
 
 class PhotopolymerService(models.Model):
-    photopolymer = models.ForeignKey(Photopolymer, on_delete=models.PROTECT)
+    photopolymer = models.ForeignKey(Photopolymer, on_delete=models.CASCADE)
     send_date = models.DateField()
     company = models.CharField(max_length=16, default='')
     service_description = models.CharField(max_length=200)

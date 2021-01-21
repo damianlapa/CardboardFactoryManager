@@ -1001,6 +1001,42 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // edycja polimerów
+
+    const editPolymerCells = document.getElementsByClassName('edit-polymer')
+
+    if (editPolymerCells.length > 0) {
+        for (let i=0; i < editPolymerCells.length; i++) {
+            editPolymerCells[i].addEventListener('click', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'polymer-update/' + editPolymerCells[i].parentElement.dataset.polymerid + '/'
+                        window.open(link, '_self')
+                        })
+            })
+            }}
+
+    const deletePolymerCells = document.getElementsByClassName('delete-polymer')
+
+    if (deletePolymerCells.length > 0) {
+        for (let i=0; i < deletePolymerCells.length; i++) {
+            deletePolymerCells[i].addEventListener('click', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'polymer-delete/' + deletePolymerCells[i].parentElement.dataset.polymerid + '/'
+                        window.open(link, '_self')
+                        })
+            })
+            }}
+
 })
 
 function drag(ev) {

@@ -1,0 +1,15 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Add New Polymer{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <h2>ADD NEW POLYMER</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Save">
+</form>
+</div>
+{% endblock %}
