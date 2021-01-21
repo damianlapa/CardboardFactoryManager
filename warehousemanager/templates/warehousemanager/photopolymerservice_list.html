@@ -1,0 +1,12 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Services List{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <h2>SERVICES LIST</h2>
+    {% for s in object_list %}
+    <p>{{ s }}</p>
+    {% endfor %}
+</div>
+{% endblock %}

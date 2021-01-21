@@ -353,6 +353,9 @@ class PhotopolymerService(models.Model):
             else:
                 return True
 
+    def get_absolute_url(self):
+        return reverse('service-details', kwargs={'pk': self.pk})
+
 
 class UserVisitCounter(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

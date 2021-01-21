@@ -12,6 +12,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
 from django.urls import reverse_lazy
 import io
 import os
@@ -1713,4 +1715,28 @@ class PolymerUpdate(UpdateView):
 
 class PolymerDelete(DeleteView):
     model = Photopolymer
+    success_url = reverse_lazy('photopolymers')
+
+
+class ServiceDetailView(DetailView):
+    model = PhotopolymerService
+
+
+class ServiceListView(ListView):
+    model = PhotopolymerService
+
+
+class ServiceCreate(CreateView):
+    model = PhotopolymerService
+    fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
+
+
+class ServiceUpdate(UpdateView):
+    model = PhotopolymerService
+    fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
+    template_name_suffix = '_update_form'
+
+
+class ServiceDelete(DeleteView):
+    model = PhotopolymerService
     success_url = reverse_lazy('photopolymers')

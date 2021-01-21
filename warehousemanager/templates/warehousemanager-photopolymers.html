@@ -5,6 +5,7 @@
 {% block content %}
 <a href="{% url 'polymer-create' %}"><button class="punch-form-btn">Dodaj Polimer</button></a>
 <br/>
+<a href="{% url 'service-create' %}"><button class="punch-form-btn">Dodaj Wysyłkę</button></a>
 {% if current_services|length > 0 %}
 <div>
     <h1> WYSYŁKI </h1>

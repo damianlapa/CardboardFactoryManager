@@ -84,5 +84,14 @@ urlpatterns += [
     path('polymer-delete/<int:pk>/', PolymerDelete.as_view(), name='polymer-delete'),
 ]
 
+# services
+urlpatterns += [
+    path('services/', ServiceListView.as_view(), name='services'),
+    path('service/<int:pk>/', ServiceDetailView.as_view(), name='service-details'),
+    path('service-create/', ServiceCreate.as_view(), name='service-create'),
+    path('service-update/<int:pk>/', ServiceUpdate.as_view(), name='service-update'),
+    path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
