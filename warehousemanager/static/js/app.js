@@ -1020,6 +1020,8 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             }}
 
+    // kasowanie polimwerów
+
     const deletePolymerCells = document.getElementsByClassName('delete-polymer')
 
     if (deletePolymerCells.length > 0) {
@@ -1036,6 +1038,34 @@ document.addEventListener("DOMContentLoaded", function () {
                         })
             })
             }}
+
+    // funkcja kasowania/edytowania elementow przedstawionych w tabeli
+
+    function deleteOrEdit(cells, path) {
+        if (cells.length > 0) {
+            for (let i=0; i < cells.length; i++) {
+                cells[i].addEventListener('click', function () {
+                $.ajax({
+                        url: '/get-local-var/PAKER_MAIN/',
+                        data: {},
+                        type: 'GET',
+                        dataType: 'json'
+                        }).done(function (data) {
+                            link = data + path + cells[i].parentElement.dataset.serviceid + '/'
+                            window.open(link, '_self')
+                            })
+            })
+            }
+        }
+    }
+
+    const deleteServiceCells = document.getElementsByClassName('delete-service')
+    const editServiceCells = document.getElementsByClassName('edit-service')
+
+    console.log(editServiceCells)
+
+    deleteOrEdit(deleteServiceCells, 'service-delete/')
+    deleteOrEdit(editServiceCells, 'service-update/')
 
 })
 

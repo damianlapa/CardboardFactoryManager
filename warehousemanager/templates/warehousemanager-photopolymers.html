@@ -16,15 +16,19 @@
                 <td>KURIER</td>
                 <td>DATA WYSŁANIA</td>
                 <td>DATA ZWROTU</td>
+                <td>EDYCJA</td>
+                <td>USUWANIE</td>
             </tr>
         </thead>
         <tbody>
             {% for s in current_services %}
-                <tr>
+                <tr class='service-row' data-serviceid="{{ s.id }}">
                     <td>{{ s.photopolymer }}</td>
                     <td>{{ s.company }}</td>
                     <td>{{ s.send_date }}</td>
                     <td>{{ s.return_date }}</td>
+                    <td class="edit-service"><i class="demo-icon icon-pencil"></i></td>
+                    <td class="delete-service"><i class="demo-icon icon-trash-empty"></i></td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -43,7 +47,7 @@
                 <td>DATA DOSTARCZENIA</td>
                 <td>STATUS</td>
                 <td>EDYCJA</td>
-                <td>USUNIECIE</td>
+                <td>USUWANIE</td>
             </tr>
         </thead>
         <tbody>
@@ -83,15 +87,19 @@
                 <td>KURIER</td>
                 <td>DATA WYSŁANIA</td>
                 <td>DATA ZWROTU</td>
+                <td>EDYCJA</td>
+                <td>USUWANIE</td>
             </tr>
         </thead>
         <tbody>
             {% for s in history_services %}
-                <tr>
+                <tr class='service-row' data-serviceid="{{ s.id }}">
                     <td>{{ s.photopolymer }}</td>
                     <td>{{ s.company }}</td>
                     <td>{{ s.send_date }}</td>
                     <td>{{ s.return_date }}</td>
+                    <td class="edit-service"><i class="demo-icon icon-pencil"></i></td>
+                    <td class="delete-service"><i class="demo-icon icon-trash-empty"></i></td>
                 </tr>
             {% endfor %}
         </tbody>
