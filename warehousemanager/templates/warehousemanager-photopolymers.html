@@ -1,0 +1,112 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<a href="{% url 'polymer-create' %}"><button class="punch-form-btn">Dodaj Polimer</button></a>
+<br/>
+<a href="{% url 'service-create' %}"><button class="punch-form-btn">Dodaj Wysyłkę</button></a>
+{% if current_services|length > 0 %}
+<div>
+    <h1> WYSYŁKI </h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>POLIMER</td>
+                <td>KURIER</td>
+                <td>DATA WYSŁANIA</td>
+                <td>DATA ZWROTU</td>
+                <td>EDYCJA</td>
+                <td>USUWANIE</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in current_services %}
+                <tr class='service-row' data-serviceid="{{ s.id }}">
+                    <td>{{ s.photopolymer }}</td>
+                    <td>{{ s.company }}</td>
+                    <td>{{ s.send_date }}</td>
+                    <td>{{ s.return_date }}</td>
+                    <td class="edit-service"><i class="demo-icon icon-pencil"></i></td>
+                    <td class="delete-service"><i class="demo-icon icon-trash-empty"></i></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div>
+    <h1>KLISZE</h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>PRODUCENT</td>
+                <td>KLIENT</td>
+                <td>NAZWA</td>
+                <td>DATA DOSTARCZENIA</td>
+                <td>STATUS</td>
+                <td>EDYCJA</td>
+                <td>USUWANIE</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in polymers %}
+                <tr class="polymer-row" data-polymerid="{{ p.id }}">
+                    <td>{{ p.producer }}</td>
+                    <td>{{ p.customer }}</td>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.delivery_date }}</td>
+                    <td>
+                        {% if p.presence %}
+                            <span style="color: green">NA MIEJSCU</span>
+                        {% else %}
+                            {% if not p.delivery_date %}
+                                <span style="color: red">NIE DOSTARCZONO</span>
+                            {% else %}
+                                <span style="color: red">WYSŁANA</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="edit-polymer"><i class="demo-icon icon-pencil"></i></td>
+                    <td class="delete-polymer"><i class="demo-icon icon-trash-empty"></i></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% if history_services|length > 0 %}
+<div>
+    <h1> HISTORIA WYSYŁEK </h1>
+    <table class="polymers">
+        <thead>
+            <tr>
+                <td>POLIMER</td>
+                <td>KURIER</td>
+                <td>DATA WYSŁANIA</td>
+                <td>DATA ZWROTU</td>
+                <td>EDYCJA</td>
+                <td>USUWANIE</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in history_services %}
+                <tr class='service-row' data-serviceid="{{ s.id }}">
+                    <td>{{ s.photopolymer }}</td>
+                    <td>{{ s.company }}</td>
+                    <td>{{ s.send_date }}</td>
+                    <td>{{ s.return_date }}</td>
+                    <td class="edit-service"><i class="demo-icon icon-pencil"></i></td>
+                    <td class="delete-service"><i class="demo-icon icon-trash-empty"></i></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block footer %} {% endblock %}

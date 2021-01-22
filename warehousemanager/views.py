@@ -11,16 +11,20 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
+from django.urls import reverse_lazy
 import io
 import os
 import sys
 import shutil
 from django.conf import settings
-import docx
+# import docx
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy
+from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter
 
 import subprocess
 # import models from warehousemanager app
@@ -347,20 +351,21 @@ class NewAllOrders(PermissionRequiredMixin, View):
 
     def get(self, request):
         customer = request.GET.get('customer')
+        all_customers = Buyer.objects.all()
         orders = Order.objects.all()
+        items = OrderItem.objects.all()
         only_uncompleted = False if not request.GET.get('only_u') else True
         provider = request.GET.get('provider')
         if provider:
             orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
         if customer:
             orders = []
-            orders_ = OrderItem.objects.filter(buyer__name__icontains=customer)
+            orders_ = OrderItem.objects.filter(buyer__name=customer)
             for o in orders_:
                 if o.order not in orders:
                     orders.append(o.order)
         paginator = Paginator(orders, 10)
         page_number = request.GET.get('page')
-        print(page_number)
         page_obj = paginator.get_page(page_number)
         providers = CardboardProvider.objects.all()
         quantities = OrderItemQuantity.objects.all()
@@ -370,6 +375,7 @@ class NewAllOrders(PermissionRequiredMixin, View):
 class StartPage(View):
     def get(self, request):
         user = request.user
+        visit_counter(user, 'index')
         return render(request, 'start-page.html', locals())
 
     def post(self, request):
@@ -517,6 +523,10 @@ class AbsencesList(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
+
+        user = request.user
+        visit_counter(user, 'absences')
+
         def month_days_function(month_and_year):
             if month_and_year.month in (1, 3, 5, 7, 8, 10, 12):
                 days_num = 31
@@ -800,6 +810,10 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+
+        user = request.user
+        visit_counter(user, 'punches')
+
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
         punch_types = PUNCH_TYPES
         title = 'PUNCHES'
@@ -811,6 +825,9 @@ class PunchAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+        user = request.user
+        visit_counter(user, 'punch_add')
+
         punch_form = PunchForm()
 
         return render(request, 'warehousemanager-punch-add.html', locals())
@@ -1652,3 +1669,74 @@ class ScheduledDelivery(View, PermissionRequiredMixin):
             items = items.filter(planned_delivery__lte=datetime.datetime.strptime(date_range, '%Y-%m-%d')).order_by('planned_delivery')
 
         return render(request, 'warehousemanager-scheduled-delivery.html', locals())
+
+
+class PhotoPolymers(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_photopolymer'
+
+    def get(self, request):
+
+        user = request.user
+        visit_counter(user, 'polymer_list')
+
+        polymers = Photopolymer.objects.all()
+        services = PhotopolymerService.objects.all()
+        current_services = []
+        history_services = []
+
+        for s in services:
+            if s.status():
+                current_services.append(s)
+            else:
+                history_services.append(s)
+        return render(request, 'warehousemanager-photopolymers.html', locals())
+
+
+class PhotoPolymerDetail(View, PermissionRequiredMixin):
+    permission_required('warehousemanager.view_photopolymer')
+
+    def get(self, request, polymer_id):
+        polymer = Photopolymer.objects.get(id=polymer_id)
+        services = PhotopolymerService.objects.filter(photopolymer=polymer)
+
+        return render(request, 'warehousemanager-polymer-detail.html', locals())
+
+
+class PolymerCreate(CreateView):
+    model = Photopolymer
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+
+
+class PolymerUpdate(UpdateView):
+    model = Photopolymer
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+    template_name_suffix = '_update_form'
+
+
+class PolymerDelete(DeleteView):
+    model = Photopolymer
+    success_url = reverse_lazy('photopolymers')
+
+
+class ServiceDetailView(DetailView):
+    model = PhotopolymerService
+
+
+class ServiceListView(ListView):
+    model = PhotopolymerService
+
+
+class ServiceCreate(CreateView):
+    model = PhotopolymerService
+    fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
+
+
+class ServiceUpdate(UpdateView):
+    model = PhotopolymerService
+    fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
+    template_name_suffix = '_update_form'
+
+
+class ServiceDelete(DeleteView):
+    model = PhotopolymerService
+    success_url = reverse_lazy('photopolymers')

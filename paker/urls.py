@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from warehousemanager.views import *
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -71,6 +72,26 @@ urlpatterns = [
     path('import-order-items/', ImportOrderItems.as_view(), name='import-order-items'),
     path('prepare-many-gs/', PrepareManySpreadsheetsForm.as_view(), name='prepare-many-gs'),
     path('prepared-gs/', PrepareManySpreadsheets.as_view(), name='prepared-gs'),
-    path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery')
-
+    path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
 ]
+
+# polymers
+urlpatterns += [
+    path('polymers/', PhotoPolymers.as_view(), name='photopolymers'),
+    path('polymer/<int:polymer_id>/', PhotoPolymerDetail.as_view(), name='polymer-details'),
+    path('polymer-create/', PolymerCreate.as_view(), name='polymer-create'),
+    path('polymer-update/<int:pk>/', PolymerUpdate.as_view(), name='polymer-update'),
+    path('polymer-delete/<int:pk>/', PolymerDelete.as_view(), name='polymer-delete'),
+]
+
+# services
+urlpatterns += [
+    path('services/', ServiceListView.as_view(), name='services'),
+    path('service/<int:pk>/', ServiceDetailView.as_view(), name='service-details'),
+    path('service-create/', ServiceCreate.as_view(), name='service-create'),
+    path('service-update/<int:pk>/', ServiceUpdate.as_view(), name='service-update'),
+    path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

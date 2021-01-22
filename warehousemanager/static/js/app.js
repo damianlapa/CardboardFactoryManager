@@ -657,7 +657,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
                 link = localLink + 'punch/' + allRows[i].dataset.punch_id
-                window.location.replace(link)
+                window.open(link, '_self')
             })
         }
     }
@@ -987,6 +987,85 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
     }
+
+    const polymerRows = document.getElementsByClassName('polymer-row')
+
+    if (polymerRows.length > 0) {
+        for (let i=0; i < polymerRows.length; i++){
+            polymerRows[i].addEventListener('click', function () {
+
+                link = localLink + 'polymer/' + polymerRows[i].dataset.polymerid + '/'
+                window.open(link, '_self')
+
+            })
+        }
+    }
+
+    // edycja polimerów
+
+    const editPolymerCells = document.getElementsByClassName('edit-polymer')
+
+    if (editPolymerCells.length > 0) {
+        for (let i=0; i < editPolymerCells.length; i++) {
+            editPolymerCells[i].addEventListener('click', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'polymer-update/' + editPolymerCells[i].parentElement.dataset.polymerid + '/'
+                        window.open(link, '_self')
+                        })
+            })
+            }}
+
+    // kasowanie polimwerów
+
+    const deletePolymerCells = document.getElementsByClassName('delete-polymer')
+
+    if (deletePolymerCells.length > 0) {
+        for (let i=0; i < deletePolymerCells.length; i++) {
+            deletePolymerCells[i].addEventListener('click', function () {
+            $.ajax({
+                    url: '/get-local-var/PAKER_MAIN/',
+                    data: {},
+                    type: 'GET',
+                    dataType: 'json'
+                    }).done(function (data) {
+                        link = data + 'polymer-delete/' + deletePolymerCells[i].parentElement.dataset.polymerid + '/'
+                        window.open(link, '_self')
+                        })
+            })
+            }}
+
+    // funkcja kasowania/edytowania elementow przedstawionych w tabeli
+
+    function deleteOrEdit(cells, path) {
+        if (cells.length > 0) {
+            for (let i=0; i < cells.length; i++) {
+                cells[i].addEventListener('click', function () {
+                $.ajax({
+                        url: '/get-local-var/PAKER_MAIN/',
+                        data: {},
+                        type: 'GET',
+                        dataType: 'json'
+                        }).done(function (data) {
+                            link = data + path + cells[i].parentElement.dataset.serviceid + '/'
+                            window.open(link, '_self')
+                            })
+            })
+            }
+        }
+    }
+
+    const deleteServiceCells = document.getElementsByClassName('delete-service')
+    const editServiceCells = document.getElementsByClassName('edit-service')
+
+    console.log(editServiceCells)
+
+    deleteOrEdit(deleteServiceCells, 'service-delete/')
+    deleteOrEdit(editServiceCells, 'service-update/')
 
 })
 

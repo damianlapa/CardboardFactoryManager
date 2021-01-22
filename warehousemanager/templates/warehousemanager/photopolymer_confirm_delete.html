@@ -1,0 +1,15 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Delete Polymer{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <h2>DELETE POLYMER: {{ object }}</h2>
+
+<form method="post">{% csrf_token %}
+    <p>Are you sure you want to delete "{{ object }}"?</p>
+    <input type="submit" value="Confirm">
+</form>
+</div>
+{% endblock %}
+

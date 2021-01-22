@@ -1,5 +1,8 @@
 from django.db import models
 from django.db.models.functions import ExtractYear
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.models import User
+from django.urls import reverse
 import decimal
 import datetime
 
@@ -24,6 +27,14 @@ CARDBOARD_TYPES = (
     ('BB', 'BB'),
     ('BCS', 'BCS'),
     ('BS', 'BS')
+)
+
+CARDBOARD_SORT = (
+    ('B', 'B'),
+    ('C', 'C'),
+    ('E', 'E'),
+    ('BC', 'BC'),
+    ('EB', 'EB')
 )
 
 GENRES = (
@@ -66,6 +77,12 @@ PRODUCTION_TYPES = (
     ('OB', 'OBRYWANIE'),
     ('PK', 'PAKOWANIE'),
     ('INNE', 'INNE')
+)
+
+
+POLYMERS_PRODUCERS = (
+    ('AMBR', 'AMBR'),
+    ('CHESPA', 'CHESPA')
 )
 
 
@@ -216,7 +233,7 @@ class Punch(models.Model):
     quantity = models.IntegerField(default=1)
     size_one = models.IntegerField()
     size_two = models.IntegerField()
-    cardboard = models.CharField(max_length=4, choices=CARDBOARD_TYPES)
+    cardboard = models.CharField(max_length=4, choices=CARDBOARD_SORT)
     pressure_large = models.IntegerField(default=0)
     pressure_small = models.IntegerField(default=0)
     wave_direction = models.BooleanField(default=True)
@@ -287,3 +304,71 @@ class DailyReport(models.Model):
     last_modification = models.DateField(auto_now=True)
     workers = models.ManyToManyField(Person)
     description = models.TextField()
+
+
+class Photopolymer(models.Model):
+    producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
+    project = models.FileField(upload_to='projects', null=True, blank=True)
+    identification_number = models.IntegerField()
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    name = models.CharField(max_length=32, default='')
+    delivery_date = models.DateField(blank=True, null=True, default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
+
+    class Meta:
+        ordering = ['-delivery_date']
+
+    def __str__(self):
+        result = f'{self.identification_number}/{self.customer}'
+        if self.name != '':
+            result += f' {self.name}'
+        return result
+
+    def presence(self):
+        if not self.delivery_date or self.delivery_date >= datetime.date.today():
+            return False
+        else:
+            services = PhotopolymerService.objects.filter(photopolymer=self)
+
+            if len(services) == 0:
+                return True
+            else:
+                result = True
+                for s in services:
+                    if s.status():
+                        result = None
+                return result
+
+    def get_absolute_url(self):
+        return reverse('polymer-details', kwargs={'polymer_id': self.pk})
+
+
+class PhotopolymerService(models.Model):
+    photopolymer = models.ForeignKey(Photopolymer, on_delete=models.CASCADE)
+    send_date = models.DateField()
+    company = models.CharField(max_length=16, default='')
+    service_description = models.CharField(max_length=200)
+    return_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.photopolymer.identification_number}|{self.photopolymer.producer} {self.photopolymer.customer}'
+
+    def status(self):
+        if not self.return_date:
+            return True
+        else:
+            if self.return_date < datetime.date.today():
+                return False
+            else:
+                return True
+
+    def get_absolute_url(self):
+        return reverse('service-details', kwargs={'pk': self.pk})
+
+
+class UserVisitCounter(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    page = models.CharField(max_length=32)
+    counter = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.user}/{self.page}: {self.counter}'

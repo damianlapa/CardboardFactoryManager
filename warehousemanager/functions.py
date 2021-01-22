@@ -3,7 +3,8 @@ import gspread
 import datetime
 from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
-from warehousemanager.models import SpreadsheetCopy, OrderItem, Order, Punch
+from warehousemanager.models import SpreadsheetCopy, OrderItem, Order, Punch, UserVisitCounter
+from django.core.exceptions import ObjectDoesNotExist
 
 def google_key():
     key_parts_tuple = ('-----BEGIN PRIVATE KEY-----', os.environ['PRIVATE_KEY_1'], os.environ['PRIVATE_KEY_2'],
@@ -156,3 +157,14 @@ def create_spreadsheet_copy(item_id):
                       f'{prov_shortcut} {order_item.order.order_provider_number}/{order_item.item_number} {buyer}')
 
     return (new_gs.id)
+
+
+def visit_counter(user, page):
+    if user.is_authenticated:
+        try:
+            visit = UserVisitCounter.objects.get(user=user, page=page)
+            visit.counter += 1
+            visit.save()
+        except ObjectDoesNotExist:
+            new_visit = UserVisitCounter.objects.create(user=user, page=page)
+            new_visit.save()

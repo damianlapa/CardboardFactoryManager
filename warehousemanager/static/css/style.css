@@ -794,3 +794,20 @@ input[type=button], input[type=submit], input[type=reset] {
 .order-name:hover {
     color: tomato;
 }
+
+.polymers {
+    color: white;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.polymers thead {
+    color: yellow;
+    font-weight: bold;
+}
+
+.polymer-row:hover {
+    background: dimgray;
+    cursor: pointer;
+}
