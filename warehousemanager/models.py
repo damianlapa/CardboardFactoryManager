@@ -294,6 +294,16 @@ class Color(models.Model):
     name = models.CharField(max_length=32, blank=True, null=True)
     number = models.CharField(max_length=12, blank=True, null=True)
     availability = models.PositiveIntegerField(default=0)
+    red = models.PositiveIntegerField(blank=True, null=True)
+    green = models.PositiveIntegerField(blank=True, null=True)
+    blue = models.PositiveIntegerField(blank=True, null=True)
+
+    def color_status(self):
+        result = self.availability
+        delivery = ColorDelivery.objects.filter(color=self)
+        for d in delivery:
+            result += d.capacity
+        return result
 
 
 class ColorDelivery(models.Model):

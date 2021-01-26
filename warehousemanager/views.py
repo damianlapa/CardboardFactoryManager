@@ -1746,6 +1746,11 @@ class ServiceDelete(DeleteView):
     success_url = reverse_lazy('photopolymers')
 
 
+class ColorListView(ListView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_color'
+    model = Color
+
+
 class ProductionProcessListView(ListView, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_productionprocess'
     model = ProductionProcess

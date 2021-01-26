@@ -1,0 +1,15 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Color List{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <h2>COLOR LIST</h2>
+    {% for c in object_list %}
+    <div>
+        <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}})">{{ c.number }}</p>
+        <p>{{ c.name }}({{ c.number }}) :: {{ c.color_status }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
