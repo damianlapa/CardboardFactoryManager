@@ -191,6 +191,9 @@ class Machine(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=16)
 
+    def __str__(self):
+        return self.shortcut
+
 
 class Note(models.Model):
     add_date = models.DateTimeField(auto_now_add=True)
@@ -271,25 +274,6 @@ class PunchProduction(models.Model):
         ordering = ['date_end']
 
 
-class ProductionProcess(models.Model):
-    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
-    production = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
-    stock = models.ManyToManyField(OrderItemQuantity)
-    type = models.CharField(max_length=8, choices=PRODUCTION_TYPES)
-    worker = models.ManyToManyField(Person, blank=True)
-    machine = models.ForeignKey(Machine, blank=True, null=True, on_delete=models.PROTECT)
-    quantity_start = models.IntegerField()
-    quantity_end = models.IntegerField()
-    date_start = models.DateField()
-    date_end = models.DateField()
-    punch = models.ForeignKey(Punch, blank=True, null=True, on_delete=models.PROTECT)
-
-    def __str__(self):
-        order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
-
-        return order_name
-
-
 class SpreadsheetCopy(models.Model):
     gs_id = models.CharField(max_length=48)
     created = models.DateTimeField(auto_now_add=True)
@@ -306,9 +290,22 @@ class DailyReport(models.Model):
     description = models.TextField()
 
 
+class Color(models.Model):
+    name = models.CharField(max_length=32, blank=True, null=True)
+    number = models.CharField(max_length=12, blank=True, null=True)
+    availability = models.PositiveIntegerField(default=0)
+
+
+class ColorDelivery(models.Model):
+    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    company = models.CharField(max_length=20, blank=True, null=True)
+    capacity = models.PositiveIntegerField()
+
+
 class Photopolymer(models.Model):
     producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
     project = models.FileField(upload_to='projects', null=True, blank=True)
+    colors = models.ManyToManyField(Color)
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     name = models.CharField(max_length=32, default='')
@@ -372,3 +369,23 @@ class UserVisitCounter(models.Model):
 
     def __str__(self):
         return f'{self.user}/{self.page}: {self.counter}'
+
+
+class ProductionProcess(models.Model):
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
+    production = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
+    stock = models.ManyToManyField(OrderItemQuantity, blank=True)
+    type = models.CharField(max_length=8, choices=PRODUCTION_TYPES)
+    worker = models.ManyToManyField(Person, blank=True)
+    machine = models.ForeignKey(Machine, blank=True, null=True, on_delete=models.PROTECT)
+    quantity_start = models.IntegerField(default=0)
+    quantity_end = models.IntegerField(default=0)
+    date_start = models.DateField(blank=True, null=True)
+    date_end = models.DateField(blank=True, null=True)
+    punch = models.ForeignKey(Punch, blank=True, null=True, on_delete=models.PROTECT)
+    polymer = models.ForeignKey(Photopolymer, blank=True, null=True, on_delete=models.PROTECT)
+
+    def __str__(self):
+        order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
+
+        return order_name

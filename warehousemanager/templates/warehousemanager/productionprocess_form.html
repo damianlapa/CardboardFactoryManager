@@ -1,0 +1,15 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Add New Production{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <h2>ADD NEW PRODUCTION</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Save">
+</form>
+</div>
+{% endblock %}

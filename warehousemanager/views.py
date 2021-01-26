@@ -810,7 +810,6 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
-
         user = request.user
         visit_counter(user, 'punches')
 
@@ -922,7 +921,7 @@ class PunchEdit(PermissionRequiredMixin, View):
             edited_punch.pressure_small = pressure_small
             edited_punch.pressure_large = pressure_large
             edited_punch.wave_direction = wave_direction
-            edited_punch.   name = name
+            edited_punch.name = name
             edited_punch.type_letter = type_letter
 
             edited_punch.save()
@@ -1325,7 +1324,8 @@ class ImportOrderItems(View):
 
             record = 4 if not request.GET.get('record') else int(request.GET.get('record'))
 
-            final_record = len(sheet.get_all_values()) + 1 if not request.GET.get('final_record') else int(request.GET.get('final_record'))
+            final_record = len(sheet.get_all_values()) + 1 if not request.GET.get('final_record') else int(
+                request.GET.get('final_record'))
 
             new_rows = []
 
@@ -1535,18 +1535,21 @@ class ImportOrderItems(View):
 
                                 statement += f'{order_item} || {width}x{height} :: {dimensions}({name}) ALREADY EXISTS'
                             except ObjectDoesNotExist:
-                                new_order_item = OrderItem.objects.create(order=function_order, item_number=order_item_num,
+                                new_order_item = OrderItem.objects.create(order=function_order,
+                                                                          item_number=order_item_num,
                                                                           sort=sort,
                                                                           dimension_one=dim1, dimension_two=dim2,
                                                                           dimension_three=dim3, scores=scores,
                                                                           format_width=width,
-                                                                          format_height=height, ordered_quantity=quantity,
+                                                                          format_height=height,
+                                                                          ordered_quantity=quantity,
                                                                           cardboard_type=cardboard_type,
                                                                           cardboard_weight=cardboard_weight,
                                                                           cardboard_additional_info=cardboard_extra,
                                                                           name=name)
                                 if delivery_date != '':
-                                    new_order_item.planned_delivery = datetime.datetime.strptime(delivery_date, '%Y-%m-%d')
+                                    new_order_item.planned_delivery = datetime.datetime.strptime(delivery_date,
+                                                                                                 '%Y-%m-%d')
                                     new_order_item.save()
                                 statement += f'{new_order_item} || {width}x{height} :: {dimensions}({name}) CREATED'
                                 if customer_object:
@@ -1666,7 +1669,8 @@ class ScheduledDelivery(View, PermissionRequiredMixin):
             items = OrderItem.objects.filter(planned_delivery=datetime.datetime.strptime(date, '%Y-%m-%d'))
         elif date and date_range:
             items = OrderItem.objects.filter(planned_delivery__gte=datetime.datetime.strptime(date, '%Y-%m-%d'))
-            items = items.filter(planned_delivery__lte=datetime.datetime.strptime(date_range, '%Y-%m-%d')).order_by('planned_delivery')
+            items = items.filter(planned_delivery__lte=datetime.datetime.strptime(date_range, '%Y-%m-%d')).order_by(
+                'planned_delivery')
 
         return render(request, 'warehousemanager-scheduled-delivery.html', locals())
 
@@ -1740,3 +1744,14 @@ class ServiceUpdate(UpdateView):
 class ServiceDelete(DeleteView):
     model = PhotopolymerService
     success_url = reverse_lazy('photopolymers')
+
+
+class ProductionProcessListView(ListView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_productionprocess'
+    model = ProductionProcess
+
+
+class ProductionProcessCreate(CreateView):
+    model = ProductionProcess
+    fields = ['order_item', 'production', 'stock', 'type', 'worker', 'machine', 'quantity_start', 'quantity_end',
+              'date_start', 'date_end', 'punch', 'polymer']

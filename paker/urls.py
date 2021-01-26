@@ -93,5 +93,11 @@ urlpatterns += [
     path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
 ]
 
+# production
+urlpatterns += [
+    path('production/', ProductionProcessListView.as_view(), name='production-list'),
+    path('production-create/', ProductionProcessCreate.as_view(), name='production-create')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
