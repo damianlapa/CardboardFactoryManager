@@ -298,6 +298,9 @@ class Color(models.Model):
     green = models.PositiveIntegerField(blank=True, null=True)
     blue = models.PositiveIntegerField(blank=True, null=True)
 
+    class Meta:
+        ordering = ['name']
+
     def __str__(self):
         return f'{self.number}({self.name})'
 
@@ -387,11 +390,6 @@ class UserVisitCounter(models.Model):
         return f'{self.user}/{self.page}: {self.counter}'
 
 
-class ColorUsage(models.Model):
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
-    value = models.DecimalField(max_digits=3, decimal_places=1)
-
-
 class ProductionProcess(models.Model):
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
     production = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
@@ -405,7 +403,6 @@ class ProductionProcess(models.Model):
     date_end = models.DateField(blank=True, null=True)
     punch = models.ForeignKey(Punch, blank=True, null=True, on_delete=models.PROTECT)
     polymer = models.ForeignKey(Photopolymer, blank=True, null=True, on_delete=models.PROTECT)
-    colors = models.ManyToManyField(ColorUsage)
     note = models.CharField(max_length=300, null=True, blank=True)
 
     def __str__(self):
@@ -414,3 +411,7 @@ class ProductionProcess(models.Model):
         return order_name
 
 
+class ColorUsage(models.Model):
+    production = models.ForeignKey(ProductionProcess, blank=True, null=True, on_delete=models.CASCADE)
+    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    value = models.DecimalField(max_digits=3, decimal_places=1)
