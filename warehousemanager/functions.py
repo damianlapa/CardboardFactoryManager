@@ -1,10 +1,13 @@
 import os
 import gspread
 import datetime
+import random
 from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
-from warehousemanager.models import SpreadsheetCopy, OrderItem, Order, Punch, UserVisitCounter
+from warehousemanager.models import SpreadsheetCopy, OrderItem, Order, Punch, UserVisitCounter, Color
 from django.core.exceptions import ObjectDoesNotExist
+
+COLORS = ('Red', 'Green', 'Blue', 'Yellow', 'Pink', 'Orange', 'Purple', 'Brown')
 
 def google_key():
     key_parts_tuple = ('-----BEGIN PRIVATE KEY-----', os.environ['PRIVATE_KEY_1'], os.environ['PRIVATE_KEY_2'],
@@ -168,3 +171,12 @@ def visit_counter(user, page):
         except ObjectDoesNotExist:
             new_visit = UserVisitCounter.objects.create(user=user, page=page)
             new_visit.save()
+
+
+def add_random_color(num):
+    for _ in range(num):
+        name = str(random.randint(0, 3)) + str(random.randint(0, 9)) + str(random.randint(0, 9)) + ' U'
+        red = random.randint(0, 255)
+        green = random.randint(0, 255)
+        blue = random.randint(0, 255)
+        Color.objects.create(name=random.choice(COLORS), number=name, red=red, green=green, blue=blue)

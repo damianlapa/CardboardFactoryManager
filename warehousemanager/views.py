@@ -24,7 +24,7 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter
+from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color
 
 import subprocess
 # import models from warehousemanager app
@@ -1748,6 +1748,7 @@ class ServiceDelete(DeleteView):
 
 class ColorListView(ListView, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_color'
+    # add_random_color(15)
     model = Color
 
 

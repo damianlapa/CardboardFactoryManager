@@ -3,12 +3,17 @@
 {% block title %}Color List{% endblock %}
 
 {% block content %}
-<div style="display: inline-block">
-    <h2>COLOR LIST</h2>
+<h2>COLOR LIST</h2>
+<div class="color-list">
     {% for c in object_list %}
-    <div>
-        <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}})">{{ c.number }}</p>
-        <p>{{ c.name }}({{ c.number }}) :: {{ c.color_status }}</p>
+    <div class="color-item">
+        <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}}); font-size: 30px;">{{ c.number }}</p>
+        <p style="color: white">{{ c.name }}({{ c.number }})</p>
+        {% if c.color_status > 5 %}
+            <p style="color: orange; font-size: 30px;">{{ c.color_status }}</p>
+        {% else %}
+            <p style="color: red; font-size: 30px;">{{ c.color_status }}</p>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
