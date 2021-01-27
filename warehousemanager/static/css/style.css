@@ -826,9 +826,12 @@ input[type=button], input[type=submit], input[type=reset] {
     border: double 2px white;
     width: 150px;
     height: 150px;
+    overflow: hidden;
 }
 
 .color-item p {
+    white-space: nowrap;
     padding: 5px;
     margin: 5px;
+    overflow: hidden;
 }
