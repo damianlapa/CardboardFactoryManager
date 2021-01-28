@@ -101,7 +101,8 @@ urlpatterns += [
 
 # colors
 urlpatterns += [
-    path('colors/', ColorListView.as_view(), name='colors')
+    path('colors/', ColorListView.as_view(), name='colors'),
+    path('color/<int:color_id>/', ColorDetail.as_view(), name='color')
 ]
 
 if settings.DEBUG:

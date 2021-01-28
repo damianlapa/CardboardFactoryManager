@@ -79,7 +79,6 @@ PRODUCTION_TYPES = (
     ('INNE', 'INNE')
 )
 
-
 POLYMERS_PRODUCERS = (
     ('AMBR', 'AMBR'),
     ('CHESPA', 'CHESPA')
@@ -319,6 +318,10 @@ class ColorDelivery(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     company = models.CharField(max_length=20, blank=True, null=True)
     weight = models.PositiveIntegerField()
+    date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.company} - {self.color} - {self.weight}'
 
 
 class Photopolymer(models.Model):
@@ -328,7 +331,8 @@ class Photopolymer(models.Model):
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     name = models.CharField(max_length=32, default='')
-    delivery_date = models.DateField(blank=True, null=True, default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
+    delivery_date = models.DateField(blank=True, null=True,
+                                     default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
 
     class Meta:
         ordering = ['-delivery_date']
@@ -406,7 +410,8 @@ class ProductionProcess(models.Model):
     note = models.CharField(max_length=300, null=True, blank=True)
 
     def __str__(self):
-        order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
+        order_name = '{}){}/{} | {} - {}'.format(self.date_end, self.order_item.order, self.order_item.item_number,
+                                                 self.type, self.quantity_end)
 
         return order_name
 

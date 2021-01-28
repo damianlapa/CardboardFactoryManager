@@ -829,9 +829,32 @@ input[type=button], input[type=submit], input[type=reset] {
     overflow: hidden;
 }
 
+.color-item:hover {
+    cursor: pointer;
+    background: #444444;
+}
+
 .color-item p {
     white-space: nowrap;
     padding: 5px;
     margin: 5px;
     overflow: hidden;
+}
+
+.page-header {
+    margin: 1em;
+    color: #6B8E23;
+    text-weight: bold;
+    text-size: 3em;
+}
+
+.color-history {
+    margin: 3em;
+    color: white;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.color-history th {
+    background: #444444;
 }

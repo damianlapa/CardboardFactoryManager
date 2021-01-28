@@ -1,0 +1,45 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<h1 class="page-header">{{ color }}</h1>
+
+<div class="color-item" data-colorid="{{ c.id }}" style="margin-left: auto; margin-right: auto;">
+        <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}}); font-size: 30px;">{{ c.number }}</p>
+        {% if c.color_status > 5 %}
+            <p style="color: orange; font-size: 30px;">{{ c.color_status }}</p>
+        {% else %}
+            <p style="color: red; font-size: 30px;">{{ c.color_status }}</p>
+        {% endif %}
+        <p style="color: white">{{ c.name }}({{ c.number }})</p>
+</div>
+
+<table class="color-history">
+    <tr>
+        <th>
+            Data
+        </th>
+        <th>
+            Wydarzenie
+        </th>
+        <th>
+            Zmiana
+        </th>
+    </tr>
+    {% for h in history %}
+    <tr>
+        <td>{{ h.0 }}</td>
+        <td>{{ h.1 }}</td>
+        {% if h.2 > 0 %}
+            <td style="background: green;">{{ h.2 }}</td>
+        {% else %}
+            <td style="background: red;">{{ h.2 }}</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+
+{% endblock %}
+
+{% block footer %} {% endblock %}

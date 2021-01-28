@@ -1067,6 +1067,22 @@ document.addEventListener("DOMContentLoaded", function () {
     deleteOrEdit(deleteServiceCells, 'service-delete/')
     deleteOrEdit(editServiceCells, 'service-update/')
 
+    const colors = document.getElementsByClassName('color-item')
+
+    for (let i=0; i < colors.length; i++){
+        colors[i].addEventListener('click', function () {
+            $.ajax({
+                url: '/get-local-var/PAKER_MAIN/',
+                data: {},
+                type: 'GET',
+                dataType: 'json'
+                }).done(function (data) {
+                    link = data + 'color/' + colors[i].dataset.colorid + '/'
+                    window.open(link, '_self')
+                    })
+        })
+    }
+
 })
 
 function drag(ev) {

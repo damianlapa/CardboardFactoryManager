@@ -1752,6 +1752,28 @@ class ColorListView(ListView, PermissionRequiredMixin):
     model = Color
 
 
+class ColorDetail(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_color'
+
+    def get(self, request, color_id):
+        c = Color.objects.get(id=color_id)
+
+        history = []
+
+        deliveries = ColorDelivery.objects.filter(color=c)
+        usage = ColorUsage.objects.filter(color=c)
+
+        for d in deliveries:
+            history.append((datetime.datetime.strftime(d.date, '%Y-%m-%d'), d, d.weight))
+
+        for u in usage:
+            history.append((datetime.datetime.strftime(u.production.date_end, '%Y-%m-%d'), u.production, float(u.value*(-1))))
+
+        history = sorted(history, key=lambda x:x[0])
+
+        return render(request, 'warehousemanager-color-detail.html', locals())
+
+
 class ProductionProcessListView(ListView, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_productionprocess'
     model = ProductionProcess
