@@ -1,0 +1,20 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Color List{% endblock %}
+
+{% block content %}
+<h1 class="page-header">COLOR LIST</h1>
+<div class="color-list">
+    {% for c in object_list %}
+    <div class="color-item" data-colorid="{{ c.id }}">
+        <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}}); font-size: 30px;">{{ c.number }}</p>
+        {% if c.color_status > 5 %}
+            <p style="color: orange; font-size: 30px;">{{ c.color_status }}</p>
+        {% else %}
+            <p style="color: red; font-size: 30px;">{{ c.color_status }}</p>
+        {% endif %}
+        <p style="color: white">{{ c.name }}({{ c.number }})</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

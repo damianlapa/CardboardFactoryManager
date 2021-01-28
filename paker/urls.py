@@ -99,5 +99,11 @@ urlpatterns += [
     path('production-create/', ProductionProcessCreate.as_view(), name='production-create')
 ]
 
+# colors
+urlpatterns += [
+    path('colors/', ColorListView.as_view(), name='colors'),
+    path('color/<int:color_id>/', ColorDetail.as_view(), name='color')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

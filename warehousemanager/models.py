@@ -79,7 +79,6 @@ PRODUCTION_TYPES = (
     ('INNE', 'INNE')
 )
 
-
 POLYMERS_PRODUCERS = (
     ('AMBR', 'AMBR'),
     ('CHESPA', 'CHESPA')
@@ -293,13 +292,36 @@ class DailyReport(models.Model):
 class Color(models.Model):
     name = models.CharField(max_length=32, blank=True, null=True)
     number = models.CharField(max_length=12, blank=True, null=True)
-    availability = models.PositiveIntegerField(default=0)
+    availability = models.DecimalField(default=0, max_digits=4, decimal_places=1)
+    red = models.PositiveIntegerField(blank=True, null=True)
+    green = models.PositiveIntegerField(blank=True, null=True)
+    blue = models.PositiveIntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.number}({self.name})'
+
+    def color_status(self):
+        result = self.availability
+        delivery = ColorDelivery.objects.filter(color=self)
+        usage = ColorUsage.objects.filter(color=self)
+        for d in delivery:
+            result += d.weight
+        for u in usage:
+            result -= u.value
+        return result
 
 
 class ColorDelivery(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     company = models.CharField(max_length=20, blank=True, null=True)
-    capacity = models.PositiveIntegerField()
+    weight = models.PositiveIntegerField()
+    date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.company} - {self.color} - {self.weight}'
 
 
 class Photopolymer(models.Model):
@@ -309,7 +331,8 @@ class Photopolymer(models.Model):
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     name = models.CharField(max_length=32, default='')
-    delivery_date = models.DateField(blank=True, null=True, default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
+    delivery_date = models.DateField(blank=True, null=True,
+                                     default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
 
     class Meta:
         ordering = ['-delivery_date']
@@ -384,8 +407,16 @@ class ProductionProcess(models.Model):
     date_end = models.DateField(blank=True, null=True)
     punch = models.ForeignKey(Punch, blank=True, null=True, on_delete=models.PROTECT)
     polymer = models.ForeignKey(Photopolymer, blank=True, null=True, on_delete=models.PROTECT)
+    note = models.CharField(max_length=300, null=True, blank=True)
 
     def __str__(self):
-        order_name = '{}/{} | {}'.format(self.order_item.order, self.order_item.item_number, self.type)
+        order_name = '{}){}/{} | {} - {}'.format(self.date_end, self.order_item.order, self.order_item.item_number,
+                                                 self.type, self.quantity_end)
 
         return order_name
+
+
+class ColorUsage(models.Model):
+    production = models.ForeignKey(ProductionProcess, blank=True, null=True, on_delete=models.CASCADE)
+    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    value = models.DecimalField(max_digits=3, decimal_places=1)

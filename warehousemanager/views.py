@@ -24,7 +24,7 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter
+from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color
 
 import subprocess
 # import models from warehousemanager app
@@ -1744,6 +1744,34 @@ class ServiceUpdate(UpdateView):
 class ServiceDelete(DeleteView):
     model = PhotopolymerService
     success_url = reverse_lazy('photopolymers')
+
+
+class ColorListView(ListView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_color'
+    # add_random_color(15)
+    model = Color
+
+
+class ColorDetail(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_color'
+
+    def get(self, request, color_id):
+        c = Color.objects.get(id=color_id)
+
+        history = []
+
+        deliveries = ColorDelivery.objects.filter(color=c)
+        usage = ColorUsage.objects.filter(color=c)
+
+        for d in deliveries:
+            history.append((datetime.datetime.strftime(d.date, '%Y-%m-%d'), d, d.weight))
+
+        for u in usage:
+            history.append((datetime.datetime.strftime(u.production.date_end, '%Y-%m-%d'), u.production, float(u.value*(-1))))
+
+        history = sorted(history, key=lambda x:x[0])
+
+        return render(request, 'warehousemanager-color-detail.html', locals())
 
 
 class ProductionProcessListView(ListView, PermissionRequiredMixin):
