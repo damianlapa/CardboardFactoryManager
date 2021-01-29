@@ -1762,12 +1762,16 @@ class ColorDetail(View, PermissionRequiredMixin):
 
         deliveries = ColorDelivery.objects.filter(color=c)
         usage = ColorUsage.objects.filter(color=c)
+        events = ColorSpecialEvent.objects.filter(color=c)
 
         for d in deliveries:
             history.append((datetime.datetime.strftime(d.date, '%Y-%m-%d'), d, d.weight))
 
         for u in usage:
             history.append((datetime.datetime.strftime(u.production.date_end, '%Y-%m-%d'), u.production, float(u.value*(-1))))
+
+        for e in events:
+            history.append((datetime.datetime.strftime(e.date, '%Y-%m-%d'), e.event, e.difference))
 
         history = sorted(history, key=lambda x:x[0])
 

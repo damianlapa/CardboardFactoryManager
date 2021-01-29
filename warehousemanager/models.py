@@ -314,6 +314,14 @@ class Color(models.Model):
         return result
 
 
+class ColorSpecialEvent(models.Model):
+    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    event = models.CharField(max_length=32)
+    date = models.DateField()
+    difference = models.DecimalField(max_digits=4, decimal_places=1)
+    description = models.CharField(max_length=255, null=True, blank=True)
+
+
 class ColorDelivery(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     company = models.CharField(max_length=20, blank=True, null=True)
