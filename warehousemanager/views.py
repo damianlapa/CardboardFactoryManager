@@ -724,19 +724,23 @@ class AbsencesAndHolidays(View):
                 non_work_days.append(r)
 
         extra_hours = []
+        non_full_days = []
         month_start_date = datetime.date(int(year), month_, 1)
         month_end_date = datetime.date(int(year), month_, 28)
         e_h = ExtraHour.objects.all().filter(extras_date__gte=month_start_date).filter(extras_date__lte=month_end_date)
 
         for e in e_h:
-            extra_hours.append((e.worker.id, e.extras_date.day, float(e.quantity)))
+            if e.full_day:
+                extra_hours.append((e.worker.id, e.extras_date.day, float(e.quantity)))
+            else:
+                non_full_days.append((e.worker.id, e.extras_date.day, float(e.quantity)))
 
         absences_and_holidays = []
         for a in absences_objects:
             absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
-        return HttpResponse(json.dumps((absences_and_holidays, non_work_days, extra_hours)))
+        return HttpResponse(json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days)))
 
 
 class GetLocalVar(View):
@@ -1702,6 +1706,7 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
     def get(self, request, polymer_id):
         polymer = Photopolymer.objects.get(id=polymer_id)
         services = PhotopolymerService.objects.filter(photopolymer=polymer)
+        colors = polymer.colors.all()
 
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 

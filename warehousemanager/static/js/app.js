@@ -396,7 +396,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     let extraHours = document.getElementsByClassName(query_text)
                     if (extraHours.length > 0) {
                     extraHours[0].innerText = data[2][z][2]
-                    extraHours[0].style.backgroundColor = 'blue'
+                    extraHours[0].style.backgroundColor = '#59E817'
+                    extraHours[0].style.color = 'black'
+                    extraHours[0].style.textAlign = 'center'
+                    }
+            }
+            for (let s=0; s < data[3].length; s++){
+                    worker_id = 'worker' + String(data[3][s][0])
+                    day_id = 'day' + String(data[3][s][1])
+                    query_text = worker_id + ' ' + day_id
+                    let extraHours = document.getElementsByClassName(query_text)
+                    if (extraHours.length > 0) {
+                    extraHours[0].innerText = data[3][s][2]
+                    extraHours[0].style.backgroundColor = '#806517'
                     extraHours[0].style.color = 'white'
                     extraHours[0].style.textAlign = 'center'
                     }

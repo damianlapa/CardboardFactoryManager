@@ -58,6 +58,44 @@
 
 {{ absence_objects }}
 
+<h2>LEGENDA</h2>
+<table class="absence-description">
+    ('NN', 'Nieobecność nieusprawiedliwiona'),
+    ('UW', ''),
+    ('UO', 'Urlop okolicznościowy'),
+    ('SP', 'Spóźnienie'),
+    ('UB', 'Urlop bezpłatny'),
+    ('CH', 'Choroba')
+    <tr>
+        <td style="color: white; background: green;"></td>
+        <td>Obecność</td>
+    </tr>
+    <tr>
+        <td style="color: white; background: red;">NN</td>
+        <td>Nieobecność nieusprawiedliwiona</td>
+    </tr>
+    <tr>
+        <td style="color: white; background: red;">UW</td>
+        <td>Urlop wypoczynkowy</td>
+    </tr>
+    <tr>
+        <td style="color: white; background: red;">UB</td>
+        <td>Urlop bezpłatny</td>
+    </tr>
+    <tr>
+        <td style="color: red;">SP</td>
+        <td>Nieobecność nieusprawiedliwiona</td>
+    </tr>
+    <tr>
+        <td style="color: red;">NN</td>
+        <td>Nieobecność nieusprawiedliwiona</td>
+    </tr>
+    <tr>
+        <td style="color: red;">NN</td>
+        <td>Nieobecność nieusprawiedliwiona</td>
+    </tr>
+</table>
+
 {% endblock %}
 
 {% block footer %}{% endblock %}

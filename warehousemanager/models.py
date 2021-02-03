@@ -219,6 +219,7 @@ class ExtraHour(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     extras_date = models.DateField()
     quantity = models.DecimalField(max_digits=3, decimal_places=1)
+    full_day = models.BooleanField(default=True)
 
     def __str__(self):
         return f'{self.worker} {self.extras_date} {self.quantity}'
