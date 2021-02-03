@@ -689,6 +689,11 @@ class AbsencesAndHolidays(View):
 
             return worker.id, result_days
 
+        for a in Absence.objects.all():
+            if a.absence_type == 'UZ':
+                a.absence_type = 'CH'
+                a.save()
+
         months = (
             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
             'November',

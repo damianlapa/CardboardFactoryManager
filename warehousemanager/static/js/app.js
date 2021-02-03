@@ -355,7 +355,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
-                        if (data[0][i][2] === 'UZ') {
+                        if (data[0][i][2] === 'CH') {
                             console.log(data[0][i])
                         }
                         absenceField[0].innerText = data[0][i][2]
