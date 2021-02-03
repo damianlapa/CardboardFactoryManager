@@ -1760,6 +1760,8 @@ class ColorDetail(View, PermissionRequiredMixin):
 
         history = []
 
+        polymers = Photopolymer.objects.filter(colors=c)
+
         deliveries = ColorDelivery.objects.filter(color=c)
         usage = ColorUsage.objects.filter(color=c)
         events = ColorSpecialEvent.objects.filter(color=c)

@@ -858,3 +858,8 @@ input[type=button], input[type=submit], input[type=reset] {
 .color-history th {
     background: #444444;
 }
+
+.p-list {
+    padding: 2px;
+    color: red;
+}

@@ -16,6 +16,19 @@
         <p style="color: white">{{ c.name }}({{ c.number }})</p>
 </div>
 
+<div>
+    <h2>Polymers with this color:</h2>
+    {% for p in polymers %}
+    <a href="{% url 'polymer-details' polymer_id=p.id %}">
+    <p class="p-list">
+     {{ p }}
+        </p>
+        </a>
+    {% endfor %}
+</div>
+
+<div>
+    <h2>Color history:</h2>
 <table class="color-history">
     <tr>
         <th>
@@ -39,6 +52,7 @@
         {% endif %}
     </tr>
     {% endfor %}
+    </div>
 
 {% endblock %}
 
