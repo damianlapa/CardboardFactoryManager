@@ -50,7 +50,8 @@ ABSENCE_TYPES = (
     ('UO', 'Urlop okolicznościowy'),
     ('SP', 'Spóźnienie'),
     ('UB', 'Urlop bezpłatny'),
-    ('UZ', 'Urlop zdrowotny')
+    ('CH', 'Chorobowe'),
+    ('KW', 'Kwarantanna')
 )
 
 PUNCH_TYPES = (
