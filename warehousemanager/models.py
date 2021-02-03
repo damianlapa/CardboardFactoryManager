@@ -93,6 +93,7 @@ class Person(models.Model):
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
+    yearly_vacation_limit = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['last_name', 'first_name']

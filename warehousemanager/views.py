@@ -689,11 +689,6 @@ class AbsencesAndHolidays(View):
 
             return worker.id, result_days
 
-        for a in Absence.objects.all():
-            if a.absence_type == 'UZ':
-                a.absence_type = 'CH'
-                a.save()
-
         months = (
             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
             'November',
@@ -1799,3 +1794,15 @@ class ProductionProcessCreate(CreateView):
     model = ProductionProcess
     fields = ['order_item', 'production', 'stock', 'type', 'worker', 'machine', 'quantity_start', 'quantity_end',
               'date_start', 'date_end', 'punch', 'polymer']
+
+
+class AvailableVacation(View):
+
+    def get(self, request):
+        persons_data = []
+        persons = Person.objects.filter(job_end=None)
+        for p in persons:
+            absences = Absence.objects.filter(worker=p, absence_date__gte=datetime.date(2020, 12, 31))
+            persons_data.append((p, absences.count()))
+
+        return render(request, 'warehousemanager-vaccation-list.html', locals())
