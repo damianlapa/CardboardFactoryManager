@@ -94,6 +94,7 @@ class Person(models.Model):
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
+    amount_2021 = models.IntegerField(null=True, blank=True, default=0)
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -103,6 +104,15 @@ class Person(models.Model):
 
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
+
+    def vacation_days(self, year):
+        r = 0
+        if year == '2021':
+            r += self.amount_2021 + self.yearly_vacation_limit
+        else:
+            r += self.yearly_vacation_limit + self.vacation_days(str(int(year) - 1))
+        return r
+
 
 
 class CardboardProvider(models.Model):
@@ -209,7 +219,7 @@ class Absence(models.Model):
     absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
 
     def __str__(self):
-        return f'{self.absence_date} {self.worker}'
+        return f'{self.absence_date} {self.worker}({self.absence_type})'
 
 
 class Holiday(models.Model):

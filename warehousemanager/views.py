@@ -1802,7 +1802,12 @@ class AvailableVacation(View):
         persons_data = []
         persons = Person.objects.filter(job_end=None)
         for p in persons:
-            absences = Absence.objects.filter(worker=p, absence_date__gte=datetime.date(2020, 12, 31))
-            persons_data.append((p, absences.count()))
+            used_vacation = 0
+            absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(2020, 12, 31))
+            for a in absences:
+                if a.absence_type in ('UO', 'UW'):
+                    used_vacation += 1
+            left_vacation = p.yearly_vacation_limit - used_vacation
+            persons_data.append((p, used_vacation, left_vacation, p.vacation_days('2021')))
 
         return render(request, 'warehousemanager-vaccation-list.html', locals())

@@ -7,12 +7,15 @@
         <td>Pracownik</td>
         <td>Limit roczny</td>
         <td>Wykorzystano</td>
+        <td>Pozostało</td>
     </tr>
     {% for p in persons_data %}
     <tr>
         <td>{{ p.0 }}</td>
         <td>{{ p.0.yearly_vacation_limit }}</td>
         <td>{{ p.1 }}</td>
+        <td>{{ p.2 }}</td>
+        <td>{{ p.3 }}</td>
     </tr>
     {% endfor %}
 </table>
