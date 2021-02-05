@@ -6,6 +6,16 @@ from django.urls import reverse
 import decimal
 import datetime
 
+PALETTES = (
+    ('EU', 'Euro'),
+    ('OR', 'Ordinary')
+)
+
+PALETTES_STATUS = (
+    ('DEL', 'Delivered'),
+    ('RET', 'returned')
+)
+
 ITEM_SORTS = (
     ('201', 'FEFCO 201'),
     ('202', 'FEFCO 202'),
@@ -114,7 +124,6 @@ class Person(models.Model):
         return r
 
 
-
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=6, blank=True)
@@ -176,10 +185,20 @@ class OrderItem(models.Model):
         return '{}/{}: {}x{}'.format(self.order, self.item_number, self.format_width, self.format_height)
 
 
+class Palette(models.Model):
+    width = models.PositiveIntegerField(default=1200)
+    height = models.PositiveIntegerField(default=800)
+    type = models.CharField(max_length=4, choices=PALETTES)
+
+    def __str__(self):
+        return f'{self.type} {self.width}x{self.height}'
+
+
 class Delivery(models.Model):
     items = models.ManyToManyField(OrderItem, through='OrderItemQuantity')
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     date_of_delivery = models.DateField()
+    palettes = models.ManyToManyField(Palette, through='PaletteQuantity')
 
     class Meta:
         ordering = ['date_of_delivery']
@@ -191,11 +210,18 @@ class Delivery(models.Model):
 class OrderItemQuantity(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=0)
     is_used = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.order_item.order}/{self.order_item.item_number} - {self.order_item.format_width} x {self.order_item.format_height}'
+
+
+class PaletteQuantity(models.Model):
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
+    palette = models.ForeignKey(Palette, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    status = models.CharField(max_length=4, choices=PALETTES_STATUS)
 
 
 class Machine(models.Model):
@@ -441,3 +467,5 @@ class ColorUsage(models.Model):
     production = models.ForeignKey(ProductionProcess, blank=True, null=True, on_delete=models.CASCADE)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=3, decimal_places=1)
+
+
