@@ -412,7 +412,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     extraHours[0].style.color = 'white'
                     extraHours[0].style.textAlign = 'center'
                     }
-            }})
+            }
+            for (let a=0; a < data[4].length; a++){
+                worker_id = 'worker' + String(data[4][a][0])
+                day_id = 'day' + String(data[4][a][1])
+                query_text = worker_id + ' ' + day_id
+                let acquaintanceField = document.getElementsByClassName(query_text)
+                if (acquaintanceField.length > 0) {
+                acquaintanceField[0].innerText = data[4][a][3]
+                acquaintanceField[0].style.backgroundColor = 'yellow'
+                acquaintanceField[0].style.color = 'black'
+                acquaintanceField[0].style.textAlign = 'center'
+            }}
+            })
         monthSelect.addEventListener('click', function () {
             $.ajax({
             url: '/get-local-var/PAKER_MAIN/',
@@ -1092,6 +1104,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     link = data + 'color/' + colors[i].dataset.colorid + '/'
                     window.open(link, '_self')
                     })
+        })
+    }
+
+    const paletteAddBtn = document.getElementById('palette-add-button')
+    const paletteAdd = document.getElementById('palette-add')
+
+    if (paletteAddBtn !== null) {
+        paletteAddBtn.addEventListener('click', function () {
+            paletteAdd.style.display = 'block'
         })
     }
 

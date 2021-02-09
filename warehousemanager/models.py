@@ -220,8 +220,8 @@ class OrderItemQuantity(models.Model):
 class PaletteQuantity(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
     palette = models.ForeignKey(Palette, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    status = models.CharField(max_length=4, choices=PALETTES_STATUS)
+    quantity = models.IntegerField(default=0)
+    status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
 
 
 class Machine(models.Model):
@@ -243,6 +243,18 @@ class Absence(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     absence_date = models.DateField()
     absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
+    value = models.IntegerField(null=True, blank=True)
+
+    # create acquaintance with value in minutes
+    def create_acquaintance(self, value):
+        if isinstance(value, int):
+            if self.absence_type == 'SP':
+                self.value = value
+                self.save()
+            else:
+                pass
+        else:
+            return TypeError('Acquaintance value must be a float')
 
     def __str__(self):
         return f'{self.absence_date} {self.worker}({self.absence_type})'

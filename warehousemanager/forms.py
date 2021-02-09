@@ -82,3 +82,9 @@ class OrderItemQuantityForm(forms.ModelForm):
             uncompleted_items = all_items.filter(is_completed=False).order_by('planned_delivery')
 
         self.fields['order_item'].queryset = uncompleted_items
+
+
+class PaletteQuantityForm(forms.ModelForm):
+    class Meta:
+        model = PaletteQuantity
+        fields = ('delivery', 'palette', 'quantity', 'status')
