@@ -756,7 +756,7 @@ class AbsencesAndHolidays(View):
         for a in absences_objects:
             print(a.absence_type)
             if a.absence_type != 'SP':
-                absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type))
+                absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type, a.id))
             else:
                 value = change_minutes_to_hours(a.value) if a.value else 'no value'
                 acquaintances.append((a.worker.id, a.absence_date.day, a.absence_type, value))
@@ -771,6 +771,14 @@ class GetLocalVar(View):
             return HttpResponse(json.dumps(os.environ[variable_name]))
         else:
             return redirect('manage')
+
+
+class AbsenceEdit(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request, absence_id):
+        absence = Absence.object.get(id=int(absence_id))
+        print(absence)
 
 
 class AbsenceAdd(LoginRequiredMixin, View):
@@ -1712,7 +1720,7 @@ class PhotoPolymers(View, PermissionRequiredMixin):
         user = request.user
         visit_counter(user, 'polymer_list')
 
-        polymers = Photopolymer.objects.all()
+        polymers = Photopolymer.objects.all().order_by('customer__name', 'name')
         services = PhotopolymerService.objects.all()
         current_services = []
         history_services = []

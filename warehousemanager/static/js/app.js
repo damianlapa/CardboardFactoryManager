@@ -355,9 +355,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
-                        if (data[0][i][2] === 'CH') {
-                            console.log(data[0][i])
-                        }
                         absenceField[0].innerText = data[0][i][2]
                         absenceField[0].style.backgroundColor = 'red'
                         absenceField[0].style.color = 'white'
@@ -437,6 +434,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
         })
     }
+
 
     // add absences form
     const absencesButtonsContainer = document.getElementById('absenceAddContainer')
@@ -1085,8 +1083,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const deleteServiceCells = document.getElementsByClassName('delete-service')
     const editServiceCells = document.getElementsByClassName('edit-service')
-
-    console.log(editServiceCells)
 
     deleteOrEdit(deleteServiceCells, 'service-delete/')
     deleteOrEdit(editServiceCells, 'service-update/')

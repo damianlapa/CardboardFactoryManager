@@ -183,4 +183,4 @@ def add_random_color(num):
 
 
 def change_minutes_to_hours(minutes):
-    return f'{minutes // 60}:{minutes % 60}'
+    return f'{minutes // 60}:{minutes % 60}' if minutes % 60 > 9 else f'{minutes // 60}:0{minutes % 60}'
