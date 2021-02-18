@@ -1,0 +1,16 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<table>
+    <tr>
+        <td>Absence</td>
+    </tr>
+    {% for a in absences %}
+    <tr>
+        <td>{{ a }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

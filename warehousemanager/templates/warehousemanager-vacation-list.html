@@ -6,18 +6,23 @@
     <tr>
         <td>Pracownik</td>
         <td>Limit roczny</td>
-        <td>Wykorzystano</td>
-        <td>Pozostało</td>
+        <td>Zaległy urlop z roku {{ previous_year }}</td>
+        <td>Wykorzystano w {{ year }} roku</td>
+        <td>Pozostało do wykorzystania</td>
     </tr>
     {% for p in persons_data %}
     <tr>
         <td>{{ p.0 }}</td>
-        <td>{{ p.0.yearly_vacation_limit }}</td>
         <td>{{ p.1 }}</td>
         <td>{{ p.2 }}</td>
         <td>{{ p.3 }}</td>
+        <td>{{ p.4 }}</td>
     </tr>
     {% endfor %}
 </table>
+
+{% for p in persons_data %}
+<a href="{% url 'persons-vacations' person_id=p.0.id %}">{{ p }}</a>
+{% endfor %}
 
 {% endblock %}

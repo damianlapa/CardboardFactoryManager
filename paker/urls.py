@@ -107,7 +107,8 @@ urlpatterns += [
 
 # vacations
 urlpatterns += [
-    path('vacations/', AvailableVacation.as_view(), name='vacations')
+    path('vacations/', AvailableVacation.as_view(), name='vacations'),
+    path('persons-vacations/<int:person_id>', PersonsVacations.as_view(), name='persons-vacations')
 ]
 
 if settings.DEBUG:

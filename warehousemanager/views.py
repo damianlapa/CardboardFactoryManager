@@ -24,7 +24,8 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, change_minutes_to_hours
+from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, \
+    change_minutes_to_hours
 
 import subprocess
 # import models from warehousemanager app
@@ -762,7 +763,8 @@ class AbsencesAndHolidays(View):
                 acquaintances.append((a.worker.id, a.absence_date.day, a.absence_type, value))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
-        return HttpResponse(json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances)))
+        return HttpResponse(
+            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances)))
 
 
 class GetLocalVar(View):
@@ -1836,12 +1838,23 @@ class AvailableVacation(View):
         persons_data = []
         persons = Person.objects.filter(job_end=None)
         for p in persons:
-            used_vacation = 0
-            absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(2020, 12, 31))
+            used_vacation_in_year = 0
+            year = datetime.datetime.now().year
+            previous_year = year - 1
+            absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(int(previous_year), 12, 31),
+                                              absence_date__lte=datetime.date(int(year), 12, 31))
             for a in absences:
-                if a.absence_type in ('UO', 'UW'):
-                    used_vacation += 1
-            left_vacation = p.yearly_vacation_limit - used_vacation
-            persons_data.append((p, used_vacation, left_vacation, p.vacation_days('2021')))
+                if a.absence_type == 'UW':
+                    used_vacation_in_year += 1
+            left_vacation = p.yearly_vacation_limit - used_vacation_in_year
+            persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year, p.end_year_vacation(year)))
 
-        return render(request, 'warehousemanager-vaccation-list.html', locals())
+        return render(request, 'warehousemanager-vacation-list.html', locals())
+
+
+class PersonsVacations(View):
+
+    def get(self, request, person_id):
+        person = Person.objects.get(id=person_id)
+        absences = Absence.objects.filter(worker=person)
+        return render(request, 'warehousemanager-vacation-person.html', locals())
