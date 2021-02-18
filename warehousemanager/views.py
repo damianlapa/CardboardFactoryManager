@@ -24,7 +24,8 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color
+from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, \
+    change_minutes_to_hours
 
 import subprocess
 # import models from warehousemanager app
@@ -440,14 +441,30 @@ class DeliveryDetails(LoginRequiredMixin, View):
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         quantities = OrderItemQuantity.objects.filter(delivery=delivery)
+        palettes = PaletteQuantity.objects.filter(delivery=delivery)
 
         order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery}, provider=delivery.provider)
+        palette_q_form = PaletteQuantityForm()
 
         return render(request, 'warehousemanager-delivery-details.html', locals())
 
     def post(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         order_item_q_form = OrderItemQuantityForm(delivery.provider, request.POST)
+        palette_q_form = PaletteQuantityForm(request.POST)
+
+        if palette_q_form.is_valid():
+            delivery = Delivery.objects.get(id=int(request.POST.get('delivery')))
+            palette = Palette.objects.get(id=int(request.POST.get('palette')))
+            quantity = int(request.POST.get('quantity'))
+            status = request.POST.get('status')
+
+            new_palette_quantity = PaletteQuantity.objects.create(delivery=delivery, palette=palette, quantity=quantity,
+                                                                  status=status)
+
+            new_palette_quantity.save()
+
+            return redirect('/delivery/{}'.format(delivery_id))
 
         if order_item_q_form.is_valid():
             delivery = request.POST.get('delivery')
@@ -724,19 +741,30 @@ class AbsencesAndHolidays(View):
                 non_work_days.append(r)
 
         extra_hours = []
+        non_full_days = []
+        acquaintances = []
         month_start_date = datetime.date(int(year), month_, 1)
         month_end_date = datetime.date(int(year), month_, 28)
         e_h = ExtraHour.objects.all().filter(extras_date__gte=month_start_date).filter(extras_date__lte=month_end_date)
 
         for e in e_h:
-            extra_hours.append((e.worker.id, e.extras_date.day, float(e.quantity)))
+            if e.full_day:
+                extra_hours.append((e.worker.id, e.extras_date.day, float(e.quantity)))
+            else:
+                non_full_days.append((e.worker.id, e.extras_date.day, float(e.quantity)))
 
         absences_and_holidays = []
         for a in absences_objects:
-            absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type))
+            print(a.absence_type)
+            if a.absence_type != 'SP':
+                absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type, a.id))
+            else:
+                value = change_minutes_to_hours(a.value) if a.value else 'no value'
+                acquaintances.append((a.worker.id, a.absence_date.day, a.absence_type, value))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
-        return HttpResponse(json.dumps((absences_and_holidays, non_work_days, extra_hours)))
+        return HttpResponse(
+            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances)))
 
 
 class GetLocalVar(View):
@@ -745,6 +773,14 @@ class GetLocalVar(View):
             return HttpResponse(json.dumps(os.environ[variable_name]))
         else:
             return redirect('manage')
+
+
+class AbsenceEdit(LoginRequiredMixin, View):
+    login_url = '/'
+
+    def get(self, request, absence_id):
+        absence = Absence.object.get(id=int(absence_id))
+        print(absence)
 
 
 class AbsenceAdd(LoginRequiredMixin, View):
@@ -766,6 +802,9 @@ class AbsenceAdd(LoginRequiredMixin, View):
             new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
 
             new_absence.save()
+
+            if absence_type == 'SP':
+                new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
 
             return redirect('absence-list')
 
@@ -1683,7 +1722,7 @@ class PhotoPolymers(View, PermissionRequiredMixin):
         user = request.user
         visit_counter(user, 'polymer_list')
 
-        polymers = Photopolymer.objects.all()
+        polymers = Photopolymer.objects.all().order_by('customer__name', 'name')
         services = PhotopolymerService.objects.all()
         current_services = []
         history_services = []
@@ -1702,6 +1741,7 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
     def get(self, request, polymer_id):
         polymer = Photopolymer.objects.get(id=polymer_id)
         services = PhotopolymerService.objects.filter(photopolymer=polymer)
+        colors = polymer.colors.all()
 
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
@@ -1760,16 +1800,23 @@ class ColorDetail(View, PermissionRequiredMixin):
 
         history = []
 
+        polymers = Photopolymer.objects.filter(colors=c)
+
         deliveries = ColorDelivery.objects.filter(color=c)
         usage = ColorUsage.objects.filter(color=c)
+        events = ColorSpecialEvent.objects.filter(color=c)
 
         for d in deliveries:
             history.append((datetime.datetime.strftime(d.date, '%Y-%m-%d'), d, d.weight))
 
         for u in usage:
-            history.append((datetime.datetime.strftime(u.production.date_end, '%Y-%m-%d'), u.production, float(u.value*(-1))))
+            history.append(
+                (datetime.datetime.strftime(u.production.date_end, '%Y-%m-%d'), u.production, float(u.value * (-1))))
 
-        history = sorted(history, key=lambda x:x[0])
+        for e in events:
+            history.append((datetime.datetime.strftime(e.date, '%Y-%m-%d'), e.event, e.difference))
+
+        history = sorted(history, key=lambda x: x[0])
 
         return render(request, 'warehousemanager-color-detail.html', locals())
 
@@ -1783,3 +1830,31 @@ class ProductionProcessCreate(CreateView):
     model = ProductionProcess
     fields = ['order_item', 'production', 'stock', 'type', 'worker', 'machine', 'quantity_start', 'quantity_end',
               'date_start', 'date_end', 'punch', 'polymer']
+
+
+class AvailableVacation(View):
+
+    def get(self, request):
+        persons_data = []
+        persons = Person.objects.filter(job_end=None)
+        for p in persons:
+            used_vacation_in_year = 0
+            year = datetime.datetime.now().year
+            previous_year = year - 1
+            absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(int(previous_year), 12, 31),
+                                              absence_date__lte=datetime.date(int(year), 12, 31))
+            for a in absences:
+                if a.absence_type == 'UW':
+                    used_vacation_in_year += 1
+            left_vacation = p.yearly_vacation_limit - used_vacation_in_year
+            persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year, p.end_year_vacation(year)))
+
+        return render(request, 'warehousemanager-vacation-list.html', locals())
+
+
+class PersonsVacations(View):
+
+    def get(self, request, person_id):
+        person = Person.objects.get(id=person_id)
+        absences = Absence.objects.filter(worker=person)
+        return render(request, 'warehousemanager-vacation-person.html', locals())

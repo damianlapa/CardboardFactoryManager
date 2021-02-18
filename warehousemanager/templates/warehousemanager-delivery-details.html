@@ -1,38 +1,61 @@
 {% extends '__base2__.html' %}
-
 {% block content %}
-
 <div class='all-deliveries-container'>
-
     <h1>Delivery Details:</h1>
-
     <h2>{{ delivery.provider }} / {{ delivery.date_of_delivery }}</h2>
-
-    <table class="all-deliveries-list">
-
-        <tr>
-            <th>#</th>
-            <th>Format</th>
-            <th>Quantity</th>
-        </tr>
-        {% for q in quantities %}
-        <tr>
-            <td>{{ q.order_item.order.order_provider_number }}/{{ q.order_item.item_number }}</td>
-            <td>{{ q.order_item.format_width }} x {{ q.order_item.format_height }}</td>
-            <td>{{ q.quantity }}</td>
-        </tr>
-        {% endfor %}
-
-    </table>
-
-    <div class="add-form-container">
-        <form method="post">
-            {% csrf_token %}
-            {{ order_item_q_form.as_p }}
-            <input type="submit" value="Add">
-        </form>
+    <div>
+        <div>
+            <table class="all-deliveries-list">
+                <tr>
+                    <th>#</th>
+                    <th>Format</th>
+                    <th>Quantity</th>
+                </tr>
+                {% for q in quantities %}
+                <tr>
+                    <td>{{ q.order_item.order.order_provider_number }}/{{ q.order_item.item_number }}</td>
+                    <td>{{ q.order_item.format_width }} x {{ q.order_item.format_height }}</td>
+                    <td>{{ q.quantity }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="add-form-container">
+            <form method="post">
+                {% csrf_token %}
+                {{ order_item_q_form.as_p }}
+                <input type="submit" value="Add">
+            </form>
+        </div>
     </div>
-
+    <div>
+        {% if palettes|length > 0 %}
+        <div>
+            <table class="all-deliveries-list">
+                <tr>
+                    <th>Palette</th>
+                    <th>Status</th>
+                    <th>Quantity</th>
+                </tr>
+                {% for p in palettes %}
+                <tr>
+                    <td>{{ p.palette }}</td>
+                    <td>{{ p.status }}</td>
+                    <td>{{ p.quantity }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% else %}
+        <button id="palette-add-button" class="monthNavButton">Dodaj Palety</button>
+        <div class="add-form-container" id="palette-add" style="display: none;">
+            <form method="post">
+                {% csrf_token %}
+                {{ palette_q_form.as_p }}
+                <input type="submit" value="Add">
+            </form>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
 {% endblock %}

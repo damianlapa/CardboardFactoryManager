@@ -6,6 +6,16 @@ from django.urls import reverse
 import decimal
 import datetime
 
+PALETTES = (
+    ('EU', 'Euro'),
+    ('OR', 'Ordinary')
+)
+
+PALETTES_STATUS = (
+    ('DEL', 'Delivered'),
+    ('RET', 'returned')
+)
+
 ITEM_SORTS = (
     ('201', 'FEFCO 201'),
     ('202', 'FEFCO 202'),
@@ -50,7 +60,8 @@ ABSENCE_TYPES = (
     ('UO', 'Urlop okolicznościowy'),
     ('SP', 'Spóźnienie'),
     ('UB', 'Urlop bezpłatny'),
-    ('UZ', 'Urlop zdrowotny')
+    ('CH', 'Chorobowe'),
+    ('KW', 'Kwarantanna')
 )
 
 PUNCH_TYPES = (
@@ -92,6 +103,8 @@ class Person(models.Model):
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
+    yearly_vacation_limit = models.PositiveIntegerField(default=0)
+    amount_2020 = models.IntegerField(null=True, blank=True, default=0)
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -101,6 +114,42 @@ class Person(models.Model):
 
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
+
+    # def vacation_days(self, year):
+    #     r = 0
+    #     if year == '2021':
+    #         r += self.amount_2021 + self.yearly_vacation_limit
+    #     else:
+    #         r += self.yearly_vacation_limit + self.vacation_days(str(int(year) - 1))
+    #     for a in Absence.objects.filter(worker=self, absence_date__gt=datetime.date(2020, 12, 31)):
+    #         if a.absence_type == 'UW':
+    #             r -= 1
+    #     return r
+    #
+    # def vacation_last_from_year(self, year):
+    #     r = 0
+    #     if year == '2020':
+    #         r = self.amount_2021
+    #     else:
+    #         r = self.vacation_days(str(year)) - self.amount_2021
+    #
+    #     return r
+
+    def end_year_vacation(self, year):
+        if year < 2020:
+            return 0
+        elif year == 2020:
+            return self.amount_2020
+        else:
+            if year == 2021:
+                r = self.amount_2020 + self.yearly_vacation_limit
+                for a in Absence.objects.filter(worker=self, absence_date__gt=datetime.date(2020, 12, 31),
+                                                absence_date__lte=datetime.date(2021, 12, 31)):
+                    if a.absence_type == 'UW':
+                        r -= 1
+                return r
+            else:
+                return self.end_year_vacation(year - 1) + self.yearly_vacation_limit
 
 
 class CardboardProvider(models.Model):
@@ -164,10 +213,20 @@ class OrderItem(models.Model):
         return '{}/{}: {}x{}'.format(self.order, self.item_number, self.format_width, self.format_height)
 
 
+class Palette(models.Model):
+    width = models.PositiveIntegerField(default=1200)
+    height = models.PositiveIntegerField(default=800)
+    type = models.CharField(max_length=4, choices=PALETTES)
+
+    def __str__(self):
+        return f'{self.type} {self.width}x{self.height}'
+
+
 class Delivery(models.Model):
     items = models.ManyToManyField(OrderItem, through='OrderItemQuantity')
     provider = models.ForeignKey(CardboardProvider, on_delete=models.CASCADE)
     date_of_delivery = models.DateField()
+    palettes = models.ManyToManyField(Palette, through='PaletteQuantity')
 
     class Meta:
         ordering = ['date_of_delivery']
@@ -179,11 +238,18 @@ class Delivery(models.Model):
 class OrderItemQuantity(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=0)
     is_used = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.order_item.order}/{self.order_item.item_number} - {self.order_item.format_width} x {self.order_item.format_height}'
+
+
+class PaletteQuantity(models.Model):
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
+    palette = models.ForeignKey(Palette, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=0)
+    status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
 
 
 class Machine(models.Model):
@@ -205,9 +271,21 @@ class Absence(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     absence_date = models.DateField()
     absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
+    value = models.IntegerField(null=True, blank=True)
+
+    # create acquaintance with value in minutes
+    def create_acquaintance(self, value):
+        if isinstance(value, int):
+            if self.absence_type == 'SP':
+                self.value = value
+                self.save()
+            else:
+                pass
+        else:
+            return TypeError('Acquaintance value must be a float')
 
     def __str__(self):
-        return f'{self.absence_date} {self.worker}'
+        return f'{self.absence_date} {self.worker}({self.absence_type})'
 
 
 class Holiday(models.Model):
@@ -219,6 +297,7 @@ class ExtraHour(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     extras_date = models.DateField()
     quantity = models.DecimalField(max_digits=3, decimal_places=1)
+    full_day = models.BooleanField(default=True)
 
     def __str__(self):
         return f'{self.worker} {self.extras_date} {self.quantity}'
@@ -312,6 +391,14 @@ class Color(models.Model):
         for u in usage:
             result -= u.value
         return result
+
+
+class ColorSpecialEvent(models.Model):
+    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    event = models.CharField(max_length=32)
+    date = models.DateField()
+    difference = models.DecimalField(max_digits=4, decimal_places=1)
+    description = models.CharField(max_length=255, null=True, blank=True)
 
 
 class ColorDelivery(models.Model):

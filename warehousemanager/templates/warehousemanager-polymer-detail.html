@@ -32,6 +32,24 @@
             {% endif %}
         {% endif %}
     </p>
+
+    <h3>Farby:</h3>
+    <div class="color-container">
+
+
+
+        {% for c in colors %}
+        <div class="color-item" data-colorid="{{ c.id }}" style="margin-left: auto; margin-right: auto;">
+            <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}}); font-size: 30px;">{{ c.number }}</p>
+            {% if c.color_status > 5 %}
+                <p style="color: orange; font-size: 30px;">{{ c.color_status }}</p>
+            {% else %}
+                <p style="color: red; font-size: 30px;">{{ c.color_status }}</p>
+            {% endif %}
+            <p style="color: white">{{ c.name }}({{ c.number }})</p>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 {% if services|length > 0 %}

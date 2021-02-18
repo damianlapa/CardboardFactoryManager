@@ -827,6 +827,7 @@ input[type=button], input[type=submit], input[type=reset] {
     width: 150px;
     height: 150px;
     overflow: hidden;
+    background: #242424;
 }
 
 .color-item:hover {
@@ -857,4 +858,22 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .color-history th {
     background: #444444;
+}
+
+.p-list {
+    padding: 2px;
+    color: red;
+}
+
+.color-container {
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    justify-content: center;
+    width: 700px;
+}
+
+.absence-description {
+    margin-left: auto;
+    margin-right: auto;
 }

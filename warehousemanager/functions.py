@@ -180,3 +180,7 @@ def add_random_color(num):
         green = random.randint(0, 255)
         blue = random.randint(0, 255)
         Color.objects.create(name=random.choice(COLORS), number=name, red=red, green=green, blue=blue)
+
+
+def change_minutes_to_hours(minutes):
+    return f'{minutes // 60}:{minutes % 60}' if minutes % 60 > 9 else f'{minutes // 60}:0{minutes % 60}'

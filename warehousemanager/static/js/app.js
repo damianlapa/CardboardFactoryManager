@@ -355,9 +355,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
-                        if (data[0][i][2] === 'UZ') {
-                            console.log(data[0][i])
-                        }
                         absenceField[0].innerText = data[0][i][2]
                         absenceField[0].style.backgroundColor = 'red'
                         absenceField[0].style.color = 'white'
@@ -396,11 +393,35 @@ document.addEventListener("DOMContentLoaded", function () {
                     let extraHours = document.getElementsByClassName(query_text)
                     if (extraHours.length > 0) {
                     extraHours[0].innerText = data[2][z][2]
-                    extraHours[0].style.backgroundColor = 'blue'
+                    extraHours[0].style.backgroundColor = '#59E817'
+                    extraHours[0].style.color = 'black'
+                    extraHours[0].style.textAlign = 'center'
+                    }
+            }
+            for (let s=0; s < data[3].length; s++){
+                    worker_id = 'worker' + String(data[3][s][0])
+                    day_id = 'day' + String(data[3][s][1])
+                    query_text = worker_id + ' ' + day_id
+                    let extraHours = document.getElementsByClassName(query_text)
+                    if (extraHours.length > 0) {
+                    extraHours[0].innerText = data[3][s][2]
+                    extraHours[0].style.backgroundColor = '#806517'
                     extraHours[0].style.color = 'white'
                     extraHours[0].style.textAlign = 'center'
                     }
-            }})
+            }
+            for (let a=0; a < data[4].length; a++){
+                worker_id = 'worker' + String(data[4][a][0])
+                day_id = 'day' + String(data[4][a][1])
+                query_text = worker_id + ' ' + day_id
+                let acquaintanceField = document.getElementsByClassName(query_text)
+                if (acquaintanceField.length > 0) {
+                acquaintanceField[0].innerText = data[4][a][3]
+                acquaintanceField[0].style.backgroundColor = 'yellow'
+                acquaintanceField[0].style.color = 'black'
+                acquaintanceField[0].style.textAlign = 'center'
+            }}
+            })
         monthSelect.addEventListener('click', function () {
             $.ajax({
             url: '/get-local-var/PAKER_MAIN/',
@@ -413,6 +434,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
         })
     }
+
 
     // add absences form
     const absencesButtonsContainer = document.getElementById('absenceAddContainer')
@@ -1062,8 +1084,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const deleteServiceCells = document.getElementsByClassName('delete-service')
     const editServiceCells = document.getElementsByClassName('edit-service')
 
-    console.log(editServiceCells)
-
     deleteOrEdit(deleteServiceCells, 'service-delete/')
     deleteOrEdit(editServiceCells, 'service-update/')
 
@@ -1080,6 +1100,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     link = data + 'color/' + colors[i].dataset.colorid + '/'
                     window.open(link, '_self')
                     })
+        })
+    }
+
+    const paletteAddBtn = document.getElementById('palette-add-button')
+    const paletteAdd = document.getElementById('palette-add')
+
+    if (paletteAddBtn !== null) {
+        paletteAddBtn.addEventListener('click', function () {
+            paletteAdd.style.display = 'block'
         })
     }
 
