@@ -755,7 +755,6 @@ class AbsencesAndHolidays(View):
 
         absences_and_holidays = []
         for a in absences_objects:
-            print(a.absence_type)
             if a.absence_type != 'SP':
                 absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type, a.id))
             else:
@@ -780,7 +779,6 @@ class AbsenceEdit(LoginRequiredMixin, View):
 
     def get(self, request, absence_id):
         absence = Absence.object.get(id=int(absence_id))
-        print(absence)
 
 
 class AbsenceAdd(LoginRequiredMixin, View):
@@ -965,8 +963,6 @@ class PunchEdit(PermissionRequiredMixin, View):
 
             edited_punch.save()
 
-            print(customers)
-
             return redirect('punches')
 
 
@@ -1080,7 +1076,6 @@ class ChangeOrderState(View):
     def get(self, request):
         order_item_id = request.GET.get('order_item_id')
         order_item = OrderItem.objects.get(id=int(order_item_id))
-        print(order_item)
         if order_item.is_completed:
             order_item.is_completed = False
         else:
@@ -1221,7 +1216,6 @@ class GoogleSheetTest(View):
         all_sheets = SpreadsheetCopy.objects.all()
 
         for s in all_sheets:
-            print('utworzono', s.created)
             if timezone.now() > s.created + datetime.timedelta(minutes=30):
                 client.del_spreadsheet(s.gs_id)
                 s.delete()
@@ -1553,7 +1547,6 @@ class ImportOrderItems(View):
                     delivery_date = ''
                     if row[5] != '':
                         delivery_date = row[5]
-                        print('delivery_date: ', delivery_date)
 
                     if sort == 'PRZEKLADKA':
                         dim1 = width
@@ -1626,8 +1619,6 @@ class PrepareManySpreadsheetsForm(View):
 
     def post(self, request):
         order_items = request.POST.get('order_items')
-
-        print(order_items)
 
         '''scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
@@ -1835,11 +1826,12 @@ class ProductionProcessCreate(CreateView):
 class AvailableVacation(View):
 
     def get(self, request):
+        year = datetime.datetime.now().year if not request.GET.get('year-choice') else int(request.GET.get('year-choice'))
+        years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
         persons = Person.objects.filter(job_end=None)
         for p in persons:
             used_vacation_in_year = 0
-            year = datetime.datetime.now().year
             previous_year = year - 1
             absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(int(previous_year), 12, 31),
                                               absence_date__lte=datetime.date(int(year), 12, 31))
