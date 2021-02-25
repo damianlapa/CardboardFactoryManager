@@ -9,17 +9,18 @@ from django.core.exceptions import ObjectDoesNotExist
 
 COLORS = ('Red', 'Green', 'Blue', 'Yellow', 'Pink', 'Orange', 'Purple', 'Brown')
 
+
 def google_key():
     key_parts_tuple = ('-----BEGIN PRIVATE KEY-----', os.environ['PRIVATE_KEY_1'], os.environ['PRIVATE_KEY_2'],
-                           os.environ['PRIVATE_KEY_3'],
-                           os.environ['PRIVATE_KEY_4'], os.environ['PRIVATE_KEY_5'], os.environ['PRIVATE_KEY_6'],
-                           os.environ['PRIVATE_KEY_7'], os.environ['PRIVATE_KEY_8'], os.environ['PRIVATE_KEY_9'],
-                           os.environ['PRIVATE_KEY_10'], os.environ['PRIVATE_KEY_11'], os.environ['PRIVATE_KEY_12'],
-                           os.environ['PRIVATE_KEY_13'], os.environ['PRIVATE_KEY_14'], os.environ['PRIVATE_KEY_15'],
-                           os.environ['PRIVATE_KEY_16'], os.environ['PRIVATE_KEY_17'], os.environ['PRIVATE_KEY_18'],
-                           os.environ['PRIVATE_KEY_19'], os.environ['PRIVATE_KEY_20'], os.environ['PRIVATE_KEY_21'],
-                           os.environ['PRIVATE_KEY_22'], os.environ['PRIVATE_KEY_23'], os.environ['PRIVATE_KEY_24'],
-                           os.environ['PRIVATE_KEY_25'], os.environ['PRIVATE_KEY_26'], '-----END PRIVATE KEY-----')
+                       os.environ['PRIVATE_KEY_3'],
+                       os.environ['PRIVATE_KEY_4'], os.environ['PRIVATE_KEY_5'], os.environ['PRIVATE_KEY_6'],
+                       os.environ['PRIVATE_KEY_7'], os.environ['PRIVATE_KEY_8'], os.environ['PRIVATE_KEY_9'],
+                       os.environ['PRIVATE_KEY_10'], os.environ['PRIVATE_KEY_11'], os.environ['PRIVATE_KEY_12'],
+                       os.environ['PRIVATE_KEY_13'], os.environ['PRIVATE_KEY_14'], os.environ['PRIVATE_KEY_15'],
+                       os.environ['PRIVATE_KEY_16'], os.environ['PRIVATE_KEY_17'], os.environ['PRIVATE_KEY_18'],
+                       os.environ['PRIVATE_KEY_19'], os.environ['PRIVATE_KEY_20'], os.environ['PRIVATE_KEY_21'],
+                       os.environ['PRIVATE_KEY_22'], os.environ['PRIVATE_KEY_23'], os.environ['PRIVATE_KEY_24'],
+                       os.environ['PRIVATE_KEY_25'], os.environ['PRIVATE_KEY_26'], '-----END PRIVATE KEY-----')
 
     key_ = ''
 
@@ -167,9 +168,11 @@ def visit_counter(user, page):
         try:
             visit = UserVisitCounter.objects.get(user=user, page=page)
             visit.counter += 1
+            visit.last_visit = datetime.datetime.now()
             visit.save()
         except ObjectDoesNotExist:
-            new_visit = UserVisitCounter.objects.create(user=user, page=page)
+            new_visit = UserVisitCounter.objects.create(user=user, page=page, first_visit=datetime.datetime.now(),
+                                                        last_visit=datetime.datetime.now())
             new_visit.save()
 
 

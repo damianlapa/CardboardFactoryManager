@@ -1734,6 +1734,8 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         services = PhotopolymerService.objects.filter(photopolymer=polymer)
         colors = polymer.colors.all()
 
+        print(polymer.project.url)
+
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
