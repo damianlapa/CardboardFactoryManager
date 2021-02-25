@@ -536,8 +536,8 @@ class AllNotes(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-all-notes.html', locals())
 
 
-class AbsencesList(LoginRequiredMixin, View):
-    login_url = '/'
+class AbsencesList(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
 
     def get(self, request):
 
