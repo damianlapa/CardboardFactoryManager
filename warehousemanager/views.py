@@ -1852,3 +1852,24 @@ class PersonsVacations(View):
         person = Person.objects.get(id=person_id)
         absences = Absence.objects.filter(worker=person)
         return render(request, 'warehousemanager-vacation-person.html', locals())
+
+
+# absence-view
+class PersonAbsences(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
+
+    def get(self, request, person_id):
+        person = Person.objects.get(id=person_id)
+        visit_counter(request.user, f'personal-abs({person})')
+        person_absences = Absence.objects.filter(worker=person)
+        person_additional_events = ExtraHour.objects.filter(worker=person)
+
+        all_events = []
+        for a in person_absences:
+            all_events.append((0, a.absence_date, a.absence_type, change_minutes_to_hours(a.value) if a.value else ''))
+        for e in person_additional_events:
+            all_events.append((1, e.extras_date, 'EX H' if e.full_day else 'NOT FULL', e.quantity))
+
+        all_events = sorted(all_events, key=lambda x: x[1])
+
+        return render(request, 'warehousemanager-person-absences.html', locals())

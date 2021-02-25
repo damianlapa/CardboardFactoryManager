@@ -35,7 +35,7 @@
 
     <th>DAY</th>
     {% for w in workers %}
-        <th>{{ w }}</th>
+        <th class="worker-name" data-workerid="{{w.id}}">{{ w }}</th>
     {% endfor %}
 
     {% for d, d1 in month_days %}
@@ -43,7 +43,7 @@
             {% if d1 >= 5 %}
                 <td style="background-color: pink">{{ d }}</td>
                 {% for w in workers %}
-                    <td class="day{{ d }} worker{{ w.id }}" style="background-color: orange"></td>
+                    <td class="day{{ d }} worker{{ w.id }} weekend" style="background-color: orange"></td>
                 {% endfor %}
             {% else %}
                 <td style="background-color: orange">{{ d }}

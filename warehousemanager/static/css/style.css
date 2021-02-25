@@ -963,3 +963,8 @@ select{
 .form-style-1 .required{
 	color:red;
 }
+
+.worker-name:hover {
+    cursor: pointer;
+    color: white;
+}

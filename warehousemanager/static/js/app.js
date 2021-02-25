@@ -379,10 +379,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_id + ' ' + day_id
                     let nonWorkField = document.getElementsByClassName(query_text)
                     if (nonWorkField.length > 0) {
-                    nonWorkField[0].innerText = ''
-                    nonWorkField[0].style.backgroundColor = 'white'
-                    nonWorkField[0].style.color = 'white'
-                    nonWorkField[0].style.textAlign = 'center'
+                        if (nonWorkField[0].classList.contains('weekend')) {
+                        }
+                        else {
+                            nonWorkField[0].innerText = ''
+                            nonWorkField[0].style.backgroundColor = 'white'
+                            nonWorkField[0].style.color = 'white'
+                            nonWorkField[0].style.textAlign = 'center'
+                        }
                     }
                 }
             }
@@ -433,6 +437,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.replace(link)
                 })
         })
+    }
+
+
+    // person absences
+    const allWorkers = document.getElementsByClassName('worker-name')
+
+    if (allWorkers.length > 0){
+        for (let i=0; i < allWorkers.length; i++){
+            allWorkers[i].addEventListener('click', function(){
+                console.log(this.dataset.workerid)
+                link = localLink + 'person-absences/' + this.dataset.workerid + '/'
+                window.open(link, '_self')
+            })
+        }
     }
 
 

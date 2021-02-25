@@ -171,8 +171,8 @@ def visit_counter(user, page):
             visit.last_visit = datetime.datetime.now()
             visit.save()
         except ObjectDoesNotExist:
-            new_visit = UserVisitCounter.objects.create(user=user, page=page, first_visit=datetime.datetime.now(),
-                                                        last_visit=datetime.datetime.now())
+            new_visit = UserVisitCounter.objects.create(user=user, page=page, first_visit=timezone.now(),
+                                                        last_visit=timezone.now())
             new_visit.save()
 
 

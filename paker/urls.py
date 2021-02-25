@@ -75,6 +75,11 @@ urlpatterns = [
     path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
 ]
 
+# absences
+urlpatterns += [
+    path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
+]
+
 # polymers
 urlpatterns += [
     path('polymers/', PhotoPolymers.as_view(), name='photopolymers'),

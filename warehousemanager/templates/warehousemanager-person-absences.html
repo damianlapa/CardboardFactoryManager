@@ -1,0 +1,31 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div>
+<table class="absence-list">
+    <thead>
+        <tr>
+            <th>DATE</th>
+            <th>TYPE</th>
+            <th>EXTRA INFO</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in all_events %}
+        <tr>
+            <td>{{ a.1 }}</td>
+            <td>{{ a.2 }}</td>
+            <td>
+                {{ a.3 }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
