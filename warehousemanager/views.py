@@ -1828,6 +1828,7 @@ class ProductionProcessCreate(CreateView):
 class AvailableVacation(View):
 
     def get(self, request):
+        title = 'Available Vacations'
         year = datetime.datetime.now().year if not request.GET.get('year-choice') else int(request.GET.get('year-choice'))
         years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
@@ -1850,6 +1851,7 @@ class PersonsVacations(View):
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
+        title = f'{person} Vacations'
         absences = Absence.objects.filter(worker=person)
         return render(request, 'warehousemanager-vacation-person.html', locals())
 
@@ -1860,7 +1862,10 @@ class PersonAbsences(PermissionRequiredMixin, View):
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
-        visit_counter(request.user, f'personal-abs({person})')
+
+        title = f'{person} Absences'
+
+        visit_counter(request.user, f'personal-abs({person.get_initials()})')
         person_absences = Absence.objects.filter(worker=person)
         person_additional_events = ExtraHour.objects.filter(worker=person)
 
