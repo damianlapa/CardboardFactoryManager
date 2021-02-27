@@ -788,17 +788,24 @@ class AbsenceAdd(LoginRequiredMixin, View):
     def get(self, request):
         today = datetime.datetime.today()
         worker = Person.objects.get(id=int(request.GET.get('worker')))
-        day = request.GET.get('day') if int(request.GET.get('day')) > 10 else '0' + request.GET.get('day')
+        day = request.GET.get('day') if int(request.GET.get('day')) > 9 else '0' + request.GET.get('day')
         monthyear = request.GET.get('monthyear')
         default_date = ' '.join((day, monthyear))
         default_date = default_date.split(' ')
         default_date = '-'.join(default_date[::-1])
+        print(default_date)
         default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
         default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
+
+        reason = 'UW'
+
+        if len(Absence.objects.filter(worker=worker, absence_date=default_date)) > 0:
+            reason = Absence.objects.filter(worker=worker, absence_date=default_date)[0].absence_type
+
         short_absence_form = AbsenceForm(initial={
             'worker': worker,
             'absence_date': default_date,
-            'absence_type': 'UW'
+            'absence_type': reason
         })
         title = f'{worker.get_initials()} {default_date} absence'
         workers = Person.objects.all()
@@ -813,9 +820,15 @@ class AbsenceAdd(LoginRequiredMixin, View):
             absence_date = short_absence_form.cleaned_data['absence_date']
             absence_type = short_absence_form.cleaned_data['absence_type']
 
-            new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
+            if len(Absence.objects.filter(worker=worker, absence_date=absence_date)) > 0:
+                new_absence = Absence.objects.filter(worker=worker, absence_date=absence_date)[0]
+                new_absence.absence_type = absence_type
+                new_absence.save()
+            else:
 
-            new_absence.save()
+                new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
+
+                new_absence.save()
 
             if absence_type == 'SP':
                 new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))

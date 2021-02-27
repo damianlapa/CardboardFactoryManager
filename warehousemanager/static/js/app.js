@@ -386,6 +386,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             nonWorkField[0].style.backgroundColor = 'white'
                             nonWorkField[0].style.color = 'white'
                             nonWorkField[0].style.textAlign = 'center'
+                            nonWorkField[0].classList.remove("addabsence");
                         }
                     }
                 }
