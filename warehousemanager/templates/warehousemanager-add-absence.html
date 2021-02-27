@@ -4,7 +4,7 @@
 
 {% block content %}
 <br />
-<div id="absenceAddContainer">
+<div id="absenceAddContainer" {% if worker %} style="display: none" {% endif %}>
     <div id="short-absence" class="absenceAddElement">
         <button class="absence-button" id="short-A" value="1-Day Absence">1-Day Absence</button>
     </div>
@@ -13,7 +13,7 @@
     </div>
 </div>
 
-<div id="shortAbsenceForm" style="display: none;">
+<div id="shortAbsenceForm" {% if worker %} style="display: block" {% else %} style="display: none;" {% endif %}>
     <form method="post">
         {% csrf_token %}
         {{ short_absence_form.as_p }}

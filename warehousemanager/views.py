@@ -25,7 +25,7 @@ import json
 import datetime
 
 from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, \
-    change_minutes_to_hours
+    change_minutes_to_hours, change_month_num_to_name
 
 import subprocess
 # import models from warehousemanager app
@@ -781,13 +781,29 @@ class AbsenceEdit(LoginRequiredMixin, View):
         absence = Absence.object.get(id=int(absence_id))
 
 
+# absence-view
 class AbsenceAdd(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        short_absence_form = AbsenceForm
+        today = datetime.datetime.today()
+        worker = Person.objects.get(id=int(request.GET.get('worker')))
+        day = request.GET.get('day') if int(request.GET.get('day')) > 10 else '0' + request.GET.get('day')
+        monthyear = request.GET.get('monthyear')
+        default_date = ' '.join((day, monthyear))
+        default_date = default_date.split(' ')
+        default_date = '-'.join(default_date[::-1])
+        default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
+        default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
+        short_absence_form = AbsenceForm(initial={
+            'worker': worker,
+            'absence_date': default_date,
+            'absence_type': 'UW'
+        })
+        title = f'{worker.get_initials()} {default_date} absence'
         workers = Person.objects.all()
         reasons = ABSENCE_TYPES
+
         return render(request, 'warehousemanager-add-absence.html', locals())
 
     def post(self, request):
@@ -804,7 +820,10 @@ class AbsenceAdd(LoginRequiredMixin, View):
             if absence_type == 'SP':
                 new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
 
-            return redirect('absence-list')
+            response = redirect('absence-list')
+            response['Location'] += f'?month={change_month_num_to_name(absence_date.month)} {absence_date.year}'
+
+            return response
 
         else:
             worker = request.POST.get('worker')

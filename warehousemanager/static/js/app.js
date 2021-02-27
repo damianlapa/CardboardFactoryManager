@@ -437,6 +437,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.replace(link)
                 })
         })
+
+        // clickable cells
+        const absenceCells = document.getElementsByClassName('addabsence')
+        for (let i=0; i < absenceCells.length; i++) {
+            absenceCells[i].addEventListener('click', function(){
+                workerId = absenceCells[i].dataset.worker
+                month = document.getElementById('monthSelect').value
+                day = absenceCells[i].dataset.day
+                console.log(month, day)
+                console.log(workerId)
+                link = localLink + 'add-absence/?worker=' + workerId + '&day=' + day + '&monthyear=' + month
+                window.open(link, '_self')
+            })
+        }
     }
 
 

@@ -9,6 +9,21 @@ from django.core.exceptions import ObjectDoesNotExist
 
 COLORS = ('Red', 'Green', 'Blue', 'Yellow', 'Pink', 'Orange', 'Purple', 'Brown')
 
+MONTHS = {
+    '1': 'January',
+    '2': 'February',
+    '3': 'March',
+    '4': 'April',
+    '5': 'May',
+    '6': 'June',
+    '7': 'July',
+    '8': 'August',
+    '9': 'September',
+    '10': 'October',
+    '11': 'November',
+    '12': 'December'
+}
+
 
 def google_key():
     key_parts_tuple = ('-----BEGIN PRIVATE KEY-----', os.environ['PRIVATE_KEY_1'], os.environ['PRIVATE_KEY_2'],
@@ -187,3 +202,7 @@ def add_random_color(num):
 
 def change_minutes_to_hours(minutes):
     return f'{minutes // 60}:{minutes % 60}' if minutes % 60 > 9 else f'{minutes // 60}:0{minutes % 60}'
+
+
+def change_month_num_to_name(num):
+    return MONTHS[str(num)]

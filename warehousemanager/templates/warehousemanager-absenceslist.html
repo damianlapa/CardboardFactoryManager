@@ -43,15 +43,15 @@
             {% if d1 >= 5 %}
                 <td style="background-color: pink">{{ d }}</td>
                 {% for w in workers %}
-                    <td class="day{{ d }} worker{{ w.id }} weekend" style="background-color: orange"></td>
+                    <td class="day{{ d }} worker{{ w.id }} weekend " style="background-color: orange"></td>
                 {% endfor %}
             {% else %}
                 <td style="background-color: orange">{{ d }}
                 {% for w in workers %}
                     {% if day_num >= d %}
-                        <td class="day{{ d }} worker{{ w.id }}" style="background-color: green"></td>
+                        <td data-worker={{w.id}} data-day={{d}} class="day{{ d }} worker{{ w.id }} addabsence " style="background-color: green"></td>
                     {% else %}
-                        <td class="day{{ d }} worker{{ w.id }}"></td>
+                        <td class="day{{ d }} worker{{ w.id }} addabsence"></td>
                     {% endif %}
                 {% endfor %}
             {% endif %}
