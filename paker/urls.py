@@ -19,7 +19,7 @@ from warehousemanager.views import *
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
     # path('', index, name='index'),
     path('orders/', Orders.as_view(), name='orders'),
     path('order/<int:order_id>', OrdersDetails.as_view(), name='order-details'),
