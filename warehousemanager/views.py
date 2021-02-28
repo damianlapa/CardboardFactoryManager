@@ -7,6 +7,7 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -817,6 +818,7 @@ class AbsenceAdd(LoginRequiredMixin, View):
 
             if len(Absence.objects.filter(worker=worker, absence_date=default_date)) > 0:
                 reason = Absence.objects.filter(worker=worker, absence_date=default_date)[0].absence_type
+                absence_edited = Absence.objects.filter(worker=worker, absence_date=default_date)[0]
 
             short_absence_form = AbsenceForm(initial={
                 'worker': worker,
@@ -845,8 +847,8 @@ class AbsenceAdd(LoginRequiredMixin, View):
             extras_quantity = float(extra_hours_form.cleaned_data['quantity'])
             extras_day = extra_hours_form.cleaned_data['full_day']
 
-            condition_one = extras_date < worker.job_end if worker.job_end else True
-            condition_two = extras_date > worker.job_start
+            condition_one = extras_date <= worker.job_end if worker.job_end else True
+            condition_two = extras_date >= worker.job_start
 
             if all((condition_one, condition_two)):
 
@@ -872,8 +874,8 @@ class AbsenceAdd(LoginRequiredMixin, View):
             absence_date = short_absence_form.cleaned_data['absence_date']
             absence_type = short_absence_form.cleaned_data['absence_type']
 
-            condition_one = absence_date < worker.job_end if worker.job_end else True
-            condition_two = absence_date > worker.job_start
+            condition_one = absence_date <= worker.job_end if worker.job_end else True
+            condition_two = absence_date >= worker.job_start
 
             print(condition_two, condition_one)
 
@@ -933,6 +935,16 @@ class AbsenceAdd(LoginRequiredMixin, View):
                     break
 
             return redirect('absence-list')
+
+
+# absence-delete
+class AbsenceDelete(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.delete_absence'
+
+    def post(self, request):
+        Absence.objects.get(id=int(request.POST.get('absence_id'))).delete()
+
+        return HttpResponse(request.POST.get('absence_id'))
 
 
 class PunchesList(PermissionRequiredMixin, View):

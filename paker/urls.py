@@ -78,6 +78,7 @@ urlpatterns = [
 # absences
 urlpatterns += [
     path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
+    path('absence-delete/', AbsenceDelete.as_view(), name='absence-delete')
 ]
 
 # polymers

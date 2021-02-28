@@ -13,6 +13,28 @@
     </div>
 </div>
 
+{% if absence_edited %}
+<div class="absence-details">
+    <p>
+        <span class="a-d-q">WORKER:</span> <span class="a-d-a">{{ absence_edited.worker }}</span>
+    </p>
+    <p>
+        <span class="a-d-q">DATE:</span> <span class="a-d-a">{{ absence_edited.absence_date }}</span>
+    </p>
+    <p>
+        <span class="a-d-q">TYPE:</span> <span class="a-d-a">{{ absence_edited.absence_type }}</span>
+    </p>
+    {% if absence_edited.value %}
+    <p>
+        <span class="a-d-q">VALUE:</span> <span class="a-d-a">{{ absence_edited.value }}</span>
+    </p>
+    {% endif %}
+
+    <button class="edit-delete-btn" id="edit-absence-btn">EDIT</button>
+    <button class="edit-delete-btn" id="delete-absence-btn" data-absenceid="{{ absence_edited.id }}">DELETE</button>
+</div>
+{% endif %}
+
 <div id="shortAbsenceForm" {% if worker %} style="display: block" {% else %} style="display: none;" {% endif %}>
     <form method="post">
         {% csrf_token %}
