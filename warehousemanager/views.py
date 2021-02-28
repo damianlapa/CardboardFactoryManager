@@ -745,7 +745,8 @@ class AbsencesAndHolidays(View):
         non_full_days = []
         acquaintances = []
         month_start_date = datetime.date(int(year), month_, 1)
-        month_end_date = datetime.date(int(year), month_, 28)
+        month_days = 30 if month_ in (4, 6, 9, 11) else 31
+        month_end_date = datetime.date(int(year), month_, 28 if month_ == 2 else month_days)
         e_h = ExtraHour.objects.all().filter(extras_date__gte=month_start_date).filter(extras_date__lte=month_end_date)
 
         for e in e_h:
