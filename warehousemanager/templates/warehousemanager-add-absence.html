@@ -19,6 +19,7 @@
         {{ short_absence_form.as_p }}
         <input type="submit" value="Add Absence">
     </form>
+    <button class="active-button" id="extra-hour-btn">Extra Hours</button>
 </div>
 
 <div id="longAbsenceForm" style="display: none;">
@@ -50,5 +51,14 @@
         <br />
         <input type="submit" value="Add Long Absence">
     </form>
+</div>
+
+<div id="extraHoursForm" style="display: none">
+    <form method="post">
+        {% csrf_token %}
+        {{ extra_hours_form.as_p }}
+        <input type="submit" value="Add Extra Hours">
+    </form>
+    <button class="active-button" id="short-a-btn">Absences</button>
 </div>
 {% endblock %}

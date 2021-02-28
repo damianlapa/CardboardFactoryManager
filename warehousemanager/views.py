@@ -786,52 +786,112 @@ class AbsenceAdd(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        today = datetime.datetime.today()
-        worker = Person.objects.get(id=int(request.GET.get('worker')))
-        day = request.GET.get('day') if int(request.GET.get('day')) > 9 else '0' + request.GET.get('day')
-        monthyear = request.GET.get('monthyear')
-        default_date = ' '.join((day, monthyear))
-        default_date = default_date.split(' ')
-        default_date = '-'.join(default_date[::-1])
-        print(default_date)
-        default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
-        default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
+        worker = None
+        day = None
+        monthyear = None
+        default_date = ''
+
+        if request.GET.get('worker'):
+            worker = Person.objects.get(id=int(request.GET.get('worker')))
+
+        if request.GET.get('day'):
+            day = request.GET.get('day') if int(request.GET.get('day')) > 9 else '0' + request.GET.get('day')
+
+        if request.GET.get('monthyear'):
+            monthyear = request.GET.get('monthyear')
+            default_date = ' '.join((day, monthyear))
+            default_date = default_date.split(' ')
+            default_date = '-'.join(default_date[::-1])
+            print(default_date)
+            default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
+            default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
 
         reason = 'UW'
 
-        if len(Absence.objects.filter(worker=worker, absence_date=default_date)) > 0:
-            reason = Absence.objects.filter(worker=worker, absence_date=default_date)[0].absence_type
-
-        short_absence_form = AbsenceForm(initial={
-            'worker': worker,
-            'absence_date': default_date,
-            'absence_type': reason
-        })
-        title = f'{worker.get_initials()} {default_date} absence'
+        title = f'{default_date} absence'
         workers = Person.objects.all()
         reasons = ABSENCE_TYPES
+
+        if all((worker, day, monthyear)):
+            title = f'{worker.get_initials()} {default_date} absence'
+
+            if len(Absence.objects.filter(worker=worker, absence_date=default_date)) > 0:
+                reason = Absence.objects.filter(worker=worker, absence_date=default_date)[0].absence_type
+
+            short_absence_form = AbsenceForm(initial={
+                'worker': worker,
+                'absence_date': default_date,
+                'absence_type': reason
+            })
+
+            extra_hours_form = ExtraHoursForm(initial={
+                'worker': worker,
+                'extras_date': default_date
+            }, auto_id='eh_%s')
+
+        else:
+            short_absence_form = AbsenceForm()
+            extra_hours_form = ExtraHoursForm(auto_id='eh_%s')
 
         return render(request, 'warehousemanager-add-absence.html', locals())
 
     def post(self, request):
         short_absence_form = AbsenceForm(request.POST)
+        extra_hours_form = ExtraHoursForm(request.POST)
+
+        if extra_hours_form.is_valid():
+            worker = extra_hours_form.cleaned_data['worker']
+            extras_date = extra_hours_form.cleaned_data['extras_date']
+            extras_quantity = float(extra_hours_form.cleaned_data['quantity'])
+            extras_day = extra_hours_form.cleaned_data['full_day']
+
+            condition_one = extras_date < worker.job_end if worker.job_end else True
+            condition_two = extras_date > worker.job_start
+
+            if all((condition_one, condition_two)):
+
+                if len(ExtraHour.objects.filter(worker=worker, extras_date=extras_date)) > 0:
+                    new_extras = ExtraHour.objects.filter(worker=worker, extras_date=extras_date)[0]
+                    new_extras.quantity = extras_quantity
+                    new_extras.full_day = extras_day
+                    new_extras.save()
+                else:
+
+                    new_extras = ExtraHour.objects.create(worker=worker, extras_date=extras_date,
+                                                          quantity=extras_quantity, full_day=extras_day)
+
+                    new_extras.save()
+
+            response = redirect('absence-list')
+            response['Location'] += f'?month={change_month_num_to_name(extras_date.month)} {extras_date.year}'
+
+            return response
+
         if short_absence_form.is_valid():
             worker = short_absence_form.cleaned_data['worker']
             absence_date = short_absence_form.cleaned_data['absence_date']
             absence_type = short_absence_form.cleaned_data['absence_type']
 
-            if len(Absence.objects.filter(worker=worker, absence_date=absence_date)) > 0:
-                new_absence = Absence.objects.filter(worker=worker, absence_date=absence_date)[0]
-                new_absence.absence_type = absence_type
-                new_absence.save()
-            else:
+            condition_one = absence_date < worker.job_end if worker.job_end else True
+            condition_two = absence_date > worker.job_start
 
-                new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
+            print(condition_two, condition_one)
 
-                new_absence.save()
+            if all((condition_one, condition_two)):
 
-            if absence_type == 'SP':
-                new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
+                if len(Absence.objects.filter(worker=worker, absence_date=absence_date)) > 0:
+                    new_absence = Absence.objects.filter(worker=worker, absence_date=absence_date)[0]
+                    new_absence.absence_type = absence_type
+                    new_absence.save()
+                else:
+
+                    new_absence = Absence.objects.create(worker=worker, absence_date=absence_date,
+                                                         absence_type=absence_type)
+
+                    new_absence.save()
+
+                if absence_type == 'SP':
+                    new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
 
             response = redirect('absence-list')
             response['Location'] += f'?month={change_month_num_to_name(absence_date.month)} {absence_date.year}'
@@ -1861,7 +1921,8 @@ class AvailableVacation(View):
 
     def get(self, request):
         title = 'Available Vacations'
-        year = datetime.datetime.now().year if not request.GET.get('year-choice') else int(request.GET.get('year-choice'))
+        year = datetime.datetime.now().year if not request.GET.get('year-choice') else int(
+            request.GET.get('year-choice'))
         years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
         persons = Person.objects.filter(job_end=None)
@@ -1874,7 +1935,8 @@ class AvailableVacation(View):
                 if a.absence_type == 'UW':
                     used_vacation_in_year += 1
             left_vacation = p.yearly_vacation_limit - used_vacation_in_year
-            persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year, p.end_year_vacation(year)))
+            persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year,
+                                 p.end_year_vacation(year)))
 
         return render(request, 'warehousemanager-vacation-list.html', locals())
 

@@ -386,7 +386,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             nonWorkField[0].style.backgroundColor = 'white'
                             nonWorkField[0].style.color = 'white'
                             nonWorkField[0].style.textAlign = 'center'
-                            nonWorkField[0].classList.remove("addabsence");
                         }
                     }
                 }
@@ -486,6 +485,40 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
 
+    // short form acquaintance
+    const absenceTypeFormField = document.getElementById('id_absence_type')
+    const acquaintanceValue = document.getElementById('id_value')
+
+    if (absenceTypeFormField !== null) {
+        acquaintanceValue.parentElement.style.display = 'none'
+        absenceTypeFormField.addEventListener('click', function() {
+            console.log(absenceTypeFormField.value)
+            if (absenceTypeFormField.value === 'SP') {
+                acquaintanceValue.parentElement.style.display = 'block'
+            } else {
+                acquaintanceValue.parentElement.style.display = 'none'
+            }
+        })
+    }
+
+    // extra hours
+    const extraHoursButton = document.getElementById('extra-hour-btn')
+    const shortAbsenceButton = document.getElementById('short-a-btn')
+
+    if (extraHoursButton !== null) {
+        extraHoursButton.addEventListener('click', function() {
+            shortAbsenceForm.style.display= 'none'
+            document.getElementById('extraHoursForm').style.display = 'block'
+        })
+    }
+
+    if (shortAbsenceButton !== null) {
+        shortAbsenceButton.addEventListener('click', function() {
+            shortAbsenceForm.style.display= 'block'
+            document.getElementById('extraHoursForm').style.display = 'none'
+        })
+    }
+
     const prevBtn = document.getElementById('prevBtn')
     const nextBtn = document.getElementById('nextBtn')
 
@@ -499,7 +532,6 @@ document.addEventListener("DOMContentLoaded", function () {
         filterPunchesBtn.addEventListener('click', function () {
         console.log(filterContainer.style.display)
             if (filterContainer.style.display === 'none' || filterContainer.style.display === '') {
-                console.log('click')
                 filterContainer.style.display = 'flex'
                 filterPunchesBtn.style.backgroundColor = 'pink'
             }

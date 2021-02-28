@@ -1,11 +1,11 @@
 {% extends '__base2__.html' %}
 {% block content %}
-<div class='all-deliveries-container'>
+<div class='all-deliveries-container' >
     <h1>Delivery Details:</h1>
     <h2>{{ delivery.provider }} / {{ delivery.date_of_delivery }}</h2>
-    <div>
+    <div style="margin-left: auto; margin-right: auto;" >
         <div>
-            <table class="all-deliveries-list">
+            <table class="all-deliveries-list" style="margin-left: auto; margin-right: auto;">
                 <tr>
                     <th>#</th>
                     <th>Format</th>
@@ -28,10 +28,10 @@
             </form>
         </div>
     </div>
-    <div>
+    <div style="margin-left: auto; margin-right: auto;">
         {% if palettes|length > 0 %}
         <div>
-            <table class="all-deliveries-list">
+            <table class="all-deliveries-list" style="margin-left: auto; margin-right: auto;">
                 <tr>
                     <th>Palette</th>
                     <th>Status</th>
@@ -45,6 +45,14 @@
                 </tr>
                 {% endfor %}
             </table>
+        </div>
+        <button id="palette-add-button" class="monthNavButton" style="margin: 3px;">Dodaj Palety</button>
+        <div class="add-form-container" id="palette-add" style="display: none;">
+            <form method="post">
+                {% csrf_token %}
+                {{ palette_q_form.as_p }}
+                <input type="submit" value="Add">
+            </form>
         </div>
         {% else %}
         <button id="palette-add-button" class="monthNavButton">Dodaj Palety</button>

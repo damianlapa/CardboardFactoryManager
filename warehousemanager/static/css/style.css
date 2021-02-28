@@ -301,6 +301,8 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .absence-list {
     background: white;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .absence-list table, th, td {
@@ -316,15 +318,15 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .absence-button {
 	background-color:#fca919;
-	border-radius:11px;
+	border-radius:7px;
 	border:1px solid #000000;
 	display:inline-block;
 	cursor:pointer;
 	color:#ffffff;
 	font-family:Arial;
-	font-size:23px;
+	font-size:17px;
 	font-weight:bold;
-	padding:18px 47px;
+	padding:11px 23px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #000000;
 }
@@ -363,6 +365,7 @@ input[type=button], input[type=submit], input[type=reset] {
 	padding:6px 24px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #ffee66;
+	margin: 1em 0em;
 }
 .monthNavButton:hover {
 	background:linear-gradient(to bottom, #ffab23 5%, #ffec64 100%);
@@ -373,7 +376,7 @@ input[type=button], input[type=submit], input[type=reset] {
 	top:1px;
 }
 
-#punch-filters-button {
+.active-button {
 	box-shadow:inset 0px 1px 0px 0px #f29c93;
 	background-color:#fe1a00;
 	border-radius:6px;
@@ -390,13 +393,13 @@ input[type=button], input[type=submit], input[type=reset] {
 	margin-top: 15px;
 }
 
-#punch-filters-button:hover {
+.active-button:hover {
 	background:linear-gradient(to bottom, blue 5%, white 100%);
 	background-color: black;
 	box-shadow:inset 0px 1px 0px 0px black;
 	border:1px solid black;
 }
-#punch-filters-button:active {
+.active-button:active {
 	position:relative;
 	top:1px;
 }
