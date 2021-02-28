@@ -362,14 +362,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     }}
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)
-                    holidayFields[0].colSpan = holidayFields.length
+                    console.log(holidayFields)
+                    // holidayFields[0].colSpan = holidayFields.length
+                    console.log(holidayFields[0])
                     holidayFields[0].innerText = data[0][i][2]
                     holidayFields[0].style.backgroundColor = 'pink'
                     holidayFields[0].style.textAlign = 'center'
-                    holidayFieldsLength = holidayFields.length
-                    for (let j=holidayFieldsLength - 1; j > 0; j--){
-                        holidayFields[j].remove()
-                    }
+                    // holidayFieldsLength = holidayFields.length
+                    // for (let j=holidayFieldsLength - 1; j > 0; j--){
+                    //    holidayFields[j].remove()
+                    // }
                 }
             }
             for (let x=0; x < data[1].length; x++){
@@ -425,6 +427,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 acquaintanceField[0].style.color = 'black'
                 acquaintanceField[0].style.textAlign = 'center'
             }}
+            for (let i=0; i < data[0].length; i++){
+                day_text = 'day' + data[0][i][1]
+                if (data[0][i][0] >= 0){
+                    worker_text = 'worker' + data[0][i][0]
+                    query_text = worker_text + ' ' + day_text
+                    let absenceField = document.getElementsByClassName(query_text)
+                    if (absenceField.length > 0) {
+                        absenceField[0].innerText = data[0][i][2]
+                        absenceField[0].style.backgroundColor = 'red'
+                        absenceField[0].style.color = 'white'
+                        absenceField[0].style.textAlign = 'center'
+                    }}
+                else {
+                    let holidayFields = document.getElementsByClassName(day_text)
+                    console.log(holidayFields)
+                    holidayFields[0].colSpan = holidayFields.length
+                    console.log(holidayFields[0])
+                    holidayFields[0].innerText = data[0][i][2]
+                    holidayFields[0].style.backgroundColor = 'pink'
+                    holidayFields[0].style.textAlign = 'center'
+                    holidayFieldsLength = holidayFields.length
+                    for (let j=holidayFieldsLength - 1; j > 0; j--){
+                        holidayFields[j].style.display = 'none'
+                    }
+                }
+            }
             })
         monthSelect.addEventListener('click', function () {
             $.ajax({
@@ -442,6 +470,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const absenceCells = document.getElementsByClassName('addabsence')
         for (let i=0; i < absenceCells.length; i++) {
             absenceCells[i].addEventListener('click', function(){
+                console.log(absenceCells[i])
                 workerId = absenceCells[i].dataset.worker
                 month = document.getElementById('monthSelect').value
                 day = absenceCells[i].dataset.day
