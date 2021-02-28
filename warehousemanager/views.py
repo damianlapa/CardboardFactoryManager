@@ -701,7 +701,7 @@ class AbsencesAndHolidays(View):
                 result_days = [x for x in range(1, start.day)]
             if end:
                 if end.month == month__.month and end.year == month__.year:
-                    for y in range(end.day, days + 1):
+                    for y in range(end.day + 1, days + 1):
                         result_days.append(y)
 
             return worker.id, result_days
