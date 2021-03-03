@@ -1842,9 +1842,23 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
-class PolymerCreate(CreateView):
+'''class PolymerCreate(CreateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']'''
+
+
+class PolymerCreate(View):
+
+    def get(self, request):
+        form = PolymerForm()
+        return render(request, 'warehousemanager/photopolymer_form.html', locals())
+
+    def post(self, request):
+        form = PolymerForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            return HttpResponse('ok')
 
 
 class PolymerUpdate(UpdateView):

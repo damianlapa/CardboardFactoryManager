@@ -98,3 +98,9 @@ class ExtraHoursForm(forms.ModelForm):
         widgets = {
             'extras_date': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
         }
+
+
+class PolymerForm(forms.ModelForm):
+    class Meta:
+        model = Photopolymer
+        fields = '__all__'
