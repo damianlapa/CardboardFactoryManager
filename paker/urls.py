@@ -19,7 +19,7 @@ from warehousemanager.views import *
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
     # path('', index, name='index'),
     path('orders/', Orders.as_view(), name='orders'),
     path('order/<int:order_id>', OrdersDetails.as_view(), name='order-details'),
@@ -73,6 +73,12 @@ urlpatterns = [
     path('prepare-many-gs/', PrepareManySpreadsheetsForm.as_view(), name='prepare-many-gs'),
     path('prepared-gs/', PrepareManySpreadsheets.as_view(), name='prepared-gs'),
     path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
+]
+
+# absences
+urlpatterns += [
+    path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
+    path('absence-delete/', AbsenceDelete.as_view(), name='absence-delete')
 ]
 
 # polymers

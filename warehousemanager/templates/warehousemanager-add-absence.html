@@ -4,7 +4,7 @@
 
 {% block content %}
 <br />
-<div id="absenceAddContainer">
+<div id="absenceAddContainer" {% if worker %} style="display: none" {% endif %}>
     <div id="short-absence" class="absenceAddElement">
         <button class="absence-button" id="short-A" value="1-Day Absence">1-Day Absence</button>
     </div>
@@ -13,12 +13,35 @@
     </div>
 </div>
 
-<div id="shortAbsenceForm" style="display: none;">
+{% if absence_edited %}
+<div class="absence-details">
+    <p>
+        <span class="a-d-q">WORKER:</span> <span class="a-d-a">{{ absence_edited.worker }}</span>
+    </p>
+    <p>
+        <span class="a-d-q">DATE:</span> <span class="a-d-a">{{ absence_edited.absence_date }}</span>
+    </p>
+    <p>
+        <span class="a-d-q">TYPE:</span> <span class="a-d-a">{{ absence_edited.absence_type }}</span>
+    </p>
+    {% if absence_edited.value %}
+    <p>
+        <span class="a-d-q">VALUE:</span> <span class="a-d-a">{{ absence_edited.value }}</span>
+    </p>
+    {% endif %}
+
+    <button class="edit-delete-btn" id="edit-absence-btn">EDIT</button>
+    <button class="edit-delete-btn" id="delete-absence-btn" data-absenceid="{{ absence_edited.id }}">DELETE</button>
+</div>
+{% endif %}
+
+<div id="shortAbsenceForm" {% if worker %} style="display: block" {% else %} style="display: none;" {% endif %}>
     <form method="post">
         {% csrf_token %}
         {{ short_absence_form.as_p }}
         <input type="submit" value="Add Absence">
     </form>
+    <button class="active-button" id="extra-hour-btn">Extra Hours</button>
 </div>
 
 <div id="longAbsenceForm" style="display: none;">
@@ -50,5 +73,14 @@
         <br />
         <input type="submit" value="Add Long Absence">
     </form>
+</div>
+
+<div id="extraHoursForm" style="display: none">
+    <form method="post">
+        {% csrf_token %}
+        {{ extra_hours_form.as_p }}
+        <input type="submit" value="Add Extra Hours">
+    </form>
+    <button class="active-button" id="short-a-btn">Absences</button>
 </div>
 {% endblock %}

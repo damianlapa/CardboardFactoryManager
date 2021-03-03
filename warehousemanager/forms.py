@@ -88,3 +88,19 @@ class PaletteQuantityForm(forms.ModelForm):
     class Meta:
         model = PaletteQuantity
         fields = ('delivery', 'palette', 'quantity', 'status')
+
+
+class ExtraHoursForm(forms.ModelForm):
+    class Meta:
+        model = ExtraHour
+        fields = '__all__'
+
+        widgets = {
+            'extras_date': forms.DateInput(format='%d/%m/%Y', attrs={'type': 'date'}),
+        }
+
+
+class PolymerForm(forms.ModelForm):
+    class Meta:
+        model = Photopolymer
+        fields = '__all__'

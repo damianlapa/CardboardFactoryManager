@@ -2,27 +2,44 @@
 
 {% block content %}
 
-<table>
+<div style="margin: 10px; width: 100%; border: none;">
+    <div style="margin: 5px; padding: 5px;">
+    <form method="get" action="#" class="form-style-1">
+        <label>ROK:
+            <select name="year-choice">
+                {% for y in years %}
+                {% if y == year %}
+                    <option value="{{ y }}" selected>{{ y }}</option>
+                {% else %}
+                    <option value="{{ y }}">{{ y }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+        </label>
+        <input type="submit" value="Check">
+    </form>
+</div>
+
+</div>
+
+
+<table class="polymers">
     <tr>
-        <td>Pracownik</td>
-        <td>Limit roczny</td>
-        <td>Zaległy urlop z roku {{ previous_year }}</td>
-        <td>Wykorzystano w {{ year }} roku</td>
-        <td>Pozostało do wykorzystania</td>
+        <th>Pracownik</th>
+        <th>Limit roczny</th>
+        <th>Zaległy urlop z roku {{ previous_year }}</th>
+        <th>Wykorzystano w {{ year }} roku</th>
+        <th>Pozostało do wykorzystania</th>
     </tr>
     {% for p in persons_data %}
     <tr>
         <td>{{ p.0 }}</td>
         <td>{{ p.1 }}</td>
         <td>{{ p.2 }}</td>
-        <td>{{ p.3 }}</td>
+        <td class="year-absences" data-year="{{ year }}" data-worker="{{ person.id }}">{{ p.3 }}</td>
         <td>{{ p.4 }}</td>
     </tr>
     {% endfor %}
 </table>
-
-{% for p in persons_data %}
-<a href="{% url 'persons-vacations' person_id=p.0.id %}">{{ p }}</a>
-{% endfor %}
 
 {% endblock %}

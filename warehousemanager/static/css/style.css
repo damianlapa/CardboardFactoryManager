@@ -301,6 +301,8 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .absence-list {
     background: white;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .absence-list table, th, td {
@@ -316,15 +318,15 @@ input[type=button], input[type=submit], input[type=reset] {
 
 .absence-button {
 	background-color:#fca919;
-	border-radius:11px;
+	border-radius:7px;
 	border:1px solid #000000;
 	display:inline-block;
 	cursor:pointer;
 	color:#ffffff;
 	font-family:Arial;
-	font-size:23px;
+	font-size:17px;
 	font-weight:bold;
-	padding:18px 47px;
+	padding:11px 23px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #000000;
 }
@@ -363,6 +365,7 @@ input[type=button], input[type=submit], input[type=reset] {
 	padding:6px 24px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #ffee66;
+	margin: 1em 0em;
 }
 .monthNavButton:hover {
 	background:linear-gradient(to bottom, #ffab23 5%, #ffec64 100%);
@@ -373,7 +376,7 @@ input[type=button], input[type=submit], input[type=reset] {
 	top:1px;
 }
 
-#punch-filters-button {
+.active-button {
 	box-shadow:inset 0px 1px 0px 0px #f29c93;
 	background-color:#fe1a00;
 	border-radius:6px;
@@ -390,13 +393,13 @@ input[type=button], input[type=submit], input[type=reset] {
 	margin-top: 15px;
 }
 
-#punch-filters-button:hover {
+.active-button:hover {
 	background:linear-gradient(to bottom, blue 5%, white 100%);
 	background-color: black;
 	box-shadow:inset 0px 1px 0px 0px black;
 	border:1px solid black;
 }
-#punch-filters-button:active {
+.active-button:active {
 	position:relative;
 	top:1px;
 }
@@ -876,4 +879,143 @@ input[type=button], input[type=submit], input[type=reset] {
 .absence-description {
     margin-left: auto;
     margin-right: auto;
+}
+
+// form template
+
+.form-style-1 {
+	margin:10px auto;
+	max-width: 400px;
+	padding: 20px 12px 10px 20px;
+	font: 13px "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+}
+.form-style-1 li {
+	padding: 0;
+	display: block;
+	list-style: none;
+	margin: 10px 0 0 0;
+}
+.form-style-1 label{
+	margin:0 0 3px 0;
+	padding:0px;
+	display:block;
+	font-weight: bold;
+}
+.form-style-1 input[type=text],
+.form-style-1 input[type=date],
+.form-style-1 input[type=datetime],
+.form-style-1 input[type=number],
+.form-style-1 input[type=search],
+.form-style-1 input[type=time],
+.form-style-1 input[type=url],
+.form-style-1 input[type=email],
+textarea,
+select{
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	border:1px solid #BEBEBE;
+	padding: 7px;
+	margin:0px;
+	-webkit-transition: all 0.30s ease-in-out;
+	-moz-transition: all 0.30s ease-in-out;
+	-ms-transition: all 0.30s ease-in-out;
+	-o-transition: all 0.30s ease-in-out;
+	outline: none;
+}
+.form-style-1 input[type=text]:focus,
+.form-style-1 input[type=date]:focus,
+.form-style-1 input[type=datetime]:focus,
+.form-style-1 input[type=number]:focus,
+.form-style-1 input[type=search]:focus,
+.form-style-1 input[type=time]:focus,
+.form-style-1 input[type=url]:focus,
+.form-style-1 input[type=email]:focus,
+.form-style-1 textarea:focus,
+.form-style-1 select:focus{
+	-moz-box-shadow: 0 0 8px #88D5E9;
+	-webkit-box-shadow: 0 0 8px #88D5E9;
+	box-shadow: 0 0 8px #88D5E9;
+	border: 1px solid #88D5E9;
+}
+.form-style-1 .field-divided{
+	width: 49%;
+}
+
+.form-style-1 .field-long{
+	width: 100%;
+}
+.form-style-1 .field-select{
+	width: 100%;
+}
+.form-style-1 .field-textarea{
+	height: 100px;
+}
+.form-style-1 input[type=submit], .form-style-1 input[type=button]{
+	background: #4B99AD;
+	padding: 8px 15px 8px 15px;
+	border: none;
+	color: #fff;
+}
+.form-style-1 input[type=submit]:hover, .form-style-1 input[type=button]:hover{
+	background: #4691A4;
+	box-shadow:none;
+	-moz-box-shadow:none;
+	-webkit-box-shadow:none;
+}
+.form-style-1 .required{
+	color:red;
+}
+
+.worker-name:hover {
+    cursor: pointer;
+    color: white;
+}
+
+.addabsence {
+    cursor: cell;
+}
+
+.absence-details {
+    background: white;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 2px solid red;
+}
+
+.edit-delete-btn {
+	box-shadow: 3px 4px 0px 0px #1564ad;
+	background:linear-gradient(to bottom, #79bbff 5%, #378de5 100%);
+	background-color:#79bbff;
+	border-radius:5px;
+	border:1px solid #337bc4;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:17px;
+	font-weight:bold;
+	padding:12px 44px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #528ecc;
+}
+.edit-delete-btn:hover {
+	background:linear-gradient(to bottom, #378de5 5%, #79bbff 100%);
+	background-color:#378de5;
+}
+.edit-delete-btn:active {
+	position:relative;
+	top:1px;
+}
+
+.a-d-q {
+    color: black
+}
+
+.a-d-a {
+    color: red;
 }

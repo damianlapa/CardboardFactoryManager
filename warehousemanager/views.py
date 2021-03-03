@@ -7,6 +7,7 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -25,7 +26,7 @@ import json
 import datetime
 
 from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, \
-    change_minutes_to_hours
+    change_minutes_to_hours, change_month_num_to_name
 
 import subprocess
 # import models from warehousemanager app
@@ -536,8 +537,8 @@ class AllNotes(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-all-notes.html', locals())
 
 
-class AbsencesList(LoginRequiredMixin, View):
-    login_url = '/'
+class AbsencesList(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
 
     def get(self, request):
 
@@ -701,7 +702,7 @@ class AbsencesAndHolidays(View):
                 result_days = [x for x in range(1, start.day)]
             if end:
                 if end.month == month__.month and end.year == month__.year:
-                    for y in range(end.day, days + 1):
+                    for y in range(end.day + 1, days + 1):
                         result_days.append(y)
 
             return worker.id, result_days
@@ -744,7 +745,8 @@ class AbsencesAndHolidays(View):
         non_full_days = []
         acquaintances = []
         month_start_date = datetime.date(int(year), month_, 1)
-        month_end_date = datetime.date(int(year), month_, 28)
+        month_days = 30 if month_ in (4, 6, 9, 11) else 31
+        month_end_date = datetime.date(int(year), month_, 28 if month_ == 2 else month_days)
         e_h = ExtraHour.objects.all().filter(extras_date__gte=month_start_date).filter(extras_date__lte=month_end_date)
 
         for e in e_h:
@@ -755,7 +757,6 @@ class AbsencesAndHolidays(View):
 
         absences_and_holidays = []
         for a in absences_objects:
-            print(a.absence_type)
             if a.absence_type != 'SP':
                 absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type, a.id))
             else:
@@ -780,33 +781,125 @@ class AbsenceEdit(LoginRequiredMixin, View):
 
     def get(self, request, absence_id):
         absence = Absence.object.get(id=int(absence_id))
-        print(absence)
 
 
+# absence-view
 class AbsenceAdd(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        short_absence_form = AbsenceForm
+        worker = None
+        day = None
+        monthyear = None
+        default_date = ''
+
+        if request.GET.get('worker'):
+            worker = Person.objects.get(id=int(request.GET.get('worker')))
+
+        if request.GET.get('day'):
+            day = request.GET.get('day') if int(request.GET.get('day')) > 9 else '0' + request.GET.get('day')
+
+        if request.GET.get('monthyear'):
+            monthyear = request.GET.get('monthyear')
+            default_date = ' '.join((day, monthyear))
+            default_date = default_date.split(' ')
+            default_date = '-'.join(default_date[::-1])
+            print(default_date)
+            default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
+            default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
+
+        reason = 'UW'
+
+        title = f'{default_date} absence'
         workers = Person.objects.all()
         reasons = ABSENCE_TYPES
+
+        if all((worker, day, monthyear)):
+            title = f'{worker.get_initials()} {default_date} absence'
+
+            if len(Absence.objects.filter(worker=worker, absence_date=default_date)) > 0:
+                reason = Absence.objects.filter(worker=worker, absence_date=default_date)[0].absence_type
+                absence_edited = Absence.objects.filter(worker=worker, absence_date=default_date)[0]
+
+            short_absence_form = AbsenceForm(initial={
+                'worker': worker,
+                'absence_date': default_date,
+                'absence_type': reason
+            })
+
+            extra_hours_form = ExtraHoursForm(initial={
+                'worker': worker,
+                'extras_date': default_date
+            }, auto_id='eh_%s')
+
+        else:
+            short_absence_form = AbsenceForm()
+            extra_hours_form = ExtraHoursForm(auto_id='eh_%s')
+
         return render(request, 'warehousemanager-add-absence.html', locals())
 
     def post(self, request):
         short_absence_form = AbsenceForm(request.POST)
+        extra_hours_form = ExtraHoursForm(request.POST)
+
+        if extra_hours_form.is_valid():
+            worker = extra_hours_form.cleaned_data['worker']
+            extras_date = extra_hours_form.cleaned_data['extras_date']
+            extras_quantity = float(extra_hours_form.cleaned_data['quantity'])
+            extras_day = extra_hours_form.cleaned_data['full_day']
+
+            condition_one = extras_date <= worker.job_end if worker.job_end else True
+            condition_two = extras_date >= worker.job_start
+
+            if all((condition_one, condition_two)):
+
+                if len(ExtraHour.objects.filter(worker=worker, extras_date=extras_date)) > 0:
+                    new_extras = ExtraHour.objects.filter(worker=worker, extras_date=extras_date)[0]
+                    new_extras.quantity = extras_quantity
+                    new_extras.full_day = extras_day
+                    new_extras.save()
+                else:
+
+                    new_extras = ExtraHour.objects.create(worker=worker, extras_date=extras_date,
+                                                          quantity=extras_quantity, full_day=extras_day)
+
+                    new_extras.save()
+
+            response = redirect('absence-list')
+            response['Location'] += f'?month={change_month_num_to_name(extras_date.month)} {extras_date.year}'
+
+            return response
+
         if short_absence_form.is_valid():
             worker = short_absence_form.cleaned_data['worker']
             absence_date = short_absence_form.cleaned_data['absence_date']
             absence_type = short_absence_form.cleaned_data['absence_type']
 
-            new_absence = Absence.objects.create(worker=worker, absence_date=absence_date, absence_type=absence_type)
+            condition_one = absence_date <= worker.job_end if worker.job_end else True
+            condition_two = absence_date >= worker.job_start
 
-            new_absence.save()
+            print(condition_two, condition_one)
 
-            if absence_type == 'SP':
-                new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
+            if all((condition_one, condition_two)):
 
-            return redirect('absence-list')
+                if len(Absence.objects.filter(worker=worker, absence_date=absence_date)) > 0:
+                    new_absence = Absence.objects.filter(worker=worker, absence_date=absence_date)[0]
+                    new_absence.absence_type = absence_type
+                    new_absence.save()
+                else:
+
+                    new_absence = Absence.objects.create(worker=worker, absence_date=absence_date,
+                                                         absence_type=absence_type)
+
+                    new_absence.save()
+
+                if absence_type == 'SP':
+                    new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
+
+            response = redirect('absence-list')
+            response['Location'] += f'?month={change_month_num_to_name(absence_date.month)} {absence_date.year}'
+
+            return response
 
         else:
             worker = request.POST.get('worker')
@@ -843,6 +936,16 @@ class AbsenceAdd(LoginRequiredMixin, View):
                     break
 
             return redirect('absence-list')
+
+
+# absence-delete
+class AbsenceDelete(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.delete_absence'
+
+    def post(self, request):
+        Absence.objects.get(id=int(request.POST.get('absence_id'))).delete()
+
+        return HttpResponse(request.POST.get('absence_id'))
 
 
 class PunchesList(PermissionRequiredMixin, View):
@@ -965,8 +1068,6 @@ class PunchEdit(PermissionRequiredMixin, View):
 
             edited_punch.save()
 
-            print(customers)
-
             return redirect('punches')
 
 
@@ -1080,7 +1181,6 @@ class ChangeOrderState(View):
     def get(self, request):
         order_item_id = request.GET.get('order_item_id')
         order_item = OrderItem.objects.get(id=int(order_item_id))
-        print(order_item)
         if order_item.is_completed:
             order_item.is_completed = False
         else:
@@ -1221,7 +1321,6 @@ class GoogleSheetTest(View):
         all_sheets = SpreadsheetCopy.objects.all()
 
         for s in all_sheets:
-            print('utworzono', s.created)
             if timezone.now() > s.created + datetime.timedelta(minutes=30):
                 client.del_spreadsheet(s.gs_id)
                 s.delete()
@@ -1553,7 +1652,6 @@ class ImportOrderItems(View):
                     delivery_date = ''
                     if row[5] != '':
                         delivery_date = row[5]
-                        print('delivery_date: ', delivery_date)
 
                     if sort == 'PRZEKLADKA':
                         dim1 = width
@@ -1626,8 +1724,6 @@ class PrepareManySpreadsheetsForm(View):
 
     def post(self, request):
         order_items = request.POST.get('order_items')
-
-        print(order_items)
 
         '''scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
@@ -1746,14 +1842,28 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
-class PolymerCreate(CreateView):
+'''class PolymerCreate(CreateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']'''
+
+
+class PolymerCreate(View):
+
+    def get(self, request):
+        form = PolymerForm()
+        return render(request, 'warehousemanager/photopolymer_form.html', locals())
+
+    def post(self, request):
+        form = PolymerForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            return HttpResponse('ok')
 
 
 class PolymerUpdate(UpdateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
     template_name_suffix = '_update_form'
 
 
@@ -1835,11 +1945,14 @@ class ProductionProcessCreate(CreateView):
 class AvailableVacation(View):
 
     def get(self, request):
+        title = 'Available Vacations'
+        year = datetime.datetime.now().year if not request.GET.get('year-choice') else int(
+            request.GET.get('year-choice'))
+        years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
         persons = Person.objects.filter(job_end=None)
         for p in persons:
             used_vacation_in_year = 0
-            year = datetime.datetime.now().year
             previous_year = year - 1
             absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(int(previous_year), 12, 31),
                                               absence_date__lte=datetime.date(int(year), 12, 31))
@@ -1847,7 +1960,8 @@ class AvailableVacation(View):
                 if a.absence_type == 'UW':
                     used_vacation_in_year += 1
             left_vacation = p.yearly_vacation_limit - used_vacation_in_year
-            persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year, p.end_year_vacation(year)))
+            persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year,
+                                 p.end_year_vacation(year)))
 
         return render(request, 'warehousemanager-vacation-list.html', locals())
 
@@ -1856,5 +1970,30 @@ class PersonsVacations(View):
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
+        title = f'{person} Vacations'
         absences = Absence.objects.filter(worker=person)
         return render(request, 'warehousemanager-vacation-person.html', locals())
+
+
+# absence-view
+class PersonAbsences(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
+
+    def get(self, request, person_id):
+        person = Person.objects.get(id=person_id)
+
+        title = f'{person.get_initials()} Absences'
+
+        visit_counter(request.user, f'personal-abs({person.get_initials()})')
+        person_absences = Absence.objects.filter(worker=person)
+        person_additional_events = ExtraHour.objects.filter(worker=person)
+
+        all_events = []
+        for a in person_absences:
+            all_events.append((0, a.absence_date, a.absence_type, change_minutes_to_hours(a.value) if a.value else ''))
+        for e in person_additional_events:
+            all_events.append((1, e.extras_date, 'EX H' if e.full_day else 'NOT FULL', e.quantity))
+
+        all_events = sorted(all_events, key=lambda x: x[1])
+
+        return render(request, 'warehousemanager-person-absences.html', locals())

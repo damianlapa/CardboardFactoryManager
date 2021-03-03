@@ -362,14 +362,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     }}
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)
-                    holidayFields[0].colSpan = holidayFields.length
                     holidayFields[0].innerText = data[0][i][2]
                     holidayFields[0].style.backgroundColor = 'pink'
                     holidayFields[0].style.textAlign = 'center'
-                    holidayFieldsLength = holidayFields.length
-                    for (let j=holidayFieldsLength - 1; j > 0; j--){
-                        holidayFields[j].remove()
-                    }
                 }
             }
             for (let x=0; x < data[1].length; x++){
@@ -379,10 +374,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_id + ' ' + day_id
                     let nonWorkField = document.getElementsByClassName(query_text)
                     if (nonWorkField.length > 0) {
-                    nonWorkField[0].innerText = ''
-                    nonWorkField[0].style.backgroundColor = 'white'
-                    nonWorkField[0].style.color = 'white'
-                    nonWorkField[0].style.textAlign = 'center'
+                        if (nonWorkField[0].classList.contains('weekend')) {
+                        }
+                        else {
+                            nonWorkField[0].innerText = ''
+                            nonWorkField[0].style.backgroundColor = 'white'
+                            nonWorkField[0].style.color = 'white'
+                            nonWorkField[0].style.textAlign = 'center'
+                        }
                     }
                 }
             }
@@ -421,6 +420,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 acquaintanceField[0].style.color = 'black'
                 acquaintanceField[0].style.textAlign = 'center'
             }}
+            for (let i=0; i < data[0].length; i++){
+                day_text = 'day' + data[0][i][1]
+                if (data[0][i][0] >= 0){
+                    worker_text = 'worker' + data[0][i][0]
+                    query_text = worker_text + ' ' + day_text
+                    let absenceField = document.getElementsByClassName(query_text)
+                    if (absenceField.length > 0) {
+                        absenceField[0].innerText = data[0][i][2]
+                        absenceField[0].style.backgroundColor = 'red'
+                        absenceField[0].style.color = 'white'
+                        absenceField[0].style.textAlign = 'center'
+                    }}
+                else {
+                    let holidayFields = document.getElementsByClassName(day_text)
+                    holidayFields[0].colSpan = holidayFields.length
+                    holidayFields[0].innerText = data[0][i][2]
+                    holidayFields[0].style.backgroundColor = 'pink'
+                    holidayFields[0].style.textAlign = 'center'
+                    holidayFieldsLength = holidayFields.length
+                    for (let j=holidayFieldsLength - 1; j > 0; j--){
+                        holidayFields[j].style.display = 'none'
+                    }
+                }
+            }
             })
         monthSelect.addEventListener('click', function () {
             $.ajax({
@@ -433,6 +456,35 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.replace(link)
                 })
         })
+
+        // clickable cells
+        const absenceCells = document.getElementsByClassName('addabsence')
+        for (let i=0; i < absenceCells.length; i++) {
+            absenceCells[i].addEventListener('click', function(){
+                console.log(absenceCells[i])
+                workerId = absenceCells[i].dataset.worker
+                month = document.getElementById('monthSelect').value
+                day = absenceCells[i].dataset.day
+                console.log(month, day)
+                console.log(workerId)
+                link = localLink + 'add-absence/?worker=' + workerId + '&day=' + day + '&monthyear=' + month
+                window.open(link, '_self')
+            })
+        }
+    }
+
+
+    // person absences
+    const allWorkers = document.getElementsByClassName('worker-name')
+
+    if (allWorkers.length > 0){
+        for (let i=0; i < allWorkers.length; i++){
+            allWorkers[i].addEventListener('click', function(){
+                console.log(this.dataset.workerid)
+                link = localLink + 'person-absences/' + this.dataset.workerid + '/'
+                window.open(link, '_self')
+            })
+        }
     }
 
 
@@ -453,6 +505,88 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
 
+    // short form acquaintance
+    const absenceTypeFormField = document.getElementById('id_absence_type')
+    const acquaintanceValue = document.getElementById('id_value')
+
+    if (absenceTypeFormField !== null) {
+        acquaintanceValue.parentElement.style.display = 'none'
+        absenceTypeFormField.addEventListener('click', function() {
+            console.log(absenceTypeFormField.value)
+            if (absenceTypeFormField.value === 'SP') {
+                acquaintanceValue.parentElement.style.display = 'block'
+            } else {
+                acquaintanceValue.parentElement.style.display = 'none'
+            }
+        })
+    }
+
+    // extra hours
+    const extraHoursButton = document.getElementById('extra-hour-btn')
+    const shortAbsenceButton = document.getElementById('short-a-btn')
+
+    if (extraHoursButton !== null) {
+        extraHoursButton.addEventListener('click', function() {
+            shortAbsenceForm.style.display= 'none'
+            document.getElementById('extraHoursForm').style.display = 'block'
+        })
+    }
+
+    if (shortAbsenceButton !== null) {
+        shortAbsenceButton.addEventListener('click', function() {
+            shortAbsenceForm.style.display= 'block'
+            document.getElementById('extraHoursForm').style.display = 'none'
+        })
+    }
+
+    // delete Absence object
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    const deleteAbsenceBtn = document.getElementById('delete-absence-btn')
+
+    if (deleteAbsenceBtn !== null ) {
+        deleteAbsenceBtn.addEventListener('click', function () {
+            console.log(this.dataset.absenceid)
+            $.ajax({
+            url: '/absence-delete/',
+            data: {'absence_id': this.dataset.absenceid, 'csrfmiddlewaretoken': csrftoken},
+            type: 'POST',
+            dataType: 'json'
+            }).done(function (data){
+               link = localLink + 'absences-list/'
+               window.open(link, '_self')
+            })
+        })
+
+    }
+
+    // edit Absence
+    const editAbsenceBtn = document.getElementById('edit-absence-btn')
+
+    if (editAbsenceBtn !== null) {
+        shortAbsenceForm.style.display = 'none'
+        editAbsenceBtn.addEventListener('click', function () {
+            shortAbsenceForm.style.display = 'block'
+            this.style.display = 'none'
+        })
+    }
+
     const prevBtn = document.getElementById('prevBtn')
     const nextBtn = document.getElementById('nextBtn')
 
@@ -466,7 +600,6 @@ document.addEventListener("DOMContentLoaded", function () {
         filterPunchesBtn.addEventListener('click', function () {
         console.log(filterContainer.style.display)
             if (filterContainer.style.display === 'none' || filterContainer.style.display === '') {
-                console.log('click')
                 filterContainer.style.display = 'flex'
                 filterPunchesBtn.style.backgroundColor = 'pink'
             }
