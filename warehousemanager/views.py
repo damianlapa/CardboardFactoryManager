@@ -1839,19 +1839,17 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         services = PhotopolymerService.objects.filter(photopolymer=polymer)
         colors = polymer.colors.all()
 
-        print(polymer.project.url)
-
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
 class PolymerCreate(CreateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
 
 
 class PolymerUpdate(UpdateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date']
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
     template_name_suffix = '_update_form'
 
 
@@ -1970,7 +1968,7 @@ class PersonAbsences(PermissionRequiredMixin, View):
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
 
-        title = f'{person} Absences'
+        title = f'{person.get_initials()} Absences'
 
         visit_counter(request.user, f'personal-abs({person.get_initials()})')
         person_absences = Absence.objects.filter(worker=person)
