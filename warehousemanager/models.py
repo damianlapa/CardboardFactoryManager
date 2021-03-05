@@ -519,6 +519,11 @@ class ColorUsage(models.Model):
 class Contract(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     type = models.CharField(choices=CONTRACT_TYPES, max_length=8)
+    position = models.CharField(max_length=64)
     date_start = models.DateField()
     date_end = models.DateField(null=True, blank=True)
     salary = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    extra_info = models.CharField(max_length=255, null=True, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('person-details', kwargs={'person_id': self.worker.id})

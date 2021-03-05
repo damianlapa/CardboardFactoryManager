@@ -2006,15 +2006,23 @@ class PersonListView(View, PermissionRequiredMixin):
     def get(self, request):
         title = 'WORKERS'
         visit_counter(request.user, 'Person List View')
-        persons = Person.objects.all().order_by('last_name')
+        former_workers = Person.objects.filter(job_end__isnull=False).order_by('last_name')
         today_workers = Person.objects.filter(job_end=None)
         return render(request, 'warehousemanager-person-list.html', locals())
 
 
+# person view
 class PersonDetailView(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_person'
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
         visit_counter(request.user, f'Person details - {person.get_initials()}')
+        contracts = Contract.objects.filter(worker=person)
         return render(request, 'warehousemanager-person-details.html', locals())
+
+
+# contract view
+class ContractCreate(CreateView):
+    model = Contract
+    fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']

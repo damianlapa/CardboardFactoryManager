@@ -123,5 +123,10 @@ urlpatterns += [
     path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
 ]
 
+# contracts
+urlpatterns += [
+    path('contact-create/', ContractCreate.as_view(), name='contract-create')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -14,7 +14,7 @@
 </div>
 <div>
     <h2>Former Workers</h2>
-{% for p in persons %}
+{% for p in former_workers %}
 <a href="{% url 'person-details' person_id=p.id %}">
 <p>
     {{ p }}
