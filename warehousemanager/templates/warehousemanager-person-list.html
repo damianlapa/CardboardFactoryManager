@@ -1,0 +1,13 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+{% for p in persons %}
+<a href="{% url 'person-details' person_id=p.id %}">
+<p>
+    {{ p }}
+</p>
+    </a>
+{% endfor %}
+
+{% endblock %}

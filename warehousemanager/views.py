@@ -1997,3 +1997,20 @@ class PersonAbsences(PermissionRequiredMixin, View):
         all_events = sorted(all_events, key=lambda x: x[1])
 
         return render(request, 'warehousemanager-person-absences.html', locals())
+
+
+# person view
+class PersonListView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_person'
+
+    def get(self, request):
+        persons = Person.objects.all()
+        return render(request, 'warehousemanager-person-list.html', locals())
+
+
+class PersonDetailView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_person'
+
+    def get(self, request, person_id):
+        person = Person.objects.get(id=person_id)
+        return render(request, 'warehousemanager-person-details.html', locals())

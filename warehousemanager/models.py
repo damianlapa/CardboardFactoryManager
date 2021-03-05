@@ -95,6 +95,11 @@ POLYMERS_PRODUCERS = (
     ('CHESPA', 'CHESPA')
 )
 
+CONTRACT_TYPES = (
+    ('UOP', 'Umowa o pracę'),
+    ('UZ', 'Umowa zlecenie')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -509,3 +514,11 @@ class ColorUsage(models.Model):
     production = models.ForeignKey(ProductionProcess, blank=True, null=True, on_delete=models.CASCADE)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=3, decimal_places=1)
+
+
+class Contract(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    type = models.CharField(choices=CONTRACT_TYPES, max_length=8)
+    date_start = models.DateField()
+    date_end = models.DateField(null=True, blank=True)
+    salary = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
