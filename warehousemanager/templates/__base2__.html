@@ -34,9 +34,17 @@
     </div>
     {% endblock %}
     <div class="nav-bar">
+        {% if user.is_superuser %}
+        <a href="{% url 'persons' %}">
+            <div class="nav-item">
+                WORKERS
+            </div>
+        </a>
+        {% else %}
             <div class="nav-item">
                 MAIN
             </div>
+        {% endif %}
         <a href="{% url 'new-all-orders' %}">
             <div class="nav-item">
                 ORDERS

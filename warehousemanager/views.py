@@ -2004,7 +2004,10 @@ class PersonListView(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_person'
 
     def get(self, request):
-        persons = Person.objects.all()
+        title = 'WORKERS'
+        visit_counter(request.user, 'Person List View')
+        persons = Person.objects.all().order_by('last_name')
+        today_workers = Person.objects.filter(job_end=None)
         return render(request, 'warehousemanager-person-list.html', locals())
 
 
@@ -2013,4 +2016,5 @@ class PersonDetailView(View, PermissionRequiredMixin):
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
+        visit_counter(request.user, f'Person details - {person.get_initials()}')
         return render(request, 'warehousemanager-person-details.html', locals())
