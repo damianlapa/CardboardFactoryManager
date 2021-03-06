@@ -2,24 +2,28 @@
 {% block title %}Manage Workers{% endblock %}
 {% block content %}
 
-<div>
-    <h1>Currently on contract:</h1>
+<div class="container-75 bg-lightgrey">
+    <h1>Currently on contract: <span class="red">{{ today_workers|length }}</span></h1>
     {% for p in today_workers %}
-    <a href="{% url 'person-details' person_id=p.id %}">
     <p>
-        {{ p }}
-    </p>
+        <span class="size15 red">{{ forloop.counter }}.</span>
+        <a href="{% url 'person-details' person_id=p.id %}" class="no-decor"><span class="person-list size20">
+            {{ p }}
+        </span>
         </a>
+    </p>
     {% endfor %}
 </div>
-<div>
-    <h2>Former Workers</h2>
+<div class="container-75 bg-lightgrey">
+    <h2>Former Workers: <span class="red">{{ former_workers|length }}</span></h2>
 {% for p in former_workers %}
-<a href="{% url 'person-details' person_id=p.id %}">
 <p>
-    {{ p }}
+    <span class="size15 red">{{ forloop.counter }}.</span>
+    <a href="{% url 'person-details' person_id=p.id %}" class="no-decor"><span class="person-list size20">
+            {{ p }}
+        </span>
+        </a>
 </p>
-    </a>
 {% endfor %}
 </div>
 {% endblock %}

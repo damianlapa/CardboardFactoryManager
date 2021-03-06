@@ -1019,3 +1019,51 @@ select{
 .a-d-a {
     color: red;
 }
+
+.person-list:hover {
+    border: 1px solid white;
+    text-decoration: none;
+    color: white;
+}
+
+.person-list {
+    color: black;
+}
+
+.no-decor:link {
+    text-decoration: none;
+}
+
+.no-decor:visited {
+    text-decoration: none;
+}
+
+.no-decor:active {
+    text-decoration: none;
+}
+
+.no-decor:hover {
+    text-decoration: none;
+}
+
+.container-75 {
+    width: 75%;
+    margin: 10px auto;
+    border: solid 2px grey;
+}
+
+.bg-lightgrey {
+    background: grey;
+}
+
+.red {
+    color: red;
+}
+
+.size15 {
+    font-size: 1.5em;
+}
+
+.size20 {
+    font-size: 2em;
+}
