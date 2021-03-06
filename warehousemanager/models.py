@@ -108,6 +108,7 @@ class Person(models.Model):
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
+    medical_examination = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
 
@@ -527,3 +528,16 @@ class Contract(models.Model):
 
     def get_absolute_url(self):
         return reverse('person-details', kwargs={'person_id': self.worker.id})
+
+    def __str__(self):
+        if self.date_end:
+            return f'{self.worker} - {self.position} ({self.date_start} - {self.date_end})'
+        else:
+            return f'{self.worker} - {self.position} ({self.date_start} - ∞)'
+
+
+class Reminder(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    title = models.CharField(max_length=64)
+    create_date = models.DateField()
+    sent_date = models.DateField(blank=True, null=True)

@@ -25,8 +25,7 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, \
-    change_minutes_to_hours, change_month_num_to_name
+from warehousemanager.functions import *
 
 import subprocess
 # import models from warehousemanager app
@@ -2008,6 +2007,14 @@ class PersonListView(View, PermissionRequiredMixin):
         visit_counter(request.user, 'Person List View')
         former_workers = Person.objects.filter(job_end__isnull=False).order_by('last_name')
         today_workers = Person.objects.filter(job_end=None)
+        for t in today_workers:
+            # print(check_medical_examination_expiration_date(t))
+            print(check_contract_expiration_date(t))
+            if check_contract_expiration_date(t) < 29:
+                try:
+                    reminder = Reminder.objects.get(worker=t, title='CONTRACT<28')
+                except ObjectDoesNotExist:
+                    Reminder.objects.create(worker=t, title='CONTRACT<28', create_date=datetime.date.today())
         return render(request, 'warehousemanager-person-list.html', locals())
 
 

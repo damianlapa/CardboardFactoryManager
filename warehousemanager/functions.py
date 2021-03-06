@@ -4,7 +4,7 @@ import datetime
 import random
 from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
-from warehousemanager.models import SpreadsheetCopy, OrderItem, Order, Punch, UserVisitCounter, Color
+from warehousemanager.models import *
 from django.core.exceptions import ObjectDoesNotExist
 
 COLORS = ('Red', 'Green', 'Blue', 'Yellow', 'Pink', 'Orange', 'Purple', 'Brown')
@@ -206,3 +206,26 @@ def change_minutes_to_hours(minutes):
 
 def change_month_num_to_name(num):
     return MONTHS[str(num)]
+
+
+def check_contract_expiration_date(worker):
+    if worker.job_end:
+        return -1
+    else:
+        worker_contracts = Contract.objects.filter(worker=worker)
+        if len(worker_contracts) == 0:
+            return 0
+        else:
+            for c in worker_contracts:
+                if not c.date_end:
+                    return 10000
+                else:
+                    if c.date_end > datetime.date.today() > c.date_start:
+                        return (c.date_end - datetime.date.today()).days
+
+
+def check_medical_examination_expiration_date(worker):
+    if not worker.medical_examination:
+        return None
+    else:
+        return worker.medical_examination

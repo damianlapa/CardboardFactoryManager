@@ -1067,3 +1067,7 @@ select{
 .size20 {
     font-size: 2em;
 }
+
+.center {
+    margin: 0px auto;
+}
