@@ -142,4 +142,10 @@ AWS_DEFAULT_ACL = None
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = os.environ.get('PPAPP')
+EMAIL_HOST_PASSWORD = os.environ.get('PPPASS')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
 django_heroku.settings(locals())

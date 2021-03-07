@@ -16,6 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy
+from django.core.mail import send_mail
 import io
 import os
 import sys
@@ -2008,13 +2009,8 @@ class PersonListView(View, PermissionRequiredMixin):
         former_workers = Person.objects.filter(job_end__isnull=False).order_by('last_name')
         today_workers = Person.objects.filter(job_end=None)
         for t in today_workers:
-            # print(check_medical_examination_expiration_date(t))
-            print(check_contract_expiration_date(t))
-            if check_contract_expiration_date(t) < 29:
-                try:
-                    reminder = Reminder.objects.get(worker=t, title='CONTRACT<28')
-                except ObjectDoesNotExist:
-                    Reminder.objects.create(worker=t, title='CONTRACT<28', create_date=datetime.date.today())
+            create_or_send_reminder(t, check_contract_expiration_date(t), 'contract')
+            create_or_send_reminder(t, check_medical_examination_expiration_date(t), 'medical examination')
         return render(request, 'warehousemanager-person-list.html', locals())
 
 
