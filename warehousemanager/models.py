@@ -541,3 +541,9 @@ class Reminder(models.Model):
     title = models.CharField(max_length=64)
     create_date = models.DateField()
     sent_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        if self.sent_date:
+            return f'SEND / {self.worker} - {self.title}'
+        else:
+            return f'-- / {self.worker} - {self.title}'
