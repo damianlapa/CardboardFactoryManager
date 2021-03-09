@@ -355,10 +355,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
-                        absenceField[0].innerText = data[0][i][2]
-                        absenceField[0].style.backgroundColor = 'red'
-                        absenceField[0].style.color = 'white'
-                        absenceField[0].style.textAlign = 'center'
+                        console.log(data[0][i][2])
+
+                        if (data[0][i][2] === 'D') {
+                        } else {
+                        console.log(absenceField[0])
+                            absenceField[0].innerText = data[0][i][2]
+                            absenceField[0].style.backgroundColor = 'red'
+                            absenceField[0].style.color = 'white'
+                            absenceField[0].style.textAlign = 'center'
+                        }
                     }}
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)
@@ -427,10 +433,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
-                        absenceField[0].innerText = data[0][i][2]
-                        absenceField[0].style.backgroundColor = 'red'
-                        absenceField[0].style.color = 'white'
-                        absenceField[0].style.textAlign = 'center'
+                        if (data[0][i][2] === 'D') {
+                            absenceField[0].innerText = data[0][i][2]
+                            absenceField[0].classList.add('del-bg')
+                        } else {
+                            absenceField[0].innerText = data[0][i][2]
+                            absenceField[0].style.backgroundColor = 'red'
+                            absenceField[0].style.color = 'white'
+                            absenceField[0].style.textAlign = 'center'
+                        }
                     }}
                 else {
                     let holidayFields = document.getElementsByClassName(day_text)

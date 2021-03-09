@@ -1071,3 +1071,8 @@ select{
 .center {
     margin: 0px auto;
 }
+
+.del-bg {
+background-image: linear-gradient(135deg, #60b837 25%, #9cd900 25%, #9cd900 50%, #60b837 50%, #60b837 75%, #9cd900 75%, #9cd900 100%);
+background-size: 28.28px 28.28px;
+}

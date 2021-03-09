@@ -61,7 +61,9 @@ ABSENCE_TYPES = (
     ('SP', 'Spóźnienie'),
     ('UB', 'Urlop bezpłatny'),
     ('CH', 'Chorobowe'),
-    ('KW', 'Kwarantanna')
+    ('KW', 'Kwarantanna'),
+    ('OP', 'Opieka nad członkiem rodziny'),
+    ('D', 'Delegacja')
 )
 
 PUNCH_TYPES = (
