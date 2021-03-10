@@ -3,13 +3,19 @@
 {% block content %}
 
 <div>
-    <li>
+    <ul style="text-align: center;">
     {% for r in reminders %}
-        <ul>
+        <a href="{% url 'reminder-details' reminder_id=r.id %}" class="no-decor">
+            {% if not r.sent_date %}
+        <li class="white bold">
+            {% else %}
+            <li class="black">
+            {% endif %}
             {{ r }}
-        </ul>
+        </li>
+            </a>
     {% endfor %}
-    </li>
+    </ul>
 </div>
 
 {% endblock %}

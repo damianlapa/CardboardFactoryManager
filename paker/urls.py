@@ -130,7 +130,8 @@ urlpatterns += [
 
 # reminders
 urlpatterns += [
-    path('reminders/', ReminderListView.as_view(), name='reminders')
+    path('reminders/', ReminderListView.as_view(), name='reminders'),
+    path('reminder/<int:reminder_id>', ReminderDetailsView.as_view(), name='reminder-details'),
 ]
 
 if settings.DEBUG:

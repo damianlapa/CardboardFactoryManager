@@ -2036,5 +2036,18 @@ class ReminderListView(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_reminder'
 
     def get(self, request):
-        reminders = Reminder.objects.all()
+        reminders = Reminder.objects.all().order_by('create_date')
         return render(request, 'warehousemanager-reminders-list.html', locals())
+
+
+class ReminderDetailsView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_reminder'
+
+    def get(self, request, reminder_id):
+        reminder = Reminder.objects.get(id=int(reminder_id))
+        reminder_content = compose_mail(reminder)
+        if not reminder.sent_date:
+            reminder.sent_date = datetime.date.today()
+            reminder.save()
+
+        return render(request, 'warehousemanager-reminder-details.html', locals())
