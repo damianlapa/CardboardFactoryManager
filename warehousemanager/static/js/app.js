@@ -1256,6 +1256,27 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 
+    // workers page
+
+    function zmienKolor() {
+    idInterwalu = setInterval(zmienKolorTekstu, 300);
+    }
+
+    function zmienKolorTekstu() {
+    const elem = document.getElementById('div-workers-att')
+      if (elem.style.color == 'white') {
+        elem.style.color = 'red';
+      } else {
+        elem.style.color = 'white';
+      }
+    }
+
+    const dVA = document.getElementById('div-workers-att')
+
+    if (document.getElementById('div-workers-att') !== null) {
+        setInterval(zmienKolorTekstu, 1000)
+    }
+
 })
 
 function drag(ev) {

@@ -128,5 +128,10 @@ urlpatterns += [
     path('contact-create/', ContractCreate.as_view(), name='contract-create')
 ]
 
+# reminders
+urlpatterns += [
+    path('reminders/', ReminderListView.as_view(), name='reminders')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

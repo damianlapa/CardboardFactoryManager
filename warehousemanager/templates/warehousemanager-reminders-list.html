@@ -1,0 +1,15 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div>
+    <li>
+    {% for r in reminders %}
+        <ul>
+            {{ r }}
+        </ul>
+    {% endfor %}
+    </li>
+</div>
+
+{% endblock %}

@@ -2029,3 +2029,12 @@ class PersonDetailView(View, PermissionRequiredMixin):
 class ContractCreate(CreateView):
     model = Contract
     fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']
+
+
+# reminder view
+class ReminderListView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_reminder'
+
+    def get(self, request):
+        reminders = Reminder.objects.all()
+        return render(request, 'warehousemanager-reminders-list.html', locals())

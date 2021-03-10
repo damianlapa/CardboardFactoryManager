@@ -1049,7 +1049,14 @@ select{
 .container-75 {
     width: 75%;
     margin: 10px auto;
-    border: solid 2px grey;
+}
+
+.border-solid-2 {
+    border: solid 2px;
+}
+
+.border-grey {
+    border: grey;
 }
 
 .bg-lightgrey {

@@ -2,7 +2,15 @@
 {% block title %}Manage Workers{% endblock %}
 {% block content %}
 
-<div class="container-75 bg-lightgrey">
+{% if new_reminders %}
+<a href="{% url 'reminders' %}">
+    <div class="container-75 red size20 no-decor">
+        You have new reminders!
+    </div>
+</a>
+{% endif %}
+
+<div class="container-75 bg-lightgrey border-solid-2">
     <h1>Currently on contract: <span class="red">{{ today_workers|length }}</span></h1>
     {% for p in today_workers %}
     <p>
@@ -14,7 +22,7 @@
     </p>
     {% endfor %}
 </div>
-<div class="container-75 bg-lightgrey">
+<div class="container-75 bg-lightgrey border-solid-2">
     <h2>Former Workers: <span class="red">{{ former_workers|length }}</span></h2>
 {% for p in former_workers %}
 <p>

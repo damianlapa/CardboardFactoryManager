@@ -221,7 +221,7 @@ def check_contract_expiration_date(worker):
                 if not c.date_end:
                     return 10000
                 else:
-                    if c.date_end > datetime.date.today() > c.date_start:
+                    if c.date_end >= datetime.date.today() > c.date_start:
                         return (c.date_end - datetime.date.today()).days
 
 
@@ -255,8 +255,8 @@ def create_or_send_reminder(worker, days_left, topic):
             reminder = Reminder.objects.get(worker=worker, title=f'{topic}*0')
             if not reminder.sent_date:
                 title, text = compose_mail(reminder)
-                send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
-                reminder.sent_date = datetime.date.today()
+                # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
+                # reminder.sent_date = datetime.date.today()
                 reminder.save()
         except ObjectDoesNotExist:
             Reminder.objects.create(worker=worker, title=f'{topic}*0', create_date=datetime.date.today())
@@ -265,8 +265,8 @@ def create_or_send_reminder(worker, days_left, topic):
             reminder = Reminder.objects.get(worker=worker, title=f'{topic}*7')
             if not reminder.sent_date:
                 title, text = compose_mail(reminder)
-                send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
-                reminder.sent_date = datetime.date.today()
+                # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
+                # reminder.sent_date = datetime.date.today()
                 reminder.save()
         except ObjectDoesNotExist:
             Reminder.objects.create(worker=worker, title=f'{topic}*7', create_date=datetime.date.today())
@@ -275,8 +275,15 @@ def create_or_send_reminder(worker, days_left, topic):
             reminder = Reminder.objects.get(worker=worker, title=f'{topic}*28')
             if not reminder.sent_date:
                 title, text = compose_mail(reminder)
-                send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
-                reminder.sent_date = datetime.date.today()
+                # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
+                # reminder.sent_date = datetime.date.today()
                 reminder.save()
         except ObjectDoesNotExist:
             Reminder.objects.create(worker=worker, title=f'{topic}*28', create_date=datetime.date.today())
+
+
+def reminders_qs():
+    reminders = Reminder.objects.filter(sent_date=None)
+    if len(reminders) > 0:
+        return True
+    return False
