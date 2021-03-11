@@ -1,0 +1,26 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div>
+    <a class="no-decor red" href="{% url 'reminders' %}">
+        <p>
+            ALL REMINDERS
+        </p>
+    </a>
+    <a href="{% url 'reminder-delete' reminder_id=reminder.id %}">
+        <button>DELETE</button>
+    </a>
+</div>
+
+<div class="container-75 white border-solid-2">
+    <p class="bold">
+    {{ reminder_content.0 }}
+    </p>
+    <p>
+        {{ reminder_content.1 }}
+    </p>
+</div>
+
+
+{% endblock %}

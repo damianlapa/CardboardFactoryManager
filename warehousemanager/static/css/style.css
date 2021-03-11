@@ -127,7 +127,7 @@ table.zamowienie, .zamowienie th{
     color: white;
 }
 
-.navigation a:link, a:visited{
+.navigation{
     color: grey;
 }
 
@@ -1018,4 +1018,84 @@ select{
 
 .a-d-a {
     color: red;
+}
+
+.person-list:hover {
+    border: 1px solid white;
+    text-decoration: none;
+    color: white;
+}
+
+.person-list {
+    color: black;
+}
+
+.no-decor:link {
+    text-decoration: none;
+}
+
+.no-decor:visited {
+    text-decoration: none;
+}
+
+.no-decor:active {
+    text-decoration: none;
+}
+
+.no-decor:hover {
+    text-decoration: none;
+}
+
+.no-decor-a {
+    text-decoration: none;
+}
+
+.container-75 {
+    width: 75%;
+    margin: 10px auto;
+}
+
+.border-solid-2 {
+    border: solid 2px;
+}
+
+.border-grey {
+    border: grey;
+}
+
+.bg-lightgrey {
+    background: grey;
+}
+
+.red {
+    color: red;
+}
+
+.size15 {
+    font-size: 1.5em;
+}
+
+.size20 {
+    font-size: 2em;
+}
+
+.center {
+    margin: 0px auto;
+}
+
+.del-bg {
+background-image: linear-gradient(135deg, #60b837 25%, #9cd900 25%, #9cd900 50%, #60b837 50%, #60b837 75%, #9cd900 75%, #9cd900 100%);
+background-size: 28.28px 28.28px;
+}
+
+.white {
+    color: white;
+}
+
+.black {
+    color: black;
+}
+
+.bold {
+    font-weight: bold;
 }

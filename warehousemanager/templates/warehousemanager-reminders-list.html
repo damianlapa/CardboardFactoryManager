@@ -1,0 +1,21 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div>
+    <ul style="text-align: center;">
+    {% for r in reminders %}
+        <a href="{% url 'reminder-details' reminder_id=r.id %}" class="no-decor">
+            {% if not r.sent_date %}
+        <li class="white bold">
+            {% else %}
+            <li class="black">
+            {% endif %}
+            {{ r }}
+        </li>
+            </a>
+    {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

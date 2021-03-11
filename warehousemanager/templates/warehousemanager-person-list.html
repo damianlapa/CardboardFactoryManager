@@ -1,0 +1,37 @@
+{% extends '__base2__.html' %}
+{% block title %}Manage Workers{% endblock %}
+{% block content %}
+
+{% if new_reminders %}
+<a href="{% url 'reminders' %}" class="no-decor-a">
+    <div class="container-75 red size20 no-decor">
+        You have new reminders!
+    </div>
+</a>
+{% endif %}
+
+<div class="container-75 bg-lightgrey border-solid-2">
+    <h1>Currently on contract: <span class="red">{{ today_workers|length }}</span></h1>
+    {% for p in today_workers %}
+    <p>
+        <span class="size15 red">{{ forloop.counter }}.</span>
+        <a href="{% url 'person-details' person_id=p.id %}" class="no-decor"><span class="person-list size20">
+            {{ p }}
+        </span>
+        </a>
+    </p>
+    {% endfor %}
+</div>
+<div class="container-75 bg-lightgrey border-solid-2">
+    <h2>Former Workers: <span class="red">{{ former_workers|length }}</span></h2>
+{% for p in former_workers %}
+<p>
+    <span class="size15 red">{{ forloop.counter }}.</span>
+    <a href="{% url 'person-details' person_id=p.id %}" class="no-decor"><span class="person-list size20">
+            {{ p }}
+        </span>
+        </a>
+</p>
+{% endfor %}
+</div>
+{% endblock %}

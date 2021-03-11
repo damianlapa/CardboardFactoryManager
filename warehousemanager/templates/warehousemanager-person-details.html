@@ -1,0 +1,48 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+<p>
+<h1>{{ person }}</h1>
+</p>
+
+<div>
+    <h3>EMPLOYMENT HISTORY</h3>
+    {% if contracts|length > 0 %}
+    <table class="center">
+        <tr>
+            <th>
+                Start Date
+            </th>
+            <th>
+                End Date
+            </th>
+            <th>
+                Type
+            </th>
+            <th>
+                Extra Info
+            </th>
+        </tr>
+    {% for c in contracts %}
+    <tr>
+        <td>
+            {{ c.date_start }}
+        </td>
+        <td>
+            {{ c.date_end }}
+        </td>
+        <td>
+            {{ c.type }}
+        </td>
+        <td>
+            {{ c.extra_info }}
+        </td>
+    </tr>
+    {% endfor %}
+    </table>
+    <a href="{% url 'contract-create' %}">Add more</a>
+    {% else %}
+    There is no contracts to display. <a href="{% url 'contract-create' %}">Add</a> some information.
+    {% endif %}
+</div>
+{% endblock %}

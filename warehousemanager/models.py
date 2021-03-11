@@ -61,7 +61,9 @@ ABSENCE_TYPES = (
     ('SP', 'Spóźnienie'),
     ('UB', 'Urlop bezpłatny'),
     ('CH', 'Chorobowe'),
-    ('KW', 'Kwarantanna')
+    ('KW', 'Kwarantanna'),
+    ('OP', 'Opieka nad członkiem rodziny'),
+    ('D', 'Delegacja')
 )
 
 PUNCH_TYPES = (
@@ -95,6 +97,11 @@ POLYMERS_PRODUCERS = (
     ('CHESPA', 'CHESPA')
 )
 
+CONTRACT_TYPES = (
+    ('UOP', 'Umowa o pracę'),
+    ('UZ', 'Umowa zlecenie')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -103,6 +110,7 @@ class Person(models.Model):
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
+    medical_examination = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
 
@@ -509,3 +517,35 @@ class ColorUsage(models.Model):
     production = models.ForeignKey(ProductionProcess, blank=True, null=True, on_delete=models.CASCADE)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=3, decimal_places=1)
+
+
+class Contract(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    type = models.CharField(choices=CONTRACT_TYPES, max_length=8)
+    position = models.CharField(max_length=64)
+    date_start = models.DateField()
+    date_end = models.DateField(null=True, blank=True)
+    salary = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    extra_info = models.CharField(max_length=255, null=True, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('person-details', kwargs={'person_id': self.worker.id})
+
+    def __str__(self):
+        if self.date_end:
+            return f'{self.worker} - {self.position} ({self.date_start} - {self.date_end})'
+        else:
+            return f'{self.worker} - {self.position} ({self.date_start} - ∞)'
+
+
+class Reminder(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    title = models.CharField(max_length=64)
+    create_date = models.DateField()
+    sent_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        if self.sent_date:
+            return f'SEND / {self.worker} - {self.title}'
+        else:
+            return f'-- / {self.worker} - {self.title}'

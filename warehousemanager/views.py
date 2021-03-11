@@ -16,6 +16,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy
+from django.core.mail import send_mail
 import io
 import os
 import sys
@@ -25,8 +26,7 @@ from django.conf import settings
 import json
 import datetime
 
-from warehousemanager.functions import google_key, create_spreadsheet_copy, visit_counter, add_random_color, \
-    change_minutes_to_hours, change_month_num_to_name
+from warehousemanager.functions import *
 
 import subprocess
 # import models from warehousemanager app
@@ -1997,3 +1997,69 @@ class PersonAbsences(PermissionRequiredMixin, View):
         all_events = sorted(all_events, key=lambda x: x[1])
 
         return render(request, 'warehousemanager-person-absences.html', locals())
+
+
+# person view
+class PersonListView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_person'
+
+    def get(self, request):
+        title = 'WORKERS'
+        visit_counter(request.user, 'Person List View')
+        former_workers = Person.objects.filter(job_end__isnull=False).order_by('last_name')
+        today_workers = Person.objects.filter(job_end=None)
+        for t in today_workers:
+            create_or_send_reminder(t, check_contract_expiration_date(t), 'contract')
+            create_or_send_reminder(t, check_medical_examination_expiration_date(t), 'medical examination')
+        return render(request, 'warehousemanager-person-list.html', locals())
+
+
+# person view
+class PersonDetailView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_person'
+
+    def get(self, request, person_id):
+        person = Person.objects.get(id=person_id)
+        visit_counter(request.user, f'Person details - {person.get_initials()}')
+        contracts = Contract.objects.filter(worker=person)
+        return render(request, 'warehousemanager-person-details.html', locals())
+
+
+# contract view
+class ContractCreate(CreateView):
+    model = Contract
+    fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']
+
+
+# reminder view
+class ReminderListView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_reminder'
+
+    def get(self, request):
+        reminders = Reminder.objects.all().order_by('create_date')
+        return render(request, 'warehousemanager-reminders-list.html', locals())
+
+
+class ReminderDetailsView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_reminder'
+
+    def get(self, request, reminder_id):
+        reminder = Reminder.objects.get(id=int(reminder_id))
+        reminder_content = compose_mail(reminder)
+        if not reminder.sent_date:
+            reminder.sent_date = datetime.date.today()
+            reminder.save()
+
+        return render(request, 'warehousemanager-reminder-details.html', locals())
+
+
+class ReminderDeleteView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_reminder'
+
+    def get(self, request, reminder_id):
+        reminder = Reminder.objects.get(id=int(reminder_id))
+        reminder.delete()
+
+        print('visit')
+
+        return redirect('reminders')

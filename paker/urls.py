@@ -117,5 +117,23 @@ urlpatterns += [
     path('persons-vacations/<int:person_id>', PersonsVacations.as_view(), name='persons-vacations')
 ]
 
+# persons
+urlpatterns += [
+    path('persons/', PersonListView.as_view(), name='persons'),
+    path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
+]
+
+# contracts
+urlpatterns += [
+    path('contact-create/', ContractCreate.as_view(), name='contract-create')
+]
+
+# reminders
+urlpatterns += [
+    path('reminders/', ReminderListView.as_view(), name='reminders'),
+    path('reminder/<int:reminder_id>', ReminderDetailsView.as_view(), name='reminder-details'),
+    path('reminder-delete/<int:reminder_id>', ReminderDeleteView.as_view(), name='reminder-delete')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
