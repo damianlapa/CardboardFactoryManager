@@ -2051,3 +2051,15 @@ class ReminderDetailsView(View, PermissionRequiredMixin):
             reminder.save()
 
         return render(request, 'warehousemanager-reminder-details.html', locals())
+
+
+class ReminderDeleteView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_reminder'
+
+    def get(self, request, reminder_id):
+        reminder = Reminder.objects.get(id=int(reminder_id))
+        reminder.delete()
+
+        print('visit')
+
+        return redirect('reminders')

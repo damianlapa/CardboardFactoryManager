@@ -132,6 +132,7 @@ urlpatterns += [
 urlpatterns += [
     path('reminders/', ReminderListView.as_view(), name='reminders'),
     path('reminder/<int:reminder_id>', ReminderDetailsView.as_view(), name='reminder-details'),
+    path('reminder-delete/<int:reminder_id>', ReminderDeleteView.as_view(), name='reminder-delete')
 ]
 
 if settings.DEBUG:

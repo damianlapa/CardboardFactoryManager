@@ -8,6 +8,9 @@
             ALL REMINDERS
         </p>
     </a>
+    <a href="{% url 'reminder-delete' reminder_id=reminder.id %}">
+        <button>DELETE</button>
+    </a>
 </div>
 
 <div class="container-75 white border-solid-2">
