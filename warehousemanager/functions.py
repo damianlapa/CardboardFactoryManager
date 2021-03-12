@@ -243,7 +243,7 @@ def compose_mail(reminder):
 
     else:
         title = f"{reminder.worker}'s {reason_text} ends within next {days} days!"
-        html = f"{reminder.worker}'s {reason_text} ends within next {days} days({event_day}! Consider prepare new one!"
+        html = f"{reminder.worker}'s {reason_text} ends within next {days} days({event_day})! Consider prepare new one!"
 
     return title, html
 

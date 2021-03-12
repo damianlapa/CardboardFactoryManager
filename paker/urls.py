@@ -135,5 +135,10 @@ urlpatterns += [
     path('reminder-delete/<int:reminder_id>', ReminderDeleteView.as_view(), name='reminder-delete')
 ]
 
+# palettes
+urlpatterns += [
+    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

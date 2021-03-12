@@ -1,0 +1,59 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div class="container-90 border-solid-2">
+    <span class="black size15">Provider: </span><span class="red size20">{{ provider_object }}</span>
+    <p class="margin-10-auto">
+        <span>between dates</span>
+    </p>
+    <p class="margin-10-auto">
+        <span>current quantity</span>
+    </p>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Delivered</th>
+            <th>Returned</th>
+        </tr>
+        {% for d in all_deliveries %}
+        <tr>
+            <td>{{ d.date_of_delivery }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="container-90">
+    <form action="" method="get">
+        <p>
+        <label>
+            Provider:
+            <select name="provider">
+                {% for p in providers %}
+                    <option value="{{ p.shortcut }}" {% if p.shortcut == provider %}selected{%endif%}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        </p>
+        <p>
+            <label>
+                From date:
+                <input type="date" name="date-from" value="{{date_from}}">
+            </label>
+        </p>
+        <p>
+            <label>
+                To date:
+                <input type="date" name="date-to" value="{{date_to}}">
+            </label>
+        </p>
+        <p>
+        <input type="submit" value="Filter">
+        </p>
+    </form>
+</div>
+
+
+
+{% endblock %}

@@ -2063,3 +2063,28 @@ class ReminderDeleteView(View, PermissionRequiredMixin):
         print('visit')
 
         return redirect('reminders')
+
+
+class PaletteQuantitiesView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_palette'
+
+    def get(self, request):
+        providers = CardboardProvider.objects.all()
+        provider = request.GET.get('provider')
+        date_from = request.GET.get('date-from')
+        date_to = request.GET.get('date-to')
+
+        if provider:
+            del_palettes = PaletteQuantity.all_quantities_between_dates(provider=provider)
+            ret_palettes = PaletteQuantity.all_quantities_between_dates(provider=provider, status='RET')
+            difference = del_palettes - ret_palettes
+        else:
+            del_palettes = PaletteQuantity.all_quantities_between_dates()
+            ret_palettes = PaletteQuantity.all_quantities_between_dates(status='RET')
+            difference = del_palettes - ret_palettes
+
+        provider_object = CardboardProvider.objects.get(shortcut=provider) if provider else CardboardProvider.objects.get(shortcut='AQ')
+
+        all_deliveries = Delivery.objects.filter(provider=provider_object)
+
+        return render(request, 'warehousemanager-palettes-quantities.html', locals())

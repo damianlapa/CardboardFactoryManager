@@ -259,6 +259,43 @@ class PaletteQuantity(models.Model):
     quantity = models.IntegerField(default=0)
     status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
 
+    @classmethod
+    def all_quantities_between_dates(cls, provider=None, palette_type=None, palette_dimensions=None, status=None, date_from=None,
+                                     date_to=None):
+
+        provider = 'AQ' if not provider else provider
+        palette_type = 'EU' if not palette_type else palette_type
+        palette_dimensions = '1200x800' if not palette_dimensions else palette_dimensions
+        status = 'DEL' if not status else status
+
+        result = 0
+        provider_object = CardboardProvider.objects.get(shortcut=provider)
+        width, height = palette_dimensions.split('x')
+        palette_object = Palette.objects.get(type=palette_type, width=int(width), height=int(height))
+
+        if not date_from:
+            date_from = datetime.datetime.strptime('2017-01-01', '%Y-%m-%d')
+        else:
+            date_from = datetime.datetime.strptime(date_from, '%Y-%m-%d')
+
+        if not date_to:
+            date_to = datetime.date.today()
+        else:
+            date_to = datetime.datetime.strptime(date_to, '%Y-%m-%d')
+
+        print(date_from, date_to)
+
+        all_deliveries = Delivery.objects.filter(provider=provider_object, date_of_delivery__gte=date_from,
+                                                 date_of_delivery__lte=date_to)
+
+        for d in all_deliveries:
+            q = cls.objects.filter(delivery=d, palette=palette_object, status=status)
+            if q:
+                for x in q:
+                    result += x.quantity
+
+        return result
+
 
 class Machine(models.Model):
     name = models.CharField(max_length=32)
