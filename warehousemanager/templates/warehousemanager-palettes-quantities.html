@@ -3,37 +3,64 @@
 {% block content %}
 
 <div class="container-90 border-solid-2">
-    <span class="black size15">Provider: </span><span class="red size20">{{ provider_object }}</span>
+    <span class="white size15">Provider: </span><br />
+    <span class="red size20">{{ provider_object }}</span>
     <p class="margin-10-auto">
-        <span>between dates</span>
+        <span class="white size15">Between dates:</span><br />
+        <span class="red size20">{{ date_from_text }} -:- {{ date_to_text }}</span>
     </p>
-    <p class="margin-10-auto">
-        <span>current quantity</span>
-    </p>
+    <span class="white size15">Quantity:</span>
     <table class="center">
         <tr>
-            <th rowspan="2">Date</th>
-            <th colspan="{{ palettes|length }}">Delivered</th>
-            <th colspan="{{ palettes|length }}">Returned</th>
+            <th class="bg-orange">Status</th>
+            {% for p in palettes %}
+            <th class="bg-orange">{{ p }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td class="bg-orange">Delivered</td>
+            {% for p in current_quantity_table_data.0 %}
+            <td class="bg-white">{{ p }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td class="bg-orange">Returned</td>
+            {% for p in current_quantity_table_data.1 %}
+            <td class="bg-white">{{ p }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td class="bg-orange">Summary</td>
+            {% for p in current_quantity_table_data.2 %}
+            <td class="bg-white">{{ p }}</td>
+            {% endfor %}
+        </tr>
+    </table>
+    <span class="white size15 dropdown-title" id="palette-deliveries-title">Deliveries({{ deliveries_query|length }}):</span>
+    <table class="center" id="palette-deliveries" style="display: none">
+        <tr>
+            <th rowspan="2" class="bg-orange">Date</th>
+            <th colspan="{{ palettes|length }}" class="bg-orange">Delivered</th>
+            <th colspan="{{ palettes|length }}" class="bg-orange">Returned</th>
         </tr>
         <tr>
             {% for p in palettes %}
-            <td>{{ p }}</td>
+            <td class="bg-orange">{{ p }}</td>
             {% endfor %}
             {% for p in palettes %}
-            <td>{{ p }}</td>
+            <td class="bg-orange">{{ p }}</td>
             {% endfor %}
         </tr>
         {% for d in all_deliveries %}
         <tr>
             {% for dd in d %}
             {% if forloop.first %}
-            <td>{{ dd }}</td>
+            <td class="bg-orange">{{ dd }}</td>
             {% else %}
                 {% if dd != '-' %}
                     <td class="bg-yellow">{{ dd }}</td>
                 {% else %}
-                    <td>{{ dd }}</td>
+                    <td class="bg-white">{{ dd }}</td>
                 {% endif %}
             {% endif %}
             {% endfor %}

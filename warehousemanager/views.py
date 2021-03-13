@@ -2074,16 +2074,11 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
         date_from = request.GET.get('date-from')
         date_to = request.GET.get('date-to')
 
-        if provider:
-            del_palettes = PaletteQuantity.all_quantities_between_dates(provider=provider)
-            ret_palettes = PaletteQuantity.all_quantities_between_dates(provider=provider, status='RET')
-            difference = del_palettes - ret_palettes
-        else:
-            del_palettes = PaletteQuantity.all_quantities_between_dates()
-            ret_palettes = PaletteQuantity.all_quantities_between_dates(status='RET')
-            difference = del_palettes - ret_palettes
+        date_from_text = date_from if date_from else '2017-01-01'
+        date_to_text = date_to if date_to else datetime.date.strftime(datetime.date.today(), '%Y-%m-%d')
 
-        provider_object = CardboardProvider.objects.get(shortcut=provider) if provider else CardboardProvider.objects.get(shortcut='AQ')
+        provider_object = CardboardProvider.objects.get(
+            shortcut=provider) if provider else CardboardProvider.objects.get(shortcut='AQ')
 
         all_deliveries = []
 
@@ -2093,7 +2088,13 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
         for p in palettes:
             palettes_list.append(p)
 
-        for delivery in Delivery.objects.filter(provider=provider_object):
+        deliveries_query = Delivery.objects.filter(provider=provider_object,
+                                                   date_of_delivery__gte=datetime.datetime.strptime(date_from_text,
+                                                                                                    '%Y-%m-%d'),
+                                                   date_of_delivery__lte=datetime.datetime.strptime(date_to_text,
+                                                                                                    '%Y-%m-%d'))
+
+        for delivery in deliveries_query:
             result = [delivery.date_of_delivery] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
             for p in PaletteQuantity.objects.filter(delivery=delivery):
                 if p.status == 'DEL':
@@ -2101,5 +2102,26 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
                 else:
                     result[palettes_list.index(p.palette) + 1 + len(palettes)] = p.quantity
             all_deliveries.append(result)
+
+        current_quantity_table_data = [['-' for _ in palettes_list], ['-' for _ in palettes_list],
+                                       ['-' for _ in palettes_list]]
+        for p in palettes_list:
+            provider = provider if provider else 'AQ'
+
+            palette_type = p.type
+            palette_dimensions = f'{p.width}x{p.height}'
+
+            del_palettes = PaletteQuantity.all_quantities_between_dates(provider=provider, palette_type=palette_type,
+                                                                        palette_dimensions=palette_dimensions,
+                                                                        date_from=date_from_text, date_to=date_to_text)
+            ret_palettes = PaletteQuantity.all_quantities_between_dates(provider=provider, palette_type=palette_type,
+                                                                        palette_dimensions=palette_dimensions,
+                                                                        date_from=date_from_text, date_to=date_to_text,
+                                                                        status='RET')
+            difference = del_palettes - ret_palettes
+
+            current_quantity_table_data[0][palettes_list.index(p)] = del_palettes
+            current_quantity_table_data[1][palettes_list.index(p)] = ret_palettes
+            current_quantity_table_data[2][palettes_list.index(p)] = difference
 
         return render(request, 'warehousemanager-palettes-quantities.html', locals())

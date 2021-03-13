@@ -1076,6 +1076,14 @@ select{
     background: yellow;
 }
 
+.bg-white {
+    background: white;
+}
+
+.bg-orange {
+    background: orange;
+}
+
 .red {
     color: red;
 }
@@ -1111,4 +1119,12 @@ background-size: 28.28px 28.28px;
 
 .margin-10-auto {
     margin: 10px auto;
+}
+
+.dropdown-title:hover {
+    cursor: s-resize;
+}
+
+.dropdown-title-hide:hover {
+    cursor: n-resize;
 }

@@ -283,8 +283,6 @@ class PaletteQuantity(models.Model):
         else:
             date_to = datetime.datetime.strptime(date_to, '%Y-%m-%d')
 
-        print(date_from, date_to)
-
         all_deliveries = Delivery.objects.filter(provider=provider_object, date_of_delivery__gte=date_from,
                                                  date_of_delivery__lte=date_to)
 
