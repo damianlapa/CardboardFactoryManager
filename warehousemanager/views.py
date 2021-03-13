@@ -2085,6 +2085,21 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
 
         provider_object = CardboardProvider.objects.get(shortcut=provider) if provider else CardboardProvider.objects.get(shortcut='AQ')
 
-        all_deliveries = Delivery.objects.filter(provider=provider_object)
+        all_deliveries = []
+
+        palettes = Palette.objects.all().order_by('type', 'width')
+
+        palettes_list = []
+        for p in palettes:
+            palettes_list.append(p)
+
+        for delivery in Delivery.objects.filter(provider=provider_object):
+            result = [delivery.date_of_delivery] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
+            for p in PaletteQuantity.objects.filter(delivery=delivery):
+                if p.status == 'DEL':
+                    result[palettes_list.index(p.palette) + 1] = p.quantity
+                else:
+                    result[palettes_list.index(p.palette) + 1 + len(palettes)] = p.quantity
+            all_deliveries.append(result)
 
         return render(request, 'warehousemanager-palettes-quantities.html', locals())

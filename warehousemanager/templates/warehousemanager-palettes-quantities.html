@@ -10,15 +10,33 @@
     <p class="margin-10-auto">
         <span>current quantity</span>
     </p>
-    <table>
+    <table class="center">
         <tr>
-            <th>Date</th>
-            <th>Delivered</th>
-            <th>Returned</th>
+            <th rowspan="2">Date</th>
+            <th colspan="{{ palettes|length }}">Delivered</th>
+            <th colspan="{{ palettes|length }}">Returned</th>
+        </tr>
+        <tr>
+            {% for p in palettes %}
+            <td>{{ p }}</td>
+            {% endfor %}
+            {% for p in palettes %}
+            <td>{{ p }}</td>
+            {% endfor %}
         </tr>
         {% for d in all_deliveries %}
         <tr>
-            <td>{{ d.date_of_delivery }}</td>
+            {% for dd in d %}
+            {% if forloop.first %}
+            <td>{{ dd }}</td>
+            {% else %}
+                {% if dd != '-' %}
+                    <td class="bg-yellow">{{ dd }}</td>
+                {% else %}
+                    <td>{{ dd }}</td>
+                {% endif %}
+            {% endif %}
+            {% endfor %}
         </tr>
         {% endfor %}
     </table>

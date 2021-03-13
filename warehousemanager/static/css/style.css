@@ -1072,6 +1072,10 @@ select{
     background: grey;
 }
 
+.bg-yellow {
+    background: yellow;
+}
+
 .red {
     color: red;
 }
