@@ -1128,3 +1128,7 @@ background-size: 28.28px 28.28px;
 .dropdown-title-hide:hover {
     cursor: n-resize;
 }
+
+.hover-border:hover {
+    border: solid 2px;
+}
