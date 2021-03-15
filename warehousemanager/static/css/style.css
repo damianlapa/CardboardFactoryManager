@@ -1064,6 +1064,10 @@ select{
     border: solid 2px;
 }
 
+.border-dotted-2 {
+    border: dotted 2px;
+}
+
 .border-grey {
     border: grey;
 }
@@ -1086,6 +1090,10 @@ select{
 
 .red {
     color: red;
+}
+
+.size12 {
+    font-size: 1.2em;
 }
 
 .size15 {
@@ -1111,6 +1119,10 @@ background-size: 28.28px 28.28px;
 
 .black {
     color: black;
+}
+
+.aqua {
+    color: aqua;
 }
 
 .bold {

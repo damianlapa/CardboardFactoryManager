@@ -2021,7 +2021,7 @@ class PersonDetailView(View, PermissionRequiredMixin):
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
         visit_counter(request.user, f'Person details - {person.get_initials()}')
-        contracts = Contract.objects.filter(worker=person)
+        contracts = Contract.objects.filter(worker=person).order_by('date_start')
         return render(request, 'warehousemanager-person-details.html', locals())
 
 
