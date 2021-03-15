@@ -2,11 +2,35 @@
 
 {% block content %}
 <p>
-<h1>{{ person }}</h1>
+<h1 class="aqua">{{ person }}</h1>
 </p>
 
-<div>
-    <h3>EMPLOYMENT HISTORY</h3>
+<div class="container-90 border-dotted-2">
+    <p>
+        <span class="white">First Name: </span><span class="size12 red">{{ person.first_name }}</span>
+    </p>
+    <p>
+        <span class="white">Last Name: </span><span class="size12 red">{{ person.last_name }}</span>
+    </p>
+    <p>
+        <span class="white">Telephone: </span><span class="size12 red">{{ person.telephone }}</span>
+    </p>
+    <p>
+        <span class="white">Email Address: </span><span class="size12 red">{{ person.email_address}}</span>
+    </p>
+    <p>
+        <span class="white">Job Start: </span><span class="size12 red">{{ person.job_start }}</span>
+    </p>
+    <p>
+        <span class="white">Job End: </span><span class="size12 red">{{ person.job_end }}</span>
+    </p>
+    <p>
+        <span class="white">Medical Examination: </span><span class="size12 red">{{ person.medical_examination }}</span>
+    </p>
+</div>
+
+<div class="container-90 border-dotted-2">
+    <h3 class="aqua">EMPLOYMENT HISTORY</h3>
     {% if contracts|length > 0 %}
     <table class="center">
         <tr>
@@ -40,9 +64,12 @@
     </tr>
     {% endfor %}
     </table>
-    <a href="{% url 'contract-create' %}">Add more</a>
+    <a href="{% url 'contract-create' %}"><span class="no-decor white">Add more</span></a>
     {% else %}
-    There is no contracts to display. <a href="{% url 'contract-create' %}">Add</a> some information.
+    There is no contracts to display. <a href="{% url 'contract-create' %}"><span class="no-decor white">Add</span></a> some information.
     {% endif %}
+</div>
+<div class="container-90 border-dotted-2">
+    <a href="{% url 'person-absences' person_id=person.id %}"><button class="btn-style">PERSON ABSENCES</button></a>
 </div>
 {% endblock %}
