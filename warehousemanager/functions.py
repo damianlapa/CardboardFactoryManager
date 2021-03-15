@@ -243,7 +243,7 @@ def compose_mail(reminder):
 
     else:
         title = f"{reminder.worker}'s {reason_text} ends within next {days} days!"
-        html = f"{reminder.worker}'s {reason_text} ends within next {days} days({event_day}! Consider prepare new one!"
+        html = f"{reminder.worker}'s {reason_text} ends within next {days} days({event_day})! Consider prepare new one!"
 
     return title, html
 
@@ -286,6 +286,10 @@ def create_or_send_reminder(worker, days_left, topic):
 
 
 def reminders_qs():
+    today_workers = Person.objects.filter(job_end=None)
+    for t in today_workers:
+        create_or_send_reminder(t, check_contract_expiration_date(t), 'contract')
+        create_or_send_reminder(t, check_medical_examination_expiration_date(t), 'medical examination')
     reminders = Reminder.objects.filter(sent_date=None)
     if len(reminders) > 0:
         return True

@@ -4,7 +4,7 @@
 
 {% if new_reminders %}
 <a href="{% url 'reminders' %}" class="no-decor-a">
-    <div class="container-75 red size20 no-decor">
+    <div class="container-75 red size20 no-decor hover-border">
         You have new reminders!
     </div>
 </a>
@@ -34,4 +34,11 @@
 </p>
 {% endfor %}
 </div>
+{% if not new_reminders %}
+<a href="{% url 'reminders' %}" class="no-decor-a">
+    <div class="container-75 red size20 no-decor hover-border">
+        All reminders
+    </div>
+</a>
+{% endif %}
 {% endblock %}

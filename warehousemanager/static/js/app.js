@@ -1277,6 +1277,24 @@ document.addEventListener("DOMContentLoaded", function () {
         setInterval(zmienKolorTekstu, 1000)
     }
 
+    // palette deliveries
+    const paletteDeliveriesTitle = document.getElementById('palette-deliveries-title')
+    const paletteDeliveries = document.getElementById('palette-deliveries')
+
+    if (paletteDeliveriesTitle !== null) {
+        paletteDeliveriesTitle.addEventListener('click', function () {
+            if (paletteDeliveries.style.display === 'none'){
+                paletteDeliveries.style.display = 'table'
+                paletteDeliveriesTitle.classList.add('dropdown-title-hide')
+                paletteDeliveriesTitle.classList.remove('dropdown-title')
+            }else{
+                paletteDeliveries.style.display = 'none'
+                paletteDeliveriesTitle.classList.remove('dropdown-title-hide')
+                paletteDeliveriesTitle.classList.add('dropdown-title')
+            }
+        })
+    }
+
 })
 
 function drag(ev) {

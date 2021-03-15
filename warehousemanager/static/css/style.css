@@ -1055,6 +1055,11 @@ select{
     margin: 10px auto;
 }
 
+.container-90 {
+    width: 90%;
+    margin: 10px auto;
+}
+
 .border-solid-2 {
     border: solid 2px;
 }
@@ -1065,6 +1070,18 @@ select{
 
 .bg-lightgrey {
     background: grey;
+}
+
+.bg-yellow {
+    background: yellow;
+}
+
+.bg-white {
+    background: white;
+}
+
+.bg-orange {
+    background: orange;
 }
 
 .red {
@@ -1098,4 +1115,20 @@ background-size: 28.28px 28.28px;
 
 .bold {
     font-weight: bold;
+}
+
+.margin-10-auto {
+    margin: 10px auto;
+}
+
+.dropdown-title:hover {
+    cursor: s-resize;
+}
+
+.dropdown-title-hide:hover {
+    cursor: n-resize;
+}
+
+.hover-border:hover {
+    border: solid 2px;
 }
