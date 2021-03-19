@@ -79,7 +79,7 @@ class OrderItemQuantityForm(forms.ModelForm):
         uncompleted_items = []
         if provider:
             all_items = OrderItem.objects.filter(order__provider=provider)
-            uncompleted_items = all_items.filter(is_completed=False).order_by('planned_delivery')
+            uncompleted_items = all_items.filter(is_completed=False).order_by('order__order_item_number', 'item_number')
 
         self.fields['order_item'].queryset = uncompleted_items
 

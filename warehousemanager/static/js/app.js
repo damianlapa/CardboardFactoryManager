@@ -1296,8 +1296,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const allOrdersRow = document.getElementsByClassName('zamowienie-row')
     // console.log(allOrdersRow)
 
-    // read input data
-    for (let i=0; i < filterTable.children.length; i++){
+    if (filterTable !== null) {
+         for (let i=0; i < filterTable.children.length; i++){
         filterTable.children[i].addEventListener('keyup', function () {
             // console.log(this.children[0].value)
             // wszystkie widoczne
@@ -1306,7 +1306,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             for (let x=0; x < 12; x++) {
-                console.log(filterTable.children[x])
                 for (let y=0; y < allOrdersRow.length; y++) {
                     let condition = allOrdersRow[y].children[x].innerText.includes(filterTable.children[x].children[0].value)
 
@@ -1322,8 +1321,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         })
     }
-    // display results
-    // console.log(filterTable)
+    }
 
 })
 
