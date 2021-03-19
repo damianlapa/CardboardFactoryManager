@@ -896,17 +896,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 12 ));
-                    console.log(condition1, condition2)
-                    console.log(dim1, dim2, dim3)
-                    console.log(dim1 + dim2)
                     scoresCorrectness = ScoresCorrectness(scores)
                     return (condition1 || condition2) && scoresCorrectness;
                     case 'C':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 13 ));
-                    console.log(condition1, condition2)
-                    console.log(dim1, dim2, dim3)
-                    console.log(dim1 + dim2)
                     return condition1 || condition2;
                     case 'BC':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
@@ -1294,6 +1288,42 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         })
     }
+
+    // order filters
+
+    // table
+    const filterTable = document.getElementById('order-filter-table')
+    const allOrdersRow = document.getElementsByClassName('zamowienie-row')
+    // console.log(allOrdersRow)
+
+    // read input data
+    for (let i=0; i < filterTable.children.length; i++){
+        filterTable.children[i].addEventListener('keyup', function () {
+            // console.log(this.children[0].value)
+            // wszystkie widoczne
+            for (let i=0; i<allOrdersRow.length; i++) {
+                allOrdersRow[i].style.display = 'table-row'
+            }
+
+            for (let x=0; x < 12; x++) {
+                console.log(filterTable.children[x])
+                for (let y=0; y < allOrdersRow.length; y++) {
+                    let condition = allOrdersRow[y].children[x].innerText.includes(filterTable.children[x].children[0].value)
+
+                    if (condition === true) {
+                        if (allOrdersRow[y].style.display === 'table-row') {
+                        allOrdersRow[y].style.display ='table-row'
+                        }
+                    }else {
+                    allOrdersRow[y].style.display ='none'
+                    }
+                }
+            }
+
+        })
+    }
+    // display results
+    // console.log(filterTable)
 
 })
 
