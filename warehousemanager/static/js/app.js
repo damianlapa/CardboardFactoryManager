@@ -1294,9 +1294,22 @@ document.addEventListener("DOMContentLoaded", function () {
     // table
     const filterTable = document.getElementById('order-filter-table')
     const allOrdersRow = document.getElementsByClassName('zamowienie-row')
+    const clearFieldsButton = document.getElementById('clear-all-filters')
+    const inputFilters = document.getElementsByClassName('input-filter')
     // console.log(allOrdersRow)
 
     if (filterTable !== null) {
+
+        clearFieldsButton.addEventListener('click', function () {
+            for (let i=0; i < inputFilters.length; i++) {
+                inputFilters[i].children[0].value = ''
+            }
+            for (let i=0; i<allOrdersRow.length; i++) {
+                allOrdersRow[i].style.display = 'table-row'
+            }
+        })
+
+
          for (let i=0; i < filterTable.children.length; i++){
         filterTable.children[i].addEventListener('keyup', function () {
             // console.log(this.children[0].value)
@@ -1305,9 +1318,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 allOrdersRow[i].style.display = 'table-row'
             }
 
-            for (let x=0; x < 12; x++) {
+            for (let x=0; x < 13; x++) {
                 for (let y=0; y < allOrdersRow.length; y++) {
-                    let condition = allOrdersRow[y].children[x].innerText.includes(filterTable.children[x].children[0].value)
+                    let condition = allOrdersRow[y].children[x].innerText.toLowerCase().includes(filterTable.children[x].children[0].value.toLowerCase())
 
                     if (condition === true) {
                         if (allOrdersRow[y].style.display === 'table-row') {
