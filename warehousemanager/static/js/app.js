@@ -1296,27 +1296,37 @@ document.addEventListener("DOMContentLoaded", function () {
     const allOrdersRow = document.getElementsByClassName('zamowienie-row')
     const clearFieldsButton = document.getElementById('clear-all-filters')
     const inputFilters = document.getElementsByClassName('input-filter')
+    const deliveryStatusFilter = document.getElementById('delivery-status')
     // console.log(allOrdersRow)
 
-    if (filterTable !== null) {
+    function deliveryStatusFilterFunction () {
+    for (let i=0; i < deliveryStatusFilter.getElementsByClassName('delivery-option').length; i++) {
+             if (deliveryStatusFilter.getElementsByClassName('delivery-option')[i].checked) {
+                for (let j=0; j < allOrdersRow.length; j++) {
+                    console.log(allOrdersRow[j].style.display)
+                    if (allOrdersRow[j].style.display == 'table-row' || allOrdersRow[j].style.display == '') {
+                        if (i == 0) {
 
-        clearFieldsButton.addEventListener('click', function () {
-            for (let i=0; i < inputFilters.length; i++) {
-                inputFilters[i].children[0].value = ''
-            }
-            for (let i=0; i<allOrdersRow.length; i++) {
-                allOrdersRow[i].style.display = 'table-row'
-            }
-        })
+                        }
+                        else if (i == 1) {
+                            if (allOrdersRow[j].children[13].children[0].style.color === 'green') {
+                                allOrdersRow[j].style.display = 'none'
+                            }
+                        }
+                        else if ( i == 2) {
+                            if (allOrdersRow[j].children[13].children[0].style.color === 'red') {
+                                allOrdersRow[j].style.display = 'none'
+                            }
+                        }
 
+                    }
 
-         for (let i=0; i < filterTable.children.length; i++){
-        filterTable.children[i].addEventListener('keyup', function () {
-            // console.log(this.children[0].value)
-            // wszystkie widoczne
-            for (let i=0; i<allOrdersRow.length; i++) {
-                allOrdersRow[i].style.display = 'table-row'
-            }
+                }
+             }
+        }
+    }
+
+    function fieldsFilterFunction () {
 
             for (let x=0; x < 13; x++) {
                 for (let y=0; y < allOrdersRow.length; y++) {
@@ -1331,6 +1341,45 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             }
+    }
+
+    function filterAllOrders (filterOrder) {
+        for (let i=0; i < allOrdersRow.length; i++) {
+            allOrdersRow[i].style.display = 'table-row'
+        }
+        if (filterOrder === 'deliveryStatus') {
+        fieldsFilterFunction()
+        deliveryStatusFilterFunction()
+
+        }else {
+
+        deliveryStatusFilterFunction()
+        fieldsFilterFunction()
+        }
+    }
+
+    if (filterTable !== null) {
+
+        deliveryStatusFilter.addEventListener('click', function () {
+            filterAllOrders('deliveryStatus')
+        })
+
+        clearFieldsButton.addEventListener('click', function () {
+            for (let i=0; i < inputFilters.length; i++) {
+                inputFilters[i].children[0].value = ''
+            }
+            for (let i=0; i<allOrdersRow.length; i++) {
+                allOrdersRow[i].style.display = 'table-row'
+            }
+
+            for (let i=0; i < deliveryStatusFilter.getElementsByClassName('delivery-option').length; i++) {
+             deliveryStatusFilter.getElementsByClassName('delivery-option')[i].checked = false }
+        })
+
+
+         for (let i=0; i < filterTable.children.length; i++){
+        filterTable.children[i].addEventListener('keyup', function () {
+            filterAllOrders()
 
         })
     }
