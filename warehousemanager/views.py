@@ -366,7 +366,9 @@ class NewAllOrders(PermissionRequiredMixin, View):
             for o in orders_:
                 if o.order not in orders:
                     orders.append(o.order)
-        paginator = Paginator(orders, 10)
+        orders_num = len(orders) if request.GET.get('all-orders') else 10
+
+        paginator = Paginator(orders, orders_num)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         providers = CardboardProvider.objects.all()

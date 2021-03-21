@@ -11,6 +11,7 @@
     <h1 class="white">Actions</h1>
     <a href="{% url 'new-order' %}"><button class="add-button-1">Add Order</button></a>
     <a href="{% url 'import-order-items' %}"><button class="add-button-1">Import Orders</button></a>
+    <a href="{% url 'new-all-orders' %}?all-orders=+"><button class="add-button-1">All Orders</button></a>
 </div>
 
 <div class="order-filters">
@@ -119,9 +120,8 @@
         </tr>
 
     </table>
-</form>
-
 </div>
+</form>
 
 <div class="table-zamowienie-container">
     <table class="zamowienie">
