@@ -760,7 +760,7 @@ input[type=button], input[type=submit], input[type=reset] {
 	font-weight:bold;
 	padding:11px 23px;
 	text-decoration:none;
-	margin: 30px;
+	margin: 5px;
 }
 .add-button-1:hover {
 	background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
@@ -1143,4 +1143,9 @@ background-size: 28.28px 28.28px;
 
 .hover-border:hover {
     border: solid 2px;
+}
+
+.order-filter-table input {
+    color: red;
+    width: 100%;
 }

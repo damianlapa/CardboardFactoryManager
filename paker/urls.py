@@ -1,18 +1,3 @@
-"""paker1 URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path
 from warehousemanager.views import *
@@ -69,10 +54,14 @@ urlpatterns = [
     path('order-item-details/<int:order_item_id>/', OrderItemDetails.as_view(), name='order-item-details'),
     path('order-item-print/<int:order_item_id>/', OrderItemPrint.as_view(), name='order-item-print'),
     path('gst/', GoogleSheetTest.as_view(), name='gstest'),
-    path('import-order-items/', ImportOrderItems.as_view(), name='import-order-items'),
     path('prepare-many-gs/', PrepareManySpreadsheetsForm.as_view(), name='prepare-many-gs'),
     path('prepared-gs/', PrepareManySpreadsheets.as_view(), name='prepared-gs'),
     path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
+]
+
+# orders
+urlpatterns += [
+    path('import-order-items/', ImportOrderItems.as_view(), name='import-order-items'),
 ]
 
 # absences

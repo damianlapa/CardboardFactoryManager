@@ -896,17 +896,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 12 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 42) && (fDim2 === dim2 + dim3 + 12 ));
-                    console.log(condition1, condition2)
-                    console.log(dim1, dim2, dim3)
-                    console.log(dim1 + dim2)
                     scoresCorrectness = ScoresCorrectness(scores)
                     return (condition1 || condition2) && scoresCorrectness;
                     case 'C':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 49) && (fDim2 === dim2 + dim3 + 13 ));
                     condition2 = ((fDim1 === dim1 + dim2 + 47) && (fDim2 === dim2 + dim3 + 13 ));
-                    console.log(condition1, condition2)
-                    console.log(dim1, dim2, dim3)
-                    console.log(dim1 + dim2)
                     return condition1 || condition2;
                     case 'BC':
                     condition1 = ((fDim1 === 2*(dim1 + dim2) + 60) && (fDim2 === dim2 + dim3 + 22 ));
@@ -1293,6 +1287,102 @@ document.addEventListener("DOMContentLoaded", function () {
                 paletteDeliveriesTitle.classList.add('dropdown-title')
             }
         })
+    }
+
+    // order filters
+
+    // table
+    const filterTable = document.getElementById('order-filter-table')
+    const allOrdersRow = document.getElementsByClassName('zamowienie-row')
+    const clearFieldsButton = document.getElementById('clear-all-filters')
+    const inputFilters = document.getElementsByClassName('input-filter')
+    const deliveryStatusFilter = document.getElementById('delivery-status')
+    // console.log(allOrdersRow)
+
+    function deliveryStatusFilterFunction () {
+    for (let i=0; i < deliveryStatusFilter.getElementsByClassName('delivery-option').length; i++) {
+             if (deliveryStatusFilter.getElementsByClassName('delivery-option')[i].checked) {
+                for (let j=0; j < allOrdersRow.length; j++) {
+                    console.log(allOrdersRow[j].style.display)
+                    if (allOrdersRow[j].style.display == 'table-row' || allOrdersRow[j].style.display == '') {
+                        if (i == 0) {
+
+                        }
+                        else if (i == 1) {
+                            if (allOrdersRow[j].children[13].children[0].style.color === 'green') {
+                                allOrdersRow[j].style.display = 'none'
+                            }
+                        }
+                        else if ( i == 2) {
+                            if (allOrdersRow[j].children[13].children[0].style.color === 'red') {
+                                allOrdersRow[j].style.display = 'none'
+                            }
+                        }
+
+                    }
+
+                }
+             }
+        }
+    }
+
+    function fieldsFilterFunction () {
+
+            for (let x=0; x < 13; x++) {
+                for (let y=0; y < allOrdersRow.length; y++) {
+                    let condition = allOrdersRow[y].children[x].innerText.toLowerCase().includes(filterTable.children[x].children[0].value.toLowerCase())
+
+                    if (condition === true) {
+                        if (allOrdersRow[y].style.display === 'table-row') {
+                        allOrdersRow[y].style.display ='table-row'
+                        }
+                    }else {
+                    allOrdersRow[y].style.display ='none'
+                    }
+                }
+            }
+    }
+
+    function filterAllOrders (filterOrder) {
+        for (let i=0; i < allOrdersRow.length; i++) {
+            allOrdersRow[i].style.display = 'table-row'
+        }
+        if (filterOrder === 'deliveryStatus') {
+        fieldsFilterFunction()
+        deliveryStatusFilterFunction()
+
+        }else {
+
+        deliveryStatusFilterFunction()
+        fieldsFilterFunction()
+        }
+    }
+
+    if (filterTable !== null) {
+
+        deliveryStatusFilter.addEventListener('click', function () {
+            filterAllOrders('deliveryStatus')
+        })
+
+        clearFieldsButton.addEventListener('click', function () {
+            for (let i=0; i < inputFilters.length; i++) {
+                inputFilters[i].children[0].value = ''
+            }
+            for (let i=0; i<allOrdersRow.length; i++) {
+                allOrdersRow[i].style.display = 'table-row'
+            }
+
+            for (let i=0; i < deliveryStatusFilter.getElementsByClassName('delivery-option').length; i++) {
+             deliveryStatusFilter.getElementsByClassName('delivery-option')[i].checked = false }
+        })
+
+
+         for (let i=0; i < filterTable.children.length; i++){
+        filterTable.children[i].addEventListener('keyup', function () {
+            filterAllOrders()
+
+        })
+    }
     }
 
 })

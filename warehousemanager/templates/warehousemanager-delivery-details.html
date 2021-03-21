@@ -10,12 +10,20 @@
                     <th>#</th>
                     <th>Format</th>
                     <th>Quantity</th>
+                    <th>All</th>
                 </tr>
                 {% for q in quantities %}
                 <tr>
                     <td>{{ q.order_item.order.order_provider_number }}/{{ q.order_item.item_number }}</td>
                     <td>{{ q.order_item.format_width }} x {{ q.order_item.format_height }}</td>
                     <td>{{ q.quantity }}</td>
+                    <td>
+                        {% if q.order_item.is_completed %}
+                        +
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </table>

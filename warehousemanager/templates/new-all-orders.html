@@ -7,6 +7,13 @@
 
 
 {% block content %}
+<div class="container-90">
+    <h1 class="white">Actions</h1>
+    <a href="{% url 'new-order' %}"><button class="add-button-1">Add Order</button></a>
+    <a href="{% url 'import-order-items' %}"><button class="add-button-1">Import Orders</button></a>
+    <a href="{% url 'new-all-orders' %}?all-orders=+"><button class="add-button-1">All Orders</button></a>
+</div>
+
 <div class="order-filters">
     <h2 id="order-filters">Filtry</h2>
     <div>
@@ -43,10 +50,6 @@
     </div>
 </div>
 
-<div>
-    <a href="{% url 'new-order' %}"><button class="add-button-1">Dodaj Zamówienie</button></a>
-</div>
-
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
@@ -66,6 +69,59 @@
         {% endif %}
     </span>
 </div>
+
+<form>
+
+<div class="table-zamowienie-container">
+    <table class="zamowienie order-filter-table">
+
+        <tr class="order-table-description">
+            <th>Nr zamówienia</th>
+            <th>Data</th>
+            <th>Nr pozycji</th>
+            <th>Typ</th>
+            <th>Szerokość</th>
+            <th>Długość</th>
+            <th>Ilość zamówiona</th>
+            <th>Ilość dostarczona</th>
+            <th>Klient</th>
+            <th>Rodzaj tektury</th>
+            <th>Wymiar pudełka</th>
+            <th>Bigi</th>
+            <th>Nazwa</th>
+            <th>Całość</th>
+            <th>Wyczyść</th>
+
+        </tr>
+        <tr id="order-filter-table">
+            <td class="input-filter"><input type="number"></td>
+            <td class="input-filter"><input></td>
+            <td class="input-filter"><input type="number"></td>
+            <td class="input-filter"><input></td>
+            <td class="input-filter"><input type="number"></td>
+            <td class="input-filter"><input type="number"></td>
+            <td class="input-filter"><input type="number"></td>
+            <td class="input-filter"><input type="number"></td>
+            <td class="input-filter"><input></td>
+            <td class="input-filter"><input></td>
+            <td class="input-filter"><input></td>
+            <td class="input-filter"><input></td>
+            <td class="input-filter"><input></td>
+            <td id="delivery-status">
+                <label for="delivery-option-1" class="white">All:</label>
+                <input type="radio" id="delivery-option-1" name="delivery-option" class="delivery-option">
+                <label for="delivery-option-2" class="white">Not delivered:</label>
+                <input type="radio" id="delivery-option-2" name="delivery-option" class="delivery-option">
+                <label for="delivery-option-3" class="white">Delivered:</label>
+                <input type="radio" id="delivery-option-3" name="delivery-option" class="delivery-option">
+
+            </td>
+            <td id="clear-all-filters"><span class="red">Clear</span></td>
+        </tr>
+
+    </table>
+</div>
+</form>
 
 <div class="table-zamowienie-container">
     <table class="zamowienie">
