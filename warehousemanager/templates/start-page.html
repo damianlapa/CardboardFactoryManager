@@ -24,7 +24,7 @@
         <div class="hello-user">
         <h2>Hello {{ request.user }}</h2>
         <h4><a href="{% url 'logout' %}">Logout</a></h4>
-            <a href="{% url 'manage' %}"><button class="btn-style">Manage</button></a>
+            <a href="{% url 'main-page' %}"><button class="btn-style">Main Page</button></a>
         </div>
         {% else %}
 

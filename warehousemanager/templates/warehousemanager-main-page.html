@@ -1,0 +1,43 @@
+{% extends '__base2__.html' %}
+
+{% block title %}
+    Main Page | {{ user }}
+{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+
+{% block content %}
+
+<div class="white">
+    <p>
+        There is {{ workers|length }} workers in the database!
+    </p>
+    <p>
+        There is {{ orders|length }} orders in the database!
+    </p>
+    <p>
+        There is {{ items|length }} items items in the database!
+    </p>
+    <p>
+        There is {{ punches|length }} punches in the database!
+    </p>
+    <p>
+        There is {{ polymers|length }} photopolymers in the database!
+    </p>
+    <p>
+        There is {{ absences|length }} absences in the database!
+    </p>
+    <p>
+        There is {{ colors|length }} colors in the database!
+    </p>
+    <p>
+        There is {{ providers|length }} providers in the database!
+    </p>
+    <p>
+        There is {{ deliveries|length }} deliveries in the database!
+    </p>
+
+</div>
+
+{% endblock %}

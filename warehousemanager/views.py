@@ -401,13 +401,23 @@ class LogoutView(View):
         return redirect('start-page')
 
 
-class ManageView(LoginRequiredMixin, View):
+class MainPageView(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        # title = 'MANAGEMENT'
-        # return render(request, 'warehousemanager-manage.html', locals())
-        return redirect('punches')
+        title = 'MAIN PAGE'
+        orders = Order.objects.all()
+        items = OrderItem.objects.all()
+        workers = Person.objects.all()
+        absences = Absence.objects.all()
+        punches = Punch.objects.all()
+        polymers = Photopolymer.objects.all()
+        colors = Color.objects.all()
+        deliveries = Delivery.objects.all()
+        providers = CardboardProvider.objects.all()
+
+        return render(request, 'warehousemanager-main-page.html', locals())
+        # return redirect('punches')
 
 
 # wszyscy dostawcy
