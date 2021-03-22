@@ -3,45 +3,15 @@ from django.urls import path
 from warehousemanager.views import *
 from django.conf.urls.static import static
 
+
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
-    # path('', index, name='index'),
-    path('orders/', Orders.as_view(), name='orders'),
-    path('order/<int:order_id>', OrdersDetails.as_view(), name='order-details'),
-    path('orders-details/', AllOrdersDetails.as_view(), name='all-orders-details'),
-    path('new-order/', NewOrder.as_view(), name='new-order'),
-    path('uncompleted-orders', UncompletedOrders.as_view(), name='uncompleted-orders'),
-    path('non/', NextOrderNumber.as_view(), name='next-order-number'),
-    path('create-new-order/', NewOrderAdd.as_view(), name='new-order-create'),
-    path('new-provider/', ProviderForm.as_view(), name='new-provider'),
-    path('add-items/<int:order_id>', NewItemAdd.as_view(), name='new-item'),
-    path('nin/', NextItemNumber.as_view(), name='next-tem-number'),
-    path('del-item/<int:order_id>/<int:item_id>', OrderItemDelete.as_view(), name='delete-item'),
-    path('complete-order/', CompleteOrder.as_view(), name='complete-order'),
-    path('delete-order/', DeleteOrder.as_view(), name='delete-order'),
-    path('gid/', GetItemDetails.as_view(), name='get-item-details'),
     path('print-test/', PrintTest.as_view(), name='print-test'),
     path('open-order/<int:order_item_id>/', OpenFile.as_view(), name='open-order'),
-    path('new-all-orders/', NewAllOrders.as_view(), name='new-all-orders'),
-    path('', StartPage.as_view(), name='start-page'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('main-page/', MainPageView.as_view(), name='main-page'),
-    path('all-providers/', AllProvidersView.as_view(), name='all-providers'),
-    path('format-converter', FormatConverter.as_view(), name='format-converter'),
-    path('deliveries-management', DeliveriesManagement.as_view(), name='deliveries-management'),
-    path('delivery/<int:delivery_id>', DeliveryDetails.as_view(), name='delivery-details'),
-    path('delivery-add/', DeliveryAdd.as_view(), name='delivery-add'),
+    path('format-converter/', FormatConverter.as_view(), name='format-converter'),
     path('add-note/', NoteAdd.as_view(), name='add-note'),
     path('notes/', AllNotes.as_view(), name='notes'),
-    path('absences-list/', AbsencesList.as_view(), name='absence-list'),
-    path('absences/', AbsencesAndHolidays.as_view(), name='absences'),
-    path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
-    path('add-absence/', AbsenceAdd.as_view(), name='add-absence'),
-    path('punches/', PunchesList.as_view(), name='punches'),
-    path('punch-add/', PunchAdd.as_view(), name='punch-add'),
-    path('punch/<str:punch_id>', PunchDetails.as_view(), name='punch-details'),
-    path('punch-edit/<int:punch_id>', PunchEdit.as_view(), name='punch-edit'),
-    path('punch-delete/<int:punch_id>', PunchDelete.as_view(), name='punch-delete'),
+
     path('buyer-add/', AddBuyer.as_view(), name='buyer-add'),
     path('buyers/', BuyersList.as_view(), name='buyers'),
     path('punch-production/', PunchProductions.as_view(), name='punch-production'),
@@ -49,7 +19,6 @@ urlpatterns = [
     path('cardboard-availability/<int:cardboard_id>', CardboardUsed.as_view(), name='cardboard-used'),
     path('stock-management/', StockManagement.as_view(), name='stock-management'),
     path('announcement/', Announcement.as_view(), name='announcement'),
-    path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
     path('production-status/', ProductionView.as_view(), name='production-status'),
     path('order-item-details/<int:order_item_id>/', OrderItemDetails.as_view(), name='order-item-details'),
     path('order-item-print/<int:order_item_id>/', OrderItemPrint.as_view(), name='order-item-print'),
@@ -59,15 +28,68 @@ urlpatterns = [
     path('scheduled-delivery/', ScheduledDelivery.as_view(), name='scheduled-delivery'),
 ]
 
+# absences
+urlpatterns += [
+    path('absences-list/', AbsencesList.as_view(), name='absence-list'),
+    path('absences/', AbsencesAndHolidays.as_view(), name='absences'),
+    path('add-absence/', AbsenceAdd.as_view(), name='add-absence'),
+    path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
+    path('absence-delete/', AbsenceDelete.as_view(), name='absence-delete'),
+]
+
+# ajax views
+urlpatterns += [
+    path('non/', NextOrderNumber.as_view(), name='next-order-number'),
+    path('nin/', NextItemNumber.as_view(), name='next-item-number'),
+    path('gid/', GetItemDetails.as_view(), name='get-item-details'),
+    path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
+    path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
+]
+
+# colors
+urlpatterns += [
+    path('colors/', ColorListView.as_view(), name='colors'),
+    path('color/<int:color_id>/', ColorDetail.as_view(), name='color')
+]
+
+# contracts
+urlpatterns += [
+    path('contact-create/', ContractCreate.as_view(), name='contract-create')
+]
+
+# deliveries
+urlpatterns += [
+    path('deliveries-management/', DeliveriesManagement.as_view(), name='deliveries-management'),
+    path('delivery/<int:delivery_id>', DeliveryDetails.as_view(), name='delivery-details'),
+    path('delivery-add/', DeliveryAdd.as_view(), name='delivery-add'),
+]
+
+# navigation
+urlpatterns += [
+    path('', StartPage.as_view(), name='start-page'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('main-page/', MainPageView.as_view(), name='main-page'),
+]
+
 # orders
 urlpatterns += [
     path('import-order-items/', ImportOrderItems.as_view(), name='import-order-items'),
+    path('new-all-orders/', NewAllOrders.as_view(), name='new-all-orders'),
+    path('new-order/', NewOrder.as_view(), name='new-order'),
+    path('add-items/<int:order_id>', NewItemAdd.as_view(), name='new-item'),
+    path('del-item/<int:order_id>/<int:item_id>', OrderItemDelete.as_view(), name='delete-item'),
+    path('complete-order/', CompleteOrder.as_view(), name='complete-order'),
+    path('delete-order/', DeleteOrder.as_view(), name='delete-order'),
 ]
 
-# absences
+# palettes
 urlpatterns += [
-    path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
-    path('absence-delete/', AbsenceDelete.as_view(), name='absence-delete')
+    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities')
+]
+# persons
+urlpatterns += [
+    path('persons/', PersonListView.as_view(), name='persons'),
+    path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
 ]
 
 # polymers
@@ -79,42 +101,25 @@ urlpatterns += [
     path('polymer-delete/<int:pk>/', PolymerDelete.as_view(), name='polymer-delete'),
 ]
 
-# services
-urlpatterns += [
-    path('services/', ServiceListView.as_view(), name='services'),
-    path('service/<int:pk>/', ServiceDetailView.as_view(), name='service-details'),
-    path('service-create/', ServiceCreate.as_view(), name='service-create'),
-    path('service-update/<int:pk>/', ServiceUpdate.as_view(), name='service-update'),
-    path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
-]
-
 # production
 urlpatterns += [
     path('production/', ProductionProcessListView.as_view(), name='production-list'),
     path('production-create/', ProductionProcessCreate.as_view(), name='production-create')
 ]
 
-# colors
+# providers
 urlpatterns += [
-    path('colors/', ColorListView.as_view(), name='colors'),
-    path('color/<int:color_id>/', ColorDetail.as_view(), name='color')
+    path('new-provider/', ProviderForm.as_view(), name='new-provider'),
+    path('all-providers/', AllProvidersView.as_view(), name='all-providers'),
 ]
 
-# vacations
+# punches
 urlpatterns += [
-    path('vacations/', AvailableVacation.as_view(), name='vacations'),
-    path('persons-vacations/<int:person_id>', PersonsVacations.as_view(), name='persons-vacations')
-]
-
-# persons
-urlpatterns += [
-    path('persons/', PersonListView.as_view(), name='persons'),
-    path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
-]
-
-# contracts
-urlpatterns += [
-    path('contact-create/', ContractCreate.as_view(), name='contract-create')
+    path('punches/', PunchesList.as_view(), name='punches'),
+    path('punch-add/', PunchAdd.as_view(), name='punch-add'),
+    path('punch/<str:punch_id>', PunchDetails.as_view(), name='punch-details'),
+    path('punch-edit/<int:punch_id>', PunchEdit.as_view(), name='punch-edit'),
+    path('punch-delete/<int:punch_id>', PunchDelete.as_view(), name='punch-delete'),
 ]
 
 # reminders
@@ -124,9 +129,19 @@ urlpatterns += [
     path('reminder-delete/<int:reminder_id>', ReminderDeleteView.as_view(), name='reminder-delete')
 ]
 
-# palettes
+# services
 urlpatterns += [
-    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities')
+    path('services/', ServiceListView.as_view(), name='services'),
+    path('service/<int:pk>/', ServiceDetailView.as_view(), name='service-details'),
+    path('service-create/', ServiceCreate.as_view(), name='service-create'),
+    path('service-update/<int:pk>/', ServiceUpdate.as_view(), name='service-update'),
+    path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
+]
+
+# vacations
+urlpatterns += [
+    path('vacations/', AvailableVacation.as_view(), name='vacations'),
+    path('persons-vacations/<int:person_id>', PersonsVacations.as_view(), name='persons-vacations')
 ]
 
 if settings.DEBUG:
