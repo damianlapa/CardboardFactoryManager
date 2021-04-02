@@ -1,0 +1,45 @@
+{% extends '__base2__.html' %}
+
+{% block title %}
+    Main Page | {{ user }}
+{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+
+{% block content %}
+
+<div class="white">
+    <p class="size15">
+        There is <a href="{% url 'persons' %}" class="no-decor">
+        <span class="red size20">{{ workers|length }}</span>
+        </a> workers in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'new-all-orders' %}" class="no-decor"><span class="red size20">{{ orders|length }}</span></a> orders in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'new-all-orders' %}" class="no-decor"><span class="red size20">{{ items|length }}</span></a> items items in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'punches' %}" class="no-decor"><span class="red size20">{{ punches|length }}</span></a> punches in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'photopolymers' %}" class="no-decor"><span class="red size20">{{ polymers|length }}</span></a> photopolymers in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'absence-list' %}" class="no-decor"><span class="red size20">{{ absences|length }}</span></a> absences in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'colors' %}" class="no-decor"><span class="red size20">{{ colors|length }}</span></a> colors in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'all-providers' %}" class="no-decor"><span class="red size20">{{ providers|length }}</span></a> providers in the database!
+    </p>
+    <p class="size15">
+        There is <a href="{% url 'deliveries-management' %}" class="no-decor"><span class="red size20">{{ deliveries|length }}</span></a> deliveries in the database!
+    </p>
+
+</div>
+
+{% endblock %}

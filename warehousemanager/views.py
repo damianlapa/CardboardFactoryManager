@@ -66,38 +66,6 @@ def render_pdf_view(request):
     return response
 
 
-# view displays all orders
-class Orders(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request):
-        orders_all = Order.objects.all()
-        return render(request, 'warehousemanager-orders.html', locals())
-
-
-class OrdersDetails(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request, order_id):
-        order = Order.objects.get(id=order_id)
-        ordered_items = order.orderitem_set.all()
-        return render(request, 'warehousemanager-order-details.html', locals())
-
-
-class AllOrdersDetails(LoginRequiredMixin, PermissionRequiredMixin, View):
-    login_url = '/'
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request):
-        orders = Order.objects.filter(is_completed=True)
-        provider = request.GET.get('provider')
-        if provider:
-            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
-        providers = CardboardProvider.objects.all()
-        quantities = OrderItemQuantity.objects.all()
-        return render(request, 'warehousemanager-all-orders-details.html', locals())
-
-
 class NewOrder(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_order'
 
@@ -149,21 +117,6 @@ class DeleteOrder(PermissionRequiredMixin, View):
         Order.objects.get(id=order_id).delete()
 
         return redirect('uncompleted-orders')
-
-
-class NewOrderAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request):
-        provider_num = request.GET.get('provider_num')
-        provider = CardboardProvider.objects.get(id=int(provider_num))
-        all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number')
-        num = all_orders.reverse()[0].order_provider_number + 1
-        new_order = Order.objects.create(provider=provider, order_provider_number=num,
-                                         date_of_order=datetime.datetime.now())
-        new_order.save()
-
-        return HttpResponse('')
 
 
 class NewItemAdd(PermissionRequiredMixin, View):
@@ -228,7 +181,7 @@ class ProviderForm(PermissionRequiredMixin, View):
             name = form.cleaned_data['name']
             CardboardProvider.objects.create(name=name)
 
-            return redirect('manage')
+            return redirect('main-page')
 
 
 class NextItemNumber(View):
@@ -251,15 +204,6 @@ class CompleteOrder(View):
         order.save()
 
         return redirect('all-orders-details')
-
-
-class UncompletedOrders(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request):
-        orders = Order.objects.filter(is_completed=False)
-        providers = CardboardProvider.objects.all()
-        return render(request, 'warehousemanager-all-orders-details.html', locals())
 
 
 class GetItemDetails(PermissionRequiredMixin, View):
@@ -401,13 +345,23 @@ class LogoutView(View):
         return redirect('start-page')
 
 
-class ManageView(LoginRequiredMixin, View):
+class MainPageView(LoginRequiredMixin, View):
     login_url = '/'
 
     def get(self, request):
-        # title = 'MANAGEMENT'
-        # return render(request, 'warehousemanager-manage.html', locals())
-        return redirect('punches')
+        title = 'MAIN PAGE'
+        orders = Order.objects.all()
+        items = OrderItem.objects.all()
+        workers = Person.objects.all()
+        absences = Absence.objects.all()
+        punches = Punch.objects.all()
+        polymers = Photopolymer.objects.all()
+        colors = Color.objects.all()
+        deliveries = Delivery.objects.all()
+        providers = CardboardProvider.objects.all()
+
+        return render(request, 'warehousemanager-main-page.html', locals())
+        # return redirect('punches')
 
 
 # wszyscy dostawcy

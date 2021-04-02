@@ -10,7 +10,9 @@
 </a>
 {% endif %}
 
-<div class="container-75 bg-lightgrey border-solid-2">
+<div class="flex-container flex-space-around container-90">
+
+<div class="bg-lightgrey border-solid-2 padding-5p">
     <h1>Currently on contract: <span class="red">{{ today_workers|length }}</span></h1>
     {% for p in today_workers %}
     <p>
@@ -22,7 +24,7 @@
     </p>
     {% endfor %}
 </div>
-<div class="container-75 bg-lightgrey border-solid-2">
+<div class="bg-lightgrey border-solid-2 padding-5p">
     <h2>Former Workers: <span class="red">{{ former_workers|length }}</span></h2>
 {% for p in former_workers %}
 <p>
@@ -34,6 +36,7 @@
 </p>
 {% endfor %}
 </div>
+    </div>
 {% if not new_reminders %}
 <a href="{% url 'reminders' %}" class="no-decor-a">
     <div class="container-75 red size20 no-decor hover-border">

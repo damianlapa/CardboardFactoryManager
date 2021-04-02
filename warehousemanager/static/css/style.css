@@ -212,28 +212,6 @@ input[type=button], input[type=submit], input[type=reset] {
     text-decoration: none;
 }
 
-.management-menu {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;;
-    align-items: center;
-    background-color: grey;
-}
-
-.management-button {
-    width: 50px;
-    height: 50px;
-    border: 2px solid orange;
-    text-align: center;
-    flex-basis: 33%;
-}
-
-.management-menu button {
-    font-size: 20px;
-    color: white;
-    background-color: black
-}
-
 .orders-notebook {
     display: inline-block;
     padding: 1%;
@@ -1148,4 +1126,28 @@ background-size: 28.28px 28.28px;
 .order-filter-table input {
     color: red;
     width: 100%;
+}
+
+.flex-container {
+    display: flex;
+}
+
+.flex-space-between {
+    justify-content: space-between;
+}
+
+.flex-space-around {
+    justify-content: space-around;
+}
+
+.width-500p {
+    width: 500px;
+}
+
+.width-45% {
+    width: 45%;
+}
+
+.padding-5p {
+    padding: 5px;
 }
