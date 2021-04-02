@@ -1,8 +1,9 @@
 {% extends '__base2__.html' %}
 {% block content %}
-<div class='all-deliveries-container' >
+<div class='all-deliveries-container ' >
     <h1>Delivery Details:</h1>
     <h2>{{ delivery.provider }} / {{ delivery.date_of_delivery }}</h2>
+    <div class="flex-container">
     <div style="margin-left: auto; margin-right: auto;" >
         <div>
             <table class="all-deliveries-list" style="margin-left: auto; margin-right: auto;">
@@ -72,6 +73,7 @@
             </form>
         </div>
         {% endif %}
+    </div>
     </div>
 </div>
 {% endblock %}

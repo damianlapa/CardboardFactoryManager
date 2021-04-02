@@ -401,7 +401,7 @@ class DeliveryDetails(LoginRequiredMixin, View):
         palettes = PaletteQuantity.objects.filter(delivery=delivery)
 
         order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery}, provider=delivery.provider)
-        palette_q_form = PaletteQuantityForm()
+        palette_q_form = PaletteQuantityForm(initial={'delivery': delivery})
 
         return render(request, 'warehousemanager-delivery-details.html', locals())
 
