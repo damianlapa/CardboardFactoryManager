@@ -1127,3 +1127,27 @@ background-size: 28.28px 28.28px;
     color: red;
     width: 100%;
 }
+
+.flex-container {
+    display: flex;
+}
+
+.flex-space-between {
+    justify-content: space-between;
+}
+
+.flex-space-around {
+    justify-content: space-around;
+}
+
+.width-500p {
+    width: 500px;
+}
+
+.width-45% {
+    width: 45%;
+}
+
+.padding-5p {
+    padding: 5px;
+}
