@@ -144,5 +144,10 @@ urlpatterns += [
     path('persons-vacations/<int:person_id>', PersonsVacations.as_view(), name='persons-vacations')
 ]
 
+# profile
+urlpatterns += [
+    path('profile/', ProfileView.as_view(), name='profile')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

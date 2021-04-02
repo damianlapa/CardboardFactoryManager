@@ -2081,3 +2081,13 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
             current_quantity_table_data[2][palettes_list.index(p)] = difference
 
         return render(request, 'warehousemanager-palettes-quantities.html', locals())
+
+
+# profile-view
+class ProfileView(View, LoginRequiredMixin):
+    login_url = '/'
+
+    def get(self, request):
+        user = request.user
+
+        return render(request, 'warehousemanager-profile.html', locals())
