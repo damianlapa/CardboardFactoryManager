@@ -8,6 +8,12 @@
 
 <button id="changePasswordBtn">Change Password</button>
 
+{% if statement %}
+
+<p class="red size15">{{ statement }}</p>
+
+{% endif %}
+
 <form method="post" id="changePasswordForm" class="hidden" style="display: none">
     {% csrf_token %}
     {{ form.as_p }}

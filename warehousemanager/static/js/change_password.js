@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    console.log('connected')
     const passwordForm = document.getElementById('changePasswordForm')
     const changePasswordBtn = document.getElementById('changePasswordBtn')
 

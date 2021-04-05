@@ -2100,14 +2100,22 @@ class ProfileView(View, LoginRequiredMixin):
         if form.is_valid():
             username = user.username
 
-            user.set_password(form.cleaned_data['new_password'])
-            user.save()
+            if user.check_password(form.cleaned_data['old_password']) and form.cleaned_data['new_password'] == \
+                    form.cleaned_data['repeated_password']:
+                user.set_password(form.cleaned_data['new_password'])
+                user.save()
 
-            username = user.username
+                username = user.username
 
-            user = authenticate(username=username, password=form.cleaned_data['new_password'])
+                user = authenticate(username=username, password=form.cleaned_data['new_password'])
 
-            if user is not None:
-                login(request, user)
+                if user is not None:
+                    login(request, user)
 
-            return redirect('profile')
+                statement = 'Password changed'
+
+            else:
+
+                statement = 'Password change unsuccessful'
+
+            return render(request, 'warehousemanager-profile.html', locals())
