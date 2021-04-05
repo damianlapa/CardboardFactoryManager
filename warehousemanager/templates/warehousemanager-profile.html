@@ -2,6 +2,16 @@
 
 {% block content %}
 
-{{ user }}
+<div>
+    <p class="white size20 bold">Welcome {{ user }}!</p>
+</div>
+
+<button id="changePasswordBtn">Change Password</button>
+
+<form method="post" id="changePasswordForm" class="hidden" style="display: none">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Change Password" id="changePasswordFormBtn">
+</form>
 
 {% endblock %}

@@ -1151,3 +1151,7 @@ background-size: 28.28px 28.28px;
 .padding-5p {
     padding: 5px;
 }
+
+.hidden {
+    display = 'inline-block';
+}

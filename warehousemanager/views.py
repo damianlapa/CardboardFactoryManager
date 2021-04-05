@@ -2089,5 +2089,25 @@ class ProfileView(View, LoginRequiredMixin):
 
     def get(self, request):
         user = request.user
-
+        form = PasswordForm()
         return render(request, 'warehousemanager-profile.html', locals())
+
+    def post(self, request):
+
+        form = PasswordForm(request.POST)
+        user = request.user
+
+        if form.is_valid():
+            username = user.username
+
+            user.set_password(form.cleaned_data['new_password'])
+            user.save()
+
+            username = user.username
+
+            user = authenticate(username=username, password=form.cleaned_data['new_password'])
+
+            if user is not None:
+                login(request, user)
+
+            return redirect('profile')
