@@ -32,7 +32,11 @@
         <tr>
             <td class="bg-orange">Summary</td>
             {% for p in current_quantity_table_data.2 %}
-            <td class="bg-white">{{ p }}</td>
+            {% if p > 0 %}
+            <td class="bg-white size20 red">{{ p }}</td>
+            {% else %}
+            <td class="bg-white size20 green">{{ p }}</td>
+            {% endif %}
             {% endfor %}
         </tr>
     </table>

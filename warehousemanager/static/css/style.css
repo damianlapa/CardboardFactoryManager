@@ -1070,6 +1070,10 @@ select{
     color: red;
 }
 
+.green {
+    color: green;
+}
+
 .size12 {
     font-size: 1.2em;
 }
