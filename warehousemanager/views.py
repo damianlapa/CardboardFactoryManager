@@ -67,7 +67,7 @@ def render_pdf_view(request):
 
 
 class NewOrder(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
+    permission_required = 'warehousemanager.add_order'
 
     def get(self, request):
         providers = CardboardProvider.objects.all()
@@ -120,7 +120,7 @@ class DeleteOrder(PermissionRequiredMixin, View):
 
 
 class NewItemAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_orderitem'
+    permission_required = 'warehousemanager.add_orderitem'
 
     def get(self, request, order_id):
         form = NewOrderItemForm()
@@ -144,7 +144,7 @@ class NewItemAdd(PermissionRequiredMixin, View):
 
 
 class OrderItemDelete(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_orderitem'
+    permission_required = 'warehousemanager.delete_orderitem'
 
     def get(self, request, order_id, item_id):
         item_object = OrderItem.objects.get(id=int(item_id))
@@ -169,7 +169,7 @@ class NextOrderNumber(View):
 
 
 class ProviderForm(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_cardboardprovider'
+    permission_required = 'warehousemanager.add_cardboardprovider'
 
     def get(self, request):
         form = CardboardProviderForm()
@@ -365,8 +365,8 @@ class MainPageView(LoginRequiredMixin, View):
 
 
 # wszyscy dostawcy
-class AllProvidersView(LoginRequiredMixin, View):
-    login_url = '/'
+class AllProvidersView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_cardboard_provider'
 
     def get(self, request):
         providers = CardboardProvider.objects.all()
@@ -382,8 +382,8 @@ class FormatConverter(LoginRequiredMixin, View):
 
 
 # zarządzanie dostawami
-class DeliveriesManagement(LoginRequiredMixin, View):
-    login_url = '/'
+class DeliveriesManagement(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_delivery'
 
     def get(self, request):
         title = 'DELIVERIES'
@@ -392,8 +392,8 @@ class DeliveriesManagement(LoginRequiredMixin, View):
 
 
 # szczegóły dostawy
-class DeliveryDetails(LoginRequiredMixin, View):
-    login_url = '/'
+class DeliveryDetails(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_delivery'
 
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
@@ -439,7 +439,7 @@ class DeliveryDetails(LoginRequiredMixin, View):
 
 # dodawanie dostawy
 class DeliveryAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_delivery'
+    permission_required = 'warehousemanager.add_delivery'
 
     def get(self, request):
         delivery_form = DeliveryForm()
@@ -464,7 +464,7 @@ class DeliveryAdd(PermissionRequiredMixin, View):
 
 # dodawanie notatek
 class NoteAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_note'
+    permission_required = 'warehousemanager.add_note'
 
     def get(self, request):
         note_form = NoteForm()
@@ -735,16 +735,16 @@ class GetLocalVar(View):
             return redirect('manage')
 
 
-class AbsenceEdit(LoginRequiredMixin, View):
-    login_url = '/'
+class AbsenceEdit(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.change_absence'
 
     def get(self, request, absence_id):
         absence = Absence.object.get(id=int(absence_id))
 
 
 # absence-view
-class AbsenceAdd(LoginRequiredMixin, View):
-    login_url = '/'
+class AbsenceAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_absence'
 
     def get(self, request):
         worker = None
@@ -924,7 +924,7 @@ class PunchesList(PermissionRequiredMixin, View):
 
 
 class PunchAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punch'
+    permission_required = 'warehousemanager.add_punch'
 
     def get(self, request):
         user = request.user
@@ -981,7 +981,7 @@ class PunchDetails(PermissionRequiredMixin, View):
 
 
 class PunchEdit(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punch'
+    permission_required = 'warehousemanager.change_punch'
 
     def get(self, request, punch_id):
         p = get_object_or_404(Punch, id=punch_id)
@@ -1046,7 +1046,7 @@ class PunchDelete(PermissionRequiredMixin, View):
 
 
 class AddBuyer(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_buyer'
+    permission_required = 'warehousemanager.add_buyer'
 
     def get(self, request):
         buyer_form = BuyerForm()
@@ -1083,7 +1083,7 @@ class PunchProductions(PermissionRequiredMixin, View):
 
 
 class PunchProductionAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punchproduction'
+    permission_required = 'warehousemanager.add_punchproduction'
 
     def get(self, request):
         punch_id = request.GET.get('punch_id')
@@ -1123,6 +1123,7 @@ class CardboardUsed(View):
             return HttpResponse(json.dumps(False))
 
 
+# to-do
 class StockManagement(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punchproduction'
 
@@ -1133,6 +1134,7 @@ class StockManagement(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-stock-management.html', locals())
 
 
+# to-do
 class Announcement(View):
     def get(self, request):
         return render(request, 'warehousemanager-announcement.html')
@@ -1152,13 +1154,16 @@ class ChangeOrderState(View):
         return HttpResponse(json.dumps(order_item.is_completed))
 
 
+# to-do
 class ProductionView(View):
     def get(self, request):
         items_to_do = OrderItem.objects.filter(is_completed=True)
         return render(request, 'warehousemanager-production-status.html', locals())
 
 
-class OrderItemDetails(View):
+class OrderItemDetails(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_order_item'
+
     def get(self, request, order_item_id):
         order_item = OrderItem.objects.get(id=order_item_id)
         productions = ProductionProcess.objects.filter(order_item=order_item)
@@ -1374,7 +1379,8 @@ class GoogleSheetTest(View):
             'https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
 
 
-class ImportOrderItems(View):
+class ImportOrderItems(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_order_item'
 
     def get(self, request):
 
@@ -1808,7 +1814,8 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
     fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']'''
 
 
-class PolymerCreate(View):
+class PolymerCreate(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_photopolymer'
 
     def get(self, request):
         form = PolymerForm()
@@ -1822,37 +1829,45 @@ class PolymerCreate(View):
             return HttpResponse('ok')
 
 
-class PolymerUpdate(UpdateView):
+class PolymerUpdate(PermissionRequiredMixin, UpdateView):
+    permission_required = 'warehousemanager.change_photopolymer'
+
     model = Photopolymer
     fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
     template_name_suffix = '_update_form'
 
 
-class PolymerDelete(DeleteView):
+class PolymerDelete(PermissionRequiredMixin, DeleteView):
+    permission_required = 'warehousemanager.delete_photopolymer'
     model = Photopolymer
     success_url = reverse_lazy('photopolymers')
 
 
-class ServiceDetailView(DetailView):
+class ServiceDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehousemanager.view_photopolymer_service'
     model = PhotopolymerService
 
 
-class ServiceListView(ListView):
+class ServiceListView(PermissionRequiredMixin, ListView):
+    permission_required = 'warehousemanager.view_photopolymer_service'
     model = PhotopolymerService
 
 
-class ServiceCreate(CreateView):
+class ServiceCreate(PermissionRequiredMixin, CreateView):
+    permission_required = 'warehousemanager.add_photopolymer_service'
     model = PhotopolymerService
     fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
 
 
-class ServiceUpdate(UpdateView):
+class ServiceUpdate(PermissionRequiredMixin, UpdateView):
+    permission_required = 'warehousemanager.change_photopolymer_service'
     model = PhotopolymerService
     fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
     template_name_suffix = '_update_form'
 
 
-class ServiceDelete(DeleteView):
+class ServiceDelete(PermissionRequiredMixin, DeleteView):
+    permission_required = 'warehousemanager.delete_photopolymer_service'
     model = PhotopolymerService
     success_url = reverse_lazy('photopolymers')
 
@@ -1897,13 +1912,15 @@ class ProductionProcessListView(ListView, PermissionRequiredMixin):
     model = ProductionProcess
 
 
-class ProductionProcessCreate(CreateView):
+class ProductionProcessCreate(CreateView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.add_productionprocess'
     model = ProductionProcess
     fields = ['order_item', 'production', 'stock', 'type', 'worker', 'machine', 'quantity_start', 'quantity_end',
               'date_start', 'date_end', 'punch', 'polymer']
 
 
-class AvailableVacation(View):
+class AvailableVacation(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
 
     def get(self, request):
         title = 'Available Vacations'
@@ -1927,7 +1944,8 @@ class AvailableVacation(View):
         return render(request, 'warehousemanager-vacation-list.html', locals())
 
 
-class PersonsVacations(View):
+class PersonsVacations(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
@@ -1987,7 +2005,8 @@ class PersonDetailView(View, PermissionRequiredMixin):
 
 
 # contract view
-class ContractCreate(CreateView):
+class ContractCreate(CreateView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.add_contract'
     model = Contract
     fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']
 
@@ -2015,7 +2034,7 @@ class ReminderDetailsView(View, PermissionRequiredMixin):
 
 
 class ReminderDeleteView(View, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.view_reminder'
+    permission_required = 'warehousemanager.delete_reminder'
 
     def get(self, request, reminder_id):
         reminder = Reminder.objects.get(id=int(reminder_id))
