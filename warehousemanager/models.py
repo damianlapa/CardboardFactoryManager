@@ -63,7 +63,8 @@ ABSENCE_TYPES = (
     ('CH', 'Chorobowe'),
     ('KW', 'Kwarantanna'),
     ('OP', 'Opieka nad członkiem rodziny'),
-    ('D', 'Delegacja')
+    ('D', 'Delegacja'),
+    ('IN', 'Inne')
 )
 
 PUNCH_TYPES = (
@@ -315,6 +316,7 @@ class Absence(models.Model):
     absence_date = models.DateField()
     absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
     value = models.IntegerField(null=True, blank=True)
+    additional_info = models.CharField(max_length=255, null=True, blank=True)
 
     # create acquaintance with value in minutes
     def create_acquaintance(self, value):
@@ -326,6 +328,14 @@ class Absence(models.Model):
                 pass
         else:
             return TypeError('Acquaintance value must be a float')
+
+    # create unusual absence type
+    def create_unusual(self, additional_info):
+        if self.absence_type == 'IN':
+            self.additional_info = additional_info
+            self.save()
+        else:
+            pass
 
     def __str__(self):
         return f'{self.absence_date} {self.worker}({self.absence_type})'

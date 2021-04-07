@@ -59,7 +59,7 @@
         <tr>
             {% for dd in d %}
             {% if forloop.first %}
-            <td class="bg-orange">{{ dd }}</td>
+            <td class="bg-orange delivery-link cursor-pointer" data-delivery_id="{{ dd.1 }}">{{ dd.0 }}</td>
             {% else %}
                 {% if dd != '-' %}
                     <td class="bg-yellow">{{ dd }}</td>

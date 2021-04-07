@@ -1095,6 +1095,11 @@ background-image: linear-gradient(135deg, #60b837 25%, #9cd900 25%, #9cd900 50%,
 background-size: 28.28px 28.28px;
 }
 
+.in-bg {
+background-image: linear-gradient(135deg, #48753f 25%, #ff7f8e 25%, #ff7f8e 50%, #48753f 50%, #48753f 75%, #ff7f8e 75%, #ff7f8e 100%);
+background-size: 28.28px 28.28px;
+}
+
 .white {
     color: white;
 }
@@ -1156,6 +1161,6 @@ background-size: 28.28px 28.28px;
     padding: 5px;
 }
 
-.hidden {
-    display = 'inline-block';
+.cursor-pointer {
+    cursor: pointer;
 }

@@ -700,6 +700,7 @@ class AbsencesAndHolidays(View):
         extra_hours = []
         non_full_days = []
         acquaintances = []
+        unusual_absences = []
         month_start_date = datetime.date(int(year), month_, 1)
         month_days = 30 if month_ in (4, 6, 9, 11) else 31
         month_end_date = datetime.date(int(year), month_, 28 if month_ == 2 else month_days)
@@ -713,15 +714,17 @@ class AbsencesAndHolidays(View):
 
         absences_and_holidays = []
         for a in absences_objects:
-            if a.absence_type != 'SP':
+            if a.absence_type != 'SP' and a.absence_type != 'IN':
                 absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type, a.id))
+            elif a.absence_type == 'IN':
+                unusual_absences.append((a.worker.id, a.absence_date.day, a.absence_type, a.additional_info))
             else:
                 value = change_minutes_to_hours(a.value) if a.value else 'no value'
                 acquaintances.append((a.worker.id, a.absence_date.day, a.absence_type, value))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
         return HttpResponse(
-            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances)))
+            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances, unusual_absences)))
 
 
 class GetLocalVar(View):
@@ -851,6 +854,8 @@ class AbsenceAdd(LoginRequiredMixin, View):
 
                 if absence_type == 'SP':
                     new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
+                elif absence_type == 'IN':
+                    new_absence.create_unusual(additional_info=short_absence_form.cleaned_data['additional_info'])
 
             response = redirect('absence-list')
             response['Location'] += f'?month={change_month_num_to_name(absence_date.month)} {absence_date.year}'
@@ -2051,7 +2056,7 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
                                                                                                     '%Y-%m-%d'))
 
         for delivery in deliveries_query:
-            result = [delivery.date_of_delivery] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
+            result = [(delivery.date_of_delivery, delivery.id)] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
             for p in PaletteQuantity.objects.filter(delivery=delivery):
                 if p.status == 'DEL':
                     result[palettes_list.index(p.palette) + 1] = p.quantity

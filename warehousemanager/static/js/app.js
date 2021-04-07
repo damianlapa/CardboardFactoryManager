@@ -426,6 +426,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 acquaintanceField[0].style.color = 'black'
                 acquaintanceField[0].style.textAlign = 'center'
             }}
+            for (let a=0; a < data[5].length; a++){
+                worker_id = 'worker' + String(data[5][a][0])
+                day_id = 'day' + String(data[5][a][1])
+                query_text = worker_id + ' ' + day_id
+                let acquaintanceField = document.getElementsByClassName(query_text)
+                if (acquaintanceField.length > 0) {
+                acquaintanceField[0].innerText = 'IN' // data[5][a][3]
+                acquaintanceField[0].classList.add('in-bg')
+            }}
             for (let i=0; i < data[0].length; i++){
                 day_text = 'day' + data[0][i][1]
                 if (data[0][i][0] >= 0){
@@ -516,18 +525,25 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
 
-    // short form acquaintance
+    // short form acquaintance, unusual type
     const absenceTypeFormField = document.getElementById('id_absence_type')
     const acquaintanceValue = document.getElementById('id_value')
+    const additionalInfo = document.getElementById('id_additional_info')
 
     if (absenceTypeFormField !== null) {
         acquaintanceValue.parentElement.style.display = 'none'
+        additionalInfo.parentElement.style.display = 'none'
         absenceTypeFormField.addEventListener('click', function() {
-            console.log(absenceTypeFormField.value)
             if (absenceTypeFormField.value === 'SP') {
                 acquaintanceValue.parentElement.style.display = 'block'
-            } else {
+                additionalInfo.parentElement.style.display = 'none'
+            }else if (absenceTypeFormField.value === 'IN') {
                 acquaintanceValue.parentElement.style.display = 'none'
+                additionalInfo.parentElement.style.display = 'block'
+            }
+            else {
+                acquaintanceValue.parentElement.style.display = 'none'
+                additionalInfo.parentElement.style.display = 'none'
             }
         })
     }
@@ -1383,6 +1399,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
         })
     }
+    }
+
+    const allDeliveryLinkCells = document.getElementsByClassName('delivery-link')
+
+    if (allDeliveryLinkCells.length > 0) {
+        for (let i=0; i < allDeliveryLinkCells.length; i++) {
+            allDeliveryLinkCells[i].addEventListener('click', function() {
+                let deliveryId = this.dataset.delivery_id
+                $.ajax({
+                url: '/get-local-var/PAKER_MAIN/',
+                data: {},
+                type: 'GET',
+                dataType: 'json'
+                }).done(function (data) {
+                    link = data + 'delivery/' + deliveryId
+                    window.location.replace(link)
+                    })
+            })
+        }
     }
 
 })
