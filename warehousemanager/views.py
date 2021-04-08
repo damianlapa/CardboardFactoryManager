@@ -1939,7 +1939,7 @@ class AvailableVacation(PermissionRequiredMixin, View):
             persons = Person.objects.filter(job_end=None)
         else:
             try:
-                persons = Person.objects.get(user=request.user)
+                persons = [Person.objects.get(user=request.user)]
             except ObjectDoesNotExist:
                 persons = []
         for p in persons:
