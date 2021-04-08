@@ -85,7 +85,8 @@ urlpatterns += [
 # palettes
 urlpatterns += [
     path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities'),
-    path('palette-customer/', PaletteCustomerView.as_view(), name='palette-customer')
+    path('palette-customer/', PaletteCustomerView.as_view(), name='palette-customer'),
+    path('palette-customer/<int:customer_id>', PaletteCustomerDetailView.as_view(), name='palette-customer-detail')
 ]
 # persons
 urlpatterns += [

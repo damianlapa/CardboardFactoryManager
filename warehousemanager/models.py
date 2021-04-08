@@ -603,6 +603,7 @@ class PaletteCustomer(models.Model):
     quantity = models.IntegerField(default=0)
     status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
     date = models.DateField()
+    exchange = models.BooleanField(default=False)
     extra_info = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
@@ -613,8 +614,10 @@ class PaletteCustomer(models.Model):
         result = 0
         for c in cls.objects.filter(customer=customer, palette=palette):
             if c.status == 'DEL':
-                result += c.quantity
+                if not c.exchange:
+                    result += c.quantity
             else:
-                result -= c.quantity
+                if not c.exchange:
+                    result -= c.quantity
 
         return result

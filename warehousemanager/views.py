@@ -2172,3 +2172,12 @@ class PaletteCustomerView(PermissionRequiredMixin, View):
             palette_quantities.append(result)
 
         return render(request, 'warehousemanager-customer-palette-list.html', locals())
+
+
+class PaletteCustomerDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_palette'
+
+    def get(self, request, customer_id):
+        customer = Buyer.objects.get(id=int(customer_id))
+
+        return render(request, 'warehousemanager-customer-palette-detail.html', locals())
