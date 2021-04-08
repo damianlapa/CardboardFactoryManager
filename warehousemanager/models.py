@@ -114,6 +114,7 @@ class Person(models.Model):
     medical_examination = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
+    user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
         ordering = ['last_name', 'first_name']

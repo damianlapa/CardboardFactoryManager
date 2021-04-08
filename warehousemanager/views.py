@@ -582,9 +582,16 @@ class AbsencesList(PermissionRequiredMixin, View):
         str_date = f'{month_year[1]}-{months.index(month_year[0]) + 1}-1'
         month_days = month_days_function(datetime.datetime.strptime(str_date, '%Y-%m-%d'))
 
-        workers = Person.objects.all().filter(
-            job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
-        workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+        if request.user.is_superuser:
+            workers = Person.objects.all().filter(
+                job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
+            workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+        else:
+            try:
+                workers = [Person.objects.get(user=request.user)]
+            except ObjectDoesNotExist:
+                workers = []
+
         '''to_delete = []
         for worker in workers:
             if worker.job_end:
@@ -1928,7 +1935,13 @@ class AvailableVacation(PermissionRequiredMixin, View):
             request.GET.get('year-choice'))
         years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
-        persons = Person.objects.filter(job_end=None)
+        if request.user.is_superuser:
+            persons = Person.objects.filter(job_end=None)
+        else:
+            try:
+                persons = Person.objects.get(user=request.user)
+            except ObjectDoesNotExist:
+                persons = []
         for p in persons:
             used_vacation_in_year = 0
             previous_year = year - 1
