@@ -84,7 +84,8 @@ urlpatterns += [
 
 # palettes
 urlpatterns += [
-    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities')
+    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities'),
+    path('palette-customer/', PaletteCustomerView.as_view(), name='palette-customer')
 ]
 # persons
 urlpatterns += [

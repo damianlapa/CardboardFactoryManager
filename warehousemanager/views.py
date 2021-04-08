@@ -2156,3 +2156,19 @@ class ProfileView(View, LoginRequiredMixin):
                 statement = 'Password change unsuccessful'
 
             return render(request, 'warehousemanager-profile.html', locals())
+
+
+class PaletteCustomerView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_palette'
+
+    def get(self, request):
+        customers = Buyer.objects.all()
+        palettes = Palette.objects.all()
+        palette_quantities = []
+        for c in customers:
+            result = [c]
+            for p in palettes:
+                result.append(PaletteCustomer.customer_palette_number(c, p))
+            palette_quantities.append(result)
+
+        return render(request, 'warehousemanager-customer-palette-list.html', locals())

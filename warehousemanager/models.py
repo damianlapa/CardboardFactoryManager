@@ -595,3 +595,26 @@ class Reminder(models.Model):
             return f'SEND / {self.worker} - {self.title}'
         else:
             return f'-- / {self.worker} - {self.title}'
+
+
+class PaletteCustomer(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+    quantity = models.IntegerField(default=0)
+    status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
+    date = models.DateField()
+    extra_info = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.customer} - {self.palette} ({self.status} - {self.quantity}) - {self.date}'
+
+    @classmethod
+    def customer_palette_number(cls, customer, palette):
+        result = 0
+        for c in cls.objects.filter(customer=customer, palette=palette):
+            if c.status == 'DEL':
+                result += c.quantity
+            else:
+                result -= c.quantity
+
+        return result
