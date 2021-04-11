@@ -359,6 +359,7 @@ class MainPageView(LoginRequiredMixin, View):
         colors = Color.objects.all()
         deliveries = Delivery.objects.all()
         providers = CardboardProvider.objects.all()
+        customers = Buyer.objects.all()
 
         return render(request, 'warehousemanager-main-page.html', locals())
         # return redirect('punches')
@@ -2179,5 +2180,25 @@ class PaletteCustomerDetailView(PermissionRequiredMixin, View):
 
     def get(self, request, customer_id):
         customer = Buyer.objects.get(id=int(customer_id))
+        customer_palettes = PaletteCustomer.objects.filter(customer=customer).order_by('date', 'status')
+        palettes = []
+        for c in customer_palettes:
+            if c.palette not in palettes:
+                palettes.append(c.palette)
 
+        rows = []
+
+        for c in customer_palettes:
+            # row = [(c.date, c.status)] + [['-' for _ in range(len(palettes))]]
+            # row[1][palettes.index(c.palette)] = c.quantity if c.status == 'DEL' else 0 - c.quantity
+            # rows.append(row)
+            row = []
+            row_data = (c.date, c.status)
+            row_values = ['-' for _ in range(len(palettes))]
+            row_values[palettes.index(c.palette)] = c.quantity if c.status == 'DEL' else 0 - c.quantity
+            row.append(row_data)
+            row.append(row_values)
+            rows.append(row)
+
+        print(rows)
         return render(request, 'warehousemanager-customer-palette-detail.html', locals())

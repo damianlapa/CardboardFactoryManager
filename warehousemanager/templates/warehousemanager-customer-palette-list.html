@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="center">
-<table class="white">
+<table class="white center">
     <tr>
         <th rowspan="2">
             Customer
@@ -31,7 +31,7 @@
 </div>
 <div>
     {% for c in customers %}
-    <a href="{% url 'palette-customer-detail' customer_id=c.id %}">
+    <a href="{% url 'palette-customer-detail' customer_id=c.id %}" class="no-decor white">
     <p>{{ c }}</p>
         </a>
     {% endfor %}
