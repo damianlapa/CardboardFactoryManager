@@ -64,7 +64,8 @@ ABSENCE_TYPES = (
     ('KW', 'Kwarantanna'),
     ('OP', 'Opieka nad członkiem rodziny'),
     ('D', 'Delegacja'),
-    ('IN', 'Inne')
+    ('IN', 'Inne'),
+    ('PO', 'Postojowe')
 )
 
 PUNCH_TYPES = (

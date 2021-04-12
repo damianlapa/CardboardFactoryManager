@@ -2189,9 +2189,6 @@ class PaletteCustomerDetailView(PermissionRequiredMixin, View):
         rows = []
 
         for c in customer_palettes:
-            # row = [(c.date, c.status)] + [['-' for _ in range(len(palettes))]]
-            # row[1][palettes.index(c.palette)] = c.quantity if c.status == 'DEL' else 0 - c.quantity
-            # rows.append(row)
             row = []
             row_data = (c.date, c.status)
             row_values = ['-' for _ in range(len(palettes))]
@@ -2199,6 +2196,14 @@ class PaletteCustomerDetailView(PermissionRequiredMixin, View):
             row.append(row_data)
             row.append(row_values)
             rows.append(row)
+            if c.exchange:
+                new_row = [(c.date, 'RET')]
+                row_values = ['-' for _ in range(len(palettes))]
+                row_values[palettes.index(c.palette)] = 0 - c.quantity
+                new_row.append(row_values)
+                rows.append(new_row)
+            palettes_result = []
+            for p in palettes:
+                palettes_result.append(PaletteCustomer.customer_palette_number(customer, p))
 
-        print(rows)
         return render(request, 'warehousemanager-customer-palette-detail.html', locals())

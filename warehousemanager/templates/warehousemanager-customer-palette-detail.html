@@ -2,17 +2,7 @@
 
 {% block content %}
 
-{{ customer }}
-
-{% for p in customer_palettes %}
-<p>{{ p }}</p>
-{% endfor %}
-
-{% for p in palettes %}
-
-<p>{{ p }}</p>
-
-{% endfor %}
+<h1 class="white">Customer: {{ customer }}</h1>
 
 <table class="center white">
 
@@ -46,6 +36,12 @@
         {% endif %}
     </tr>
     {% endfor %}
+    <tr>
+        <td>SUMA</td>
+        {% for r in palettes_result %}
+        <td>{{ r }}</td>
+        {% endfor %}
+    </tr>
 
 </table>
 
