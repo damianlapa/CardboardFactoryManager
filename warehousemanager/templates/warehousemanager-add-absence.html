@@ -30,6 +30,12 @@
     </p>
     {% endif %}
 
+    {% if absence_edited.additional_info %}
+    <p>
+        <span class="a-d-q">ADDITIONAL INFO:</span> <span class="a-d-a">{{ absence_edited.additional_info }}</span>
+    </p>
+    {% endif %}
+
     <button class="edit-delete-btn" id="edit-absence-btn">EDIT</button>
     <button class="edit-delete-btn" id="delete-absence-btn" data-absenceid="{{ absence_edited.id }}">DELETE</button>
 </div>

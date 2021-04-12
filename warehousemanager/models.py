@@ -63,7 +63,9 @@ ABSENCE_TYPES = (
     ('CH', 'Chorobowe'),
     ('KW', 'Kwarantanna'),
     ('OP', 'Opieka nad członkiem rodziny'),
-    ('D', 'Delegacja')
+    ('D', 'Delegacja'),
+    ('IN', 'Inne'),
+    ('PO', 'Postojowe')
 )
 
 PUNCH_TYPES = (
@@ -113,6 +115,7 @@ class Person(models.Model):
     medical_examination = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
+    user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -315,6 +318,7 @@ class Absence(models.Model):
     absence_date = models.DateField()
     absence_type = models.CharField(max_length=4, choices=ABSENCE_TYPES)
     value = models.IntegerField(null=True, blank=True)
+    additional_info = models.CharField(max_length=255, null=True, blank=True)
 
     # create acquaintance with value in minutes
     def create_acquaintance(self, value):
@@ -326,6 +330,14 @@ class Absence(models.Model):
                 pass
         else:
             return TypeError('Acquaintance value must be a float')
+
+    # create unusual absence type
+    def create_unusual(self, additional_info):
+        if self.absence_type == 'IN':
+            self.additional_info = additional_info
+            self.save()
+        else:
+            pass
 
     def __str__(self):
         return f'{self.absence_date} {self.worker}({self.absence_type})'
@@ -584,3 +596,29 @@ class Reminder(models.Model):
             return f'SEND / {self.worker} - {self.title}'
         else:
             return f'-- / {self.worker} - {self.title}'
+
+
+class PaletteCustomer(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+    quantity = models.IntegerField(default=0)
+    status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
+    date = models.DateField()
+    exchange = models.BooleanField(default=False)
+    extra_info = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.customer} - {self.palette} ({self.status} - {self.quantity}) - {self.date}'
+
+    @classmethod
+    def customer_palette_number(cls, customer, palette):
+        result = 0
+        for c in cls.objects.filter(customer=customer, palette=palette):
+            if c.status == 'DEL':
+                if not c.exchange:
+                    result += c.quantity
+            else:
+                if not c.exchange:
+                    result -= c.quantity
+
+        return result

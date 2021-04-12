@@ -84,7 +84,9 @@ urlpatterns += [
 
 # palettes
 urlpatterns += [
-    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities')
+    path('palette-quantities/', PaletteQuantitiesView.as_view(), name='palette-quantities'),
+    path('palette-customer/', PaletteCustomerView.as_view(), name='palette-customer'),
+    path('palette-customer/<int:customer_id>', PaletteCustomerDetailView.as_view(), name='palette-customer-detail')
 ]
 # persons
 urlpatterns += [
@@ -142,6 +144,11 @@ urlpatterns += [
 urlpatterns += [
     path('vacations/', AvailableVacation.as_view(), name='vacations'),
     path('persons-vacations/<int:person_id>', PersonsVacations.as_view(), name='persons-vacations')
+]
+
+# profile
+urlpatterns += [
+    path('profile/', ProfileView.as_view(), name='profile')
 ]
 
 if settings.DEBUG:

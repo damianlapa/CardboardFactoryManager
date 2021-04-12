@@ -1070,6 +1070,10 @@ select{
     color: red;
 }
 
+.green {
+    color: green;
+}
+
 .size12 {
     font-size: 1.2em;
 }
@@ -1088,6 +1092,11 @@ select{
 
 .del-bg {
 background-image: linear-gradient(135deg, #60b837 25%, #9cd900 25%, #9cd900 50%, #60b837 50%, #60b837 75%, #9cd900 75%, #9cd900 100%);
+background-size: 28.28px 28.28px;
+}
+
+.in-bg {
+background-image: linear-gradient(135deg, #48753f 25%, #ff7f8e 25%, #ff7f8e 50%, #48753f 50%, #48753f 75%, #ff7f8e 75%, #ff7f8e 100%);
 background-size: 28.28px 28.28px;
 }
 
@@ -1150,4 +1159,16 @@ background-size: 28.28px 28.28px;
 
 .padding-5p {
     padding: 5px;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.hover-grey-bg:hover {
+    background: grey;
+}
+
+.hover-yellow:hover {
+    color: yellow;
 }

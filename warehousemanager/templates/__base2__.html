@@ -28,7 +28,7 @@
             {{ title }}
         </p>
         <p class="welcome-text">
-            WELCOME <a href="">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
+            WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
             <a href="{% url 'logout' %}">LOGOUT</a>
         </p>
     </div>
@@ -84,5 +84,6 @@
     {% endblock %}
 </div>
 <script src="{% static 'js/app.js' %}"></script>
+<script src="{% static 'js/change_password.js' %}"></script>
 </body>
 </html>

@@ -1,0 +1,48 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<h1 class="white">Customer: {{ customer }}</h1>
+
+<table class="center white">
+
+    <tr>
+        <th>
+            Date
+        </th>
+        {% for p in palettes %}
+        <th>
+            {{ p }}
+        </th>
+        {% endfor %}
+    </tr>
+    {% for r in rows %}
+    <tr>
+        <td>
+            {{ r.0.0 }}
+        </td>
+        {% if r.0.1 == 'DEL' %}
+        {% for value in r.1 %}
+        <td class="green">
+            {{ value }}
+        </td>
+        {% endfor %}
+        {% else %}
+        {% for value in r.1 %}
+        <td class="red">
+            {{ value }}
+        </td>
+        {% endfor %}
+        {% endif %}
+    </tr>
+    {% endfor %}
+    <tr>
+        <td>SUMA</td>
+        {% for r in palettes_result %}
+        <td>{{ r }}</td>
+        {% endfor %}
+    </tr>
+
+</table>
+
+{% endblock %}

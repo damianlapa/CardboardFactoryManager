@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'warehousemanager',
     'rest_framework',
     'storages',
+    'crispy_forms'
 
 ]
 

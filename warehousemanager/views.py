@@ -67,7 +67,7 @@ def render_pdf_view(request):
 
 
 class NewOrder(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
+    permission_required = 'warehousemanager.add_order'
 
     def get(self, request):
         providers = CardboardProvider.objects.all()
@@ -120,7 +120,7 @@ class DeleteOrder(PermissionRequiredMixin, View):
 
 
 class NewItemAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_orderitem'
+    permission_required = 'warehousemanager.add_orderitem'
 
     def get(self, request, order_id):
         form = NewOrderItemForm()
@@ -144,7 +144,7 @@ class NewItemAdd(PermissionRequiredMixin, View):
 
 
 class OrderItemDelete(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_orderitem'
+    permission_required = 'warehousemanager.delete_orderitem'
 
     def get(self, request, order_id, item_id):
         item_object = OrderItem.objects.get(id=int(item_id))
@@ -169,7 +169,7 @@ class NextOrderNumber(View):
 
 
 class ProviderForm(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_cardboardprovider'
+    permission_required = 'warehousemanager.add_cardboardprovider'
 
     def get(self, request):
         form = CardboardProviderForm()
@@ -359,14 +359,15 @@ class MainPageView(LoginRequiredMixin, View):
         colors = Color.objects.all()
         deliveries = Delivery.objects.all()
         providers = CardboardProvider.objects.all()
+        customers = Buyer.objects.all()
 
         return render(request, 'warehousemanager-main-page.html', locals())
         # return redirect('punches')
 
 
 # wszyscy dostawcy
-class AllProvidersView(LoginRequiredMixin, View):
-    login_url = '/'
+class AllProvidersView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_cardboard_provider'
 
     def get(self, request):
         providers = CardboardProvider.objects.all()
@@ -382,8 +383,8 @@ class FormatConverter(LoginRequiredMixin, View):
 
 
 # zarządzanie dostawami
-class DeliveriesManagement(LoginRequiredMixin, View):
-    login_url = '/'
+class DeliveriesManagement(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_delivery'
 
     def get(self, request):
         title = 'DELIVERIES'
@@ -392,8 +393,8 @@ class DeliveriesManagement(LoginRequiredMixin, View):
 
 
 # szczegóły dostawy
-class DeliveryDetails(LoginRequiredMixin, View):
-    login_url = '/'
+class DeliveryDetails(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_delivery'
 
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
@@ -401,7 +402,7 @@ class DeliveryDetails(LoginRequiredMixin, View):
         palettes = PaletteQuantity.objects.filter(delivery=delivery)
 
         order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery}, provider=delivery.provider)
-        palette_q_form = PaletteQuantityForm()
+        palette_q_form = PaletteQuantityForm(initial={'delivery': delivery})
 
         return render(request, 'warehousemanager-delivery-details.html', locals())
 
@@ -439,7 +440,7 @@ class DeliveryDetails(LoginRequiredMixin, View):
 
 # dodawanie dostawy
 class DeliveryAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_delivery'
+    permission_required = 'warehousemanager.add_delivery'
 
     def get(self, request):
         delivery_form = DeliveryForm()
@@ -464,7 +465,7 @@ class DeliveryAdd(PermissionRequiredMixin, View):
 
 # dodawanie notatek
 class NoteAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_note'
+    permission_required = 'warehousemanager.add_note'
 
     def get(self, request):
         note_form = NoteForm()
@@ -582,9 +583,16 @@ class AbsencesList(PermissionRequiredMixin, View):
         str_date = f'{month_year[1]}-{months.index(month_year[0]) + 1}-1'
         month_days = month_days_function(datetime.datetime.strptime(str_date, '%Y-%m-%d'))
 
-        workers = Person.objects.all().filter(
-            job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
-        workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+        if request.user.is_superuser:
+            workers = Person.objects.all().filter(
+                job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
+            workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+        else:
+            try:
+                workers = [Person.objects.get(user=request.user)]
+            except ObjectDoesNotExist:
+                workers = []
+
         '''to_delete = []
         for worker in workers:
             if worker.job_end:
@@ -700,6 +708,7 @@ class AbsencesAndHolidays(View):
         extra_hours = []
         non_full_days = []
         acquaintances = []
+        unusual_absences = []
         month_start_date = datetime.date(int(year), month_, 1)
         month_days = 30 if month_ in (4, 6, 9, 11) else 31
         month_end_date = datetime.date(int(year), month_, 28 if month_ == 2 else month_days)
@@ -713,15 +722,17 @@ class AbsencesAndHolidays(View):
 
         absences_and_holidays = []
         for a in absences_objects:
-            if a.absence_type != 'SP':
+            if a.absence_type != 'SP' and a.absence_type != 'IN':
                 absences_and_holidays.append((a.worker.id, a.absence_date.day, a.absence_type, a.id))
+            elif a.absence_type == 'IN':
+                unusual_absences.append((a.worker.id, a.absence_date.day, a.absence_type, a.additional_info))
             else:
                 value = change_minutes_to_hours(a.value) if a.value else 'no value'
                 acquaintances.append((a.worker.id, a.absence_date.day, a.absence_type, value))
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
         return HttpResponse(
-            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances)))
+            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances, unusual_absences)))
 
 
 class GetLocalVar(View):
@@ -732,16 +743,16 @@ class GetLocalVar(View):
             return redirect('manage')
 
 
-class AbsenceEdit(LoginRequiredMixin, View):
-    login_url = '/'
+class AbsenceEdit(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.change_absence'
 
     def get(self, request, absence_id):
         absence = Absence.object.get(id=int(absence_id))
 
 
 # absence-view
-class AbsenceAdd(LoginRequiredMixin, View):
-    login_url = '/'
+class AbsenceAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_absence'
 
     def get(self, request):
         worker = None
@@ -851,6 +862,8 @@ class AbsenceAdd(LoginRequiredMixin, View):
 
                 if absence_type == 'SP':
                     new_absence.create_acquaintance(value=int(short_absence_form.cleaned_data['value']))
+                elif absence_type == 'IN':
+                    new_absence.create_unusual(additional_info=short_absence_form.cleaned_data['additional_info'])
 
             response = redirect('absence-list')
             response['Location'] += f'?month={change_month_num_to_name(absence_date.month)} {absence_date.year}'
@@ -877,7 +890,7 @@ class AbsenceAdd(LoginRequiredMixin, View):
                                               absence_type=absence_type)
                         new_absence.save()
                     else:
-                        if absence_type == 'UZ':
+                        if absence_type == 'CH':
                             new_absence = Absence(worker=worker_object, absence_date=first_day_date,
                                                   absence_type=absence_type)
                             new_absence.save()
@@ -919,7 +932,7 @@ class PunchesList(PermissionRequiredMixin, View):
 
 
 class PunchAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punch'
+    permission_required = 'warehousemanager.add_punch'
 
     def get(self, request):
         user = request.user
@@ -976,7 +989,7 @@ class PunchDetails(PermissionRequiredMixin, View):
 
 
 class PunchEdit(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punch'
+    permission_required = 'warehousemanager.change_punch'
 
     def get(self, request, punch_id):
         p = get_object_or_404(Punch, id=punch_id)
@@ -1041,7 +1054,7 @@ class PunchDelete(PermissionRequiredMixin, View):
 
 
 class AddBuyer(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_buyer'
+    permission_required = 'warehousemanager.add_buyer'
 
     def get(self, request):
         buyer_form = BuyerForm()
@@ -1078,7 +1091,7 @@ class PunchProductions(PermissionRequiredMixin, View):
 
 
 class PunchProductionAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punchproduction'
+    permission_required = 'warehousemanager.add_punchproduction'
 
     def get(self, request):
         punch_id = request.GET.get('punch_id')
@@ -1118,6 +1131,7 @@ class CardboardUsed(View):
             return HttpResponse(json.dumps(False))
 
 
+# to-do
 class StockManagement(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punchproduction'
 
@@ -1128,6 +1142,7 @@ class StockManagement(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-stock-management.html', locals())
 
 
+# to-do
 class Announcement(View):
     def get(self, request):
         return render(request, 'warehousemanager-announcement.html')
@@ -1147,13 +1162,16 @@ class ChangeOrderState(View):
         return HttpResponse(json.dumps(order_item.is_completed))
 
 
+# to-do
 class ProductionView(View):
     def get(self, request):
         items_to_do = OrderItem.objects.filter(is_completed=True)
         return render(request, 'warehousemanager-production-status.html', locals())
 
 
-class OrderItemDetails(View):
+class OrderItemDetails(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_order_item'
+
     def get(self, request, order_item_id):
         order_item = OrderItem.objects.get(id=order_item_id)
         productions = ProductionProcess.objects.filter(order_item=order_item)
@@ -1369,7 +1387,8 @@ class GoogleSheetTest(View):
             'https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
 
 
-class ImportOrderItems(View):
+class ImportOrderItems(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_order_item'
 
     def get(self, request):
 
@@ -1803,7 +1822,8 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
     fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']'''
 
 
-class PolymerCreate(View):
+class PolymerCreate(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_photopolymer'
 
     def get(self, request):
         form = PolymerForm()
@@ -1817,37 +1837,45 @@ class PolymerCreate(View):
             return HttpResponse('ok')
 
 
-class PolymerUpdate(UpdateView):
+class PolymerUpdate(PermissionRequiredMixin, UpdateView):
+    permission_required = 'warehousemanager.change_photopolymer'
+
     model = Photopolymer
     fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
     template_name_suffix = '_update_form'
 
 
-class PolymerDelete(DeleteView):
+class PolymerDelete(PermissionRequiredMixin, DeleteView):
+    permission_required = 'warehousemanager.delete_photopolymer'
     model = Photopolymer
     success_url = reverse_lazy('photopolymers')
 
 
-class ServiceDetailView(DetailView):
+class ServiceDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehousemanager.view_photopolymer_service'
     model = PhotopolymerService
 
 
-class ServiceListView(ListView):
+class ServiceListView(PermissionRequiredMixin, ListView):
+    permission_required = 'warehousemanager.view_photopolymer_service'
     model = PhotopolymerService
 
 
-class ServiceCreate(CreateView):
+class ServiceCreate(PermissionRequiredMixin, CreateView):
+    permission_required = 'warehousemanager.add_photopolymer_service'
     model = PhotopolymerService
     fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
 
 
-class ServiceUpdate(UpdateView):
+class ServiceUpdate(PermissionRequiredMixin, UpdateView):
+    permission_required = 'warehousemanager.change_photopolymer_service'
     model = PhotopolymerService
     fields = ['photopolymer', 'send_date', 'company', 'service_description', 'return_date']
     template_name_suffix = '_update_form'
 
 
-class ServiceDelete(DeleteView):
+class ServiceDelete(PermissionRequiredMixin, DeleteView):
+    permission_required = 'warehousemanager.delete_photopolymer_service'
     model = PhotopolymerService
     success_url = reverse_lazy('photopolymers')
 
@@ -1892,13 +1920,15 @@ class ProductionProcessListView(ListView, PermissionRequiredMixin):
     model = ProductionProcess
 
 
-class ProductionProcessCreate(CreateView):
+class ProductionProcessCreate(CreateView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.add_productionprocess'
     model = ProductionProcess
     fields = ['order_item', 'production', 'stock', 'type', 'worker', 'machine', 'quantity_start', 'quantity_end',
               'date_start', 'date_end', 'punch', 'polymer']
 
 
-class AvailableVacation(View):
+class AvailableVacation(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
 
     def get(self, request):
         title = 'Available Vacations'
@@ -1906,7 +1936,13 @@ class AvailableVacation(View):
             request.GET.get('year-choice'))
         years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
-        persons = Person.objects.filter(job_end=None)
+        if request.user.is_superuser:
+            persons = Person.objects.filter(job_end=None)
+        else:
+            try:
+                persons = [Person.objects.get(user=request.user)]
+            except ObjectDoesNotExist:
+                persons = []
         for p in persons:
             used_vacation_in_year = 0
             previous_year = year - 1
@@ -1922,7 +1958,8 @@ class AvailableVacation(View):
         return render(request, 'warehousemanager-vacation-list.html', locals())
 
 
-class PersonsVacations(View):
+class PersonsVacations(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_absence'
 
     def get(self, request, person_id):
         person = Person.objects.get(id=person_id)
@@ -1982,7 +2019,8 @@ class PersonDetailView(View, PermissionRequiredMixin):
 
 
 # contract view
-class ContractCreate(CreateView):
+class ContractCreate(CreateView, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.add_contract'
     model = Contract
     fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']
 
@@ -2010,7 +2048,7 @@ class ReminderDetailsView(View, PermissionRequiredMixin):
 
 
 class ReminderDeleteView(View, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.view_reminder'
+    permission_required = 'warehousemanager.delete_reminder'
 
     def get(self, request, reminder_id):
         reminder = Reminder.objects.get(id=int(reminder_id))
@@ -2051,7 +2089,7 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
                                                                                                     '%Y-%m-%d'))
 
         for delivery in deliveries_query:
-            result = [delivery.date_of_delivery] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
+            result = [(delivery.date_of_delivery, delivery.id)] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
             for p in PaletteQuantity.objects.filter(delivery=delivery):
                 if p.status == 'DEL':
                     result[palettes_list.index(p.palette) + 1] = p.quantity
@@ -2081,3 +2119,91 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
             current_quantity_table_data[2][palettes_list.index(p)] = difference
 
         return render(request, 'warehousemanager-palettes-quantities.html', locals())
+
+
+# profile-view
+class ProfileView(View, LoginRequiredMixin):
+    login_url = '/'
+
+    def get(self, request):
+        user = request.user
+        form = PasswordForm()
+        return render(request, 'warehousemanager-profile.html', locals())
+
+    def post(self, request):
+
+        form = PasswordForm(request.POST)
+        user = request.user
+
+        if form.is_valid():
+            username = user.username
+
+            if user.check_password(form.cleaned_data['old_password']) and form.cleaned_data['new_password'] == \
+                    form.cleaned_data['repeated_password']:
+                user.set_password(form.cleaned_data['new_password'])
+                user.save()
+
+                username = user.username
+
+                user = authenticate(username=username, password=form.cleaned_data['new_password'])
+
+                if user is not None:
+                    login(request, user)
+
+                statement = 'Password changed'
+
+            else:
+
+                statement = 'Password change unsuccessful'
+
+            return render(request, 'warehousemanager-profile.html', locals())
+
+
+class PaletteCustomerView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_palette'
+
+    def get(self, request):
+        customers = Buyer.objects.all()
+        palettes = Palette.objects.all()
+        palette_quantities = []
+        for c in customers:
+            result = [c]
+            for p in palettes:
+                result.append(PaletteCustomer.customer_palette_number(c, p))
+            palette_quantities.append(result)
+
+        return render(request, 'warehousemanager-customer-palette-list.html', locals())
+
+
+class PaletteCustomerDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_palette'
+
+    def get(self, request, customer_id):
+        customer = Buyer.objects.get(id=int(customer_id))
+        customer_palettes = PaletteCustomer.objects.filter(customer=customer).order_by('date', 'status')
+        palettes = []
+        for c in customer_palettes:
+            if c.palette not in palettes:
+                palettes.append(c.palette)
+
+        rows = []
+
+        for c in customer_palettes:
+            row = []
+            row_data = (c.date, c.status)
+            row_values = ['-' for _ in range(len(palettes))]
+            row_values[palettes.index(c.palette)] = c.quantity if c.status == 'DEL' else 0 - c.quantity
+            row.append(row_data)
+            row.append(row_values)
+            rows.append(row)
+            if c.exchange:
+                new_row = [(c.date, 'RET')]
+                row_values = ['-' for _ in range(len(palettes))]
+                row_values[palettes.index(c.palette)] = 0 - c.quantity
+                new_row.append(row_values)
+                rows.append(new_row)
+            palettes_result = []
+            for p in palettes:
+                palettes_result.append(PaletteCustomer.customer_palette_number(customer, p))
+
+        return render(request, 'warehousemanager-customer-palette-detail.html', locals())

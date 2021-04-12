@@ -32,7 +32,11 @@
         <tr>
             <td class="bg-orange">Summary</td>
             {% for p in current_quantity_table_data.2 %}
-            <td class="bg-white">{{ p }}</td>
+            {% if p > 0 %}
+            <td class="bg-white size20 red">{{ p }}</td>
+            {% else %}
+            <td class="bg-white size20 green">{{ p }}</td>
+            {% endif %}
             {% endfor %}
         </tr>
     </table>
@@ -55,7 +59,7 @@
         <tr>
             {% for dd in d %}
             {% if forloop.first %}
-            <td class="bg-orange">{{ dd }}</td>
+            <td class="bg-orange delivery-link cursor-pointer" data-delivery_id="{{ dd.1 }}">{{ dd.0 }}</td>
             {% else %}
                 {% if dd != '-' %}
                     <td class="bg-yellow">{{ dd }}</td>
