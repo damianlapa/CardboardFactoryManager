@@ -622,3 +622,14 @@ class PaletteCustomer(models.Model):
                     result -= c.quantity
 
         return result
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(User)
+    recipient = models.ForeignKey(User)
+    content = models.TextField()
+    date_send = models.DateField(blank=True, null=True)
+    date_read = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.sender} -> {self.recipient} ({self.date_send})'
