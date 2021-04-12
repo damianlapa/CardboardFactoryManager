@@ -1420,6 +1420,25 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    const allCustomerListLink = document.getElementsByClassName('customer-name')
+
+    if (allCustomerListLink.length > 0) {
+        for (let i=0; i < allCustomerListLink.length; i++) {
+            allCustomerListLink[i].addEventListener('click', function() {
+                let customerId = this.dataset.customer
+                $.ajax({
+                url: '/get-local-var/PAKER_MAIN/',
+                data: {},
+                type: 'GET',
+                dataType: 'json'
+                }).done(function (data) {
+                    link = data + 'palette-customer/' + customerId
+                    window.open(link, '_self')
+                    })
+            })
+        }
+    }
+
 })
 
 function drag(ev) {

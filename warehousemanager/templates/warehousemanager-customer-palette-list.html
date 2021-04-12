@@ -18,22 +18,21 @@
         {% endfor %}
     </tr>
     {% for p in palette_quantities %}
-    <tr>
+    <tr class="hover-grey-bg">
         {% for x in p %}
+        {% if forloop.first %}
+        <td class="customer-name cursor-pointer bold black hover-yellow" data-customer="{{ x.id }}">
+            {{ x }}
+        </td>
+        {% else %}
         <td>
             {{ x }}
         </td>
+        {% endif %}
         {% endfor %}
 
     </tr>
     {% endfor %}
 </table>
-</div>
-<div>
-    {% for c in customers %}
-    <a href="{% url 'palette-customer-detail' customer_id=c.id %}" class="no-decor white">
-    <p>{{ c }}</p>
-        </a>
-    {% endfor %}
 </div>
 {% endblock %}

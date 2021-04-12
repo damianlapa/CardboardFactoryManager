@@ -890,7 +890,7 @@ class AbsenceAdd(PermissionRequiredMixin, View):
                                               absence_type=absence_type)
                         new_absence.save()
                     else:
-                        if absence_type == 'UZ':
+                        if absence_type == 'CH':
                             new_absence = Absence(worker=worker_object, absence_date=first_day_date,
                                                   absence_type=absence_type)
                             new_absence.save()
