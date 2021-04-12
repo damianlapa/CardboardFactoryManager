@@ -1172,3 +1172,7 @@ background-size: 28.28px 28.28px;
 .hover-yellow:hover {
     color: yellow;
 }
+
+.border-solid-pink {
+    border: solid 2px pink;
+}

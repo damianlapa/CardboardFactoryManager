@@ -2207,3 +2207,14 @@ class PaletteCustomerDetailView(PermissionRequiredMixin, View):
                 palettes_result.append(PaletteCustomer.customer_palette_number(customer, p))
 
         return render(request, 'warehousemanager-customer-palette-detail.html', locals())
+
+
+class MessageView(View, LoginRequiredMixin):
+    login_url = '/'
+
+    def get(self, request):
+        user = request.user
+        sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True)
+        drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
+        received_messages = Message.objects.filter(recipient=user)
+        return render(request, 'warehousemanager-messages.html', locals())

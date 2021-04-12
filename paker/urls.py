@@ -64,6 +64,11 @@ urlpatterns += [
     path('delivery-add/', DeliveryAdd.as_view(), name='delivery-add'),
 ]
 
+# message
+urlpatterns += [
+    path('messages/', MessageView.as_view(), name='messages')
+]
+
 # navigation
 urlpatterns += [
     path('', StartPage.as_view(), name='start-page'),

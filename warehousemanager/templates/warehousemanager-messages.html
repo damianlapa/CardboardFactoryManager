@@ -1,0 +1,31 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div>
+    {{ user }}
+</div>
+<div class="flex-container center flex-space-between bg-orange">
+    <div class="padding-5p border-solid-pink" style="width:400px;">
+        <h2>
+            RECEIVED({{ received_messages|length }})
+        </h2>
+        <h2>
+            SENT({{ sent_messages|length }})
+        </h2>
+        <h2>
+            DRAFTS({{ drafts|length }})
+        </h2>
+    </div>
+    <div class="padding-5p border-solid-pink" style="width: 800px;">
+        {% for message in sent_messages %}
+            <h3>
+                {{ message }}
+            </h3>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
