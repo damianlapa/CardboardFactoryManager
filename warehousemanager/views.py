@@ -2213,11 +2213,44 @@ class MessageView(View, LoginRequiredMixin):
     login_url = '/'
 
     def get(self, request):
+        initial_message = None
+        if request.GET.get('message_id'):
+            initial_message = Message.objects.get(id=int(request.GET.get('message_id')))
         user = request.user
+        users = User.objects.all()
         sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
         drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
-        received_messages = Message.objects.filter(recipient=user).order_by('-date_sent')
+        received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by('-date_sent')
+        form = MessageForm() if not initial_message else MessageForm(instance=initial_message)
         return render(request, 'warehousemanager-messages.html', locals())
+
+    def post(self, request):
+        initial_message = None
+        if request.GET.get('message_id'):
+            initial_message = Message.objects.get(id=int(request.GET.get('message_id')))
+        form = MessageForm(request.POST)
+        action = request.POST['s-btn']
+
+        if form.is_valid():
+            message_to = form.cleaned_data['recipient']
+            message_title = form.cleaned_data['title']
+            message_content = form.cleaned_data['content']
+
+            if not initial_message:
+                new_message = Message.objects.create(sender=request.user, recipient=message_to, title=message_title, content=message_content)
+            else:
+                new_message = initial_message
+                new_message.sender = request.user
+                new_message.recipient = message_to
+                new_message.title = message_title
+                new_message.content = message_content
+                new_message.save()
+
+            if action == 'Send':
+                new_message.date_sent = datetime.datetime.now()
+                new_message.save()
+
+        return redirect('messages')
 
 
 class MessageContent(View):

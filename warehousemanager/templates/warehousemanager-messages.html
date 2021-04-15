@@ -6,7 +6,10 @@
 
 <div class="flex-container center flex-space-between bg-orange">
     <div class="padding-5p border-solid-pink" style="width:400px;">
-        <h2 class="hover-light-orange-bg cursor-pointer bg-light-orange" id="received-messages">
+        <h2 class="hover-light-orange-bg cursor-pointer {% if initial_message %} bg-light-orange {% endif %} " id="write-message">
+            COMPOSE MESSAGE
+        </h2>
+        <h2 class="hover-light-orange-bg cursor-pointer {% if not initial_message %}bg-light-orange{% endif %}" id="received-messages">
             RECEIVED({{ received_messages|length }})
         </h2>
         <h2 class="hover-light-orange-bg cursor-pointer" id="sent-messages">
@@ -17,12 +20,15 @@
         </h2>
     </div>
     <div class="padding-5p border-solid-pink" style="width: 800px;">
-        <div>
+        <div id="messages-description" class="{% if initial_message %}display-none{% endif %}">
             <div class="bold flex-container flex-space-between">
                 <p class="padding-5p">PERSON</p>
                 <p class="padding-5p">TITLE</p>
                 <p class="padding-5p">DATE</p>
             </div>
+        </div>
+        <div class="{% if not initial_message %}display-none{% endif %}" id="compose-message">
+            {% include 'message-form.html' %}
         </div>
         {% for message in sent_messages %}
         <div class="sent-message display-none">
@@ -37,7 +43,7 @@
         </div>
         {% endfor %}
         {% for message in received_messages %}
-        <div class="received-message">
+        <div class="received-message {% if initial_message %}display-none{% endif %}">
             <div data-message="{{ message.id }}" class="{% if not message.date_read %}bold unread-message{% endif %} message-title hover-light-orange-bg cursor-pointer flex-container flex-space-between border-dotted-2">
                 <p class="padding-5p">{{ message.sender }}</p>
                 <p class="padding-5p">{{ message.title }}</p>
@@ -50,11 +56,10 @@
         {% endfor %}
         {% for message in drafts %}
         <div class="draft-message display-none">
-            <div data-message="{{ message.id }}" class="message-title hover-light-orange-bg cursor-pointer">
-                {{ message.title }}
-            </div>
-            <div class="bg-white message-content " style="display: none;">
-                {{ message.content }}
+            <div data-message="{{ message.id }}" class="draft-message-title hover-light-orange-bg cursor-pointer flex-container flex-space-between border-dotted-2">
+                <p class="padding-5p">{{ message.sender }}</p>
+                <p class="padding-5p">{{ message.title }}</p>
+                <p class="padding-5p">{{ message.date_sent }}</p>
             </div>
         </div>
         {% endfor %}
