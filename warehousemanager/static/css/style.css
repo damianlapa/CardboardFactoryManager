@@ -1066,6 +1066,10 @@ select{
     background: orange;
 }
 
+.bg-light-orange {
+    background: #FFC864;
+}
+
 .red {
     color: red;
 }
@@ -1169,10 +1173,18 @@ background-size: 28.28px 28.28px;
     background: grey;
 }
 
+.hover-light-orange-bg:hover {
+    background: #FFC864;
+}
+
 .hover-yellow:hover {
     color: yellow;
 }
 
 .border-solid-pink {
     border: solid 2px pink;
+}
+
+.display-none {
+    display: none;
 }

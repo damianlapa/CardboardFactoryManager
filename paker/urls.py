@@ -44,6 +44,7 @@ urlpatterns += [
     path('gid/', GetItemDetails.as_view(), name='get-item-details'),
     path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
     path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
+    path('message-content/<int:message_id>/', MessageContent.as_view(), name='message-content'),
 ]
 
 # colors

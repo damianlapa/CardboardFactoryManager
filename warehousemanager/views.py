@@ -2218,3 +2218,19 @@ class MessageView(View, LoginRequiredMixin):
         drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
         received_messages = Message.objects.filter(recipient=user)
         return render(request, 'warehousemanager-messages.html', locals())
+
+
+class MessageContent(View):
+
+    def get(self, request, message_id):
+        message = Message.objects.get(id=message_id)
+
+        data = {
+            'sender': str(message.sender),
+            'recipient': str(message.recipient),
+            'content': str(message.content),
+        }
+
+        print(data)
+
+        return HttpResponse(json.dumps(data))

@@ -4,26 +4,48 @@
 
 {% block content %}
 
-<div>
-    {{ user }}
-</div>
 <div class="flex-container center flex-space-between bg-orange">
     <div class="padding-5p border-solid-pink" style="width:400px;">
-        <h2>
+        <h2 class="hover-light-orange-bg cursor-pointer" id="received-messages">
             RECEIVED({{ received_messages|length }})
         </h2>
-        <h2>
+        <h2 class="hover-light-orange-bg cursor-pointer" id="sent-messages">
             SENT({{ sent_messages|length }})
         </h2>
-        <h2>
+        <h2 class="hover-light-orange-bg cursor-pointer" id="draft-messages">
             DRAFTS({{ drafts|length }})
         </h2>
     </div>
     <div class="padding-5p border-solid-pink" style="width: 800px;">
         {% for message in sent_messages %}
-            <h3>
+        <div class="sent-message display-none">
+            <h3 data-message="{{ message.id }}" class="message-title hover-light-orange-bg cursor-pointer">
                 {{ message }}
             </h3>
+            <p class="bg-white message-content " style="display: none;">
+                {{ message.content }}
+            </p>
+        </div>
+        {% endfor %}
+        {% for message in received_messages %}
+        <div class="received-message">
+            <h3 data-message="{{ message.id }}" class="message-title hover-light-orange-bg cursor-pointer">
+                {{ message }}
+            </h3>
+            <p class="bg-white message-content " style="display: none;">
+                {{ message.content }}
+            </p>
+        </div>
+        {% endfor %}
+        {% for message in drafts %}
+        <div class="draft-message display-none">
+            <h3 data-message="{{ message.id }}" class="message-title hover-light-orange-bg cursor-pointer">
+                {{ message }}
+            </h3>
+            <p class="bg-white message-content " style="display: none;">
+                {{ message.content }}
+            </p>
+        </div>
         {% endfor %}
     </div>
 </div>
