@@ -60,13 +60,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     for (let i=0; i < messageTitles.length; i++) {
         messageTitles[i].addEventListener('click', function() {
-            if (this.nextElementSibling.style.display === 'none') {
-            // hideAllElements(messageContents)
             changeClickDisplay(this.nextElementSibling, 'none', 'block')
-            }else {
-            changeClickDisplay(this.nextElementSibling, 'none', 'block')
+            if (this.classList.contains('unread-message')) {
+                this.classList.remove('unread-message')
+                this.classList.remove('bold')
+                $.ajax({
+                url: '/message-read/' + this.dataset.message + '/',
+                data: {},
+                type: 'GET',
+                dataType: 'json'
+                }).done(function (){
+                })
             }
-
         })
     }
 })

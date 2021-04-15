@@ -2214,9 +2214,9 @@ class MessageView(View, LoginRequiredMixin):
 
     def get(self, request):
         user = request.user
-        sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True)
+        sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
         drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
-        received_messages = Message.objects.filter(recipient=user)
+        received_messages = Message.objects.filter(recipient=user).order_by('-date_sent')
         return render(request, 'warehousemanager-messages.html', locals())
 
 
@@ -2234,3 +2234,14 @@ class MessageContent(View):
         print(data)
 
         return HttpResponse(json.dumps(data))
+
+
+class MessageRead(View):
+
+    def get(self, request, message_id):
+
+        message = Message.objects.get(id=message_id)
+        message.date_read = datetime.datetime.now()
+        message.save()
+
+        return HttpResponse('')
