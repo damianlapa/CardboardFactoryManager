@@ -19,18 +19,24 @@
 <div id="main-container">
     {% block header %}
     <div class="header">
-        <p>
+        <div>
             <a href="{% url 'main-page' %}">
                 <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
             </a>
-        </p>
-        <p id="page-title">
+        </div>
+        <div id="page-title">
             {{ title }}
-        </p>
-        <p class="welcome-text">
+        </div>
+        <div class="welcome-text">
+            <div>
             WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
-            <a href="{% url 'logout' %}">LOGOUT</a>
-        </p>
+                <a href="{% url 'logout' %}">LOGOUT</a></div>
+            {% if new_messages %}
+            <div>
+                <i class="demo-icon icon-mail white"></i>({{ new_messages }})
+            </div>
+            {% endif %}
+        </div>
     </div>
     {% endblock %}
     <div class="nav-bar">
