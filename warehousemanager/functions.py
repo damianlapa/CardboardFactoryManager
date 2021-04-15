@@ -294,3 +294,9 @@ def reminders_qs():
     if len(reminders) > 0:
         return True
     return False
+
+
+def new_messages_function(request):
+    user = request.user
+    messages = Message.objects.filter(recipient=user, date_read__isnull=True).exclude(date_sent__isnull=True)
+    return len(messages) if len(messages) > 0 else False

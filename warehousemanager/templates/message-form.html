@@ -1,0 +1,11 @@
+<h2>COMPOSE MAIL</h2>
+
+<form method="post" action="" style="background: white;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="flex-container flex-space-around">
+        <div><input type="submit" value="Save" name='s-btn' style="background: yellow; width: 300px;"></div>
+        <div><input type="submit" value="Send" name='s-btn' style="background: yellow; width: 300px;"></div>
+    </div>
+
+</form>

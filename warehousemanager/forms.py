@@ -110,3 +110,9 @@ class PasswordForm(forms.Form):
     new_password = forms.CharField(label='New Password', max_length=32, widget=forms.PasswordInput)
     repeated_password = forms.CharField(label='Repeated Password', max_length=32, widget=forms.PasswordInput)
     old_password = forms.CharField(label='Old Password', max_length=32, widget=forms.PasswordInput)
+
+
+class MessageForm(forms.ModelForm):
+    class Meta:
+        model = Message
+        fields = ('recipient', 'title', 'content')

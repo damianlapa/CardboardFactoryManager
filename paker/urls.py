@@ -44,6 +44,8 @@ urlpatterns += [
     path('gid/', GetItemDetails.as_view(), name='get-item-details'),
     path('oic/', ChangeOrderState.as_view(), name='order-item-state'),
     path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
+    path('message-content/<int:message_id>/', MessageContent.as_view(), name='message-content'),
+    path('message-read/<int:message_id>/', MessageRead.as_view(), name='message-read'),
 ]
 
 # colors
@@ -62,6 +64,11 @@ urlpatterns += [
     path('deliveries-management/', DeliveriesManagement.as_view(), name='deliveries-management'),
     path('delivery/<int:delivery_id>', DeliveryDetails.as_view(), name='delivery-details'),
     path('delivery-add/', DeliveryAdd.as_view(), name='delivery-add'),
+]
+
+# message
+urlpatterns += [
+    path('messages/', MessageView.as_view(), name='messages')
 ]
 
 # navigation
