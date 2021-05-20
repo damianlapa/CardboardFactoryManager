@@ -298,5 +298,6 @@ def reminders_qs():
 
 def new_messages_function(request):
     user = request.user
-    messages = Message.objects.filter(recipient=user, date_read__isnull=True).exclude(date_sent__isnull=True)
+    messages = Message.objects.filter(recipient=user, date_read__isnull=True).exclude(
+        date_sent__isnull=True) if not user.is_anonymous else ()
     return len(messages) if len(messages) > 0 else False

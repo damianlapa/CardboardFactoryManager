@@ -32,9 +32,11 @@
             WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
                 <a href="{% url 'logout' %}">LOGOUT</a></div>
             {% if new_messages %}
-            <div>
-                <i class="demo-icon icon-mail white"></i>({{ new_messages }})
-            </div>
+            <a href="{% url 'messages' %}">
+                <div>
+                    <i class="demo-icon icon-mail white"></i>({{ new_messages }})
+                </div>
+            </a>
             {% endif %}
         </div>
     </div>

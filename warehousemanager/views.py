@@ -2216,12 +2216,15 @@ class MessageView(View, LoginRequiredMixin):
         initial_message = None
         if request.GET.get('message_id'):
             initial_message = Message.objects.get(id=int(request.GET.get('message_id')))
-        user = request.user
+        user = request.user if not request.user.is_anonymous else None
         users = User.objects.all()
-        sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
-        drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
-        received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by('-date_sent')
-        form = MessageForm() if not initial_message else MessageForm(instance=initial_message)
+        if user:
+            sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
+            drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
+            received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by('-date_sent')
+            form = MessageForm() if not initial_message else MessageForm(instance=initial_message)
+        else:
+            user = 'AnonymousUser'
         return render(request, 'warehousemanager-messages.html', locals())
 
     def post(self, request):
