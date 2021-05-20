@@ -637,3 +637,20 @@ class Message(models.Model):
 
     def __str__(self):
         return f'{self.sender} -> {self.recipient} ({self.date_sent})'
+
+
+class Cloth(models.Model):
+    name = models.CharField(max_length=64)
+    description = models.CharField(max_length=512)
+
+    def __str__(self):
+        return self.name
+
+
+class WorkerWorkWear(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    cloth = models.ForeignKey(Cloth, on_delete=models.CASCADE)
+    date = models.DateField()
+
+    def __str__(self):
+        return str(self.date) + ' ' + str(self.worker) + str(self.cloth)
