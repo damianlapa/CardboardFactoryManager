@@ -537,6 +537,9 @@ class UserVisitCounter(models.Model):
     def __str__(self):
         return f'{self.user}/{self.page}: {self.counter}'
 
+    class Meta:
+        ordering = ['-last_visit']
+
 
 class ProductionProcess(models.Model):
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)

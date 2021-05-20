@@ -180,7 +180,8 @@ def create_spreadsheet_copy(item_id):
 
 
 def visit_counter(user, page):
-    if user.is_authenticated:
+    # personal setting
+    if user.is_authenticated and user.username != 'damian':
         try:
             visit = UserVisitCounter.objects.get(user=user, page=page)
             visit.counter += 1
