@@ -2281,3 +2281,12 @@ class MessageRead(View):
         message.save()
 
         return HttpResponse('')
+
+
+class ClothesView(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_cloth'
+
+    def get(self, request):
+        clothes = Cloth.objects.all()
+
+        return render(request, 'whm-clothes.html', locals())

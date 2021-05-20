@@ -641,7 +641,7 @@ class Message(models.Model):
 
 class Cloth(models.Model):
     name = models.CharField(max_length=64)
-    description = models.CharField(max_length=512)
+    description = models.CharField(max_length=512, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -650,6 +650,7 @@ class Cloth(models.Model):
 class WorkerWorkWear(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
     cloth = models.ForeignKey(Cloth, on_delete=models.CASCADE)
+    number_or_size = models.CharField(max_length=16, null=True, blank=True)
     date = models.DateField()
 
     def __str__(self):

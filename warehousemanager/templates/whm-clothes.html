@@ -1,0 +1,17 @@
+{% extends '__base2__.html' %}
+
+{% block title %}CLOTHES{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div>
+    {% for c in clothes %}
+    <p>{{ c }}</p>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}
