@@ -1188,3 +1188,11 @@ background-size: 28.28px 28.28px;
 .display-none {
     display: none;
 }
+
+.flex-33 {
+    width: 333px;
+}
+
+.flex-66 {
+    width: 666px;
+}

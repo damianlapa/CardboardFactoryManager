@@ -2287,6 +2287,8 @@ class ClothesView(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_cloth'
 
     def get(self, request):
+        visit_counter(request.user, 'clothes')
         clothes = Cloth.objects.all()
+        workwear = WorkerWorkWear.objects.all()
 
         return render(request, 'whm-clothes.html', locals())

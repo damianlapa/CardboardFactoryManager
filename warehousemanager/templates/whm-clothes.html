@@ -5,13 +5,28 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
-
-<div>
+<div class="flex-container" style="padding: 20px;">
+<div style="width: 100%; float: left;" class="bg-white">
     {% for c in clothes %}
-    <p>{{ c }}</p>
+    <div style="padding: 20px;" class="cloth" data-cloth="{{ c.name }}">
+        {{ c }}
+    </div>
     {% endfor %}
 </div>
 
+<div style="width: 100%; float: right;" class="bg-yellow">
+    {% for w in workwear %}
+    <div style="padding: 5px; display: none;" data-cloth="{{ w.cloth }}" class="person-cloth">
+        {{ w }}
+    </div>
+    {% endfor %}
+</div>
+</div>
 {% endblock %}
 
 {% block footer %}{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/clothes.js' %}"></script>
+{% endblock %}

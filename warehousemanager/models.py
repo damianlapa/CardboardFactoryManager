@@ -654,4 +654,4 @@ class WorkerWorkWear(models.Model):
     date = models.DateField()
 
     def __str__(self):
-        return str(self.date) + ' ' + str(self.worker) + str(self.cloth)
+        return str(self.date) + ' ' + str(self.worker) + ' ' + str(self.cloth)
