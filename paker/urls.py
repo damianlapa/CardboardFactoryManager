@@ -48,7 +48,7 @@ urlpatterns += [
     path('message-read/<int:message_id>/', MessageRead.as_view(), name='message-read'),
 ]
 
-#clothes
+# clothes
 urlpatterns += [
     path('clothes/', ClothesView.as_view(), name='clothes'),
 ]

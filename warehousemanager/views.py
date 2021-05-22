@@ -2290,5 +2290,6 @@ class ClothesView(View, PermissionRequiredMixin):
         visit_counter(request.user, 'clothes')
         clothes = Cloth.objects.all()
         workwear = WorkerWorkWear.objects.all()
+        workers = Person.objects.all()
 
         return render(request, 'whm-clothes.html', locals())
