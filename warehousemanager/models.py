@@ -162,6 +162,10 @@ class Person(models.Model):
             else:
                 return self.end_year_vacation(year - 1) + self.yearly_vacation_limit
 
+    def status(self):
+        if self.job_end:
+            return 'not active'
+        return 'active'
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
@@ -637,3 +641,24 @@ class Message(models.Model):
 
     def __str__(self):
         return f'{self.sender} -> {self.recipient} ({self.date_sent})'
+
+
+class Cloth(models.Model):
+    name = models.CharField(max_length=64)
+    description = models.CharField(max_length=512, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class WorkerWorkWear(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE)
+    cloth = models.ForeignKey(Cloth, on_delete=models.CASCADE)
+    number_or_size = models.CharField(max_length=16, null=True, blank=True)
+    date = models.DateField()
+
+    def __str__(self):
+        return str(self.date) + ' ' + str(self.worker) + ' ' + str(self.cloth)
+
+    class Meta:
+        ordering = ['-date']
