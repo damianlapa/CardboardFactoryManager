@@ -2288,8 +2288,8 @@ class ClothesView(View, PermissionRequiredMixin):
 
     def get(self, request):
         visit_counter(request.user, 'clothes')
-        clothes = Cloth.objects.all()
+        clothes = Cloth.objects.all().order_by('name')
         workwear = WorkerWorkWear.objects.all()
-        workers = Person.objects.all()
+        workers = Person.objects.all().order_by('last_name')
 
         return render(request, 'whm-clothes.html', locals())

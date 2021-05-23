@@ -162,6 +162,10 @@ class Person(models.Model):
             else:
                 return self.end_year_vacation(year - 1) + self.yearly_vacation_limit
 
+    def status(self):
+        if self.job_end:
+            return 'not active'
+        return 'active'
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
@@ -655,3 +659,6 @@ class WorkerWorkWear(models.Model):
 
     def __str__(self):
         return str(self.date) + ' ' + str(self.worker) + ' ' + str(self.cloth)
+
+    class Meta:
+        ordering = ['-date']

@@ -9,19 +9,27 @@
 <div style="width: 100%; float: left;" class="bg-white">
     <select id="select-option">
         <option>
+            ALL
+        </option>
+        <option>
             CLOTHES
         </option>
         <option>
             WORKERS
         </option>
     </select>
+    <p class="active-workers" style="display: none;">
+        Only Active Workers <input type="checkbox" id="active-workers" style=" margin: auto;">
+    </p>
+
     {% for c in clothes %}
-    <div style="padding: 20px;" class="cloth" data-cloth="{{ c.name }}">
+    <div style="padding: 20px; display: none;" class="cloth" data-cloth="{{ c.name }}">
         {{ c }}
     </div>
     {% endfor %}
     {% for w in workers %}
-    <div style="padding: 20px; display: none" class="worker" data-worker="{{ w.id }}">
+    <div style="padding: 20px; display: none" class="worker" data-worker="{{ w.id }}"
+         {% if not w.job_end %}data-status="active"{% else %}data-status="inactive"{% endif %}>
         {{ w }}
     </div>
     {% endfor %}
@@ -29,7 +37,7 @@
 
 <div style="width: 100%; float: right;" class="bg-yellow">
     {% for w in workwear %}
-    <div style="padding: 5px; display: none;" data-cloth="{{ w.cloth }}" data-worker="{{ w.worker.id }}" class="person-cloth">
+    <div style="padding: 5px;" data-cloth="{{ w.cloth }}" data-worker="{{ w.worker.id }}" data-workerStatus="{{ w.worker.status }}" class="person-cloth">
         {{ w }}
     </div>
     {% endfor %}
