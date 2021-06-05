@@ -41,9 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'warehousemanager',
-    'rest_framework',
-    'storages',
-    'crispy_forms'
 
 ]
 
