@@ -2305,11 +2305,12 @@ class StatsView(View):
         workers_list = []
         workers = Person.objects.all()
         for w in workers:
-            if not w.job_end:
-                workers_list.append(w)
-            else:
-                if w.job_end.year >= int(year):
+            if w.days_at_work(year=year) > 0:
+                if not w.job_end:
                     workers_list.append(w)
+                else:
+                    if w.job_end.year >= int(year):
+                        workers_list.append(w)
 
         workers = workers_list
         workers_data = [(w.last_name, w.days_at_work(year=year),

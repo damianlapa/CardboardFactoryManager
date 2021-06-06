@@ -177,6 +177,8 @@ class Person(models.Model):
             if self.job_start:
                 if self.job_start.year == start.year:
                     start = self.job_start
+                elif self.job_start > start.date():
+                    start = year_end
         if not end:
             end = year_end
             if int(year) == datetime.date.today().year:
