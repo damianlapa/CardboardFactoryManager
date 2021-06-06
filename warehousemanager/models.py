@@ -167,6 +167,35 @@ class Person(models.Model):
             return 'not active'
         return 'active'
 
+    def days_at_work(self, year, start=None, end=None):
+
+        year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
+        year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
+        if not start:
+            start = year_start
+        if not end:
+            end = year_end
+        if int(year) == datetime.date.today().year:
+            end = datetime.datetime.today()
+
+        holidays = Holiday.objects.filter(holiday_date__gte=start, holiday_date__lte=end)
+        year_days = (end - start).days + 1
+
+        if start.weekday() != 0:
+            difference = 7 - start.weekday()
+            year_days -= difference
+        if end.weekday():
+            sec_difference = 1 + end.weekday()
+            year_days -= sec_difference
+
+        days_to_add = 5 - start.weekday() if start.weekday() < 5 else 0
+        days_to_add_2 = 1 + end.weekday() if end.weekday() < 5 else 5
+
+        absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end)
+
+        return (year_days // 7)*5 + days_to_add + days_to_add_2 - holidays.count() - absences.count()
+
+
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=6, blank=True)
@@ -350,6 +379,12 @@ class Absence(models.Model):
 class Holiday(models.Model):
     name = models.CharField(max_length=32)
     holiday_date = models.DateField(unique=True)
+
+    def __str__(self):
+        return f'{self.name}({self.holiday_date})'
+
+    class Meta:
+        ordering = ['-holiday_date']
 
 
 class ExtraHour(models.Model):

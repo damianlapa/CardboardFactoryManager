@@ -152,6 +152,11 @@ urlpatterns += [
     path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
 ]
 
+# stats
+urlpatterns += [
+    path('stats/', StatsView.as_view(), name='stats'),
+]
+
 # vacations
 urlpatterns += [
     path('vacations/', AvailableVacation.as_view(), name='vacations'),

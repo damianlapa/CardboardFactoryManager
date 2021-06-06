@@ -2293,3 +2293,11 @@ class ClothesView(View, PermissionRequiredMixin):
         workers = Person.objects.all().order_by('last_name')
 
         return render(request, 'whm-clothes.html', locals())
+
+
+class StatsView(View):
+
+    def get(self, request):
+        workers = Person.objects.all()
+        workers_data = [(w.last_name, w.days_at_work(2021)) for w in workers]
+        return render(request, 'whm-stats.html', locals())

@@ -30,6 +30,8 @@ DEBUG = (os.environ.get('DEBUG') == 'True')
 
 ALLOWED_HOSTS = []
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 
 # Application definition
 
