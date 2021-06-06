@@ -2315,4 +2315,5 @@ class StatsView(View):
         workers = workers_list
         workers_data = [(w.last_name, w.days_at_work(year=year),
                          (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))) for w in workers]
+        workers_data = sorted(workers_data, key=lambda x: x[1], reverse=True)
         return render(request, 'whm-stats.html', locals())

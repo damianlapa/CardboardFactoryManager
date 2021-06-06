@@ -178,7 +178,7 @@ class Person(models.Model):
                 if self.job_start.year == start.year:
                     start = self.job_start
                 elif self.job_start > start.date():
-                    start = year_end
+                    start = year_end + 1
         if not end:
             end = year_end
             if int(year) == datetime.date.today().year:
@@ -192,8 +192,11 @@ class Person(models.Model):
 
         absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end, absence_type__in=['UW', 'UB', 'CH', 'OP', 'NN', 'KW', 'UO'])
 
-        return workdays - holidays.count() - absences.count()
+        new_holidays = [h for h in holidays if h.holiday_date.weekday() < 5]
 
+        holidays = new_holidays
+
+        return workdays - len(holidays) - len(absences)
 
 
 class CardboardProvider(models.Model):
