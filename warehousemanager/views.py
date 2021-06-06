@@ -2316,4 +2316,9 @@ class StatsView(View):
         workers_data = [(w.last_name, w.days_at_work(year=year),
                          (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))) for w in workers]
         workers_data = sorted(workers_data, key=lambda x: x[1], reverse=True)
+
+        # personal absences types
+        personal_absences = [(w.absences_types(year=year), w) for w in workers if len(w.absences_types(year=year)) > 0]
+        print(personal_absences)
+
         return render(request, 'whm-stats.html', locals())

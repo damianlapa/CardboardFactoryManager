@@ -7,6 +7,10 @@
 {% block content %}
 <h1 class="center">STATS</h1>
 <canvas id="myChart" width="400" height="155"></canvas>
+{% for worker in personal_absences %}
+<h3>{{ worker.1 }} </h3>
+<canvas id="absences-{{ worker.1.id }}" width="400" height="55"></canvas>
+{% endfor %}
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -45,5 +49,45 @@
             }
         }
     });
+
+{% for worker in personal_absences %}
+var ctx{{worker.1.id}} = document.getElementById('absences-{{ worker.1.id }}').getContext('2d');
+    var myChart{{worker.1.id}} = new Chart(ctx{{worker.1.id}}, {
+        type: 'pie',
+        data: {
+            labels: [{% for w in worker.0%}'{{ w.0 }}', {% endfor %}],
+            datasets: [{
+                label: 'Absences {{ worker.1}}',
+                data: [{% for w in worker.0%}'{{ w.1 }}', {% endfor %}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                    ],
+                borderWidth: 3
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+{% endfor %}
 </script>
 {% endblock %}

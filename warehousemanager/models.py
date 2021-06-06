@@ -178,7 +178,7 @@ class Person(models.Model):
                 if self.job_start.year == start.year:
                     start = self.job_start
                 elif self.job_start > start.date():
-                    start = year_end + 1
+                    start = year_end + datetime.timedelta(days=1)
         if not end:
             end = year_end
             if int(year) == datetime.date.today().year:
@@ -197,6 +197,35 @@ class Person(models.Model):
         holidays = new_holidays
 
         return workdays - len(holidays) - len(absences)
+
+    def absences_types(self, year=None, start=None, end=None):
+        year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
+        year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
+        if not start:
+            start = year_start
+            if self.job_start:
+                if self.job_start.year == start.year:
+                    start = self.job_start
+                elif self.job_start > start.date():
+                    start = year_end + datetime.timedelta(days=1)
+        if not end:
+            end = year_end
+            if int(year) == datetime.date.today().year:
+                end = datetime.datetime.today()
+            if self.job_end:
+                if self.job_end.year == end.year:
+                    end = self.job_end
+
+        absences = Absence.objects.filter(absence_date__gte=start, absence_date__lte=end, worker=self)
+
+        result = []
+
+        for x, y in ABSENCE_TYPES:
+            absences_to_add = absences.filter(absence_type=x)
+            if len(absences_to_add) > 0:
+                result.append((y, len(absences_to_add)))
+
+        return result
 
 
 class CardboardProvider(models.Model):
