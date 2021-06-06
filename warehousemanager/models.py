@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 import decimal
 import datetime
+from warehousemanager.clear_funcs import work_days_during_period
 
 PALETTES = (
     ('EU', 'Euro'),
@@ -167,33 +168,30 @@ class Person(models.Model):
             return 'not active'
         return 'active'
 
-    def days_at_work(self, year, start=None, end=None):
+    def days_at_work(self, year=None, start=None, end=None):
 
         year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
         year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
         if not start:
             start = year_start
+            if self.job_start:
+                if self.job_start.year == start.year:
+                    start = self.job_start
         if not end:
             end = year_end
-        if int(year) == datetime.date.today().year:
-            end = datetime.datetime.today()
+            if int(year) == datetime.date.today().year:
+                end = datetime.datetime.today()
+            if self.job_end:
+                if self.job_end.year == end.year:
+                    end = self.job_end
 
         holidays = Holiday.objects.filter(holiday_date__gte=start, holiday_date__lte=end)
-        year_days = (end - start).days + 1
+        workdays = work_days_during_period(year=year, start=start, end=end)
 
-        if start.weekday() != 0:
-            difference = 7 - start.weekday()
-            year_days -= difference
-        if end.weekday():
-            sec_difference = 1 + end.weekday()
-            year_days -= sec_difference
+        absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end, absence_type__in=['UW', 'UB', 'CH', 'OP', 'NN', 'KW', 'UO'])
 
-        days_to_add = 5 - start.weekday() if start.weekday() < 5 else 0
-        days_to_add_2 = 1 + end.weekday() if end.weekday() < 5 else 5
+        return workdays - holidays.count() - absences.count()
 
-        absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end)
-
-        return (year_days // 7)*5 + days_to_add + days_to_add_2 - holidays.count() - absences.count()
 
 
 class CardboardProvider(models.Model):

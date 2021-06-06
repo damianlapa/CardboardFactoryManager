@@ -154,7 +154,7 @@ urlpatterns += [
 
 # stats
 urlpatterns += [
-    path('stats/', StatsView.as_view(), name='stats'),
+    path('stats/<str:year>/', StatsView.as_view(), name='stats'),
 ]
 
 # vacations

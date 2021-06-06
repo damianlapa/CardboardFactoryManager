@@ -294,6 +294,7 @@ def reminders_qs():
     reminders = Reminder.objects.filter(sent_date=None)
     if len(reminders) > 0:
         return True
+
     return False
 
 

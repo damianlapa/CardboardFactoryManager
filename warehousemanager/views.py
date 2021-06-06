@@ -586,7 +586,8 @@ class AbsencesList(PermissionRequiredMixin, View):
         if request.user.is_superuser:
             workers = Person.objects.all().filter(
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
-            workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            workers = workers.exclude(
+                job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
         else:
             try:
                 workers = [Person.objects.get(user=request.user)]
@@ -732,7 +733,8 @@ class AbsencesAndHolidays(View):
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
         return HttpResponse(
-            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances, unusual_absences)))
+            json.dumps(
+                (absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances, unusual_absences)))
 
 
 class GetLocalVar(View):
@@ -2089,7 +2091,8 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
                                                                                                     '%Y-%m-%d'))
 
         for delivery in deliveries_query:
-            result = [(delivery.date_of_delivery, delivery.id)] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
+            result = [(delivery.date_of_delivery, delivery.id)] + ['-' for _ in palettes_list] + ['-' for _ in
+                                                                                                  palettes_list]
             for p in PaletteQuantity.objects.filter(delivery=delivery):
                 if p.status == 'DEL':
                     result[palettes_list.index(p.palette) + 1] = p.quantity
@@ -2221,7 +2224,8 @@ class MessageView(View, LoginRequiredMixin):
         if user:
             sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
             drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
-            received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by('-date_sent')
+            received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by(
+                '-date_sent')
             form = MessageForm() if not initial_message else MessageForm(instance=initial_message)
         else:
             user = 'AnonymousUser'
@@ -2240,7 +2244,8 @@ class MessageView(View, LoginRequiredMixin):
             message_content = form.cleaned_data['content']
 
             if not initial_message:
-                new_message = Message.objects.create(sender=request.user, recipient=message_to, title=message_title, content=message_content)
+                new_message = Message.objects.create(sender=request.user, recipient=message_to, title=message_title,
+                                                     content=message_content)
             else:
                 new_message = initial_message
                 new_message.sender = request.user
@@ -2275,7 +2280,6 @@ class MessageContent(View):
 class MessageRead(View):
 
     def get(self, request, message_id):
-
         message = Message.objects.get(id=message_id)
         message.date_read = datetime.datetime.now()
         message.save()
@@ -2297,7 +2301,17 @@ class ClothesView(View, PermissionRequiredMixin):
 
 class StatsView(View):
 
-    def get(self, request):
+    def get(self, request, year):
+        workers_list = []
         workers = Person.objects.all()
-        workers_data = [(w.last_name, w.days_at_work(2021)) for w in workers]
+        for w in workers:
+            if not w.job_end:
+                workers_list.append(w)
+            else:
+                if w.job_end.year >= int(year):
+                    workers_list.append(w)
+
+        workers = workers_list
+        workers_data = [(w.last_name, w.days_at_work(year=year),
+                         (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))) for w in workers]
         return render(request, 'whm-stats.html', locals())
