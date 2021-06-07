@@ -7,6 +7,21 @@ import decimal
 import datetime
 from warehousemanager.clear_funcs import work_days_during_period
 
+MONTHS = (
+    ('1', 'January'),
+    ('2', 'February'),
+    ('3', 'March'),
+    ('4', 'April'),
+    ('5', 'May'),
+    ('6', 'June'),
+    ('7', 'July'),
+    ('8', 'August'),
+    ('9', 'September'),
+    ('10', 'October'),
+    ('11', 'November'),
+    ('12', 'December')
+)
+
 PALETTES = (
     ('EU', 'Euro'),
     ('OR', 'Ordinary')
@@ -324,6 +339,29 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f'{self.provider}|{self.date_of_delivery}'
+
+    @classmethod
+    def deliveries_during_period(cls, year):
+        result = []
+        year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
+        year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
+        year_deliveries = cls.objects.filter(date_of_delivery__gte=year_start, date_of_delivery__lte=year_end)
+
+        for d in year_deliveries:
+            result.append((1, d.date_of_delivery.month))
+
+        chart_data = []
+
+        for m in MONTHS:
+            chart_data.append([m[0], m[1], 0])
+
+        for d in result:
+            chart_data[d[1]-1][2] += 1
+
+        chart_data = list(filter(lambda x: x[2] > 0, chart_data))
+
+        return chart_data
+
 
 
 class OrderItemQuantity(models.Model):

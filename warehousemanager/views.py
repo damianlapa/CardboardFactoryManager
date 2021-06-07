@@ -389,6 +389,9 @@ class DeliveriesManagement(PermissionRequiredMixin, View):
     def get(self, request):
         title = 'DELIVERIES'
         all_deliveries = Delivery.objects.all()
+
+        year_deliveries = Delivery.deliveries_during_period(2021)
+
         return render(request, 'warehousemanager-all-deliveries.html', locals())
 
 
