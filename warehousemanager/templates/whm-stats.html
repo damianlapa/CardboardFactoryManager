@@ -7,7 +7,7 @@
 {% block content %}
 <h1 class="center">STATS</h1>
 <canvas id="myChart" width="400" height="155"></canvas>
-<div class="flex-container flex-space-around">
+<div class="flex-container flex-space-around flex-wrap">
 {% for worker in personal_absences %}
     <div>
 <h3>{{ worker.1 }} </h3>
@@ -64,6 +64,7 @@ var ctx{{worker.1.id}} = document.getElementById('absences-{{ worker.1.id }}').g
                 label: 'Absences {{ worker.1}}',
                 data: [{% for w in worker.0%}'{{ w.1 }}', {% endfor %}],
                 backgroundColor: [
+                    'rgba(75, 192, 192, 0.7)',
                     'rgba(255, 99, 132, 0.7)',
                     'rgba(54, 162, 235, 0.7)',
                     'rgba(255, 206, 86, 0.7)',
@@ -72,6 +73,7 @@ var ctx{{worker.1.id}} = document.getElementById('absences-{{ worker.1.id }}').g
                     'rgba(255, 159, 64, 0.7)'
                 ],
                 borderColor: [
+                    'rgba(75, 192, 192, 1)',
                     'rgba(255, 99, 132, 1)',
                     'rgba(54, 162, 235, 1)',
                     'rgba(255, 206, 86, 1)',

@@ -1153,6 +1153,10 @@ background-size: 28.28px 28.28px;
     justify-content: space-around;
 }
 
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
 .width-500p {
     width: 500px;
 }

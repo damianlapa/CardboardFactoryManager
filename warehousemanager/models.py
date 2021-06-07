@@ -232,10 +232,13 @@ class Person(models.Model):
 
         result = []
 
+        not_counted_types = ('D', 'SP')
+
         for x, y in ABSENCE_TYPES:
-            absences_to_add = absences.filter(absence_type=x)
-            if len(absences_to_add) > 0:
-                result.append((x, len(absences_to_add)))
+            if x not in not_counted_types:
+                absences_to_add = absences.filter(absence_type=x)
+                if len(absences_to_add) > 0:
+                    result.append((x, len(absences_to_add)))
 
         return result
 

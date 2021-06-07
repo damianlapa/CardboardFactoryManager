@@ -2308,4 +2308,6 @@ class StatsView(View):
             p[0] = sorted(p[0], key= lambda x: x[0])
             p[0].insert(0, ('OB', p[1].days_at_work(year=year)))
 
+        personal_absences = sorted(personal_absences, key= lambda x: x[0][0][1], reverse=True)
+
         return render(request, 'whm-stats.html', locals())
