@@ -580,6 +580,7 @@ class AbsencesList(PermissionRequiredMixin, View):
             prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
         month_year = aa.split()
+        print(month_year, user)
         str_date = f'{month_year[1]}-{months.index(month_year[0]) + 1}-1'
         month_days = month_days_function(datetime.datetime.strptime(str_date, '%Y-%m-%d'))
 
@@ -587,7 +588,7 @@ class AbsencesList(PermissionRequiredMixin, View):
             workers = Person.objects.all().filter(
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
-                job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+                job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
         else:
             try:
                 workers = [Person.objects.get(user=request.user)]
@@ -773,7 +774,6 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             default_date = ' '.join((day, monthyear))
             default_date = default_date.split(' ')
             default_date = '-'.join(default_date[::-1])
-            print(default_date)
             default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
             default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
 
@@ -1819,24 +1819,9 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
-'''class PolymerCreate(CreateView):
+class PolymerCreate(CreateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']'''
-
-
-class PolymerCreate(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_photopolymer'
-
-    def get(self, request):
-        form = PolymerForm()
-        return render(request, 'warehousemanager/photopolymer_form.html', locals())
-
-    def post(self, request):
-        form = PolymerForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            form.save()
-            return HttpResponse('ok')
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
 
 
 class PolymerUpdate(PermissionRequiredMixin, UpdateView):
@@ -2318,7 +2303,9 @@ class StatsView(View):
         workers_data = sorted(workers_data, key=lambda x: x[1], reverse=True)
 
         # personal absences types
-        personal_absences = [(w.absences_types(year=year), w) for w in workers if len(w.absences_types(year=year)) > 0]
-        print(personal_absences)
+        personal_absences = [[w.absences_types(year=year), w] for w in workers if len(w.absences_types(year=year)) > 0]
+        for p in personal_absences:
+            p[0] = sorted(p[0], key= lambda x: x[0])
+            p[0].insert(0, ('OB', p[1].days_at_work(year=year)))
 
         return render(request, 'whm-stats.html', locals())

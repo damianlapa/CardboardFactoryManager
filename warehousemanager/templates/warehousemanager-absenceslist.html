@@ -3,6 +3,9 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+<a href="{% url 'stats' year=2021%}"><button class="absence-button">Statistics</button></a>
+
+<br />
 <br />
 
 <a href="{% url 'vacations' %}"><button class="absence-button">Vacations</button></a>

@@ -187,6 +187,11 @@ class Person(models.Model):
                 if self.job_end.year == end.year:
                     end = self.job_end
 
+        if isinstance(start, datetime.datetime):
+            start = start.date()
+        if isinstance(end, datetime.datetime):
+            end = end.date()
+
         holidays = Holiday.objects.filter(holiday_date__gte=start, holiday_date__lte=end)
         workdays = work_days_during_period(year=year, start=start, end=end)
 
@@ -195,6 +200,8 @@ class Person(models.Model):
         new_holidays = [h for h in holidays if h.holiday_date.weekday() < 5]
 
         holidays = new_holidays
+
+        print(self, workdays, start, end)
 
         return workdays - len(holidays) - len(absences)
 
@@ -216,6 +223,11 @@ class Person(models.Model):
                 if self.job_end.year == end.year:
                     end = self.job_end
 
+        if isinstance(start, datetime.datetime):
+            start = start.date()
+        if isinstance(end, datetime.datetime):
+            end = end.date()
+
         absences = Absence.objects.filter(absence_date__gte=start, absence_date__lte=end, worker=self)
 
         result = []
@@ -223,7 +235,7 @@ class Person(models.Model):
         for x, y in ABSENCE_TYPES:
             absences_to_add = absences.filter(absence_type=x)
             if len(absences_to_add) > 0:
-                result.append((y, len(absences_to_add)))
+                result.append((x, len(absences_to_add)))
 
         return result
 

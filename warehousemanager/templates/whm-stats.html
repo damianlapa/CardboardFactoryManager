@@ -7,10 +7,14 @@
 {% block content %}
 <h1 class="center">STATS</h1>
 <canvas id="myChart" width="400" height="155"></canvas>
+<div class="flex-container flex-space-around">
 {% for worker in personal_absences %}
+    <div>
 <h3>{{ worker.1 }} </h3>
-<canvas id="absences-{{ worker.1.id }}" width="400" height="55"></canvas>
+<canvas id="absences-{{ worker.1.id }}" width="400" height="222"></canvas>
+        </div>
 {% endfor %}
+    </div>
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -75,18 +79,9 @@ var ctx{{worker.1.id}} = document.getElementById('absences-{{ worker.1.id }}').g
                     'rgba(153, 102, 255, 1)',
                     'rgba(255, 159, 64, 1)'
                     ],
-                borderWidth: 3
+                borderWidth: 1
             }]
         },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
-        }
     });
 {% endfor %}
 </script>
