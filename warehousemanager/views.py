@@ -761,6 +761,7 @@ class AbsenceAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.add_absence'
 
     def get(self, request):
+        print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
         worker = None
         day = None
         monthyear = None
@@ -827,9 +828,12 @@ class AbsenceAdd(PermissionRequiredMixin, View):
 
                 if len(ExtraHour.objects.filter(worker=worker, extras_date=extras_date)) > 0:
                     new_extras = ExtraHour.objects.filter(worker=worker, extras_date=extras_date)[0]
+                    old_data = f'{new_extras}'
                     new_extras.quantity = extras_quantity
                     new_extras.full_day = extras_day
                     new_extras.save()
+                    new_data = f'{new_extras}'
+                    visit_counter(request.user, f'{old_data}//{new_data}')
                 else:
 
                     new_extras = ExtraHour.objects.create(worker=worker, extras_date=extras_date,
@@ -850,14 +854,15 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             condition_one = absence_date <= worker.job_end if worker.job_end else True
             condition_two = absence_date >= worker.job_start
 
-            print(condition_two, condition_one)
-
             if all((condition_one, condition_two)):
 
                 if len(Absence.objects.filter(worker=worker, absence_date=absence_date)) > 0:
                     new_absence = Absence.objects.filter(worker=worker, absence_date=absence_date)[0]
+                    old_data = f'{new_absence}'
                     new_absence.absence_type = absence_type
                     new_absence.save()
+                    new_data = f'{new_absence}'
+                    visit_counter(request.user, f'{old_data}//{new_data}')
                 else:
 
                     new_absence = Absence.objects.create(worker=worker, absence_date=absence_date,
@@ -917,7 +922,11 @@ class AbsenceDelete(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_absence'
 
     def post(self, request):
-        Absence.objects.get(id=int(request.POST.get('absence_id'))).delete()
+        absence = Absence.objects.get(id=int(request.POST.get('absence_id')))
+        absence_info = f'{absence.worker}-{absence.absence_type}-{absence.absence_date}-by: {request.user}'
+        absence.delete()
+
+        visit_counter(request.user, 'absence-delete ' + absence_info)
 
         return HttpResponse(request.POST.get('absence_id'))
 

@@ -653,7 +653,7 @@ class PhotopolymerService(models.Model):
 
 class UserVisitCounter(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    page = models.CharField(max_length=32)
+    page = models.CharField(max_length=64)
     counter = models.PositiveIntegerField(default=0)
     first_visit = models.DateTimeField(null=True, blank=True)
     last_visit = models.DateTimeField(null=True, blank=True)
