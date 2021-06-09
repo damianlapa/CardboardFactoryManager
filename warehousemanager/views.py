@@ -2308,9 +2308,9 @@ class StatsView(View):
         # personal absences types
         personal_absences = [[w.absences_types(year=year), w] for w in workers if len(w.absences_types(year=year)) > 0]
         for p in personal_absences:
-            p[0] = sorted(p[0], key= lambda x: x[0])
+            p[0] = sorted(p[0], key=lambda x: x[0])
             p[0].insert(0, ('OB', p[1].days_at_work(year=year)))
 
-        personal_absences = sorted(personal_absences, key= lambda x: x[0][0][1], reverse=True)
+        personal_absences = sorted(personal_absences, key=lambda x: x[0][0][1], reverse=True)
 
         return render(request, 'whm-stats.html', locals())
