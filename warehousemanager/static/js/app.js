@@ -838,7 +838,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (allRows.length > 0) {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
-                link = localLink + 'punch/' + allRows[i].dataset.punch_id
+                link = localLink + 'punch/' + allRows[i].dataset.punch_id + '/'
                 window.open(link, '_self')
             })
         }
