@@ -358,8 +358,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         console.log(data[0][i][2])
 
                         if (data[0][i][2] === 'D') {
-                        absenceField[0].innerText = data[0][i][2]
-                        absenceField[0].classList.add('del-bg')
                         } else {
                         console.log(absenceField[0])
                             absenceField[0].innerText = data[0][i][2]
@@ -437,7 +435,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 acquaintanceField[0].innerText = 'IN' // data[5][a][3]
                 acquaintanceField[0].classList.add('in-bg')
             }}
-            /*
             for (let i=0; i < data[0].length; i++){
                 day_text = 'day' + data[0][i][1]
                 if (data[0][i][0] >= 0){
@@ -467,7 +464,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             }
-            */
             })
         monthSelect.addEventListener('click', function () {
             $.ajax({
