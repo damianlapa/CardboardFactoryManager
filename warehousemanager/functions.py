@@ -266,12 +266,12 @@ def create_or_send_reminder(worker, days_left, topic):
                 Reminder.objects.create(worker=worker, title=f'{topic}*0*{date}', create_date=datetime.date.today())
         elif 8 > days_left > 0:
             try:
-                reminder = Reminder.objects.get(worker=worker, title=f'{topic}*7*{date}')
-                if not reminder.sent_date:
-                    title, text = compose_mail(reminder)
+                reminders = Reminder.objects.filter(worker=worker, title=f'{topic}*7*{date}')
+                if not reminders[0].sent_date:
+                    # title, text = compose_mail(reminder)
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
-                    reminder.save()
+                    reminders[0].save()
             except ObjectDoesNotExist:
                 Reminder.objects.create(worker=worker, title=f'{topic}*7*{date}', create_date=datetime.date.today())
         elif 29 > days_left > 7:
