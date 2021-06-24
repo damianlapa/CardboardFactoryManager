@@ -266,12 +266,12 @@ def create_or_send_reminder(worker, days_left, topic):
                 Reminder.objects.create(worker=worker, title=f'{topic}*0*{date}', create_date=datetime.date.today())
         elif 8 > days_left > 0:
             try:
-                reminders = Reminder.objects.filter(worker=worker, title=f'{topic}*7*{date}')
-                if not reminders[0].sent_date:
+                reminder = Reminder.objects.get(worker=worker, title=f'{topic}*7*{date}')
+                if not reminder.sent_date:
                     # title, text = compose_mail(reminder)
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
-                    reminders[0].save()
+                    reminder.save()
             except ObjectDoesNotExist:
                 Reminder.objects.create(worker=worker, title=f'{topic}*7*{date}', create_date=datetime.date.today())
         elif 29 > days_left > 7:
@@ -303,3 +303,46 @@ def new_messages_function(request):
     messages = Message.objects.filter(recipient=user, date_read__isnull=True).exclude(
         date_sent__isnull=True) if not user.is_anonymous else ()
     return len(messages) if len(messages) > 0 else False
+
+
+def year_weeks(year):
+
+    first_day_of_year = datetime.datetime.strptime(f'{year}-01-01', '%Y-%m-%d').date()
+    last_day_of_year = datetime.datetime.strptime(f'{year}-12-31', '%Y-%m-%d').date()
+    today = datetime.date.today()
+
+    first_week = None
+    first_monday = None
+    all_weeks = []
+
+    if first_day_of_year.weekday() < 5:
+        first_week = first_day_of_year
+    else:
+        while first_day_of_year.weekday() != 0:
+            first_day_of_year = first_day_of_year + datetime.timedelta(days=1)
+        first_week = first_day_of_year
+        first_monday = first_week
+
+    if not first_monday:
+        while first_day_of_year.weekday() != 0:
+            first_day_of_year += datetime.timedelta(days=1)
+        first_monday = first_day_of_year
+
+    if first_week != first_monday:
+        all_weeks = [first_week, first_monday]
+    else:
+        all_weeks = [first_week]
+
+    if today.year == int(year):
+        last_day_of_year = today
+
+    while first_monday < last_day_of_year:
+        all_weeks.append(first_monday)
+        first_monday += datetime.timedelta(days=7)
+
+    return all_weeks
+
+
+def active_workers_at_day(day):
+    active_workers = Person.objects.filter()
+

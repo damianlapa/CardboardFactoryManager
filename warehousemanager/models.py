@@ -216,8 +216,6 @@ class Person(models.Model):
 
         holidays = new_holidays
 
-        print(self, workdays, start, end)
-
         return workdays - len(holidays) - len(absences)
 
     def absences_types(self, year=None, start=None, end=None):
@@ -256,6 +254,19 @@ class Person(models.Model):
                     result.append((x, len(absences_to_add)))
 
         return result
+
+    @classmethod
+    def active_workers_at_day(cls, day):
+        active_workers = []
+        workers = cls.objects.filter(job_start__lte=day)
+        for worker in workers:
+            if worker.job_end:
+                if day <= worker.job_end:
+                    active_workers.append(worker)
+            else:
+                active_workers.append(worker)
+
+        return len(active_workers)
 
 
 class CardboardProvider(models.Model):

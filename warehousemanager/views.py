@@ -583,7 +583,6 @@ class AbsencesList(PermissionRequiredMixin, View):
             prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
         month_year = aa.split()
-        print(month_year, user)
         str_date = f'{month_year[1]}-{months.index(month_year[0]) + 1}-1'
         month_days = month_days_function(datetime.datetime.strptime(str_date, '%Y-%m-%d'))
 
@@ -761,7 +760,6 @@ class AbsenceAdd(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.add_absence'
 
     def get(self, request):
-        print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
         worker = None
         day = None
         monthyear = None
@@ -2053,8 +2051,6 @@ class ReminderDeleteView(View, PermissionRequiredMixin):
         reminder = Reminder.objects.get(id=int(reminder_id))
         reminder.delete()
 
-        print('visit')
-
         return redirect('reminders')
 
 
@@ -2269,8 +2265,6 @@ class MessageContent(View):
             'content': str(message.content),
         }
 
-        print(data)
-
         return HttpResponse(json.dumps(data))
 
 
@@ -2321,5 +2315,10 @@ class StatsView(View):
             p[0].insert(0, ('OB', p[1].days_at_work(year=year)))
 
         personal_absences = sorted(personal_absences, key=lambda x: x[0][0][1], reverse=True)
+
+        # employment during period
+        employment_data = []
+        for week in year_weeks(year):
+            employment_data.append((week, Person.active_workers_at_day(week)))
 
         return render(request, 'whm-stats.html', locals())

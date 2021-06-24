@@ -15,6 +15,9 @@
         </div>
 {% endfor %}
     </div>
+<div>
+    <canvas id="employmentChart" width="400" height="155"></canvas>
+</div>
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -39,6 +42,34 @@
                     {% for w in workers_data %}
                     'rgba({{w.2.0}}, {{w.2.1}}, {{w.2.2}}, 1)',
                     {% endfor %}
+                ],
+                borderWidth: 3
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+
+    var ctxEmployment = document.getElementById('employmentChart').getContext('2d');
+    var ChartEmployment = new Chart(ctxEmployment, {
+        type: 'line',
+        data: {
+            labels: [{% for d in employment_data%}'{{ d.0 }}', {% endfor %}],
+            datasets: [{
+                label: 'Employment',
+                data: [{% for d in employment_data %}{{ d.1 }}, {% endfor %}],
+                backgroundColor: [
+                    'pink',
+                ],
+                borderColor: [
+                    'red'
                 ],
                 borderWidth: 3
             }]
