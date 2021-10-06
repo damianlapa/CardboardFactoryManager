@@ -425,7 +425,7 @@ class DeliveryDetails(PermissionRequiredMixin, View):
 
             new_palette_quantity.save()
 
-            return redirect('/delivery/{}'.format(delivery_id))
+            return redirect('/delivery/{}/'.format(delivery_id))
 
         if order_item_q_form.is_valid():
             delivery = request.POST.get('delivery')
@@ -438,7 +438,7 @@ class DeliveryDetails(PermissionRequiredMixin, View):
 
             new_oiq.save()
 
-            return redirect('/delivery/{}'.format(delivery_id))
+            return redirect('/delivery/{}/'.format(delivery_id))
 
 
 # dodawanie dostawy
@@ -460,7 +460,7 @@ class DeliveryAdd(PermissionRequiredMixin, View):
 
             new_delivery.save()
 
-            return redirect('/delivery/{}'.format(new_delivery.id))
+            return redirect('/delivery/{}/'.format(new_delivery.id))
 
         else:
             return HttpResponse('fail')

@@ -374,7 +374,6 @@ class Delivery(models.Model):
         return chart_data
 
 
-
 class OrderItemQuantity(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE)
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)

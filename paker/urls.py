@@ -1,10 +1,12 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from warehousemanager.views import *
 from django.conf.urls.static import static
 
 
 urlpatterns = [
+    path('production/', include('production.urls')),
+
     path('admin/', admin.site.urls, name='admin'),
     path('print-test/', PrintTest.as_view(), name='print-test'),
     path('open-order/<int:order_item_id>/', OpenFile.as_view(), name='open-order'),
