@@ -3,6 +3,9 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+<a href="{% url 'stats' year=2021%}"><button class="absence-button">Statistics</button></a>
+
+<br />
 <br />
 
 <a href="{% url 'vacations' %}"><button class="absence-button">Vacations</button></a>
@@ -24,9 +27,9 @@
 <select id="monthSelect" style="margin-bottom: 5px;">
     {% for zz in z %}
     {% if zz == aa %}
-        <option value="{{ zz }}" selected>{{ zz }}</option>
+        <option value="{{ zz }}" selected class="month-select-option">{{ zz }}</option>
     {% else %}
-        <option value="{{ zz }}">{{ zz }}</option>
+        <option value="{{ zz }}" class="month-select-option">{{ zz }}</option>
     {% endif %}
 {% endfor %}
 </select>

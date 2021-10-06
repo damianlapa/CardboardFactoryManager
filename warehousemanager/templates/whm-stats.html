@@ -1,0 +1,139 @@
+{% extends '__base2__.html' %}
+
+{% block title %}PAKER - Statistics{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<h1 class="center">STATS</h1>
+<canvas id="myChart" width="400" height="155"></canvas>
+<div class="flex-container flex-space-around flex-wrap">
+{% for worker in personal_absences %}
+    <div>
+<h3>{{ worker.1 }} </h3>
+<canvas id="absences-{{ worker.1.id }}" width="400" height="222"></canvas>
+        </div>
+{% endfor %}
+    </div>
+<div>
+    <canvas id="employmentChart" width="400" height="155"></canvas>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script>
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for w in workers_data%}'{{ w.0 }}', {% endfor %}],
+            datasets: [{
+                label: 'Days at work',
+                data: [{% for w in workers_data %}{{ w.1 }}, {% endfor %}],
+                backgroundColor: [
+                    {% for w in workers_data %}
+                    'rgba({{w.2.0}}, {{w.2.1}}, {{w.2.2}}, 0.2)',
+                    {% endfor %}
+                ],
+                borderColor: [
+                    {% for w in workers_data %}
+                    'rgba({{w.2.0}}, {{w.2.1}}, {{w.2.2}}, 1)',
+                    {% endfor %}
+                ],
+                borderWidth: 3
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+
+    var ctxEmployment = document.getElementById('employmentChart').getContext('2d');
+    var ChartEmployment = new Chart(ctxEmployment, {
+        type: 'line',
+        data: {
+            labels: [{% for d in employment_data%}'{{ d.0 }}', {% endfor %}],
+            datasets: [{
+                label: 'Employment',
+                data: [{% for d in employment_data %}{{ d.1 }}, {% endfor %}],
+                backgroundColor: [
+                    'pink',
+                ],
+                borderColor: [
+                    'red'
+                ],
+                borderWidth: 3
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+
+{% for worker in personal_absences %}
+var ctx{{worker.1.id}} = document.getElementById('absences-{{ worker.1.id }}').getContext('2d');
+    var myChart{{worker.1.id}} = new Chart(ctx{{worker.1.id}}, {
+        type: 'pie',
+        data: {
+            labels: [{% for w in worker.0%}'{{ w.0 }}', {% endfor %}],
+            datasets: [{
+                label: 'Absences {{ worker.1}}',
+                data: [{% for w in worker.0%}'{{ w.1 }}', {% endfor %}],
+                backgroundColor: [
+                    {% for data in worker.0 %}
+                        // {{ data.0 }}
+                        {% if data.0 == 'UW' %}
+                        'rgba(255, 99, 177, 0.7)',
+                        {% elif data.0 == 'OB' %}
+                        'rgba(177, 222, 222, 0.7)',
+                        {% elif data.0 == 'UB' %}
+                        'rgba(54, 162, 235, 0.7)',
+                        {% elif data.0 == 'CH' %}
+                        'rgba(255, 206, 86, 0.7)',
+                        {% elif data.0 == 'IN' %}
+                        'rgba(255, 206, 199, 0.7)',
+                        {% else %}
+                        'rgba(33, 206, 86, 0.7)',
+                        {% endif %}
+                    {% endfor %}
+                ],
+                borderColor: [
+                    {% for data in worker.0 %}
+                        // {{ data.0 }}
+                        {% if data.0 == 'UW' %}
+                        'rgba(255, 99, 177, 1)',
+                        {% elif data.0 == 'OB' %}
+                        'rgba(177, 222, 222, 1)',
+                        {% elif data.0 == 'UB' %}
+                        'rgba(54, 162, 235, 1)',
+                        {% elif data.0 == 'CH' %}
+                        'rgba(255, 206, 86, 1)',
+                        {% elif data.0 == 'IN' %}
+                        'rgba(255, 206, 199, 1)',
+                        {% else %}
+                        'rgba(33, 206, 86, 1)',
+                        {% endif %}
+                    {% endfor %}
+                    ],
+                borderWidth: 1
+            }]
+        },
+    });
+{% endfor %}
+</script>
+{% endblock %}

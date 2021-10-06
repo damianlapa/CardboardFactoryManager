@@ -1,5 +1,5 @@
 from django.utils import timezone
-from warehousemanager.models import Reminder
+from warehousemanager.models import *
 from warehousemanager.functions import reminders_qs, new_messages_function
 
 

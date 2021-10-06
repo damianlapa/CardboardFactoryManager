@@ -5,6 +5,22 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 import decimal
 import datetime
+from warehousemanager.clear_funcs import work_days_during_period
+
+MONTHS = (
+    ('1', 'January'),
+    ('2', 'February'),
+    ('3', 'March'),
+    ('4', 'April'),
+    ('5', 'May'),
+    ('6', 'June'),
+    ('7', 'July'),
+    ('8', 'August'),
+    ('9', 'September'),
+    ('10', 'October'),
+    ('11', 'November'),
+    ('12', 'December')
+)
 
 PALETTES = (
     ('EU', 'Euro'),
@@ -167,6 +183,92 @@ class Person(models.Model):
             return 'not active'
         return 'active'
 
+    def days_at_work(self, year=None, start=None, end=None):
+
+        year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
+        year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
+        if not start:
+            start = year_start
+            if self.job_start:
+                if self.job_start.year == start.year:
+                    start = self.job_start
+                elif self.job_start > start.date():
+                    start = year_end + datetime.timedelta(days=1)
+        if not end:
+            end = year_end
+            if int(year) == datetime.date.today().year:
+                end = datetime.datetime.today()
+            if self.job_end:
+                if self.job_end.year == end.year:
+                    end = self.job_end
+
+        if isinstance(start, datetime.datetime):
+            start = start.date()
+        if isinstance(end, datetime.datetime):
+            end = end.date()
+
+        holidays = Holiday.objects.filter(holiday_date__gte=start, holiday_date__lte=end)
+        workdays = work_days_during_period(year=year, start=start, end=end)
+
+        absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end, absence_type__in=['UW', 'UB', 'CH', 'OP', 'NN', 'KW', 'UO'])
+
+        new_holidays = [h for h in holidays if h.holiday_date.weekday() < 5]
+
+        holidays = new_holidays
+
+        return workdays - len(holidays) - len(absences)
+
+    def absences_types(self, year=None, start=None, end=None):
+        year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
+        year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
+        if not start:
+            start = year_start
+            if self.job_start:
+                if self.job_start.year == start.year:
+                    start = self.job_start
+                elif self.job_start > start.date():
+                    start = year_end + datetime.timedelta(days=1)
+        if not end:
+            end = year_end
+            if int(year) == datetime.date.today().year:
+                end = datetime.datetime.today()
+            if self.job_end:
+                if self.job_end.year == end.year:
+                    end = self.job_end
+
+        if isinstance(start, datetime.datetime):
+            start = start.date()
+        if isinstance(end, datetime.datetime):
+            end = end.date()
+
+        absences = Absence.objects.filter(absence_date__gte=start, absence_date__lte=end, worker=self)
+
+        result = []
+
+        not_counted_types = ('D', 'SP')
+
+        for x, y in ABSENCE_TYPES:
+            if x not in not_counted_types:
+                absences_to_add = absences.filter(absence_type=x)
+                if len(absences_to_add) > 0:
+                    result.append((x, len(absences_to_add)))
+
+        return result
+
+    @classmethod
+    def active_workers_at_day(cls, day):
+        active_workers = []
+        workers = cls.objects.filter(job_start__lte=day)
+        for worker in workers:
+            if worker.job_end:
+                if day <= worker.job_end:
+                    active_workers.append(worker)
+            else:
+                active_workers.append(worker)
+
+        return len(active_workers)
+
+
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=6, blank=True)
@@ -248,6 +350,28 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f'{self.provider}|{self.date_of_delivery}'
+
+    @classmethod
+    def deliveries_during_period(cls, year):
+        result = []
+        year_start = datetime.datetime.strptime('01-01-{}'.format(year), '%d-%m-%Y')
+        year_end = datetime.datetime.strptime('31-12-{}'.format(year), '%d-%m-%Y')
+        year_deliveries = cls.objects.filter(date_of_delivery__gte=year_start, date_of_delivery__lte=year_end)
+
+        for d in year_deliveries:
+            result.append((1, d.date_of_delivery.month))
+
+        chart_data = []
+
+        for m in MONTHS:
+            chart_data.append([m[0], m[1], 0])
+
+        for d in result:
+            chart_data[d[1]-1][2] += 1
+
+        chart_data = list(filter(lambda x: x[2] > 0, chart_data))
+
+        return chart_data
 
 
 class OrderItemQuantity(models.Model):
@@ -350,6 +474,12 @@ class Absence(models.Model):
 class Holiday(models.Model):
     name = models.CharField(max_length=32)
     holiday_date = models.DateField(unique=True)
+
+    def __str__(self):
+        return f'{self.name}({self.holiday_date})'
+
+    class Meta:
+        ordering = ['-holiday_date']
 
 
 class ExtraHour(models.Model):
@@ -533,7 +663,7 @@ class PhotopolymerService(models.Model):
 
 class UserVisitCounter(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    page = models.CharField(max_length=32)
+    page = models.CharField(max_length=64)
     counter = models.PositiveIntegerField(default=0)
     first_visit = models.DateTimeField(null=True, blank=True)
     last_visit = models.DateTimeField(null=True, blank=True)

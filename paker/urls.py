@@ -1,10 +1,12 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from warehousemanager.views import *
 from django.conf.urls.static import static
 
 
 urlpatterns = [
+    path('production/', include('production.urls')),
+
     path('admin/', admin.site.urls, name='admin'),
     path('print-test/', PrintTest.as_view(), name='print-test'),
     path('open-order/<int:order_item_id>/', OpenFile.as_view(), name='open-order'),
@@ -150,6 +152,11 @@ urlpatterns += [
     path('service-create/', ServiceCreate.as_view(), name='service-create'),
     path('service-update/<int:pk>/', ServiceUpdate.as_view(), name='service-update'),
     path('service-delete/<int:pk>/', ServiceDelete.as_view(), name='service-delete'),
+]
+
+# stats
+urlpatterns += [
+    path('stats/<str:year>/', StatsView.as_view(), name='stats'),
 ]
 
 # vacations

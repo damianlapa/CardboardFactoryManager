@@ -389,6 +389,9 @@ class DeliveriesManagement(PermissionRequiredMixin, View):
     def get(self, request):
         title = 'DELIVERIES'
         all_deliveries = Delivery.objects.all()
+
+        year_deliveries = Delivery.deliveries_during_period(2021)
+
         return render(request, 'warehousemanager-all-deliveries.html', locals())
 
 
@@ -422,7 +425,7 @@ class DeliveryDetails(PermissionRequiredMixin, View):
 
             new_palette_quantity.save()
 
-            return redirect('/delivery/{}'.format(delivery_id))
+            return redirect('/delivery/{}/'.format(delivery_id))
 
         if order_item_q_form.is_valid():
             delivery = request.POST.get('delivery')
@@ -435,7 +438,7 @@ class DeliveryDetails(PermissionRequiredMixin, View):
 
             new_oiq.save()
 
-            return redirect('/delivery/{}'.format(delivery_id))
+            return redirect('/delivery/{}/'.format(delivery_id))
 
 
 # dodawanie dostawy
@@ -457,7 +460,7 @@ class DeliveryAdd(PermissionRequiredMixin, View):
 
             new_delivery.save()
 
-            return redirect('/delivery/{}'.format(new_delivery.id))
+            return redirect('/delivery/{}/'.format(new_delivery.id))
 
         else:
             return HttpResponse('fail')
@@ -586,7 +589,8 @@ class AbsencesList(PermissionRequiredMixin, View):
         if request.user.is_superuser:
             workers = Person.objects.all().filter(
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
-            workers = workers.exclude(job_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            workers = workers.exclude(
+                job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
         else:
             try:
                 workers = [Person.objects.get(user=request.user)]
@@ -732,7 +736,8 @@ class AbsencesAndHolidays(View):
         for h in holiday_objects:
             absences_and_holidays.append((-1, h.holiday_date.day, h.name))
         return HttpResponse(
-            json.dumps((absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances, unusual_absences)))
+            json.dumps(
+                (absences_and_holidays, non_work_days, extra_hours, non_full_days, acquaintances, unusual_absences)))
 
 
 class GetLocalVar(View):
@@ -771,7 +776,6 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             default_date = ' '.join((day, monthyear))
             default_date = default_date.split(' ')
             default_date = '-'.join(default_date[::-1])
-            print(default_date)
             default_date = datetime.datetime.strptime(default_date, '%Y-%B-%d')
             default_date = datetime.date.strftime(default_date, '%Y-%m-%d')
 
@@ -822,9 +826,12 @@ class AbsenceAdd(PermissionRequiredMixin, View):
 
                 if len(ExtraHour.objects.filter(worker=worker, extras_date=extras_date)) > 0:
                     new_extras = ExtraHour.objects.filter(worker=worker, extras_date=extras_date)[0]
+                    old_data = f'{new_extras}'
                     new_extras.quantity = extras_quantity
                     new_extras.full_day = extras_day
                     new_extras.save()
+                    new_data = f'{new_extras}'
+                    visit_counter(request.user, f'{old_data}//{new_data}')
                 else:
 
                     new_extras = ExtraHour.objects.create(worker=worker, extras_date=extras_date,
@@ -845,14 +852,15 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             condition_one = absence_date <= worker.job_end if worker.job_end else True
             condition_two = absence_date >= worker.job_start
 
-            print(condition_two, condition_one)
-
             if all((condition_one, condition_two)):
 
                 if len(Absence.objects.filter(worker=worker, absence_date=absence_date)) > 0:
                     new_absence = Absence.objects.filter(worker=worker, absence_date=absence_date)[0]
+                    old_data = f'{new_absence}'
                     new_absence.absence_type = absence_type
                     new_absence.save()
+                    new_data = f'{new_absence}'
+                    visit_counter(request.user, f'{old_data}//{new_data}')
                 else:
 
                     new_absence = Absence.objects.create(worker=worker, absence_date=absence_date,
@@ -912,7 +920,11 @@ class AbsenceDelete(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_absence'
 
     def post(self, request):
-        Absence.objects.get(id=int(request.POST.get('absence_id'))).delete()
+        absence = Absence.objects.get(id=int(request.POST.get('absence_id')))
+        absence_info = f'{absence.worker}-{absence.absence_type}-{absence.absence_date}-by: {request.user}'
+        absence.delete()
+
+        visit_counter(request.user, 'absence-delete ' + absence_info)
 
         return HttpResponse(request.POST.get('absence_id'))
 
@@ -1817,24 +1829,9 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
-'''class PolymerCreate(CreateView):
+class PolymerCreate(CreateView):
     model = Photopolymer
-    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']'''
-
-
-class PolymerCreate(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_photopolymer'
-
-    def get(self, request):
-        form = PolymerForm()
-        return render(request, 'warehousemanager/photopolymer_form.html', locals())
-
-    def post(self, request):
-        form = PolymerForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            form.save()
-            return HttpResponse('ok')
+    fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
 
 
 class PolymerUpdate(PermissionRequiredMixin, UpdateView):
@@ -2054,8 +2051,6 @@ class ReminderDeleteView(View, PermissionRequiredMixin):
         reminder = Reminder.objects.get(id=int(reminder_id))
         reminder.delete()
 
-        print('visit')
-
         return redirect('reminders')
 
 
@@ -2089,7 +2084,8 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
                                                                                                     '%Y-%m-%d'))
 
         for delivery in deliveries_query:
-            result = [(delivery.date_of_delivery, delivery.id)] + ['-' for _ in palettes_list] + ['-' for _ in palettes_list]
+            result = [(delivery.date_of_delivery, delivery.id)] + ['-' for _ in palettes_list] + ['-' for _ in
+                                                                                                  palettes_list]
             for p in PaletteQuantity.objects.filter(delivery=delivery):
                 if p.status == 'DEL':
                     result[palettes_list.index(p.palette) + 1] = p.quantity
@@ -2221,7 +2217,8 @@ class MessageView(View, LoginRequiredMixin):
         if user:
             sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
             drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
-            received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by('-date_sent')
+            received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by(
+                '-date_sent')
             form = MessageForm() if not initial_message else MessageForm(instance=initial_message)
         else:
             user = 'AnonymousUser'
@@ -2240,7 +2237,8 @@ class MessageView(View, LoginRequiredMixin):
             message_content = form.cleaned_data['content']
 
             if not initial_message:
-                new_message = Message.objects.create(sender=request.user, recipient=message_to, title=message_title, content=message_content)
+                new_message = Message.objects.create(sender=request.user, recipient=message_to, title=message_title,
+                                                     content=message_content)
             else:
                 new_message = initial_message
                 new_message.sender = request.user
@@ -2267,15 +2265,12 @@ class MessageContent(View):
             'content': str(message.content),
         }
 
-        print(data)
-
         return HttpResponse(json.dumps(data))
 
 
 class MessageRead(View):
 
     def get(self, request, message_id):
-
         message = Message.objects.get(id=message_id)
         message.date_read = datetime.datetime.now()
         message.save()
@@ -2293,3 +2288,37 @@ class ClothesView(View, PermissionRequiredMixin):
         workers = Person.objects.all().order_by('last_name')
 
         return render(request, 'whm-clothes.html', locals())
+
+
+class StatsView(View):
+
+    def get(self, request, year):
+        workers_list = []
+        workers = Person.objects.all()
+        for w in workers:
+            if w.days_at_work(year=year) > 0:
+                if not w.job_end:
+                    workers_list.append(w)
+                else:
+                    if w.job_end.year >= int(year):
+                        workers_list.append(w)
+
+        workers = workers_list
+        workers_data = [(w.last_name, w.days_at_work(year=year),
+                         (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))) for w in workers]
+        workers_data = sorted(workers_data, key=lambda x: x[1], reverse=True)
+
+        # personal absences types
+        personal_absences = [[w.absences_types(year=year), w] for w in workers if len(w.absences_types(year=year)) > 0]
+        for p in personal_absences:
+            p[0] = sorted(p[0], key=lambda x: x[0])
+            p[0].insert(0, ('OB', p[1].days_at_work(year=year)))
+
+        personal_absences = sorted(personal_absences, key=lambda x: x[0][0][1], reverse=True)
+
+        # employment during period
+        employment_data = []
+        for week in year_weeks(year):
+            employment_data.append((week, Person.active_workers_at_day(week)))
+
+        return render(request, 'whm-stats.html', locals())

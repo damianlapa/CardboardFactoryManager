@@ -355,11 +355,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     query_text = worker_text + ' ' + day_text
                     let absenceField = document.getElementsByClassName(query_text)
                     if (absenceField.length > 0) {
-                        console.log(data[0][i][2])
 
                         if (data[0][i][2] === 'D') {
                         } else {
-                        console.log(absenceField[0])
                             absenceField[0].innerText = data[0][i][2]
                             absenceField[0].style.backgroundColor = 'red'
                             absenceField[0].style.color = 'white'
@@ -465,7 +463,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             })
+
         monthSelect.addEventListener('click', function () {
+            console.log('done')
             $.ajax({
             url: '/get-local-var/PAKER_MAIN/',
             data: {},
@@ -473,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
             dataType: 'json'
             }).done(function (data) {
                 link = data + 'absences-list/?month=' + monthSelect.value
-                window.location.replace(link)
+                window.open(link, '_self')
                 })
         })
 
@@ -838,7 +838,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (allRows.length > 0) {
         for (let i=0; i < allRows.length; i++) {
             allRows[i].addEventListener('click', function () {
-                link = localLink + 'punch/' + allRows[i].dataset.punch_id
+                link = localLink + 'punch/' + allRows[i].dataset.punch_id + '/'
                 window.open(link, '_self')
             })
         }
@@ -1413,7 +1413,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 type: 'GET',
                 dataType: 'json'
                 }).done(function (data) {
-                    link = data + 'delivery/' + deliveryId
+                    link = data + 'delivery/' + deliveryId + '/'
                     window.location.replace(link)
                     })
             })
@@ -1432,7 +1432,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 type: 'GET',
                 dataType: 'json'
                 }).done(function (data) {
-                    link = data + 'palette-customer/' + customerId
+                    link = data + 'palette-customer/' + customerId + '/'
                     window.open(link, '_self')
                     })
             })
