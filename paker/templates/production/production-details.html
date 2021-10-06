@@ -1,0 +1,23 @@
+{% extends '__base2__.html' %}
+{% block title %}{{ prduction_order }}{% endblock %}
+{% block content %}
+<h1 class="page-header">{{ production_order }}</h1>
+
+<div class="color-list">
+    {% for pu in production_units %}
+    <div class="prod-item">
+        {{ pu }}
+        <p>
+        {{ pu.start }}
+        </p>
+        <p>
+        {{ pu.estimated_time }}
+        </p>
+        <p>
+            {{ pu.estimated_end }}
+        </p>
+
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

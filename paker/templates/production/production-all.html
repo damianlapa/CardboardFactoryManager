@@ -1,0 +1,25 @@
+{% extends '__base2__.html' %}
+{% block title %}ALL PRODUCTION{% endblock %}
+{% block content %}
+<h1 class="page-header">PRODUCTION ORDERS</h1>
+
+<div class="color-list">
+    {% for po in production_orders %}
+    <a href="{% url 'production-details' production_order_id=po.id %}">
+    <div class="prod-item {% if po.status == 'PLANNED' %}bg-orange{% endif %}{% if po.priority %}bg-yellow{% endif %}">
+        <p>{{ po.id_number }}</p>
+        <p>{{ po.customer }}</p>
+        <p>{{ po.dimensions }}</p>
+        <p>{{ po.cardboard }}</p>
+        <p>{{ po.cardboard_dimensions }}</p>
+        <h4 class="red">{{ po.status }}</h4>
+        {% if po.status == 'PLANNED' %}
+        <p>
+            {{ po.completed }}
+        </p>
+        {% endif %}
+    </div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

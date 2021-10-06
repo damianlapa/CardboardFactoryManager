@@ -990,6 +990,27 @@ select{
 	top:1px;
 }
 
+.prod-item {
+    margin: 10px;
+    padding: 10px;
+    border: double 2px white;
+    width: 150px;
+    height: 200px;
+    overflow: hidden;
+    background: white;
+}
+
+.prod-item:hover {
+    cursor: pointer;
+    background: #aaaaaa;
+}
+
+.prod-item p {
+    white-space: nowrap;
+    padding: 2px;
+    margin: 2px;
+}
+
 .a-d-q {
     color: black
 }

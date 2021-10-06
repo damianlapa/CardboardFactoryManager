@@ -1,9 +1,11 @@
 from django.db import models
 from warehousemanager.models import Person, Buyer
 
+import datetime
 
 PRODUCTION_ORDER_STATUSES = (
     ('UNCOMPLETED', 'UNCOMPLETED'),
+    ('PLANNED', 'PLANNED'),
     ('COMPLETED', 'COMPLETED')
 )
 
@@ -44,11 +46,18 @@ class ProductionUnit(models.Model):
     order = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=PRODUCTION_UNIT_STATUSES, default='NOT STARTED')
     persons = models.ManyToManyField(Person)
+    estimated_time = models.IntegerField(null=True, blank=True)
     start = models.DateTimeField(null=True, blank=True)
     end = models.DateTimeField(null=True, blank=True)
-    quantity_start = models.IntegerField(null=True)
-    quantity_end = models.IntegerField(null=True)
+    quantity_start = models.IntegerField(null=True, blank=True)
+    quantity_end = models.IntegerField(null=True, blank=True)
     notes = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return f'{self.work_station} {self.production_order} {self.status}'
+
+    def estimated_end(self):
+        if self.start:
+            if self.estimated_time:
+                return self.start + datetime.timedelta(minutes=self.estimated_time)
+
