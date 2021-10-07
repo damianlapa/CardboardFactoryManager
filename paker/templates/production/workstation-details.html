@@ -1,0 +1,19 @@
+{% extends '__base2__.html' %}
+{% block title %}{{ station }} - Details{% endblock %}
+{% block content %}
+<a href="{% url 'production-workstations' %}">back</a>
+<h1 class="white">{{ station }}</h1>
+<table>
+    <tr>
+        <th>
+            UNIT
+        </th>
+    </tr>
+    {% for unit in units %}
+    <tr>
+        <td>{{ unit }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

@@ -18,3 +18,16 @@ class ProductionDetails(View):
         production_units = production_units.order_by('start')
 
         return render(request, 'production/production-details.html', locals())
+
+
+class WorkStations(View):
+    def get(self, request):
+        stations = WorkStation.objects.all()
+        return render(request, 'production/workstations.html', locals())
+
+
+class WorkStationDetails(View):
+    def get(self, request, workstation_id):
+        station = WorkStation.objects.get(id=workstation_id)
+        units = ProductionUnit.objects.filter(work_station=station).order_by('order')
+        return render(request, 'production/workstation-details.html', locals())

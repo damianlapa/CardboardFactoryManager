@@ -3,6 +3,7 @@
 {% block content %}
 <h1 class="page-header">{{ production_order }}</h1>
 
+<!--
 <div class="color-list">
     {% for pu in production_units %}
     <div class="prod-item">
@@ -20,4 +21,41 @@
     </div>
     {% endfor %}
 </div>
+-->
+<div>
+    <table class="bg-white center">
+        <tr>
+            <th>
+                STATUS
+            </th>
+            <th>
+                WORK STATION
+            </th>
+            <th>
+                START
+            </th>
+            <th>
+                END
+            </th>
+            <th>
+                ESTIMATED TIME
+            </th>
+            <th>
+                ESTIMATED END
+            </th>
+
+        </tr>
+        {% for p in production_units %}
+        <tr>
+            <td>{{ p.status }}</td>
+            <td>{{ p.work_station }}</td>
+            <td>{{ p.start }}</td>
+            <td>{{ p.end }}</td>
+            <td>{{ p.estimated_time }}</td>
+            <td>{{ p.estimated_end }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
 {% endblock %}
