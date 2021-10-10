@@ -1091,6 +1091,10 @@ select{
     background: #FFC864;
 }
 
+.bg-green {
+    background: green;
+}
+
 .red {
     color: red;
 }
