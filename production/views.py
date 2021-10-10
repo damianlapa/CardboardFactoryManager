@@ -19,9 +19,21 @@ class AllProductionOrders(View):
 
 class ProductionDetails(View):
     def get(self, request, production_order_id):
+        production_order_statuses = PRODUCTION_ORDER_STATUSES
         production_order = ProductionOrder.objects.get(id=production_order_id)
         production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
         return render(request, 'production/production-details.html', locals())
+
+
+class ChangeProductionStatus(View):
+    def get(self, request):
+        production_order_id = int(request.GET.get('production-order-id'))
+        status = request.GET.get('status')
+        production_order = ProductionOrder.objects.get(id=production_order_id)
+        production_order.status = status
+        production_order.save()
+
+        return redirect('production-details', production_order_id=production_order.id)
 
 
 class AddProductionOrder(View):
@@ -102,3 +114,11 @@ class AddProductionUnit(View):
             ProductionUnit.objects.create(production_order=production_order, work_station=work_station, status=status, sequence=sequence)
 
             return redirect('production-details', production_order_id=production_order.id)
+
+
+class DeleteProductionUnit(View):
+    def get(self, request, unit_id):
+        unit = ProductionUnit.objects.get(id=unit_id)
+        order_id = unit.production_order.id
+        unit.delete()
+        return redirect('production-details', production_order_id=order_id)

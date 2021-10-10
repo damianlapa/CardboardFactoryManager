@@ -3,6 +3,18 @@
 {% block content %}
 <h1 class="page-header">{{ production_order }}</h1>
 
+<form class="ordinary-form" method="get" action="{% url 'production-details-change' %}">
+    <select id="select-status" name="status">
+        {% for s in production_order_statuses %}
+        <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %} >
+            {{ s.0 }}
+        </option>
+        {% endfor %}
+    </select>
+    <input type="number" value="{{ production_order.id }}" name="production-order-id" hidden>
+    <input type="submit" class="ordinary-form" value="CHANGE" id="change-btn" disabled>
+</form>
+
 <h3 class="red">DETAILS</h3>
 <table style="border: 1px solid pink" class="center bg-white">
     <tr>
@@ -54,6 +66,9 @@
     <table class="bg-white center">
         <tr>
             <th>
+                DETAILS
+            </th>
+            <th>
                 SEQUENCE
             </th>
             <th>
@@ -78,6 +93,13 @@
         </tr>
         {% for p in production_units %}
         <tr>
+            <td>
+                <a>
+                    <button style="color: white; background: green;">
+                        DETAILS
+                    </button>
+                </a>
+            </td>
             <td>{{ p.sequence }}</td>
             <td>{{ p.status }}</td>
             <td>{{ p.work_station }}</td>
@@ -85,6 +107,13 @@
             <td>{{ p.end }}</td>
             <td>{{ p.estimated_time }}</td>
             <td>{{ p.estimated_end }}</td>
+            <td>
+                <a href="{% url 'delete-production-unit' unit_id=p.id %}">
+                <button style="background: red; color: white;">
+                DELETE
+                </button>
+                </a>
+            </td>
         </tr>
         {% endfor %}
     </table>

@@ -1242,3 +1242,8 @@ input.right {
 input.right:focus {
     background-color: lightblue;
 }
+
+.ordinary-form {
+    background: white;
+    color: black;
+}
