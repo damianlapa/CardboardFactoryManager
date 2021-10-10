@@ -2,17 +2,19 @@
 {% block title %}Workstations{% endblock %}
 {% block content %}
 {% for s in stations %}
-<a href="{% url 'workstation-details' workstation_id=s.id %}">
+
 <div class="conatianer-90 border-solid-2 bg-white height-100" style="margin: 10px;">
-    <div style="float: left; width: 33%; height: 100%;"  {% if s.currently_in_production != "UNOCCUPIED" %}class="bg-yellow"{% endif %}>
+    <a href="{% url 'workstation-details' workstation_id=s.id %}" class="no-decor">
+    <div style="float: left; width: 33%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;"  {% if s.currently_in_production != "UNOCCUPIED" %}class="bg-yellow black"{% else %}class="black"{% endif %}>
         <h1>{{ s }}</h1>
     </div>
-    <div style="float: left; width: 66%; height: 100%" class="bg-grey">
-        <div style="height: 50%;">{{ s.currently_in_production }}</div>
-        <div style="height: 50%;">{{ s }}</div>
+        </a>
+    <div style="float: left; width: 67%; height: 100%" class="black">
+        <div style="height: 50%; border-bottom: solid 3px grey; box-sizing: border-box; padding: 5px;">{{ s.currently_in_production }}</div>
+        <div style="height: 50%; box-sizing: border-box; padding: 5px;" class="bg-yellow">{{ s }}</div>
     </div>
     <div style="clear: both"></div>
 </div>
-</a>
+
 {% endfor %}
 {% endblock %}

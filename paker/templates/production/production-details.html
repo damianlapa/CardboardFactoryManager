@@ -3,28 +3,59 @@
 {% block content %}
 <h1 class="page-header">{{ production_order }}</h1>
 
-<!--
-<div class="color-list">
-    {% for pu in production_units %}
-    <div class="prod-item">
-        {{ pu }}
-        <p>
-        {{ pu.start }}
-        </p>
-        <p>
-        {{ pu.estimated_time }}
-        </p>
-        <p>
-            {{ pu.estimated_end }}
-        </p>
-
-    </div>
-    {% endfor %}
-</div>
--->
+<h3 class="red">DETAILS</h3>
+<table style="border: 1px solid pink" class="center bg-white">
+    <tr>
+        <th>id_number</th>
+        <th>{{ production_order.id_number }}</th>
+    </tr>
+    <tr>
+        <th>cardboard</th>
+        <th>{{ production_order.cardboard }}</th>
+    </tr>
+    <tr>
+        <th>cardboard dimensions</th>
+        <th>{{ production_order.cardboard_dimensions }}</th>
+    </tr>
+    <tr>
+        <th>customer</th>
+        <th>{{ production_order.customer }}</th>
+    </tr>
+    <tr>
+        <th>dimensions</th>
+        <th>{{ production_order.dimensions }}</th>
+    </tr>
+    <tr>
+        <th>quantity</th>
+        <th>{{ production_order.quantity }}</th>
+    </tr>
+    <tr>
+        <th>status</th>
+        <th id="production-status">{{ production_order.status }}</th>
+    </tr>
+    <tr>
+        <th>completed</th>
+        <th>{{ production_order.completed }}</th>
+    </tr>
+    <tr>
+        <th>priority</th>
+        <th>{{ production_order.priority }}</th>
+    </tr>
+    <tr>
+        <th>notes</th>
+        <th>{{ production_order.notes }}</th>
+    </tr>
+</table>
+<h3 class="red">UNITS</h3>
+<a href="{% url 'production-unit-add' order_id=production_order.id %}">
+    <button>Add Unit</button>
+</a>
 <div>
     <table class="bg-white center">
         <tr>
+            <th>
+                SEQUENCE
+            </th>
             <th>
                 STATUS
             </th>
@@ -47,6 +78,7 @@
         </tr>
         {% for p in production_units %}
         <tr>
+            <td>{{ p.sequence }}</td>
             <td>{{ p.status }}</td>
             <td>{{ p.work_station }}</td>
             <td>{{ p.start }}</td>
@@ -58,4 +90,8 @@
     </table>
 </div>
 
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/production-order-details.js' %}"></script>
 {% endblock %}

@@ -1,5 +1,7 @@
 from django.db import models
-from warehousemanager.models import Person, Buyer
+from django.core.exceptions import ObjectDoesNotExist
+
+from warehousemanager.models import Person, Buyer, Holiday
 
 import datetime
 
@@ -64,7 +66,7 @@ class ProductionUnit(models.Model):
     notes = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.work_station} {self.production_order} {self.status}'
+        return f'{self.sequence}) {self.work_station} {self.production_order} {self.status}'
 
     @classmethod
     def last_in_line(cls, station, point=None):
@@ -91,6 +93,16 @@ class ProductionUnit(models.Model):
             if self.start:
                 if self.estimated_time:
                     return self.start + datetime.timedelta(minutes=self.estimated_time)
+        else:
+            try:
+                previous_unit = ProductionUnit.objects.get(production_order=self.production_order,
+                                                           sequence=self.sequence - 1)
+                if previous_unit.estimated_end():
+                    if self.estimated_time:
+                        return self.start + datetime.timedelta(minutes=self.estimated_time)
+                return False
+            except ObjectDoesNotExist:
+                return False
 
     def move_up_order(self):
         if self.order or self.order == 0:
@@ -119,6 +131,14 @@ class ProductionUnit(models.Model):
             self.order = place
             self.save()'''
 
-    def check_realization_possibility(self):
-        if self.order:
-            planned_units = ProductionUnit.objects.filter(work_station=self.work_station)
+    def previous_unit_end_time(self):
+        if self.sequence == 1:
+            return True
+        if self.sequence > 1:
+            try:
+                previous_unit = ProductionUnit.objects.get(production_order=self.production_order, sequence=self.sequence - 1)
+                if previous_unit.estimated_end():
+                    return previous_unit.estimated_end()
+                return False
+            except ObjectDoesNotExist:
+                return False

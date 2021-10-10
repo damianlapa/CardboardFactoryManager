@@ -118,10 +118,10 @@ urlpatterns += [
 ]
 
 # production
-urlpatterns += [
+'''urlpatterns += [
     path('production/', ProductionProcessListView.as_view(), name='production-list'),
     path('production-create/', ProductionProcessCreate.as_view(), name='production-create')
-]
+]'''
 
 # providers
 urlpatterns += [

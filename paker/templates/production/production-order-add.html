@@ -1,0 +1,13 @@
+{% extends '__base2__.html' %}
+{% block title %}Add Production Order{% endblock %}
+{% block content %}
+<div>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Add">
+    </form>
+
+</div>
+
+{% endblock %}

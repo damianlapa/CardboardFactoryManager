@@ -1,0 +1,16 @@
+{% extends '__base2__.html' %}
+{% block title %}Production Menu{% endblock %}
+{% block content %}
+<div>
+<a href="{% url 'all-production-orders' %}">
+    <button>
+        ORDERS
+    </button>
+</a>
+<a href="{% url 'production-workstations' %}">
+    <button>
+        WORKSTATIONS
+    </button>
+</a>
+</div>
+{% endblock %}

@@ -2,18 +2,38 @@
 {% block title %}{{ station }} - Details{% endblock %}
 {% block content %}
 <a href="{% url 'production-workstations' %}">back</a>
+<div>
+<div style="margin-left: auto; margin-right: 0">
+    <input class="right" type="date" value="{{ date_string }}">
+</div>
+    </div>
 <h1 class="white">{{ station }}</h1>
-<table>
-    <tr>
-        <th>
-            UNIT
-        </th>
-    </tr>
-    {% for unit in units %}
-    <tr>
-        <td>{{ unit }}</td>
-    </tr>
-    {% endfor %}
-</table>
+{% for unit in units %}
+<div class="bg-white" style="margin: 2px; border: 3px solid pink">
+    <div>
+        <div style="float: left; width: 20%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;">
+        {{ unit.production_order.customer }} - {{ unit.production_order.dimensions }}
+    </div>
+        <div style="float: left; width: 20%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;">
+            {{ unit.start }}
+        </div>
+        <div style="float: left; width: 10%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;">
+            {{ unit.estimated_time }}
+        </div>
+        <div style="float: left; width: 20%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;">
+            {{ unit.estimated_end }}
+        </div>
+        <div style="float: left; width: 20%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;">
+            {% for p in unit.persons.all %}<p>{{ p }}</p>{% endfor %}
+        </div>
+        <div style="float: left; width: 10%; height: 100%; border-right: solid 3px grey; box-sizing: border-box;">
+            <div>+</div>
+            <div>-</div>
+            <div>USUŃ Z KOLEJKI</div>
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+</div>
+{% endfor %}
 
 {% endblock %}

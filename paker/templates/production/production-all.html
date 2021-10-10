@@ -1,12 +1,31 @@
 {% extends '__base2__.html' %}
 {% block title %}ALL PRODUCTION{% endblock %}
 {% block content %}
-<h1 class="page-header">PRODUCTION ORDERS</h1>
+<div style="margin: 10px;">
+    <a href="{% url 'production-order-add' %}">
+    <button>ADD PRODUCTION ORDER</button>
+        </a>
+</div>
+
+<div id="production-orders-buttons">
+    <button class="production-order-btn">
+        ALL
+    </button>
+    <button class="production-order-btn">
+        UNCOMPLETED
+    </button>
+    <button class="production-order-btn">
+        PLANNED
+    </button>
+    <button class="production-order-btn">
+        COMPLETED
+    </button>
+</div>
 
 <div class="color-list">
     {% for po in production_orders %}
     <a href="{% url 'production-details' production_order_id=po.id %}">
-    <div class="prod-item {% if po.status == 'PLANNED' %}bg-orange{% endif %}{% if po.priority %}bg-yellow{% endif %}">
+    <div data-orderstatus="{{ po.status }}" class="production-order prod-item {% if po.status == 'PLANNED' %}bg-orange{% endif %}{% if po.priority %}bg-yellow{% endif %}">
         <p>{{ po.id_number }}</p>
         <p>{{ po.customer }}</p>
         <p>{{ po.dimensions }}</p>
@@ -22,4 +41,8 @@
     </a>
     {% endfor %}
 </div>
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/production-orders.js' %}"></script>
 {% endblock %}
