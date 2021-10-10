@@ -1,6 +1,11 @@
 {% extends '__base2__.html' %}
 {% block title %}{{ prduction_order }}{% endblock %}
 {% block content %}
+<a href="{% url 'all-production-orders' %}">
+    <button>
+        BACK TO ALL ORDERS
+    </button>
+</a>
 <h1 class="page-header">{{ production_order }}</h1>
 
 <form class="ordinary-form" method="get" action="{% url 'production-details-change' %}">
@@ -52,7 +57,15 @@
     <tr>
         <th>priority</th>
         <th>{{ production_order.priority }}</th>
-    </tr>
+    </tr><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html>
     <tr>
         <th>notes</th>
         <th>{{ production_order.notes }}</th>
@@ -94,7 +107,7 @@
         {% for p in production_units %}
         <tr>
             <td>
-                <a>
+                <a href="{% url 'unit-details' unit_id=p.id %}" >
                     <button style="color: white; background: green;">
                         DETAILS
                     </button>

@@ -33,7 +33,13 @@ class ProductionOrder(models.Model):
     notes = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.id_number} {self.customer} {self.dimensions} [{self.status}]'
+        return f'{self.id_number} {self.customer} {self.dimensions}'
+
+    def planned_end(self):
+        if self.status == 'PLANNED':
+            units = ProductionUnit.objects.filter(production_order=self).order_by('-sequence')
+            if units[0].estimated_end():
+                return units[0].estimated_end()
 
 
 class WorkStation(models.Model):
@@ -71,14 +77,21 @@ class ProductionUnit(models.Model):
 
     @classmethod
     def last_in_line(cls, station, point=None):
-        all_units = cls.objects.filter(order__isnull=False, work_station=station).order_by('order')
+        all_units = cls.objects.filter(order__isnull=False, work_station=station, status='PLANNED').order_by('order')
         if point:
             all_units = all_units.filter(order__lt=point)
         return tuple(all_units)[-1].order if all_units.count() > 0 else 0
 
     @classmethod
     def next_in_line(cls, station, point):
-        all_units = cls.objects.filter(order__isnull=False, work_station=station, order__gt=point).order_by('order')
+        all_units = cls.objects.filter(order__isnull=False, work_station=station, status='PLANNED',
+                                       order__gt=point).order_by('order')
+        return tuple(all_units)[0] if all_units.count() > 0 else False
+
+    @classmethod
+    def previous_in_line(cls, station, point):
+        all_units = cls.objects.filter(order__isnull=False, work_station=station, status='PLANNED',
+                                       order__gt=point).order_by('order')
         return tuple(all_units)[0] if all_units.count() > 0 else False
 
     @classmethod
@@ -100,12 +113,13 @@ class ProductionUnit(models.Model):
                                                            sequence=self.sequence - 1)
                 if previous_unit.estimated_end():
                     if self.estimated_time:
-                        return self.start + datetime.timedelta(minutes=self.estimated_time)
+                        if self.start:
+                            return self.start + datetime.timedelta(minutes=self.estimated_time)
                 return False
             except ObjectDoesNotExist:
                 return False
 
-    def move_up_order(self):
+    def move_up_unit(self):
         if self.order or self.order == 0:
             if self.order > 0:
                 place = ProductionUnit.last_in_line(self.work_station, self.order)
@@ -118,26 +132,26 @@ class ProductionUnit(models.Model):
             self.order = place
             self.save()
 
-    def move_down_order(self):
-        pass
-        '''if self.order or self.order == 0:
-            if ProductionUnit.next_in_line(self.work_station, self.order):
-                place = ProductionUnit.last_in_line(self.work_station, self.order)
-                ProductionUnit.shift_units(self.work_station, place)
+    def move_down_unit(self):
+        if self.order or self.order == 0:
+            if ProductionUnit.previous_in_line(self.work_station, self.order):
+                place = ProductionUnit.previous_in_line(self.work_station, self.order).order
+                previous_unit = ProductionUnit.objects.get(work_station=self.work_station, order=place)
+                previous_unit.order = self.order
+                previous_unit.save()
                 self.order = place
                 self.save()
+
         else:
-            place = ProductionUnit.last_in_line(self.work_station)
-            ProductionUnit.shift_units(self.work_station, place)
-            self.order = place
-            self.save()'''
+            pass
 
     def previous_unit_end_time(self):
         if self.sequence == 1:
             return True
         if self.sequence > 1:
             try:
-                previous_unit = ProductionUnit.objects.get(production_order=self.production_order, sequence=self.sequence - 1)
+                previous_unit = ProductionUnit.objects.get(production_order=self.production_order,
+                                                           sequence=self.sequence - 1)
                 if previous_unit.estimated_end():
                     return previous_unit.estimated_end()
                 return False
