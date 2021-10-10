@@ -221,7 +221,7 @@ class PlanProductionUnit(View):
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'PLANNED'
-        unit.order = ProductionUnit.last_in_line(unit.work_station)
+        unit.order = ProductionUnit.last_in_line(unit.work_station) + 1
         unit.save()
 
         return redirect('workstation-details', workstation_id=unit.work_station.id)

@@ -20,6 +20,34 @@ PRODUCTION_UNIT_STATUSES = (
 )
 
 
+def add_times_includes_working_hours(date_start, time_delta_in_minutes):
+    print(date_start)
+    date_end = date_start
+    hours = time_delta_in_minutes // 60
+    minutes = time_delta_in_minutes % 60
+
+    for _ in range(hours):
+        date_end += datetime.timedelta(hours=1)
+        if date_end.hour == 11:
+            date_end += datetime.timedelta(minutes=15)
+        if date_end.hour == 15:
+            minutes += date_end.minute
+            date_end -= datetime.timedelta(minutes=date_end.minute)
+            if date_end.isoweekday() >= 5:
+                date_end += datetime.timedelta(hours=64)
+            else:
+                date_end += datetime.timedelta(hours=16)
+
+    for _ in range(minutes // 15):
+        date_end += datetime.timedelta(minutes=15)
+        if date_end.hour == 11 and 0 <= date_end.minute < 16:
+            date_end += datetime.timedelta(minutes=15)
+
+    date_end += datetime.timedelta(minutes=minutes % 15)
+
+    return date_end
+
+
 class ProductionOrder(models.Model):
     id_number = models.CharField(max_length=32, unique=True)
     cardboard = models.CharField(max_length=32, blank=True)
@@ -80,12 +108,13 @@ class ProductionUnit(models.Model):
         all_units = cls.objects.filter(order__isnull=False, work_station=station, status='PLANNED').order_by('order')
         if point:
             all_units = all_units.filter(order__lt=point)
+        print(all_units)
         return tuple(all_units)[-1].order if all_units.count() > 0 else 0
 
     @classmethod
     def next_in_line(cls, station, point):
         all_units = cls.objects.filter(order__isnull=False, work_station=station, status='PLANNED',
-                                       order__gt=point).order_by('order')
+                                       order__lt=point).order_by('-order')
         return tuple(all_units)[0] if all_units.count() > 0 else False
 
     @classmethod
@@ -157,3 +186,35 @@ class ProductionUnit(models.Model):
                 return False
             except ObjectDoesNotExist:
                 return False
+
+    def planned_start(self):
+        if self.status == 'PLANNED':
+            if self.order or self.order == 0:
+                if self.estimated_time:
+                    if not ProductionUnit.next_in_line(self.work_station, self.order):
+                        if ProductionUnit.objects.filter(work_station=self.work_station, status='IN PROGRESS'):
+                            unit_in_progress = ProductionUnit.objects.filter(status='IN PROGRESS')[0]
+                            if unit_in_progress.planned_end():
+                                return unit_in_progress.planned_end()
+                        if datetime.datetime.now().hour < 7:
+                            now = datetime.datetime.today()
+                            today_start = datetime.datetime.strptime(f'{now.year}-{now.month}-{now.day} 7:00:00',
+                                                                     '%Y-%m-%d %H:%M:%S')
+                            return today_start
+                        if datetime.datetime.now().hour > 15:
+                            now = datetime.datetime.today()
+                            tomorrow_start = datetime.datetime.strptime(f'{now.year}-{now.month}-{now.day} 7:00:00',
+                                                                        '%Y-%m-%d %H:%M:%S')
+                            return tomorrow_start + datetime.timedelta(days=1)
+                        return datetime.datetime.now()
+                    else:
+                        next_in_line = ProductionUnit.next_in_line(self.work_station, self.order)
+                        return next_in_line.planned_end()
+
+    def planned_end(self):
+        if self.planned_start():
+            if self.estimated_time:
+                return add_times_includes_working_hours(self.planned_start(), self.estimated_time)
+        if self.start:
+            if self.estimated_time:
+                return add_times_includes_working_hours(self.start, self.estimated_time)

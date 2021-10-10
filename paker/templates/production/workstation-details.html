@@ -53,9 +53,9 @@
             order
         </th>
         <th>ORDER</th>
-        <th>START</th>
-        <th>TIME</th>
-        <th>END</th>
+        <th>PLANNED<br>START</th>
+        <th>PLANNED<br>END</th>
+        <th>PLANNED<br>TIME</th>
         <th>PERSONS</th>
         <th>ACTIONS</th>
     </tr>
@@ -70,9 +70,9 @@
             </td>
             <td>{{ unit.order }}</td>
             <td>{{ unit.production_order }}</td>
-            <td>{{ unit.start }}</td>
+            <td>{{ unit.planned_start }}</td>
+            <td>{{ unit.planned_end }}</td>
             <td>{{ unit.estimated_time }}</td>
-            <td>{{ unit.end }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
             <td>
                 <a href="{% url 'unit-start' unit_id=unit.id %}">
@@ -104,11 +104,11 @@
 <h2 class="white">
     NOT PLANNED UNITS
 </h2>
-
+{% if other_units %}
 <table class="bg-white center">
     <tr>
         <th>ORDER</th>
-        <th>START</th>
+        <th>PLANNED<br>START</th>
         <th>TIME</th>
         <th>END</th>
         <th>PERSONS</th>
@@ -117,7 +117,7 @@
     {% for unit in other_units %}
         <tr>
             <td>{{ unit.production_order }}</td>
-            <td>{{ unit.start }}</td>
+            <td>{{ unit.planned_start }}</td>
             <td>{{ unit.estimated_time }}</td>
             <td>{{ unit.end }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
@@ -131,6 +131,7 @@
         </tr>
     {% endfor %}
 </table>
+{% endif %}
 <hr style="border: solid 2px pink">
 <h2 class="white">
     HISTORY UNITS
