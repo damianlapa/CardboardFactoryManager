@@ -19,7 +19,7 @@
     </tr>
     {% for unit in in_progress_units %}
         <tr>
-            <td>{{ unit.production_order }}</td>
+            <td>{{ unit.production_order }}<br>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
             <td>{{ unit.start|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.planned_end|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.estimated_time }}</td>
@@ -100,7 +100,7 @@
         {% if unit.previous_unit_end_time %}
         <tr>
             <td colspan="2">Previous unit ends:</td>
-            <td colspan="6" class="red">{{ unit.previous_unit_end_time }}</td>
+            <td colspan="6" class="red">{{ unit.previous_unit_end_time|date:"d M Y, H:i:s" }}</td>
         </tr>
         {% endif %}
     {% endfor %}
@@ -147,22 +147,25 @@
 
     <tr>
         <th>ORDER</th>
+        <th>CARDBOARD</th>
+        <th>QUANTITY</th>
         <th>START</th>
 
         <th>END</th>
         <th>TIME</th>
+        <th>ESTIMATED<br>TIME</th>
         <th>PERSONS</th>
-        <th>ACTIONS</th>
     </tr>
     {% for unit in history_units %}
         <tr>
-            <td>{{ unit.production_order }}</td>
+            <td>{{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
+            <td>{{ unit.cardboard }} {{ unit.cardboard_dimensions }}</td>
+            <td>{{ unit.quantity }}</td>
             <td>{{ unit.start|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.end|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.unit_duration }}</td>
+            <td>{{ unit.estimated_duration }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
-            <td>
-            </td>
         </tr>
     {% endfor %}
 </table>

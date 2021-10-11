@@ -232,3 +232,14 @@ class ProductionUnit(models.Model):
                         seconds = f'0{seconds}'
 
                     return f'{hours}:{minutes}:{seconds}'
+
+    def estimated_duration(self):
+        if self.estimated_time:
+
+            hours = self.estimated_time // 60
+            minutes = self.estimated_time - hours * 60
+
+            if minutes < 10:
+                minutes = f'0{minutes}'
+
+            return f'{hours}:{minutes}:00'
