@@ -97,6 +97,12 @@
                 </a>
             </td>
         </tr>
+        {% if unit.previous_unit_end_time %}
+        <tr>
+            <td colspan="2">Previous unit ends:</td>
+            <td colspan="6" class="red">{{ unit.previous_unit_end_time }}</td>
+        </tr>
+        {% endif %}
     {% endfor %}
 </table>
 {% endif %}

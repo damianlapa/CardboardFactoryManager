@@ -21,7 +21,6 @@ PRODUCTION_UNIT_STATUSES = (
 
 
 def add_times_includes_working_hours(date_start, time_delta_in_minutes):
-    print(date_start)
     date_end = date_start
     hours = time_delta_in_minutes // 60
     minutes = time_delta_in_minutes % 60
@@ -176,16 +175,16 @@ class ProductionUnit(models.Model):
 
     def previous_unit_end_time(self):
         if self.sequence == 1:
-            return True
+            return False
         if self.sequence > 1:
             try:
                 previous_unit = ProductionUnit.objects.get(production_order=self.production_order,
                                                            sequence=self.sequence - 1)
-                if previous_unit.estimated_end():
-                    return previous_unit.estimated_end()
-                return False
+                if previous_unit.planned_end():
+                    return previous_unit.planned_end()
+                return 'Previous unit has not been planned yet!'
             except ObjectDoesNotExist:
-                return False
+                return 'There is no previous unit, which should exists!'
 
     def planned_start(self):
         if self.status == 'PLANNED':
