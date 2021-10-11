@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 
 from warehousemanager.models import Person, Buyer, Holiday
 
@@ -21,6 +22,7 @@ PRODUCTION_UNIT_STATUSES = (
 
 
 def add_times_includes_working_hours(date_start, time_delta_in_minutes):
+    date_start = date_start + datetime.timedelta(hours=2)
     date_end = date_start
     hours = time_delta_in_minutes // 60
     minutes = time_delta_in_minutes % 60
@@ -44,7 +46,7 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
 
     date_end += datetime.timedelta(minutes=minutes % 15)
 
-    return date_end
+    return date_end - datetime.timedelta(hours=2)
 
 
 class ProductionOrder(models.Model):
@@ -195,17 +197,17 @@ class ProductionUnit(models.Model):
                             unit_in_progress = ProductionUnit.objects.filter(status='IN PROGRESS')[0]
                             if unit_in_progress.planned_end():
                                 return unit_in_progress.planned_end()
-                        if datetime.datetime.now().hour < 7:
-                            now = datetime.datetime.today()
+                        if timezone.now().hour < 7:
+                            now = timezone.now().today()
                             today_start = datetime.datetime.strptime(f'{now.year}-{now.month}-{now.day} 7:00:00',
                                                                      '%Y-%m-%d %H:%M:%S')
                             return today_start
                         if datetime.datetime.now().hour > 15:
-                            now = datetime.datetime.today()
+                            now = timezone.now().today()
                             tomorrow_start = datetime.datetime.strptime(f'{now.year}-{now.month}-{now.day} 7:00:00',
                                                                         '%Y-%m-%d %H:%M:%S')
                             return tomorrow_start + datetime.timedelta(days=1)
-                        return datetime.datetime.now()
+                        return timezone.now()
                     else:
                         next_in_line = ProductionUnit.next_in_line(self.work_station, self.order)
                         return next_in_line.planned_end()
@@ -217,3 +219,22 @@ class ProductionUnit(models.Model):
         if self.start:
             if self.estimated_time:
                 return add_times_includes_working_hours(self.start, self.estimated_time)
+
+    def unit_duration(self):
+        if self.start and self.end:
+            self.start += datetime.timedelta(hours=2)
+            self.end += datetime.timedelta(hours=2)
+            difference = self.end - self.start
+            if self.end.month == self.start.month:
+                same_day = self.end.day == self.start.day
+                if same_day:
+                    hours = difference.seconds // 3600
+                    minutes = (difference.seconds // 60) - hours * 60
+                    seconds = difference.seconds - hours * 3600 - minutes * 60
+
+                    if minutes < 10:
+                        minutes = f'0{minutes}'
+                    if seconds < 10:
+                        seconds = f'0{seconds}'
+
+                    return f'{hours}:{minutes}:{seconds}'

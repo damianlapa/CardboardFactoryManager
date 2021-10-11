@@ -148,17 +148,18 @@
     <tr>
         <th>ORDER</th>
         <th>START</th>
-        <th>TIME</th>
+
         <th>END</th>
+        <th>TIME</th>
         <th>PERSONS</th>
         <th>ACTIONS</th>
     </tr>
     {% for unit in history_units %}
         <tr>
             <td>{{ unit.production_order }}</td>
-            <td>{{ unit.start }}</td>
-            <td>{{ unit.estimated_time }}</td>
-            <td>{{ unit.end }}</td>
+            <td>{{ unit.start|date:"d M Y, H:m:s" }}</td>
+            <td>{{ unit.end|date:"d M Y, H:m:s" }}</td>
+            <td>{{ unit.unit_duration }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
             <td>
             </td>
