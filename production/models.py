@@ -89,6 +89,12 @@ class WorkStation(models.Model):
                 return units[0]
         return 'UNOCCUPIED'
 
+    def first_planned(self):
+        units = ProductionUnit.objects.filter(work_station=self, status='PLANNED').order_by('order')
+        if units:
+            return units[0]
+        else:
+            return 'NO PLANNED UNITS'
 
 class ProductionUnit(models.Model):
     production_order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE)

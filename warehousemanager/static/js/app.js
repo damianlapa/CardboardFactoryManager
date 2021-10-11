@@ -1281,10 +1281,35 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    function zmienKolorTekstu2(elem) {
+        console.log(elem)
+      if (elem.style.color == 'white') {
+        elem.style.color = 'red';
+      } else {
+        elem.style.color = 'white';
+      }
+    }
+
     const dVA = document.getElementById('div-workers-att')
+    const liveBlink = document.getElementsByClassName('live-blink')
 
     if (document.getElementById('div-workers-att') !== null) {
         setInterval(zmienKolorTekstu, 1000)
+    }
+
+    if (liveBlink !== null) {
+        for (let i=0; i < liveBlink.length; i++){
+
+        function zmienKolorTekstu2() {
+            elem = liveBlink[i]
+          if (elem.style.color == 'white') {
+            elem.style.color = 'red';
+          } else {
+            elem.style.color = 'white';
+          }
+        }
+            setInterval(zmienKolorTekstu2, 1000)
+        }
     }
 
     // palette deliveries

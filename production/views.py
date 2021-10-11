@@ -216,6 +216,17 @@ class FinishProductionUnit(View):
         unit.end = datetime.datetime.now()
         unit.save()
 
+        all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
+
+        all_finished = True
+        for u in all_production_order_units:
+            if u.status != 'FINISHED':
+                all_finished = False
+
+        if all_finished:
+            unit.production_order.status = 'FINISHED'
+            unit.production_order.save()
+
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 

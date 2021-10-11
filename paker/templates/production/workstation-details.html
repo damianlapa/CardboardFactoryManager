@@ -159,8 +159,8 @@
     {% for unit in history_units %}
         <tr>
             <td>{{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
-            <td>{{ unit.cardboard }} {{ unit.cardboard_dimensions }}</td>
-            <td>{{ unit.quantity }}</td>
+            <td>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
+            <td>{{ unit.production_order.quantity }}</td>
             <td>{{ unit.start|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.end|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.unit_duration }}</td>
