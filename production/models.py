@@ -198,17 +198,8 @@ class ProductionUnit(models.Model):
                             unit_in_progress = ProductionUnit.objects.filter(status='IN PROGRESS')[0]
                             if unit_in_progress.planned_end():
                                 return unit_in_progress.planned_end()
-                        if timezone.now().hour < 7:
-                            now = timezone.now().today()
-                            today_start = datetime.datetime.strptime(f'{now.year}-{now.month}-{now.day} 7:00:00',
-                                                                     '%Y-%m-%d %H:%M:%S')
-                            return today_start
-                        if datetime.datetime.now().hour > 15:
-                            now = timezone.now().today()
-                            tomorrow_start = datetime.datetime.strptime(f'{now.year}-{now.month}-{now.day} 7:00:00',
-                                                                        '%Y-%m-%d %H:%M:%S')
-                            return tomorrow_start + datetime.timedelta(days=1)
-                        return timezone.now()
+                        else:
+                            return datetime.datetime.now()
                     else:
                         next_in_line = ProductionUnit.next_in_line(self.work_station, self.order)
                         return next_in_line.planned_end()

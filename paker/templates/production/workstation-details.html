@@ -20,8 +20,8 @@
     {% for unit in in_progress_units %}
         <tr>
             <td>{{ unit.production_order }}</td>
-            <td>{{ unit.start }}</td>
-            <td>{{ unit.planned_end }}</td>
+            <td>{{ unit.start|date:"d M Y, H:m:s" }}</td>
+            <td>{{ unit.planned_end|date:"d M Y, H:m:s" }}</td>
             <td>{{ unit.estimated_time }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
             <td>
@@ -70,8 +70,8 @@
             </td>
             <td>{{ unit.order }}</td>
             <td>{{ unit.production_order }}</td>
-            <td>{{ unit.planned_start }}</td>
-            <td>{{ unit.planned_end }}</td>
+            <td>{{ unit.planned_start|date:"d M Y, H:m:s" }}</td>
+            <td>{{ unit.planned_end|date:"d M Y, H:m:s" }}</td>
             <td>{{ unit.estimated_time }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
             <td>
@@ -123,9 +123,9 @@
     {% for unit in other_units %}
         <tr>
             <td>{{ unit.production_order }}</td>
-            <td>{{ unit.planned_start }}</td>
+            <td>{{ unit.planned_start|date:"d M Y, H:m:s" }}</td>
             <td>{{ unit.estimated_time }}</td>
-            <td>{{ unit.end }}</td>
+            <td>{{ unit.end|date:"d M Y, H:m:s" }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
             <td>
                 <a href="{% url 'unit-plan' unit_id=unit.id %}">
