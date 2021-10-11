@@ -22,15 +22,21 @@ PRODUCTION_UNIT_STATUSES = (
 
 
 def add_times_includes_working_hours(date_start, time_delta_in_minutes):
+    """
+    need a correct with timezone issue
+    :param date_start:
+    :param time_delta_in_minutes:
+    :return:
+    """
     date_end = date_start
     hours = time_delta_in_minutes // 60
     minutes = time_delta_in_minutes % 60
 
     for _ in range(hours):
         date_end += datetime.timedelta(hours=1)
-        if date_end.hour == 11:
+        if date_end.hour == 9:
             date_end += datetime.timedelta(minutes=15)
-        if date_end.hour == 15:
+        if date_end.hour == 13:
             if date_end.isoweekday() >= 5:
                 date_end += datetime.timedelta(hours=64)
             else:
@@ -38,7 +44,7 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
 
     for _ in range(minutes // 15):
         date_end += datetime.timedelta(minutes=15)
-        if date_end.hour == 11 and 0 <= date_end.minute < 16:
+        if date_end.hour == 9 and 0 <= date_end.minute < 16:
             date_end += datetime.timedelta(minutes=15)
 
     date_end += datetime.timedelta(minutes=minutes % 15)
