@@ -192,17 +192,17 @@ class ProductionUnit(models.Model):
     def planned_start(self):
         if self.status == 'PLANNED':
             if self.order or self.order == 0:
-                if self.estimated_time:
-                    if not ProductionUnit.next_in_line(self.work_station, self.order):
-                        if ProductionUnit.objects.filter(work_station=self.work_station, status='IN PROGRESS'):
-                            unit_in_progress = ProductionUnit.objects.filter(status='IN PROGRESS')[0]
-                            if unit_in_progress.planned_end():
-                                return unit_in_progress.planned_end()
-                        else:
-                            return datetime.datetime.now()
+                if not ProductionUnit.next_in_line(self.work_station, self.order):
+                    if ProductionUnit.objects.filter(work_station=self.work_station, status='IN PROGRESS'):
+                        units = ProductionUnit.objects.filter(work_station=self.work_station, status='IN PROGRESS')
+                        unit_in_progress = units[0]
+                        if unit_in_progress.planned_end():
+                            return unit_in_progress.planned_end()
                     else:
-                        next_in_line = ProductionUnit.next_in_line(self.work_station, self.order)
-                        return next_in_line.planned_end()
+                        return datetime.datetime.now()
+                else:
+                    next_in_line = ProductionUnit.next_in_line(self.work_station, self.order)
+                    return next_in_line.planned_end()
 
     def planned_end(self):
         if self.start:
