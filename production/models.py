@@ -214,12 +214,12 @@ class ProductionUnit(models.Model):
                         return next_in_line.planned_end()
 
     def planned_end(self):
-        if self.planned_start():
-            if self.estimated_time:
-                return add_times_includes_working_hours(self.planned_start(), self.estimated_time)
         if self.start:
             if self.estimated_time:
                 return add_times_includes_working_hours(self.start, self.estimated_time)
+        if self.planned_start():
+            if self.estimated_time:
+                return add_times_includes_working_hours(self.planned_start(), self.estimated_time)
 
     def unit_duration(self):
         if self.start and self.end:
