@@ -12,8 +12,8 @@
     <tr>
         <th>ORDER</th>
         <th>START</th>
-        <th>TIME</th>
-        <th>END</th>
+        <th>PLANNED<br>END</th>
+        <th>PLANNED<br>TIME</th>
         <th>PERSONS</th>
         <th>ACTIONS</th>
     </tr>
@@ -21,8 +21,8 @@
         <tr>
             <td>{{ unit.production_order }}</td>
             <td>{{ unit.start }}</td>
+            <td>{{ unit.planned_end }}</td>
             <td>{{ unit.estimated_time }}</td>
-            <td>{{ unit.end }}</td>
             <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
             <td>
                 <a href="{% url 'unit-finish' unit_id=unit.id %}">
