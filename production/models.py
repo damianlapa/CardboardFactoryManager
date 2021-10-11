@@ -31,8 +31,6 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
         if date_end.hour == 11:
             date_end += datetime.timedelta(minutes=15)
         if date_end.hour == 15:
-            minutes += date_end.minute
-            date_end -= datetime.timedelta(minutes=date_end.minute)
             if date_end.isoweekday() >= 5:
                 date_end += datetime.timedelta(hours=64)
             else:
