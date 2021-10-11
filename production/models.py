@@ -22,7 +22,7 @@ PRODUCTION_UNIT_STATUSES = (
 
 
 def add_times_includes_working_hours(date_start, time_delta_in_minutes):
-    date_start = date_start + datetime.timedelta(hours=2)
+    '''date_start = date_start + datetime.timedelta(hours=2)
     date_end = date_start
     hours = time_delta_in_minutes // 60
     minutes = time_delta_in_minutes % 60
@@ -46,7 +46,8 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
 
     date_end += datetime.timedelta(minutes=minutes % 15)
 
-    return date_end - datetime.timedelta(hours=2)
+    return date_end - datetime.timedelta(hours=2)'''
+    return date_start + datetime.timedelta(minutes=time_delta_in_minutes)
 
 
 class ProductionOrder(models.Model):
