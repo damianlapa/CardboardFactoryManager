@@ -18,7 +18,15 @@
                 <span>.</span>
                 {% endif %}
             </div>
-            <div style="box-sizing: border-box; width: 75%; float: left; text-align: left;">{{ s.currently_in_production }}</div>
+            <div style="box-sizing: border-box; width: 75%; float: left;">
+                <div style="box-sizing: border-box; width: 75%; float: left; text-align: left;">
+                {{ s.currently_in_production }}
+                </div>
+                <div style="box-sizing: border-box; width: 25%; float: left; text-align: left;">
+                    {{ s.currently_in_production.planned_end|date:"d M Y, H:i:s" }}
+                </div>
+                <div style="clear: both;"></div>
+            </div>
             <div style="clear: both;"></div>
         </div>
         <div style="height: 50%; box-sizing: border-box; padding: 5px;">

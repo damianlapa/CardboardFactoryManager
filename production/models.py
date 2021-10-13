@@ -257,9 +257,10 @@ class ProductionUnit(models.Model):
                         days_difference = self.end.day - self.start.day
                         hours_difference = 0
                         if days_difference <= 4:
-                            if self.end.isoweekday > self.start.isoweekday:
-                                difference = difference - (16 * days_difference)
+                            if self.end.isoweekday() > self.start.isoweekday():
+                                difference = difference - datetime.timedelta(hours=16 * days_difference)
                                 return change_difference_to_time(difference)
+
                     else:
                         pass
 
