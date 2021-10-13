@@ -221,6 +221,18 @@ class ProductionUnit(models.Model):
                 return add_times_includes_working_hours(self.planned_start(), self.estimated_time)
 
     def unit_duration(self):
+        def change_difference_to_time(difference_value):
+            hours = difference_value.seconds // 3600
+            minutes = (difference_value.seconds // 60) - hours * 60
+            seconds = difference_value.seconds - hours * 3600 - minutes * 60
+
+            if minutes < 10:
+                minutes = f'0{minutes}'
+            if seconds < 10:
+                seconds = f'0{seconds}'
+
+            return f'{hours}:{minutes}:{seconds}'
+
         if self.start and self.end:
             self.start += datetime.timedelta(hours=2)
             self.end += datetime.timedelta(hours=2)
@@ -228,7 +240,7 @@ class ProductionUnit(models.Model):
             if self.end.month == self.start.month:
                 same_day = self.end.day == self.start.day
                 if same_day:
-                    hours = difference.seconds // 3600
+                    '''hours = difference.seconds // 3600
                     minutes = (difference.seconds // 60) - hours * 60
                     seconds = difference.seconds - hours * 3600 - minutes * 60
 
@@ -237,7 +249,19 @@ class ProductionUnit(models.Model):
                     if seconds < 10:
                         seconds = f'0{seconds}'
 
-                    return f'{hours}:{minutes}:{seconds}'
+                    return f'{hours}:{minutes}:{seconds}'''
+                    return change_difference_to_time(difference)
+
+                else:
+                    if self.end.month == self.start.month:
+                        days_difference = self.end.day - self.start.day
+                        hours_difference = 0
+                        if days_difference <= 4:
+                            if self.end.isoweekday > self.start.isoweekday:
+                                difference = difference - (16 * days_difference)
+                                return change_difference_to_time(difference)
+                    else:
+                        pass
 
     def estimated_duration(self):
         if self.estimated_time:
