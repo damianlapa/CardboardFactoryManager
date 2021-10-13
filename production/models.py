@@ -70,8 +70,8 @@ class ProductionOrder(models.Model):
     def planned_end(self):
         if self.status == 'PLANNED':
             units = ProductionUnit.objects.filter(production_order=self).order_by('-sequence')
-            if units[0].estimated_end():
-                return units[0].estimated_end()
+            if units[0].planned_end():
+                return units[0].planned_end()
 
 
 class WorkStation(models.Model):
@@ -95,6 +95,7 @@ class WorkStation(models.Model):
             return units[0]
         else:
             return 'NO PLANNED UNITS'
+
 
 class ProductionUnit(models.Model):
     production_order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE)
@@ -240,28 +241,22 @@ class ProductionUnit(models.Model):
             if self.end.month == self.start.month:
                 same_day = self.end.day == self.start.day
                 if same_day:
-                    '''hours = difference.seconds // 3600
-                    minutes = (difference.seconds // 60) - hours * 60
-                    seconds = difference.seconds - hours * 3600 - minutes * 60
-
-                    if minutes < 10:
-                        minutes = f'0{minutes}'
-                    if seconds < 10:
-                        seconds = f'0{seconds}'
-
-                    return f'{hours}:{minutes}:{seconds}'''
                     return change_difference_to_time(difference)
 
                 else:
                     if self.end.month == self.start.month:
                         days_difference = self.end.day - self.start.day
-                        hours_difference = 0
                         if days_difference <= 4:
                             if self.end.isoweekday() > self.start.isoweekday():
                                 difference = difference - datetime.timedelta(hours=16 * days_difference)
-                                return change_difference_to_time(difference)
-
+                            else:
+                                difference = difference - datetime.timedelta(hours=16 * days_difference)
+                                difference -= datetime.timedelta(days=2)
+                            return change_difference_to_time(difference)
                     else:
+                        '''
+                        TO DO
+                        '''
                         pass
 
     def estimated_duration(self):
@@ -274,3 +269,12 @@ class ProductionUnit(models.Model):
                 minutes = f'0{minutes}'
 
             return f'{hours}:{minutes}:00'
+
+    def time_group(self):
+        if self.end:
+            if datetime.datetime.today().date() == self.end.date():
+                return 'today last7 thismonth alltime'
+            elif datetime.datetime.today().date() >= self.end.date() > datetime.datetime.today().date() - datetime.timedelta(days=7):
+                return 'last7 thismonth alltime'
+            else:
+                return 'alltime'

@@ -143,6 +143,18 @@
     HISTORY UNITS
 </h2>
 {% if history_units %}
+<button id="today-btn" style="background: green; color: white;">
+    Today
+</button>
+<button id="last7-btn" style="background: red; color: white;">
+    Last 7 days
+</button>
+<button id="thismonth-btn" style="background: green; color: white;">
+    This month
+</button>
+<button id="alltime-btn" style="background: green; color: white;">
+    All
+</button>
 <table class="bg-white center">
 
     <tr>
@@ -157,7 +169,7 @@
         <th>PERSONS</th>
     </tr>
     {% for unit in history_units %}
-        <tr>
+        <tr class="{{ unit.time_group }}" style="{% if unit.time_group != 'last7 thismonth alltime' %}display: none{% endif %}">
             <td>{{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
             <td>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
             <td>{{ unit.production_order.quantity }}</td>
@@ -173,4 +185,8 @@
 <hr style="border: solid 2px pink">
 
 
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/workstation-details.js' %}"></script>
 {% endblock %}
