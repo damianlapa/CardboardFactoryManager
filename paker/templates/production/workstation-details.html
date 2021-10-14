@@ -10,6 +10,7 @@
 {% if in_progress_units %}
 <table class="bg-white center">
     <tr>
+        <th>EDIT</th>
         <th>ORDER</th>
         <th>START</th>
         <th>PLANNED<br>END</th>
@@ -19,6 +20,13 @@
     </tr>
     {% for unit in in_progress_units %}
         <tr>
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
             <td>{{ unit.production_order }}<br>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
             <td>{{ unit.start|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.planned_end|date:"d M Y, H:i:s" }}</td>
@@ -62,7 +70,7 @@
     {% for unit in planned_units %}
         <tr>
             <td>
-                <a href="{% url 'unit-edit' unit_id=unit.id %}">
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
                     <button style="color: white; background: green;">
                         EDIT
                     </button>
@@ -113,6 +121,7 @@
 {% if other_units %}
 <table class="bg-white center">
     <tr>
+        <th>EDIT</th>
         <th>ORDER</th>
         <th>PLANNED<br>START</th>
         <th>TIME</th>
@@ -122,6 +131,13 @@
     </tr>
     {% for unit in other_units %}
         <tr>
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
             <td>{{ unit.production_order }}</td>
             <td>{{ unit.planned_start|date:"d M Y, H:i:s" }}</td>
             <td>{{ unit.estimated_time }}</td>
@@ -158,6 +174,7 @@
 <table class="bg-white center">
 
     <tr>
+        <th>EDIT</th>
         <th>ORDER</th>
         <th>CARDBOARD</th>
         <th>QUANTITY</th>
@@ -170,6 +187,13 @@
     </tr>
     {% for unit in history_units %}
         <tr class="{{ unit.time_group }}" style="{% if unit.time_group != 'last7 thismonth alltime' %}display: none{% endif %}">
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
             <td>{{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
             <td>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
             <td>{{ unit.production_order.quantity }}</td>

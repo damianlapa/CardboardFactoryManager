@@ -109,6 +109,7 @@ class ProductionUnitDetails(View):
 
 class EditProductionUnit(View):
     def get(self, request, unit_id):
+        source = request.GET.get('source')
         edit = True
         form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id))
         return render(request, 'production/production-unit-add.html', locals())
@@ -129,6 +130,11 @@ class EditProductionUnit(View):
             quantity_end = data['quantity_end']
             notes = data['notes']
             persons = data['persons']
+            source = None
+            try:
+                source = form.data.get('source')
+            except KeyError:
+                pass
 
             unit = ProductionUnit.objects.get(id=unit_id)
 
@@ -150,6 +156,9 @@ class EditProductionUnit(View):
                     unit.persons.add(p)
 
             unit.save()
+
+            if source:
+                return redirect('workstation-details', workstation_id=int(source))
 
             return redirect('unit-details', unit_id=unit.id)
 
