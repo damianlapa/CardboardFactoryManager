@@ -268,6 +268,24 @@ class Person(models.Model):
 
         return len(active_workers)
 
+    @classmethod
+    def workers_at_work(cls, day):
+        day_workers = []
+        active_workers = []
+        workers = cls.objects.filter(job_start__lte=day)
+        for worker in workers:
+            if worker.job_end:
+                if day <= worker.job_end:
+                    active_workers.append(worker)
+            else:
+                active_workers.append(worker)
+        for worker_ in active_workers:
+            absence = Absence.objects.filter(worker=worker_, absence_date=day)
+            if absence.count() == 0:
+                day_workers.append(worker_)
+
+        return day_workers
+
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)

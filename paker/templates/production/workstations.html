@@ -1,6 +1,7 @@
 {% extends '__base2__.html' %}
 {% block title %}Workstations{% endblock %}
 {% block content %}
+<div style="width: 82%; box-sizing: border-box; float: left">
 {% for s in stations %}
 
 <div class="conatianer-90 border-solid-2 bg-white height-100" style="margin: 10px;">
@@ -37,6 +38,15 @@
     </div>
     <div style="clear: both"></div>
 </div>
-
+    {% endfor %}
+</div>
+<div style="width: 18%; box-sizing: border-box; float: left">
+{% for w in workers_data %}
+    <div class="{% if w.1 == 'Free' %}white{% else %}red{% endif %}" style="padding: 10px; font-weight: bold; font-size: 15px;">
+        {{ w.0 }} - {{ w.1 }}
+    </div>
 {% endfor %}
+</div>
+<div style="clear: both;"></div>
+
 {% endblock %}

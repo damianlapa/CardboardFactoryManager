@@ -278,3 +278,10 @@ class ProductionUnit(models.Model):
                 return 'last7 thismonth alltime'
             else:
                 return 'alltime'
+
+    @classmethod
+    def worker_occupancy(cls, worker):
+        activity = cls.objects.filter(status='IN PROGRESS', persons__in=[worker])
+        if activity:
+            return activity[0].work_station
+        return 'Free'
