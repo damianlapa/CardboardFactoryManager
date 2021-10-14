@@ -208,6 +208,31 @@ class ProductionUnit(models.Model):
                         if unit_in_progress.planned_end():
                             return unit_in_progress.planned_end()
                     else:
+                        if datetime.datetime.now().isoweekday() >= 6:
+                            days_difference = 8 - datetime.datetime.now().isoweekday()
+                            day = datetime.datetime.now().date() + datetime.timedelta(days=days_difference)
+                            day_date = datetime.datetime.strptime(f'{day.year}-{day.month}-{day.day} 7:00:00',
+                                                                  '%Y-%m-%d %H:%M:%S')
+                            return day_date
+                        if datetime.datetime.now().hour > 14:
+                            if datetime.datetime.now().isoweekday() < 5:
+                                day = datetime.datetime.now().date() + datetime.timedelta(days=1)
+                                day_date = datetime.datetime.strptime(f'{day.year}-{day.month}-{day.day} 7:00:00',
+                                                                      '%Y-%m-%d %H:%M:%S')
+                                return day_date
+                            else:
+                                days_difference = 8 - datetime.datetime.now().isoweekday()
+                                day = datetime.datetime.now().date() + datetime.timedelta(days=days_difference)
+                                day_date = datetime.datetime.strptime(f'{day.year}-{day.month}-{day.day} 7:00:00',
+                                                                      '%Y-%m-%d %H:%M:%S')
+                                return day_date
+                        elif datetime.datetime.now().hour < 7:
+                            if datetime.datetime.now().isoweekday() <= 5:
+                                day = datetime.datetime.now().date()
+                                day_date = datetime.datetime.strptime(f'{day.year}-{day.month}-{day.day} 7:00:00',
+                                                                      '%Y-%m-%d %H:%M:%S')
+                                return day_date
+
                         return datetime.datetime.now()
                 else:
                     next_in_line = ProductionUnit.next_in_line(self.work_station, self.order)
@@ -274,7 +299,8 @@ class ProductionUnit(models.Model):
         if self.end:
             if datetime.datetime.today().date() == self.end.date():
                 return 'today last7 thismonth alltime'
-            elif datetime.datetime.today().date() >= self.end.date() > datetime.datetime.today().date() - datetime.timedelta(days=7):
+            elif datetime.datetime.today().date() >= self.end.date() > datetime.datetime.today().date() - datetime.timedelta(
+                    days=7):
                 return 'last7 thismonth alltime'
             else:
                 return 'alltime'
