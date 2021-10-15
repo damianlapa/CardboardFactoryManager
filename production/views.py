@@ -167,7 +167,7 @@ class EditProductionUnit(View):
 
             unit.save()
 
-            if source:
+            if source and isinstance(source, int):
                 return redirect('workstation-details', workstation_id=int(source))
 
             return redirect('unit-details', unit_id=unit.id)
