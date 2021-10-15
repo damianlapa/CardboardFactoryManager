@@ -186,7 +186,7 @@
         <th>PERSONS</th>
     </tr>
     {% for unit in history_units %}
-        <tr class="{{ unit.time_group }}" style="{% if unit.time_group != 'last7 thismonth alltime' %}display: none{% endif %}">
+        <tr class="{{ unit.time_group }}" style="{% if  not 'last7' in unit.time_group %}display: none{% endif %}">
             <td>
                 <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
                     <button style="color: white; background: green;">

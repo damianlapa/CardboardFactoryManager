@@ -302,6 +302,8 @@ class ProductionUnit(models.Model):
             elif datetime.datetime.today().date() >= self.end.date() > datetime.datetime.today().date() - datetime.timedelta(
                     days=7):
                 return 'last7 thismonth alltime'
+            elif self.end.date().month == datetime.datetime.today().date().month:
+                return 'thismonth alltime'
             else:
                 return 'alltime'
 

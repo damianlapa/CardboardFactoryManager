@@ -6,6 +6,8 @@ from django.db.models import Q
 from production.models import *
 from production.forms import *
 
+from warehousemanager.functions import visit_counter
+
 
 class ProductionMenu(View):
     def get(self, request):
@@ -14,6 +16,7 @@ class ProductionMenu(View):
 
 class AllProductionOrders(View):
     def get(self, request):
+        visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
         production_orders = ProductionOrder.objects.all().order_by('id_number', 'dimensions')
         return render(request, 'production/production-all.html', locals())
@@ -73,6 +76,7 @@ class AddProductionOrder(View):
 
 class WorkStations(View):
     def get(self, request):
+        visit_counter(request.user, 'Production Workstations')
         workers_data = []
         workers = Person.workers_at_work(datetime.date.today())
         for w in workers:
@@ -97,6 +101,7 @@ class WorkStationDetails(View):
         date_string = get_date_str(datetime.date.today())
 
         station = WorkStation.objects.get(id=workstation_id)
+        visit_counter(request.user, f'{station} - details')
         units = ProductionUnit.objects.filter(work_station=station)
         planned_units = units.filter(status='PLANNED').order_by('order')
         in_progress_units = units.filter(status='IN PROGRESS').order_by('order')
