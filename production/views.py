@@ -167,6 +167,27 @@ class EditProductionUnit(View):
 
             unit.save()
 
+            all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
+
+            all_finished = True
+            all_planned = True
+            for u in all_production_order_units:
+                if u.status not in ('FINISHED', 'PLANNED'):
+                    all_planned = False
+                if u.status != 'FINISHED':
+                    all_finished = False
+
+            if all_finished:
+                unit.production_order.status = 'FINISHED'
+                unit.production_order.save()
+
+            if all_planned:
+                unit.production_order.status = 'PLANNED'
+                unit.production_order.save()
+
+            if not any((all_finished, all_planned)):
+                unit.production_order.status = 'COMPLETED'
+
             if source and isinstance(source, int):
                 return redirect('workstation-details', workstation_id=int(source))
 
@@ -238,12 +259,19 @@ class FinishProductionUnit(View):
         all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
 
         all_finished = True
+        all_planned = True
         for u in all_production_order_units:
+            if u.status not in ('FINISHED', 'PLANNED'):
+                all_planned = False
             if u.status != 'FINISHED':
                 all_finished = False
 
         if all_finished:
             unit.production_order.status = 'FINISHED'
+            unit.production_order.save()
+
+        if all_planned:
+            unit.production_order.status = 'PLANNED'
             unit.production_order.save()
 
         return redirect('workstation-details', workstation_id=unit.work_station.id)
