@@ -80,7 +80,8 @@ class WorkStations(View):
         workers_data = []
         workers = Person.workers_at_work(datetime.date.today())
         for w in workers:
-            workers_data.append((w, ProductionUnit.worker_occupancy(w)))
+            if w.occupancy_type == 'PRODUCTION':
+                workers_data.append((w, ProductionUnit.worker_occupancy(w)))
         stations = WorkStation.objects.all()
         return render(request, 'production/workstations.html', locals())
 

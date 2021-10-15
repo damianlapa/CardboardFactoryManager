@@ -192,6 +192,8 @@ class ProductionUnit(models.Model):
             try:
                 previous_unit = ProductionUnit.objects.get(production_order=self.production_order,
                                                            sequence=self.sequence - 1)
+                if previous_unit.end:
+                    return previous_unit.end
                 if previous_unit.planned_end():
                     return previous_unit.planned_end()
                 return 'Previous unit has not been planned yet!'
