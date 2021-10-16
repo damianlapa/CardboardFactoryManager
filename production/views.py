@@ -185,13 +185,10 @@ class EditProductionUnit(View):
                 unit.production_order.status = 'PLANNED'
                 unit.production_order.save()
 
-            if not any((all_finished, all_planned)):
-                unit.production_order.status = 'COMPLETED'
-
-            if source and isinstance(source, int):
+            try:
                 return redirect('workstation-details', workstation_id=int(source))
-
-            return redirect('unit-details', unit_id=unit.id)
+            except ValueError:
+                return redirect('unit-details', unit_id=unit.id)
 
 
 class AddProductionUnit(View):

@@ -250,7 +250,9 @@ class ProductionUnit(models.Model):
 
     def unit_duration(self):
         def change_difference_to_time(difference_value):
+            days = difference_value.days
             hours = difference_value.seconds // 3600
+
             minutes = (difference_value.seconds // 60) - hours * 60
             seconds = difference_value.seconds - hours * 3600 - minutes * 60
 
@@ -258,6 +260,9 @@ class ProductionUnit(models.Model):
                 minutes = f'0{minutes}'
             if seconds < 10:
                 seconds = f'0{seconds}'
+
+            if days:
+                hours += days * 24
 
             return f'{hours}:{minutes}:{seconds}'
 
@@ -273,15 +278,26 @@ class ProductionUnit(models.Model):
                 else:
                     if self.end.month == self.start.month:
                         days_difference = self.end.day - self.start.day
+                        print(days_difference)
                         if days_difference <= 4:
                             # the same week
                             if self.end.isoweekday() > self.start.isoweekday():
                                 difference = difference - datetime.timedelta(hours=16 * days_difference)
                             # ends next week
                             else:
-                                difference = difference - datetime.timedelta(hours=16)
+                                difference = difference - datetime.timedelta(hours=(days_difference - 2) * 16)
                                 difference -= datetime.timedelta(days=2)
                             return change_difference_to_time(difference)
+                        else:
+                            day_number = 8 - self.start.isoweekday()
+                            full_weeks = (day_number + days_difference) // 7
+                            if full_weeks > 0:
+                                difference = difference - datetime.timedelta(days=full_weeks * 2)
+                                difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
+                                    seconds=difference.seconds)
+                                return change_difference_to_time(difference)
+                            else:
+                                return change_difference_to_time(difference)
                     else:
                         '''
                         TO DO
