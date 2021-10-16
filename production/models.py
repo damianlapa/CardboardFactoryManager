@@ -33,14 +33,16 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
     minutes = time_delta_in_minutes % 60
 
     for _ in range(hours):
+        timezone_factor = 2 if str(date_start.tzinfo) == 'UTC' else 0
         date_end += datetime.timedelta(hours=1)
-        if date_end.hour == 11:
+        if date_end.hour == 11 - timezone_factor:
             date_end += datetime.timedelta(minutes=15)
-        if date_end.hour == 15:
+        if date_end.hour == 15 - timezone_factor:
             if date_end.isoweekday() >= 5:
                 date_end += datetime.timedelta(hours=64)
             else:
                 date_end += datetime.timedelta(hours=16)
+        print(date_end.hour)
 
     for _ in range(minutes // 15):
         date_end += datetime.timedelta(minutes=15)
