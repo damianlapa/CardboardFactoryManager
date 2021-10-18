@@ -359,6 +359,11 @@ class WorkerEfficiency(View):
                                 absences += 1
                             working_days += 1
                 else:
+                    if start_day.isoweekday() < 6:
+                        absence = Absence.objects.filter(worker=worker, absence_date=start_day)
+                        absence = absence.exclude(absence_type='SP')
+                        if absence:
+                            absences += 1
                     working_days += 1
             start_day += datetime.timedelta(days=1)
 
@@ -373,13 +378,13 @@ class WorkerEfficiency(View):
 
         month_end += datetime.timedelta(days=1)
 
-        units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end, persons__id=worker_id)
+        units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end, persons__id=worker_id).order_by('start')
 
         data = []
 
         for unit in units:
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
-                unit_fractal = 1.25*unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
+                unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
                 unit_efficiency = round(100*unit_fractal, 2)
                 data.append((unit, unit_efficiency))
 
