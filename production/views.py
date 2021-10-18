@@ -389,10 +389,10 @@ class WorkerEfficiency(View):
                 unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
                 unit_efficiency = round(100*unit_fractal, 2)
                 data.append((unit, unit_efficiency))
-                efficiency[0] += 1
-                efficiency[1] += unit_fractal
+                efficiency[0] += unit.estimated_duration_in_seconds()
+                efficiency[1] += unit.unit_duration_in_seconds()
 
-        efficiency = round(100*efficiency[1]/efficiency[0], 2)
+        efficiency = round(100*efficiency[0]/efficiency[1], 2)
 
         pot = round(600 * (days_at_work/working_days), 2)
 
