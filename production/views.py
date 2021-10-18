@@ -375,8 +375,9 @@ class WorkerEfficiency(View):
         data = []
 
         for unit in units:
-            unit_efficiency = round(100*(unit.estimated_duration_in_seconds()*0.75)/unit.unit_duration_in_seconds(), 2)
-            data.append((unit, unit_efficiency))
+            if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+                unit_efficiency = round(100*(unit.estimated_duration_in_seconds()*0.75)/unit.unit_duration_in_seconds(), 2)
+                data.append((unit, unit_efficiency))
 
         pot = round(600 * (days_at_work/working_days), 2)
 
