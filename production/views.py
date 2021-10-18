@@ -358,6 +358,8 @@ class WorkerEfficiency(View):
                             if absence:
                                 absences += 1
                             working_days += 1
+                else:
+                    working_days += 1
             start_day += datetime.timedelta(days=1)
 
         work_seconds = 36 * 800 * (working_days - absences)
@@ -369,14 +371,23 @@ class WorkerEfficiency(View):
         work_hours = working_hours(work_seconds)
         days_at_work = working_days - absences
 
+        month_end += datetime.timedelta(days=1)
+
         units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end, persons__id=worker_id)
-        units = ProductionUnit.objects.all()
+
+        for u in ProductionUnit.objects.all():
+            print(u.start.date() >= month_start)
+            print(u.end.date() <= month_end)
+            print(worker in u.persons.all())
+
+
 
         data = []
 
         for unit in units:
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
-                unit_efficiency = round(100*(unit.estimated_duration_in_seconds()*0.75)/unit.unit_duration_in_seconds(), 2)
+                unit_fractal = 0.75*unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
+                unit_efficiency = round(100*unit_fractal, 2)
                 data.append((unit, unit_efficiency))
 
         pot = round(600 * (days_at_work/working_days), 2)
