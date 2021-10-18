@@ -379,7 +379,7 @@ class WorkerEfficiency(View):
 
         for unit in units:
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
-                unit_fractal = 0.75*unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
+                unit_fractal = 1.25*unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
                 unit_efficiency = round(100*unit_fractal, 2)
                 data.append((unit, unit_efficiency))
 
