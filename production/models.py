@@ -121,7 +121,6 @@ class ProductionUnit(models.Model):
         all_units = cls.objects.filter(order__isnull=False, work_station=station, status='PLANNED').order_by('order')
         if point:
             all_units = all_units.filter(order__lt=point)
-        print(all_units)
         return tuple(all_units)[-1].order if all_units.count() > 0 else 0
 
     @classmethod

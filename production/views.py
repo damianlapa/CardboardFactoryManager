@@ -375,13 +375,6 @@ class WorkerEfficiency(View):
 
         units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end, persons__id=worker_id)
 
-        for u in ProductionUnit.objects.all():
-            print(u.start.date() >= month_start)
-            print(u.end.date() <= month_end)
-            print(worker in u.persons.all())
-
-
-
         data = []
 
         for unit in units:
