@@ -277,6 +277,32 @@ class Person(models.Model):
         return len(active_workers)
 
     @classmethod
+    def active_workers_at_month(cls, year, month):
+        if month == 2:
+            if year % 4 == 0:
+                days = 29
+            else:
+                days = 28
+        elif month in (1, 3, 5, 7, 8, 10, 12):
+            days = 31
+        else:
+            days = 30
+
+        month_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
+        month_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
+
+        active_workers = []
+        workers = cls.objects.filter(job_start__lte=month_end)
+        for worker in workers:
+            if worker.job_end:
+                if month_start <= worker.job_end:
+                    active_workers.append(worker)
+            else:
+                active_workers.append(worker)
+
+        return active_workers
+
+    @classmethod
     def workers_at_work(cls, day):
         day_workers = []
         active_workers = []

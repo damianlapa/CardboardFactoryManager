@@ -329,6 +329,58 @@ class ProductionUnit(models.Model):
             else:
                 return 'alltime'
 
+    def unit_duration_in_seconds(self):
+        def change_difference_to_time(difference_value):
+            print(difference_value)
+            days = difference_value.days
+            print(days, self)
+            seconds = difference_value.seconds
+            if days:
+                seconds += days * 3600 * 24
+
+            return seconds
+
+        if self.start and self.end:
+            self.start += datetime.timedelta(hours=2)
+            self.end += datetime.timedelta(hours=2)
+            difference = self.end - self.start
+            if self.end.month == self.start.month:
+                same_day = self.end.day == self.start.day
+                if same_day:
+                    return change_difference_to_time(difference)
+
+                else:
+                    if self.end.month == self.start.month:
+                        days_difference = self.end.day - self.start.day
+                        print(days_difference)
+                        if days_difference <= 4:
+                            # the same week
+                            if self.end.isoweekday() > self.start.isoweekday():
+                                difference = difference - datetime.timedelta(hours=16 * days_difference)
+                            # ends next week
+                            else:
+                                difference = difference - datetime.timedelta(hours=(days_difference - 2) * 16)
+                                difference -= datetime.timedelta(days=2)
+                            return change_difference_to_time(difference)
+                        else:
+                            day_number = 8 - self.start.isoweekday()
+                            full_weeks = (day_number + days_difference) // 7
+                            if full_weeks > 0:
+                                difference = difference - datetime.timedelta(days=full_weeks * 2)
+                                difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
+                                    seconds=difference.seconds)
+                                return change_difference_to_time(difference)
+                            else:
+                                return change_difference_to_time(difference)
+                    else:
+                        '''
+                        TO DO
+                        '''
+                        pass
+
+    def estimated_duration_in_seconds(self):
+        return self.estimated_time * 60 if self.estimated_time else None
+
     @classmethod
     def worker_occupancy(cls, worker):
         activity = cls.objects.filter(status='IN PROGRESS', persons__in=[worker])

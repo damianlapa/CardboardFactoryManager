@@ -24,3 +24,9 @@ urlpatterns += [
     path('unit/up/<int:unit_id>/', UpProductionUnit.as_view(), name='unit-up'),
     path('unit/down/<int:unit_id>/', DownProductionUnit.as_view(), name='unit-down'),
 ]
+
+# worker
+urlpatterns += [
+    path('workers-by-month/<int:year>/<int:month>/', WorkersByMonth.as_view(), name='worker-month'),
+    path('worker-efficiency/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiency.as_view(), name='worker-efficiency')
+]

@@ -8,6 +8,8 @@ from production.forms import *
 
 from warehousemanager.functions import visit_counter
 
+from warehousemanager.models import Absence
+
 
 class ProductionMenu(View):
     def get(self, request):
@@ -312,3 +314,70 @@ class DownProductionUnit(View):
         unit.save()
 
         return redirect('workstation-details', workstation_id=unit.work_station.id)
+
+
+class WorkersByMonth(View):
+    def get(self, request, year, month):
+        month_date = datetime.datetime.strptime(f'{year}-{month}', '%Y-%m').strftime("%B")
+        month_date = f'{month_date} {year}'
+        active_workers = Person.active_workers_at_month(year, month)
+        return render(request, 'production/workers-by-month.html', locals())
+
+
+class WorkerEfficiency(View):
+    def get(self, request, year, month, worker_id):
+        worker = Person.objects.get(id=worker_id)
+        if month == 2:
+            if year % 4 == 0:
+                days = 29
+            else:
+                days = 28
+        elif month in (1, 3, 5, 7, 8, 10, 12):
+            days = 31
+        else:
+            days = 30
+
+        month_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
+        month_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
+
+        if month_end > datetime.datetime.today().date():
+            month_end = datetime.datetime.today().date()
+
+        working_days = 0
+        absences = 0
+
+        end_day = None
+        start_day = month_start
+        while start_day != month_end + datetime.timedelta(days=1):
+            if worker.job_start <= start_day:
+                if worker.job_end:
+                    if worker.job_end >= start_day:
+                        if start_day.isoweekday() < 6:
+                            absence = Absence.objects.filter(worker=worker, absence_date=start_day)
+                            absence = absence.exclude(absence_type='SP')
+                            if absence:
+                                absences += 1
+                            working_days += 1
+            start_day += datetime.timedelta(days=1)
+
+        work_seconds = 36 * 800 * (working_days - absences)
+
+        def working_hours(value_in_seconds):
+            hours = value_in_seconds // 3600
+            return hours
+
+        work_hours = working_hours(work_seconds)
+        days_at_work = working_days - absences
+
+        units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end, persons__id=worker_id)
+        units = ProductionUnit.objects.all()
+
+        data = []
+
+        for unit in units:
+            unit_efficiency = round(100*(unit.estimated_duration_in_seconds()*0.75)/unit.unit_duration_in_seconds(), 2)
+            data.append((unit, unit_efficiency))
+
+        pot = round(600 * (days_at_work/working_days), 2)
+
+        return render(request, 'production/worker-efficiency.html', locals())
