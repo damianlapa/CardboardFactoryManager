@@ -110,6 +110,48 @@ class WorkStationDetails(View):
         in_progress_units = units.filter(status='IN PROGRESS').order_by('order')
         other_units = units.filter(status='NOT STARTED').order_by('order')
         history_units = units.filter(status='FINISHED').order_by('-end')
+
+        # counting machine set up
+        def counting_machine_times(some_units):
+            '''
+            :param some_units:
+            :return:
+            '''
+            equations = []
+            set_up_values = []
+            for u in some_units:
+                equation = (u.production_order.quantity, u.unit_duration_in_seconds())
+                equations.append(equation)
+
+            for num in range(len(equations)):
+                equation_one = equations[num]
+                for num_2 in range(len(equations)):
+                    if num_2 != num:
+                        equation_two = equations[num_2]
+
+                        set_up_value = abs(equation_two[1] - equation_one[1])/abs(equation_two[0] - equation_one[0])
+
+                        set_up_values.append(set_up_value)
+
+            unit_sum_ups = (sum([x[1] for x in equations]), -sum([x[0] for x in equations]), len(equations))
+
+            print(set_up_values)
+
+            set_up_values = set(set_up_values)
+
+            print(set_up_values)
+
+            return sum(set_up_values)/len(set_up_values), unit_sum_ups
+
+        result_1, result_2 = counting_machine_times(history_units)
+
+        final_result = (result_2[0] + result_2[1] * result_1)/result_2[2]
+
+        print(result_2[0], result_2[1], result_1, result_2[2])
+
+        test_value = final_result // 60
+
+
         return render(request, 'production/workstation-details.html', locals())
 
 
@@ -385,6 +427,7 @@ class WorkerEfficiency(View):
         efficiency = [0, 0]
 
         for unit in units:
+            print(unit.start.tzinfo, unit.end.tzinfo, unit.start, unit.end)
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
                 unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
                 unit_efficiency = round(100*unit_fractal, 2)
@@ -392,7 +435,7 @@ class WorkerEfficiency(View):
                 efficiency[0] += unit.estimated_duration_in_seconds()
                 efficiency[1] += unit.unit_duration_in_seconds()
 
-        efficiency = round(100*efficiency[0]/efficiency[1], 2)
+        efficiency = round(100*efficiency[0]/efficiency[1], 2) if efficiency[1] else 100
 
         pot = round(600 * (days_at_work/working_days), 2)
 

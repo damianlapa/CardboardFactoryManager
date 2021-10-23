@@ -42,7 +42,6 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
                 date_end += datetime.timedelta(hours=64)
             else:
                 date_end += datetime.timedelta(hours=16)
-        print(date_end.hour)
 
     for _ in range(minutes // 15):
         date_end += datetime.timedelta(minutes=15)
@@ -279,7 +278,6 @@ class ProductionUnit(models.Model):
                 else:
                     if self.end.month == self.start.month:
                         days_difference = self.end.day - self.start.day
-                        print(days_difference)
                         if days_difference <= 4:
                             # the same week
                             if self.end.isoweekday() > self.start.isoweekday():
@@ -330,9 +328,7 @@ class ProductionUnit(models.Model):
 
     def unit_duration_in_seconds(self):
         def change_difference_to_time(difference_value):
-            print(difference_value)
             days = difference_value.days
-            print(days, self)
             seconds = difference_value.seconds
             if days:
                 seconds += days * 3600 * 24
@@ -351,7 +347,6 @@ class ProductionUnit(models.Model):
                 else:
                     if self.end.month == self.start.month:
                         days_difference = self.end.day - self.start.day
-                        print(days_difference)
                         if days_difference <= 4:
                             # the same week
                             if self.end.isoweekday() > self.start.isoweekday():

@@ -82,10 +82,10 @@
             {{ forloop.counter }}
         </td>
         <td>
-            {{ u.0.start }}
+            {{ u.0.start|date:"d M Y, H:i:s" }}
         </td>
         <td>
-            {{ u.0.end }}
+            {{ u.0.end|date:"d M Y, H:i:s" }}
         </td>
         <td>
             {{ u.0.work_station }}
