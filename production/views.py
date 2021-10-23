@@ -112,11 +112,7 @@ class WorkStationDetails(View):
         history_units = units.filter(status='FINISHED').order_by('-end')
 
         # counting machine set up
-        def counting_machine_times(some_units):
-            '''
-            :param some_units:
-            :return:
-            '''
+        '''def counting_machine_times(some_units):
             equations = []
             set_up_values = []
             for u in some_units:
@@ -149,7 +145,7 @@ class WorkStationDetails(View):
 
         print(result_2[0], result_2[1], result_1, result_2[2])
 
-        test_value = final_result // 60
+        test_value = final_result // 60'''
 
 
         return render(request, 'production/workstation-details.html', locals())
