@@ -428,6 +428,10 @@ class WorkerEfficiency(View):
 
         work_hours = working_hours(work_seconds)
         days_at_work = working_days - absences
+        days_at_work_to_count = days_at_work
+
+        if work_hours != days_at_work_to_count * 8:
+            days_at_work_to_count = round(work_hours // 8 + (work_hours % 8)/8, 2)
 
         month_end += datetime.timedelta(days=1)
 
@@ -448,6 +452,6 @@ class WorkerEfficiency(View):
 
         efficiency = round(100*efficiency[0]/efficiency[1], 2) if efficiency[1] else 100
 
-        pot = round(600 * (days_at_work/working_days), 2)
+        pot = round(600 * (days_at_work_to_count/working_days), 2)
 
         return render(request, 'production/worker-efficiency.html', locals())
