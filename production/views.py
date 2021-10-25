@@ -8,7 +8,7 @@ from production.forms import *
 
 from warehousemanager.functions import visit_counter
 
-from warehousemanager.models import Absence
+from warehousemanager.models import Absence, ExtraHour
 
 
 class ProductionMenu(View):
@@ -297,6 +297,7 @@ class FinishProductionUnit(View):
 
         all_finished = True
         all_planned = True
+
         for u in all_production_order_units:
             if u.status not in ('FINISHED', 'PLANNED'):
                 all_planned = False
@@ -306,8 +307,7 @@ class FinishProductionUnit(View):
         if all_finished:
             unit.production_order.status = 'FINISHED'
             unit.production_order.save()
-
-        if all_planned:
+        elif all_planned:
             unit.production_order.status = 'PLANNED'
             unit.production_order.save()
 
@@ -383,6 +383,7 @@ class WorkerEfficiency(View):
 
         working_days = 0
         absences = 0
+        extra_hours = 0
 
         end_day = None
         start_day = month_start
@@ -393,6 +394,13 @@ class WorkerEfficiency(View):
                         if start_day.isoweekday() < 6:
                             absence = Absence.objects.filter(worker=worker, absence_date=start_day)
                             absence = absence.exclude(absence_type='SP')
+                            extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
+                            if extra_h:
+                                extra_ho = extra_h[0]
+                                if extra_ho.full_day:
+                                    extra_hours += extra_ho.quantity
+                                else:
+                                    extra_hours += extra_ho.quantity - 8
                             if absence:
                                 absences += 1
                             working_days += 1
@@ -400,12 +408,19 @@ class WorkerEfficiency(View):
                     if start_day.isoweekday() < 6:
                         absence = Absence.objects.filter(worker=worker, absence_date=start_day)
                         absence = absence.exclude(absence_type='SP')
+                        extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
+                        if extra_h:
+                            extra_ho = extra_h[0]
+                            if extra_ho.full_day:
+                                extra_hours += extra_ho.quantity
+                            else:
+                                extra_hours += extra_ho.quantity - 8
                         if absence:
                             absences += 1
-                    working_days += 1
+                        working_days += 1
             start_day += datetime.timedelta(days=1)
 
-        work_seconds = 36 * 800 * (working_days - absences)
+        work_seconds = 36 * 800 * (working_days - absences) + extra_hours * 3600
 
         def working_hours(value_in_seconds):
             hours = value_in_seconds // 3600
@@ -423,11 +438,11 @@ class WorkerEfficiency(View):
         efficiency = [0, 0]
 
         for unit in units:
-            print(unit.start.tzinfo, unit.end.tzinfo, unit.start, unit.end)
+            data.append([unit, ])
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
                 unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
                 unit_efficiency = round(100*unit_fractal, 2)
-                data.append((unit, unit_efficiency))
+                data[-1].append(unit_efficiency)
                 efficiency[0] += unit.estimated_duration_in_seconds()
                 efficiency[1] += unit.unit_duration_in_seconds()
 

@@ -336,8 +336,8 @@ class ProductionUnit(models.Model):
             return seconds
 
         if self.start and self.end:
-            self.start += datetime.timedelta(hours=2)
-            self.end += datetime.timedelta(hours=2)
+            # self.start += datetime.timedelta(hours=2)
+            # self.end += datetime.timedelta(hours=2)
             difference = self.end - self.start
             if self.end.month == self.start.month:
                 same_day = self.end.day == self.start.day
