@@ -31,8 +31,9 @@
 
 <div class="color-list">
     {% for po in production_orders %}
-    <a href="{% url 'production-details' production_order_id=po.id %}" class="no-decor black">
-        <div data-orderstatus="{{ po.status }}"
+    <a href="{% url 'production-details' production_order_id=po.id %}" class="no-decor black" >
+        <div style="{% if po.status == 'FINISHED' %}display: none; {% endif %}"
+             data-orderstatus="{{ po.status }}"
              data-idnumber="{{ po.id_number }}"
              data-cardboard="{{ po.cardboard }}"
              data-cardboarddimensions="{{ po.cardboard_dimensions }}"
