@@ -20,28 +20,46 @@
             font-weight: bold;
         }
         @page {
-            size: A4;
-            margin: 2cm;
-            @frame content_frame {
-                left: 50pt;
-                width: 500pt;
-                top: 50pt;
-                height: 692pt;
-            }
+        size: a4 portrait;
+        @frame header_frame {           /* Static Frame */
+            -pdf-frame-content: header_content;
+            left: 50pt; width: 512pt; top: 50pt; height: 40pt;
         }
+        @frame content_frame {          /* Content Frame */
+            left: 50pt; width: 512pt; top: 90pt; height: 632pt;
+        }
+        @frame footer_frame {           /* Another static Frame */
+            -pdf-frame-content: footer_content;
+            left: 50pt; width: 512pt; top: 772pt; height: 20pt;
+        }
+    }
 
         body {
              font-family: "Roboto", sans-serif;
+             page-break-inside:auto;
         }
 
         td {
             padding: 1px;
             text-align: center;
         }
+
+        h5 {
+            page-break-before:always;
+        }
     </style>
 
 </head>
 <body>
+<!-- Content for Static Frame 'header_frame' -->
+    <div id="header_content">PAKER - {{ worker }} raport okresowy</div>
+
+    <!-- Content for Static Frame 'footer_frame' -->
+    <div id="footer_content" style="text-align: right;">page <pdf:pagenumber>
+        of <pdf:pagecount>
+    </div>
+
+    <!-- HTML Content -->
 <table>
     <tr>
 
