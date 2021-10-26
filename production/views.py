@@ -6,6 +6,11 @@ from django.db.models import Q
 from production.models import *
 from production.forms import *
 
+from django.template.loader import get_template
+
+import os
+from xhtml2pdf import pisa
+
 from warehousemanager.functions import visit_counter
 
 from warehousemanager.models import Absence, ExtraHour
@@ -455,3 +460,129 @@ class WorkerEfficiency(View):
         pot = round(600 * (days_at_work_to_count/working_days), 2)
 
         return render(request, 'production/worker-efficiency.html', locals())
+
+
+class WorkerEfficiencyPrintPDF(View):
+    def get(self, request, year, month, worker_id):
+        now = datetime.datetime.now()
+        worker = Person.objects.get(id=worker_id)
+        if month == 2:
+            if year % 4 == 0:
+                days = 29
+            else:
+                days = 28
+        elif month in (1, 3, 5, 7, 8, 10, 12):
+            days = 31
+        else:
+            days = 30
+
+        month_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
+        month_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
+
+        if month_end > datetime.datetime.today().date():
+            month_end = datetime.datetime.today().date()
+
+        working_days = 0
+        absences = 0
+        extra_hours = 0
+        holidays = 0
+
+        end_day = None
+        start_day = month_start
+        while start_day != month_end + datetime.timedelta(days=1):
+            if worker.job_start <= start_day:
+                if worker.job_end:
+                    if worker.job_end >= start_day:
+                        holiday = Holiday.objects.filter(holiday_date=start_day)
+                        if start_day.isoweekday() < 6:
+                            if not holiday:
+                                absence = Absence.objects.filter(worker=worker, absence_date=start_day)
+                                absence = absence.exclude(absence_type='SP')
+                                extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
+                                if extra_h:
+                                    extra_ho = extra_h[0]
+                                    if extra_ho.full_day:
+                                        extra_hours += extra_ho.quantity
+                                    else:
+                                        extra_hours += extra_ho.quantity - 8
+                                if absence:
+                                    absences += 1
+                                working_days += 1
+                            else:
+                                holidays += 1
+                else:
+                    holiday = Holiday.objects.filter(holiday_date=start_day)
+                    if not holiday:
+                        if start_day.isoweekday() < 6:
+                            absence = Absence.objects.filter(worker=worker, absence_date=start_day)
+                            absence = absence.exclude(absence_type='SP')
+                            extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
+                            if extra_h:
+                                extra_ho = extra_h[0]
+                                if extra_ho.full_day:
+                                    extra_hours += extra_ho.quantity
+                                else:
+                                    extra_hours += extra_ho.quantity - 8
+                            if absence:
+                                absences += 1
+                            working_days += 1
+                    else:
+                        holidays += 1
+            start_day += datetime.timedelta(days=1)
+
+        work_seconds = 36 * 800 * (working_days - absences) + extra_hours * 3600
+
+        def working_hours(value_in_seconds):
+            hours = value_in_seconds // 3600
+            return hours
+
+        work_hours = working_hours(work_seconds)
+        days_at_work = working_days - absences
+        days_at_work_to_count = days_at_work
+
+        if work_hours != days_at_work_to_count * 8:
+            days_at_work_to_count = round(work_hours // 8 + (work_hours % 8) / 8, 2)
+
+        month_end += datetime.timedelta(days=1)
+
+        units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end,
+                                              persons__id=worker_id).order_by('start')
+
+        data = []
+
+        efficiency = [0, 0]
+
+        for unit in units:
+            data.append([unit, ])
+            if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+                unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
+                unit_efficiency = round(100 * unit_fractal, 2)
+                data[-1].append(unit_efficiency)
+                efficiency[0] += unit.estimated_duration_in_seconds()
+                efficiency[1] += unit.unit_duration_in_seconds()
+
+        efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
+
+        pot = round(600 * (days_at_work_to_count / working_days), 2)
+
+        month_end_pdf = month_end - datetime.timedelta(days=1)
+
+        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
+        font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
+
+        template_path = 'production/worker-efficiency-pdf.html'
+        context = locals()
+        # Create a Django response object, and specify content_type as pdf
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'filename="{worker} {year}-{month} report.pdf"'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+            html, dest=response, encoding='UTF-8')
+        # if errorw
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response

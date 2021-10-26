@@ -28,5 +28,6 @@ urlpatterns += [
 # worker
 urlpatterns += [
     path('workers-by-month/<int:year>/<int:month>/', WorkersByMonth.as_view(), name='worker-month'),
-    path('worker-efficiency/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiency.as_view(), name='worker-efficiency')
+    path('worker-efficiency/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiency.as_view(), name='worker-efficiency'),
+    path('worker-efficiency-pdf/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiencyPrintPDF.as_view(), name='worker-efficiency-pdf')
 ]
