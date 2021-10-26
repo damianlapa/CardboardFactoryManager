@@ -513,8 +513,12 @@ class WorkerEfficiencyPrintPDF(View):
                                     extra_ho = extra_h[0]
                                     if extra_ho.full_day:
                                         extra_hours += extra_ho.quantity
+                                        events_data.append(
+                                            (extra_ho.extras_date, 'Nadgodziny', extra_ho.quantity))
                                     else:
                                         extra_hours += extra_ho.quantity - 8
+                                        events_data.append(
+                                            (extra_ho.extras_date, 'Niepełny dzień', 8 - extra_ho.quantity))
                                 if absence:
                                     absences += 1
                                 working_days += 1
@@ -536,8 +540,12 @@ class WorkerEfficiencyPrintPDF(View):
                                 extra_ho = extra_h[0]
                                 if extra_ho.full_day:
                                     extra_hours += extra_ho.quantity
+                                    events_data.append(
+                                        (extra_ho.extras_date, 'Nadgodziny', extra_ho.quantity))
                                 else:
                                     extra_hours += extra_ho.quantity - 8
+                                    events_data.append(
+                                        (extra_ho.extras_date, 'Niepełny dzień', 8 - extra_ho.quantity))
                             if absence:
                                 absences += 1
                             working_days += 1

@@ -2,6 +2,7 @@
 {% block title %}{{ worker }} Efficiency{% endblock %}
 {% block content %}
 <h1 class="white">WORKER EFFICIENCY</h1>
+<a href="{% url 'worker-efficiency-pdf' worker_id=worker.id year=year month=month%}"><h6>print</h6></a>
 <hr style="border: solid 2px pink">
 <h2 class="white">{{ month_start }} - {{ month_end }}</h2>
 <hr style="border: solid 2px pink">
