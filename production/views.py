@@ -464,6 +464,7 @@ class WorkerEfficiency(View):
 
 class WorkerEfficiencyPrintPDF(View):
     def get(self, request, year, month, worker_id):
+        full_pot = float(600.00)
         now = datetime.datetime.now()
         worker = Person.objects.get(id=worker_id)
         if month == 2:
@@ -486,6 +487,9 @@ class WorkerEfficiencyPrintPDF(View):
         absences = 0
         extra_hours = 0
         holidays = 0
+        late = 0
+
+        events_data = []
 
         end_day = None
         start_day = month_start
@@ -497,6 +501,12 @@ class WorkerEfficiencyPrintPDF(View):
                         if start_day.isoweekday() < 6:
                             if not holiday:
                                 absence = Absence.objects.filter(worker=worker, absence_date=start_day)
+                                if absence:
+                                    late_in_minutes = f'{absence[0].value} minut' if absence[0].value else ''
+                                    events_data.append((absence[0].absence_date, absence[0].absence_type, late_in_minutes))
+                                    if absence[0].absence_type == 'SP':
+                                        late += 1
+
                                 absence = absence.exclude(absence_type='SP')
                                 extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
                                 if extra_h:
@@ -515,6 +525,11 @@ class WorkerEfficiencyPrintPDF(View):
                     if not holiday:
                         if start_day.isoweekday() < 6:
                             absence = Absence.objects.filter(worker=worker, absence_date=start_day)
+                            if absence:
+                                late_in_minutes = f'{absence[0].value} minut' if absence[0].value else ''
+                                events_data.append((absence[0].absence_date, absence[0].absence_type, late_in_minutes))
+                                if absence[0].absence_type == 'SP':
+                                    late += 1
                             absence = absence.exclude(absence_type='SP')
                             extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
                             if extra_h:
@@ -537,6 +552,7 @@ class WorkerEfficiencyPrintPDF(View):
             return hours
 
         work_hours = working_hours(work_seconds)
+        all_hours = working_days * 8
         days_at_work = working_days - absences
         days_at_work_to_count = days_at_work
 
@@ -563,7 +579,20 @@ class WorkerEfficiencyPrintPDF(View):
 
         efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
 
-        pot = round(600 * (days_at_work_to_count / working_days), 2)
+        pot = round(full_pot * float((days_at_work_to_count / working_days)), 2)
+
+        suggested_bonus = 0
+
+        if efficiency >= 100:
+            suggested_bonus = 0.5 * pot * (1 + (efficiency - 100)/50)
+            if suggested_bonus > pot:
+                suggested_bonus = pot
+        else:
+            suggested_bonus = 0.5 * pot * (100-((100 - efficiency)*4))/100
+            if suggested_bonus < 0:
+                suggested_bonus = 0
+
+        suggested_bonus = round(suggested_bonus, 2)
 
         month_end_pdf = month_end - datetime.timedelta(days=1)
 

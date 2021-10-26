@@ -52,7 +52,7 @@
 </head>
 <body>
 <!-- Content for Static Frame 'header_frame' -->
-    <div id="header_content">PAKER - {{ worker }} raport okresowy</div>
+    <div id="header_content">PAKER - {{ worker }} raport okresowy {{ month }}.{{ year }}</div>
 
     <!-- Content for Static Frame 'footer_frame' -->
     <div id="footer_content" style="text-align: right;">page <pdf:pagenumber>
@@ -75,18 +75,34 @@
 <div style="text-align: center;">
 <span style="color: black; font-size: 30px; font-weight: bold; text-align: center;">RAPORT WYDAJNOŚCI</span></div>
 <hr>
-<span style="color: black; font-size: 20px;">Pracownik:</span>
-<span style="color: darkblue; font-size: 28px; font-weight: bold;">{{ worker }}</span><br>
-<span style="color: black; font-size: 20px;">Okres:</span>
-<span style="color: darkred; font-size: 22px; font-weight: bold;">{{ month_start|date:"d.m.Y" }} - {{ month_end_pdf|date:"d.m.Y" }}</span>
-<hr>
-<h1 style="color: black; font-size: 20px;">Frekwencja</h1>
-<table class="bg-white center">
+<table>
     <tr>
-        <td>Days</td>
-        <td>Hours</td>
-        <td>Absences</td>
-        <td>Holidays</td>
+       <th style="text-align: left;">
+           <span style="color: black; font-size: 20px;">Pracownik:</span>
+<span style="color: darkblue; font-size: 32px; font-weight: bold;">{{ worker }}</span>
+       </th>
+       <th rowspan="2" style="text-align: right">
+           <span style="color: red; font-size: 45px;">{{ efficiency }}%</span>
+       </th>
+    </tr>
+    <tr>
+       <th style="text-align: left;">
+           <span style="color: black; font-size: 20px;">Okres:</span>
+<span style="color: darkred; font-size: 22px; font-weight: bold;">{{ month_start|date:"d.m.Y" }} - {{ month_end_pdf|date:"d.m.Y" }}</span>
+
+       </th>
+    </tr>
+</table>
+<hr>
+<h1 style="color: black; font-size: 28px; text-align: center;">Frekwencja</h1>
+<h2 class="white">Podsumowanie:</h2>
+<table style="border: 1px solid black">
+    <tr>
+        <th>Dni</th>
+        <th>Godziny</th>
+        <th>Nieobecności</th>
+        <th>Spóźnienia</th>
+        <th>Święta</th>
     </tr>
     <tr>
         <td>
@@ -94,46 +110,76 @@
 
         </td>
         <td>
-            {{ work_hours }}
+            {{ work_hours }}/{{ all_hours }}
         </td>
         <td>
 
             {{ absences }}
         </td>
         <td>
+            {{ late }}
+        </td>
+        <td>
             {{ holidays }}
         </td>
     </tr>
 </table>
-
-<h2 class="white">Units</h2>
-<h2 class="white">Efficiency:</h2>
-<h1 class="red">{{ efficiency }}%</h1>
-<table class="bg-white center">
+{% if events_data %}
+<h2 class="white">Wydarzenia:</h2>
+<table style="border: solid 1px black">
+    <tr>
+        <th>
+            Data
+        </th>
+        <th>
+            Typ
+        </th>
+        <th>
+            Dodatkowe informacje
+        </th>
+    </tr>
+    {% for e in events_data %}
+    <tr>
+        <td>
+            {{ e.0 }}
+        </td>
+        <td>
+            {{ e.1 }}
+        </td>
+        <td>
+            {{ e.2 }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+<hr style="color: grey;">
+<h1 style="color: black; font-size: 28px; text-align: center;">Jednostki produkcyjne</h1>
+<table style="border: 1px solid black">
     <tr>
         <th rowspan="2">
-            Num
+            Nr
         </th>
         <th colspan="2">
-            Date
+            Data
         </th>
         <th rowspan="2">
-            Station
+            Stanowisko
         </th>
         <th rowspan="2">
-            Order
+            Zlecenie
         </th>
         <th rowspan="2">
-            Quantity
+            Ilość
         </th>
         <th rowspan="2">
-            Coworkers
+            Pracownicy
         </th>
         <th colspan="2">
-            Time
+            Czas
         </th>
         <th rowspan="2">
-            Efficiency
+            Wydajność
         </th>
     </tr>
     <tr>
@@ -141,13 +187,13 @@
             Start
         </th>
         <th>
-            End
+            Koniec
         </th>
         <th>
-            Estimated
+            Planowany
         </th>
         <th>
-            Real
+            Rzeczywisty
         </th>
     </tr>
     {% for u in data %}
@@ -156,10 +202,10 @@
             {{ forloop.counter }}
         </td>
         <td>
-            {{ u.0.start|date:"d M Y, H:i:s" }}
+            {{ u.0.start|date:"d.m, H:i:s" }}
         </td>
         <td>
-            {{ u.0.end|date:"d M Y, H:i:s" }}
+            {{ u.0.end|date:"d.m, H:i:s" }}
         </td>
         <td>
             {{ u.0.work_station }}
@@ -188,6 +234,32 @@
         </td>
     </tr>
     {% endfor %}
+</table>
+<hr>
+<h1 style="color: black; font-size: 28px; text-align: center;">Premia</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Max
+        </th>
+        <th>
+            Możliwa
+        </th>
+        <th>
+            Sugerowana
+        </th>
+    </tr>
+    <tr>
+        <td>
+            {{ full_pot }}
+        </td>
+        <td>
+            {{ pot }}
+        </td>
+        <td>
+            {{ suggested_bonus }}
+        </td>
+    </tr>
 </table>
 </body>
 </html>
