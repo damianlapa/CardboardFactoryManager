@@ -464,6 +464,7 @@ class WorkerEfficiency(View):
 
 class WorkerEfficiencyPrintPDF(View):
     def get(self, request, year, month, worker_id):
+        bonus = True if request.GET.get('bonus') else False
         full_pot = float(600.00)
         now = datetime.datetime.now()
         worker = Person.objects.get(id=worker_id)
@@ -545,7 +546,7 @@ class WorkerEfficiencyPrintPDF(View):
                                 else:
                                     extra_hours += extra_ho.quantity - 8
                                     events_data.append(
-                                        (extra_ho.extras_date, 'Niepełny dzień', 8 - extra_ho.quantity))
+                                        (extra_ho.extras_date, 'Niepełny dzień', extra_ho.quantity))
                             if absence:
                                 absences += 1
                             working_days += 1
@@ -574,16 +575,44 @@ class WorkerEfficiencyPrintPDF(View):
 
         data = []
 
+        worker_stations = []
+        units_stations = []
+
         efficiency = [0, 0]
 
         for unit in units:
             data.append([unit, ])
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+
                 unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
                 unit_efficiency = round(100 * unit_fractal, 2)
                 data[-1].append(unit_efficiency)
                 efficiency[0] += unit.estimated_duration_in_seconds()
                 efficiency[1] += unit.unit_duration_in_seconds()
+
+                # work stations
+                if unit.work_station not in worker_stations:
+                    worker_stations.append(unit.work_station)
+                    units_stations.append([unit.work_station, 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                else:
+                    for us in units_stations:
+                        if us[0] == unit.work_station:
+                            us[1] += 1
+                            us[2] += unit.unit_duration_in_seconds()
+                            us[3][0] += unit.estimated_duration_in_seconds()
+                            us[3][1] += unit.estimated_duration_in_seconds()
+
+        for us in units_stations:
+            hours = us[2] // 3600
+            minutes = (us[2] - hours * 3600) // 60
+            seconds = us[2] % 60
+            hours = hours if hours > 9 else f'0{hours}'
+            minutes = minutes if minutes > 9 else f'0{minutes}'
+            seconds = seconds if seconds > 9 else f'0{seconds}'
+            us[2] = f'{hours}:{minutes}:{seconds}'
+            us[3] = round(100 * us[3][0] / us[3][1], 2) if us[3][1] else 100
+
+        units_stations = sorted(units_stations, key=lambda x:x[1], reverse=True)
 
         efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
 

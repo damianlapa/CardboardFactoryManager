@@ -173,7 +173,7 @@
             Ilość
         </th>
         <th rowspan="2">
-            Pracownicy
+            Współ- pracownicy
         </th>
         <th colspan="2">
             Czas
@@ -236,6 +236,43 @@
     {% endfor %}
 </table>
 <hr>
+
+<h1 style="color: black; font-size: 28px; text-align: center;">Miejsca pracy</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Stanowisko
+        </th>
+        <th>
+            Ilość Produkcji
+        </th>
+        <th>
+            Łączny czas
+        </th>
+        <th>
+            Efektywność
+        </th>
+    </tr>
+    {% for u_s in units_stations %}
+    <tr>
+        <th>
+            {{ u_s.0 }}
+        </th>
+        <td>
+            {{ u_s.1 }}
+        </td>
+        <td>
+            {{ u_s.2 }}
+        </td>
+        <td>
+            {{ u_s.3 }}%
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<hr>
+{% if bonus %}
 <h1 style="color: black; font-size: 28px; text-align: center;">Premia</h1>
 <table style="border: solid 1px black;">
     <tr>
@@ -261,5 +298,6 @@
         </td>
     </tr>
 </table>
+{% endif %}
 </body>
 </html>
