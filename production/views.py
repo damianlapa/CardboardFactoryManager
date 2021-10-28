@@ -719,3 +719,78 @@ class WorkStationEfficiency(View):
         efficiency = round(100*efficiency[0]/efficiency[1], 2) if efficiency[1] else 100
 
         return render(request, 'production/station-efficiency.html', locals())
+
+
+class StationEfficiencyPrintPDF(View):
+    def get(self, request, year, month, station_id):
+        station = WorkStation.objects.get(id=station_id)
+
+        date_start = datetime.datetime.strptime('2021-10-01', '%Y-%m-%d').date()
+        date_end = datetime.datetime.strptime('2021-10-31', '%Y-%m-%d').date()
+
+        units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1),
+                                              work_station=station).order_by('start')
+
+        data = []
+
+        coworkers = []
+        works_with = []
+
+        efficiency = [0, 0]
+
+        for unit in units:
+            data.append([unit, ])
+            if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+
+                unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
+                unit_efficiency = round(100 * unit_fractal, 2)
+                data[-1].append(unit_efficiency)
+                efficiency[0] += unit.estimated_duration_in_seconds()
+                efficiency[1] += unit.unit_duration_in_seconds()
+
+                # works with
+                for coworker in unit.persons.all():
+                    if coworker not in coworkers:
+                        coworkers.append(coworker)
+                        works_with.append([coworker, 0, 0, [0, 0]])
+                for coop in works_with:
+                    for coworker_person in unit.persons.all():
+                        if coworker_person == coop[0]:
+                            coop[1] += 1
+                            coop[2] += unit.unit_duration_in_seconds()
+                            coop[3][0] += unit.estimated_duration_in_seconds()
+                            coop[3][1] += unit.unit_duration_in_seconds()
+
+        for coworker_data in works_with:
+            hours = coworker_data[2] // 3600
+            minutes = (coworker_data[2] - hours * 3600) // 60
+            seconds = coworker_data[2] % 60
+            hours = hours if hours > 9 else f'0{hours}'
+            minutes = minutes if minutes > 9 else f'0{minutes}'
+            seconds = seconds if seconds > 9 else f'0{seconds}'
+            coworker_data[2] = f'{hours}:{minutes}:{seconds}'
+            coworker_data[3] = round(100 * coworker_data[3][0] / coworker_data[3][1], 2) if coworker_data[3][1] else 100
+
+        works_with = sorted(works_with, key=lambda x: x[1], reverse=True)
+
+        efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
+
+        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
+        font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
+
+        template_path = 'production/station-efficiency-pdf.html'
+        context = locals()
+        # Create a Django response object, and specify content_type as pdf
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'filename="report.pdf"'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+            html, dest=response, encoding='UTF-8')
+        # if errorw
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response

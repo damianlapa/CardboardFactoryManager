@@ -209,7 +209,7 @@
 {% endif %}
 <hr style="border: solid 2px pink">
 
-<a href="{% url 'station-efficiency' year=2021 month=10 station_id=station.id %}">station report</a>
+<a href="{% url 'station-efficiency-pdf' year=2021 month=10 station_id=station.id %}">station report</a>
 {% endblock %}
 {% block scripts %}
 {% load static %}
