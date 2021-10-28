@@ -607,17 +607,20 @@ class WorkerEfficiencyPrintPDF(View):
                 # works with
                 for coworker in unit.persons.all():
                     if coworker != worker:
-                        coworkers.append(coworker)
-                        works_with.append([coworker, 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
-                if not unit.persons.all():
+                        if coworker not in coworkers:
+                            coworkers.append(coworker)
+                            works_with.append([coworker, 0, 0, [0, 0]])
+                if unit.persons.all().count() == 1:
                     if works_with:
-                        if works_with[0][0] == '':
+                        if works_with[0][0] == '-':
                             works_with[0][1] += 1
                             works_with[0][2] += unit.unit_duration_in_seconds()
                             works_with[0][3][0] += unit.estimated_duration_in_seconds()
                             works_with[0][3][1] += unit.unit_duration_in_seconds()
                         else:
-                            works_with.insert(0, ['', 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                            works_with.insert(0, ['-', 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                    else:
+                        works_with.append(['-', 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
                 for coop in works_with:
                     for coworker_person in unit.persons.all():
                         if coworker_person == coop[0]:
@@ -626,6 +629,19 @@ class WorkerEfficiencyPrintPDF(View):
                             coop[3][0] += unit.estimated_duration_in_seconds()
                             coop[3][1] += unit.unit_duration_in_seconds()
 
+        for coworker_data in works_with:
+            hours = coworker_data[2] // 3600
+            minutes = (coworker_data[2] - hours * 3600) // 60
+            seconds = coworker_data[2] % 60
+            hours = hours if hours > 9 else f'0{hours}'
+            minutes = minutes if minutes > 9 else f'0{minutes}'
+            seconds = seconds if seconds > 9 else f'0{seconds}'
+            coworker_data[2] = f'{hours}:{minutes}:{seconds}'
+            coworker_data[3] = round(100 * coworker_data[3][0] / coworker_data[3][1], 2) if coworker_data[3][1] else 100
+
+        works_with = sorted(works_with, key=lambda x: x[1], reverse=True)
+
+        # work stations
         for us in units_stations:
             hours = us[2] // 3600
             minutes = (us[2] - hours * 3600) // 60

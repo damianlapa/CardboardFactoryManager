@@ -272,6 +272,40 @@
 </table>
 
 <hr>
+<h1 style="color: black; font-size: 28px; text-align: center;">Współpracuje z:</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Współpracownik
+        </th>
+        <th>
+            Ilość Produkcji
+        </th>
+        <th>
+            Łączny czas
+        </th>
+        <th>
+            Efektywność
+        </th>
+    </tr>
+    {% for u_s in works_with %}
+    <tr>
+        <th>
+            {{ u_s.0 }}
+        </th>
+        <td>
+            {{ u_s.1 }}
+        </td>
+        <td>
+            {{ u_s.2 }}
+        </td>
+        <td>
+            {{ u_s.3 }}%
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<hr>
 {% if bonus %}
 <h1 style="color: black; font-size: 28px; text-align: center;">Premia</h1>
 <table style="border: solid 1px black;">
