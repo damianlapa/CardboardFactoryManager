@@ -31,3 +31,8 @@ urlpatterns += [
     path('worker-efficiency/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiency.as_view(), name='worker-efficiency'),
     path('worker-efficiency-pdf/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiencyPrintPDF.as_view(), name='worker-efficiency-pdf')
 ]
+
+# work stations
+urlpatterns += [
+    path('station-efficiency/<int:year>/<int:month>/<int:station_id>/', WorkStationEfficiency.as_view(), name='station-efficiency'),
+]

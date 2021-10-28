@@ -692,3 +692,30 @@ class WorkerEfficiencyPrintPDF(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+class WorkStationEfficiency(View):
+    def get(self, request, year, month, station_id):
+        station = WorkStation.objects.get(id=station_id)
+
+        date_start = datetime.datetime.strptime('2021-10-01', '%Y-%m-%d').date()
+        date_end = datetime.datetime.strptime('2021-10-31', '%Y-%m-%d').date()
+
+        units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1), work_station=station).order_by('start')
+
+        data = []
+
+        efficiency = [0, 0]
+
+        for unit in units:
+            data.append([unit, ])
+            if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+                unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
+                unit_efficiency = round(100*unit_fractal, 2)
+                data[-1].append(unit_efficiency)
+                efficiency[0] += unit.estimated_duration_in_seconds()
+                efficiency[1] += unit.unit_duration_in_seconds()
+
+        efficiency = round(100*efficiency[0]/efficiency[1], 2) if efficiency[1] else 100
+
+        return render(request, 'production/station-efficiency.html', locals())

@@ -1,0 +1,95 @@
+{% extends '__base2__.html' %}
+{% block title %}{{ worker }} Efficiency{% endblock %}
+{% block content %}
+<h1 class="white">STATION EFFICIENCY</h1>
+<hr style="border: solid 2px pink">
+<h2 class="white">{{ date_start }} - {{ date_end }}</h2>
+<hr style="border: solid 2px pink">
+<h2 class="white">{{ station }}</h2>
+<hr style="border: solid 2px pink">
+
+<h2 class="white">Units</h2>
+<h2 class="white">Efficiency:</h2>
+<h1 class="red">{{ efficiency }}%</h1>
+<table class="bg-white center">
+    <tr>
+        <th rowspan="2">
+            Num
+        </th>
+        <th colspan="2">
+            Date
+        </th>
+        <th rowspan="2">
+            Station
+        </th>
+        <th rowspan="2">
+            Order
+        </th>
+        <th rowspan="2">
+            Quantity
+        </th>
+        <th rowspan="2">
+            Coworkers
+        </th>
+        <th colspan="2">
+            Time
+        </th>
+        <th rowspan="2">
+            Efficiency
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Start
+        </th>
+        <th>
+            End
+        </th>
+        <th>
+            Estimated
+        </th>
+        <th>
+            Real
+        </th>
+    </tr>
+    {% for u in data %}
+    <tr>
+        <td>
+            {{ forloop.counter }}
+        </td>
+        <td>
+            {{ u.0.start|date:"d M Y, H:i:s" }}
+        </td>
+        <td>
+            {{ u.0.end|date:"d M Y, H:i:s" }}
+        </td>
+        <td>
+            {{ u.0.work_station }}
+        </td>
+        <td>
+            {{ u.0.production_order }}
+        </td>
+        <td>
+            {{ u.0.production_order.quantity }}
+        </td>
+        <td>
+            {% for p in u.0.persons.all %}
+                {% if p != worker %}
+                    {{ p }}<br>
+                {% endif %}
+            {% endfor %}
+        </td>
+        <td>
+            {{ u.0.estimated_duration }}
+        </td>
+        <td>
+            {{ u.0.unit_duration }}
+        </td>
+        <td>
+            {{ u.1 }}%
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
