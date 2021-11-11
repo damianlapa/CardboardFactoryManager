@@ -269,6 +269,15 @@ class ProductionUnit(models.Model):
 
             return f'{hours}:{minutes}:{seconds}'
 
+        def holiday_between_days(first_date, second_date):
+            holidays = 0
+            if second_date.date() > first_date.date():
+                while first_date.date() != second_date.date():
+                    first_date = first_date + datetime.timedelta(days=1)
+                    if len(Holiday.objects.filter(holiday_date=first_date)) > 0:
+                        holidays += 1
+                return holidays
+
         if self.start and self.end:
             self.start += datetime.timedelta(hours=2)
             self.end += datetime.timedelta(hours=2)
@@ -279,6 +288,7 @@ class ProductionUnit(models.Model):
                     return change_difference_to_time(difference)
 
                 else:
+                    holidays_to_count = holiday_between_days(self.start, self.end)
                     if self.end.month == self.start.month:
                         days_difference = self.end.day - self.start.day
                         if days_difference <= 4:
@@ -289,6 +299,7 @@ class ProductionUnit(models.Model):
                             else:
                                 difference = difference - datetime.timedelta(hours=(days_difference - 2) * 16)
                                 difference -= datetime.timedelta(days=2)
+                            difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                             return change_difference_to_time(difference)
                         else:
                             day_number = 8 - self.start.isoweekday()
@@ -297,8 +308,10 @@ class ProductionUnit(models.Model):
                                 difference = difference - datetime.timedelta(days=full_weeks * 2)
                                 difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
                                     seconds=difference.seconds)
+                                difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                                 return change_difference_to_time(difference)
                             else:
+                                difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                                 return change_difference_to_time(difference)
                     else:
                         '''
@@ -330,6 +343,7 @@ class ProductionUnit(models.Model):
                 return 'alltime'
 
     def unit_duration_in_seconds(self):
+
         def change_difference_to_time(difference_value):
             days = difference_value.days
             seconds = difference_value.seconds
@@ -338,7 +352,17 @@ class ProductionUnit(models.Model):
 
             return seconds
 
+        def holiday_between_days(first_date, second_date):
+            holidays = 0
+            if second_date.date() > first_date.date():
+                while first_date.date() != second_date.date():
+                    first_date = first_date + datetime.timedelta(days=1)
+                    if len(Holiday.objects.filter(holiday_date=first_date)) > 0:
+                        holidays += 1
+                return holidays
+
         if self.start and self.end:
+            holidays_to_count = holiday_between_days(self.start, self.end)
             # self.start += datetime.timedelta(hours=2)
             # self.end += datetime.timedelta(hours=2)
             difference = self.end - self.start
@@ -350,6 +374,7 @@ class ProductionUnit(models.Model):
                 else:
                     if self.end.month == self.start.month:
                         days_difference = self.end.day - self.start.day
+
                         if days_difference <= 4:
                             # the same week
                             if self.end.isoweekday() > self.start.isoweekday():
@@ -358,6 +383,7 @@ class ProductionUnit(models.Model):
                             else:
                                 difference = difference - datetime.timedelta(hours=(days_difference - 2) * 16)
                                 difference -= datetime.timedelta(days=2)
+                            difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                             return change_difference_to_time(difference)
                         else:
                             day_number = 8 - self.start.isoweekday()
@@ -366,8 +392,10 @@ class ProductionUnit(models.Model):
                                 difference = difference - datetime.timedelta(days=full_weeks * 2)
                                 difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
                                     seconds=difference.seconds)
+                                difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                                 return change_difference_to_time(difference)
                             else:
+                                difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                                 return change_difference_to_time(difference)
                     else:
                         '''

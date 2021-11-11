@@ -725,8 +725,15 @@ class StationEfficiencyPrintPDF(View):
     def get(self, request, year, month, station_id):
         station = WorkStation.objects.get(id=station_id)
 
-        date_start = datetime.datetime.strptime('2021-10-01', '%Y-%m-%d').date()
-        date_end = datetime.datetime.strptime('2021-10-31', '%Y-%m-%d').date()
+        if month == 2:
+            days = 28 if year % 4 != 0 else 29
+        elif month in (4, 6, 9, 11):
+            days = 30
+        else:
+            days = 31
+
+        date_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
+        date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
 
         units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1),
                                               work_station=station).order_by('start')
