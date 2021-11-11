@@ -466,7 +466,6 @@ class WorkerEfficiencyPrintPDF(View):
     def get(self, request, year, month, worker_id):
         date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00", '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
         date_to = datetime.datetime.strptime(f"{request.GET.get('to')} 23:59:59", '%Y-%m-%d %H:%M:%S') if request.GET.get('to') else None
-        print(date_from, date_to)
         bonus = True if request.GET.get('bonus') else False
         full_pot = float(600.00)
         now = datetime.datetime.now()
@@ -733,7 +732,13 @@ class WorkStationEfficiency(View):
 
 class StationEfficiencyPrintPDF(View):
     def get(self, request, year, month, station_id):
+        date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
+                                               '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
+        date_to = datetime.datetime.strptime(f"{request.GET.get('to')} 23:59:59",
+                                             '%Y-%m-%d %H:%M:%S') if request.GET.get('to') else None
         station = WorkStation.objects.get(id=station_id)
+
+        now = datetime.datetime.now()
 
         if month == 2:
             days = 28 if year % 4 != 0 else 29
@@ -744,6 +749,11 @@ class StationEfficiencyPrintPDF(View):
 
         date_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
         date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
+
+        if date_from:
+            date_start = date_from.date()
+        if date_to:
+            date_end = date_to.date()
 
         units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1),
                                               work_station=station).order_by('start')
@@ -817,11 +827,22 @@ class CustomReport(View):
     def get(self, request):
         workers = Person.objects.all()
         worker = None
+        stations = WorkStation.objects.all()
+        station = None
+
         if request.GET.get('worker_id'):
             worker = Person.objects.get(id=int(request.GET.get('worker_id')))
+
+        if request.GET.get('station_id'):
+            station = WorkStation.objects.get(id=int(request.GET.get('station_id')))
+
         date_from = request.GET.get('from')
         date_to = request.GET.get('to')
 
         if all((worker, date_from, date_to)):
             report_link = f'RAPORT {worker} {date_from} - {date_to}'
+
+        if all((station, date_from, date_to)):
+            report_link_station = f'RAPORT {station} {date_from} - {date_to}'
+
         return render(request, 'production/custom-report.html', locals())
