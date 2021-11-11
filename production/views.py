@@ -488,6 +488,8 @@ class WorkerEfficiencyPrintPDF(View):
         if date_to:
             month_end = date_to.date()
 
+        visit_counter(request.user, f'{worker} {month_start} - {month_end}')
+
         if month_end > datetime.datetime.today().date():
             month_end = datetime.datetime.today().date()
 
@@ -754,6 +756,8 @@ class StationEfficiencyPrintPDF(View):
             date_start = date_from.date()
         if date_to:
             date_end = date_to.date()
+
+        visit_counter(request.user, f'{station} {date_start} - {date_end}')
 
         units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1),
                                               work_station=station).order_by('start')
