@@ -3,13 +3,18 @@
 {% block content %}
 <div>
 <a href="{% url 'all-production-orders' %}">
-    <button>
+    <button class="productionButton">
         ORDERS
     </button>
 </a>
 <a href="{% url 'production-workstations' %}">
-    <button>
+    <button class="productionButton">
         WORKSTATIONS
+    </button>
+</a>
+<a href="{% url 'custom-report' %}">
+    <button class="productionButton">
+        REPORTS
     </button>
 </a>
 </div>

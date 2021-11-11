@@ -464,6 +464,9 @@ class WorkerEfficiency(View):
 
 class WorkerEfficiencyPrintPDF(View):
     def get(self, request, year, month, worker_id):
+        date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00", '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
+        date_to = datetime.datetime.strptime(f"{request.GET.get('to')} 23:59:59", '%Y-%m-%d %H:%M:%S') if request.GET.get('to') else None
+        print(date_from, date_to)
         bonus = True if request.GET.get('bonus') else False
         full_pot = float(600.00)
         now = datetime.datetime.now()
@@ -481,8 +484,15 @@ class WorkerEfficiencyPrintPDF(View):
         month_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
         month_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
 
+        if date_from:
+            month_start = date_from.date()
+        if date_to:
+            month_end = date_to.date()
+
         if month_end > datetime.datetime.today().date():
             month_end = datetime.datetime.today().date()
+
+        print(month_start, month_end)
 
         working_days = 0
         absences = 0
@@ -801,3 +811,17 @@ class StationEfficiencyPrintPDF(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+class CustomReport(View):
+    def get(self, request):
+        workers = Person.objects.all()
+        worker = None
+        if request.GET.get('worker_id'):
+            worker = Person.objects.get(id=int(request.GET.get('worker_id')))
+        date_from = request.GET.get('from')
+        date_to = request.GET.get('to')
+
+        if all((worker, date_from, date_to)):
+            report_link = f'RAPORT {worker} {date_from} - {date_to}'
+        return render(request, 'production/custom-report.html', locals())

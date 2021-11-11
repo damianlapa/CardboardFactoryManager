@@ -37,3 +37,8 @@ urlpatterns += [
     path('station-efficiency/<int:year>/<int:month>/<int:station_id>/', WorkStationEfficiency.as_view(), name='station-efficiency'),
     path('station-efficiency-pdf/<int:year>/<int:month>/<int:station_id>/', StationEfficiencyPrintPDF.as_view(), name='station-efficiency-pdf'),
 ]
+
+# custom reports
+urlpatterns += [
+    path('custom-report/', CustomReport.as_view(), name='custom-report')
+]
