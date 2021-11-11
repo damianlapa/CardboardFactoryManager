@@ -22,6 +22,7 @@ PRODUCTION_UNIT_STATUSES = (
 
 
 def add_times_includes_working_hours(date_start, time_delta_in_minutes):
+    from warehousemanager.models import Holiday
     """
     need a correct with timezone issue
     :param date_start:
@@ -42,6 +43,8 @@ def add_times_includes_working_hours(date_start, time_delta_in_minutes):
                 date_end += datetime.timedelta(hours=64)
             else:
                 date_end += datetime.timedelta(hours=16)
+        if len(Holiday.objects.filter(holiday_date=date_end.date())) > 0:
+            date_end += datetime.timedelta(hours=24)
 
     for _ in range(minutes // 15):
         date_end += datetime.timedelta(minutes=15)
