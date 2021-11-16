@@ -302,13 +302,26 @@ class ProductionUnit(models.Model):
                             difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                             return change_difference_to_time(difference)
                         else:
+                            # old way
                             day_number = 8 - self.start.isoweekday()
                             full_weeks = (day_number + days_difference) // 7
-                            if full_weeks > 0:
-                                difference = difference - datetime.timedelta(days=full_weeks * 2)
+
+                            # new way
+                            start_day_day_of_week = self.start.isoweekday()
+                            end_day_day_of_week = self.end.isoweekday()
+                            difference_in_days_between_dates = (self.end - self.start).days
+                            weekends = 0
+
+                            if end_day_day_of_week < start_day_day_of_week:
+                                weekends += 1
+                            weekends += difference_in_days_between_dates // 7
+
+                            if weekends > 0:
+                                difference = difference - datetime.timedelta(days=weekends * 2)
                                 difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
                                     seconds=difference.seconds)
                                 difference = difference - holidays_to_count * datetime.timedelta(hours=8)
+                                print(difference)
                                 return change_difference_to_time(difference)
                             else:
                                 difference = difference - holidays_to_count * datetime.timedelta(hours=8)
@@ -386,10 +399,16 @@ class ProductionUnit(models.Model):
                             difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                             return change_difference_to_time(difference)
                         else:
-                            day_number = 8 - self.start.isoweekday()
-                            full_weeks = (day_number + days_difference) // 7
-                            if full_weeks > 0:
-                                difference = difference - datetime.timedelta(days=full_weeks * 2)
+                            start_day_day_of_week = self.start.isoweekday()
+                            end_day_day_of_week = self.end.isoweekday()
+                            difference_in_days_between_dates = (self.end - self.start).days
+                            weekends = 0
+
+                            if end_day_day_of_week < start_day_day_of_week:
+                                weekends += 1
+                            weekends += difference_in_days_between_dates // 7
+                            if weekends > 0:
+                                difference = difference - datetime.timedelta(days=weekends * 2)
                                 difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
                                     seconds=difference.seconds)
                                 difference = difference - holidays_to_count * datetime.timedelta(hours=8)
