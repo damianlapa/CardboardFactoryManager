@@ -1,0 +1,139 @@
+{% extends '__base2__.html' %}
+{% block title %}{{ prduction_order }}{% endblock %}
+{% block content %}
+<a href="{% url 'all-production-orders' %}">
+    <button>
+        BACK TO ALL ORDERS
+    </button>
+</a>
+<h1 class="page-header">{{ production_order }}</h1>
+
+<form class="ordinary-form" method="get" action="{% url 'production-details-change' %}">
+    <select id="select-status" name="status">
+        {% for s in production_order_statuses %}
+        <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %} >
+            {{ s.0 }}
+        </option>
+        {% endfor %}
+    </select>
+    <input type="number" value="{{ production_order.id }}" name="production-order-id" hidden>
+    <input type="submit" class="ordinary-form" value="CHANGE" id="change-btn" disabled>
+</form>
+
+<h3 class="red">DETAILS</h3>
+<table style="border: 1px solid pink" class="center bg-white">
+    <tr>
+        <th>id_number</th>
+        <th>{{ production_order.id_number }}</th>
+    </tr>
+    <tr>
+        <th>cardboard</th>
+        <th>{{ production_order.cardboard }}</th>
+    </tr>
+    <tr>
+        <th>cardboard dimensions</th>
+        <th>{{ production_order.cardboard_dimensions }}</th>
+    </tr>
+    <tr>
+        <th>customer</th>
+        <th>{{ production_order.customer }}</th>
+    </tr>
+    <tr>
+        <th>dimensions</th>
+        <th>{{ production_order.dimensions }}</th>
+    </tr>
+    <tr>
+        <th>quantity</th>
+        <th>{{ production_order.quantity }}</th>
+    </tr>
+    <tr>
+        <th>status</th>
+        <th id="production-status">{{ production_order.status }}</th>
+    </tr>
+    <tr>
+        <th>completed</th>
+        <th>{{ production_order.completed }}</th>
+    </tr>
+    <tr>
+        <th>priority</th>
+        <th>{{ production_order.priority }}</th>
+    </tr><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html>
+    <tr>
+        <th>notes</th>
+        <th>{{ production_order.notes }}</th>
+    </tr>
+</table>
+<h3 class="red">UNITS</h3>
+<a href="{% url 'production-unit-add' order_id=production_order.id %}">
+    <button>Add Unit</button>
+</a>
+<div>
+    <table class="bg-white center">
+        <tr>
+            <th>
+                DETAILS
+            </th>
+            <th>
+                SEQUENCE
+            </th>
+            <th>
+                STATUS
+            </th>
+            <th>
+                WORK STATION
+            </th>
+            <th>
+                START
+            </th>
+            <th>
+                END
+            </th>
+            <th>
+                ESTIMATED TIME
+            </th>
+            <th>
+                ESTIMATED END
+            </th>
+
+        </tr>
+        {% for p in production_units %}
+        <tr>
+            <td>
+                <a href="{% url 'unit-details' unit_id=p.id %}" >
+                    <button style="color: white; background: green;">
+                        DETAILS
+                    </button>
+                </a>
+            </td>
+            <td>{{ p.sequence }}</td>
+            <td>{{ p.status }}</td>
+            <td>{{ p.work_station }}</td>
+            <td>{{ p.start }}</td>
+            <td>{{ p.end }}</td>
+            <td>{{ p.estimated_time }}</td>
+            <td>{{ p.estimated_end }}</td>
+            <td>
+                <a href="{% url 'delete-production-unit' unit_id=p.id %}">
+                <button style="background: red; color: white;">
+                DELETE
+                </button>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/production-order-details.js' %}"></script>
+{% endblock %}

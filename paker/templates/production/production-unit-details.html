@@ -1,0 +1,116 @@
+{% extends '__base2__.html' %}
+{% block title %}Details {{ unit }}{% endblock %}
+{% block content %}
+<div style="margin: 20px" class="green">
+    {{ unit }}
+</div>
+<div>
+<table class="center bg-white">
+    <tr>
+        <th>
+            Order
+        </th>
+        <th>
+            {{ unit.production_order }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Sequence
+        </th>
+        <th>
+            {{ unit.sequence }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Work Station
+        </th>
+        <th>
+            {{ unit.work_station }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Order
+        </th>
+        <th>
+            {{ unit.order }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Status
+        </th>
+        <th>
+            {{ unit.status }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Persons
+        </th>
+        <th>
+            {% for person in unit.persons.all %}
+            {{ person }}</br>
+            {% empty %}
+            There is no persons!
+            {% endfor %}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Estimated Time
+        </th>
+        <th>
+            {{ unit.estimated_time }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Start
+        </th>
+        <th>
+            {{ unit.start }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            End
+        </th>
+        <th>
+            {{ unit.end }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Quantity start
+        </th>
+        <th>
+            {{ unit.quantity_start }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Quantity End
+        </th>
+        <th>
+            {{ unit.quantity_end }}
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Notes
+        </th>
+        <th>
+            {{ unit.notes }}
+        </th>
+    </tr>
+</table>
+<a href="{% url 'unit-edit' unit_id=unit.id %}">
+    <button>
+        EDIT
+    </button>
+</a>
+</div>
+{% endblock %}

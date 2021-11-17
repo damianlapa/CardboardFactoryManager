@@ -1,0 +1,223 @@
+{% extends '__base2__.html' %}
+{% block title %}{{ station }} - Details{% endblock %}
+{% block content %}
+<a href="{% url 'production-workstations' %}">back</a>
+<h1 class="white">{{ station }}</h1>
+<h3 class="white">{{ test_value }}</h3>
+<hr style="border: solid 2px pink">
+<h2 class="white">
+    IN PROGRESS UNITS
+</h2>
+{% if in_progress_units %}
+<table class="bg-white center">
+    <tr>
+        <th>EDIT</th>
+        <th>ORDER</th>
+        <th>START</th>
+        <th>PLANNED<br>END</th>
+        <th>PLANNED<br>TIME</th>
+        <th>PERSONS</th>
+        <th>ACTIONS</th>
+    </tr>
+    {% for unit in in_progress_units %}
+        <tr>
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
+            <td>{{ unit.production_order }}<br>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
+            <td>{{ unit.start|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.planned_end|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.estimated_time }}</td>
+            <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
+            <td>
+                <a href="{% url 'unit-finish' unit_id=unit.id %}">
+                    <button style="margin: 2px;">
+                        FINISH
+                    </button>
+                </a></br>
+                <a href="{% url 'unit-remove' unit_id=unit.id %}">
+                    <button style="margin: 2px;">
+                        REMOVE
+                    </button>
+                </a></br>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+{% endif %}
+<hr style="border: solid 2px pink">
+
+<h2 class="white">
+    PLANNED UNITS
+</h2>
+{% if planned_units %}
+<table class="bg-white center">
+    <tr>
+        <th>EDIT</th>
+        <th>
+            order
+        </th>
+        <th>ORDER</th>
+        <th>PLANNED<br>START</th>
+        <th>PLANNED<br>END</th>
+        <th>PLANNED<br>TIME</th>
+        <th>PERSONS</th>
+        <th>ACTIONS</th>
+    </tr>
+    {% for unit in planned_units %}
+        <tr>
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
+            <td>{{ unit.order }}</td>
+            <td>{{ unit.production_order }}</td>
+            <td>{{ unit.planned_start|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.planned_end|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.estimated_time }}</td>
+            <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
+            <td>
+                <a href="{% url 'unit-start' unit_id=unit.id %}">
+                    <button style="margin: 2px;">
+                        START
+                    </button>
+                </a></br>
+                <a href="{% url 'unit-remove' unit_id=unit.id %}">
+                    <button style="margin: 2px;">
+                        REMOVE
+                    </button>
+                </a></br>
+                <a href="{% url 'unit-up' unit_id=unit.id %}">
+                    <button style="margin: 2px;">
+                        UP
+                    </button>
+                </a></br>
+                <a href="{% url 'unit-down' unit_id=unit.id %}">
+                    <button style="margin: 2px;">
+                        DOWN
+                    </button>
+                </a>
+            </td>
+        </tr>
+        {% if unit.previous_unit_end_time %}
+        <tr>
+            <td colspan="2">Previous unit ends:</td>
+            <td colspan="6" class="red">{{ unit.previous_unit_end_time|date:"d M Y, H:i:s" }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+</table>
+{% endif %}
+<hr style="border: solid 2px pink">
+<h2 class="white">
+    NOT PLANNED UNITS
+</h2>
+{% if other_units %}
+<table class="bg-white center">
+    <tr>
+        <th>EDIT</th>
+        <th>ORDER</th>
+        <th>PLANNED<br>START</th>
+        <th>TIME</th>
+        <th>END</th>
+        <th>PERSONS</th>
+        <th>ACTIONS</th>
+    </tr>
+    {% for unit in other_units %}
+        <tr>
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
+            <td>{{ unit.production_order }}</td>
+            <td>{{ unit.planned_start|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.estimated_time }}</td>
+            <td>{{ unit.end|date:"d M Y, H:i:s" }}</td>
+            <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
+            <td>
+                <a href="{% url 'unit-plan' unit_id=unit.id %}">
+                    <button>
+                        ADD
+                    </button>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+{% endif %}
+<hr style="border: solid 2px pink">
+<h2 class="white">
+    HISTORY UNITS
+</h2>
+{% if history_units %}
+<button id="today-btn" style="background: green; color: white;">
+    Today
+</button>
+<button id="last7-btn" style="background: red; color: white;">
+    Last 7 days
+</button>
+<button id="thismonth-btn" style="background: green; color: white;">
+    This month
+</button>
+<button id="alltime-btn" style="background: green; color: white;">
+    All
+</button>
+<table class="bg-white center">
+
+    <tr>
+        <th>EDIT</th>
+        <th>ORDER</th>
+        <th>CARDBOARD</th>
+        <th>QUANTITY</th>
+        <th>START</th>
+
+        <th>END</th>
+        <th>TIME</th>
+        <th>ESTIMATED<br>TIME</th>
+        <th>PERSONS</th>
+    </tr>
+    {% for unit in history_units %}
+        <tr class="{{ unit.time_group }}" style="{% if  not 'last7' in unit.time_group %}display: none{% endif %}">
+            <td>
+                <a href="{% url 'unit-edit' unit_id=unit.id %}?source={{ unit.work_station.id }}">
+                    <button style="color: white; background: green;">
+                        EDIT
+                    </button>
+                </a>
+            </td>
+            <td>{{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
+            <td>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
+            <td>
+                {% if unit.quantity_end %}
+                    {{ unit.quantity_end }}
+                {% else %}
+                    {{ unit.production_order.quantity }}
+                {% endif %}
+            </td>
+            <td>{{ unit.start|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.end|date:"d M Y, H:i:s" }}</td>
+            <td>{{ unit.unit_duration }}</td>
+            <td>{{ unit.estimated_duration }}</td>
+            <td>{% for p in unit.persons.all %}{{ p }}</br>{% endfor %}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endif %}
+<hr style="border: solid 2px pink">
+
+<a href="{% url 'station-efficiency-pdf' year=now.year month=now.month station_id=station.id %}">station report</a>
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/workstation-details.js' %}"></script>
+{% endblock %}

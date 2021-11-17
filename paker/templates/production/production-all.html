@@ -1,0 +1,64 @@
+{% extends '__base2__.html' %}
+{% block title %}ALL PRODUCTION{% endblock %}
+{% block content %}
+<div style="margin: 10px;">
+    <a href="{% url 'production-order-add' %}">
+        <button>ADD PRODUCTION ORDER</button>
+    </a>
+</div>
+
+<div>
+    SEARCH: <input type="text" id="production-orders-filter">
+</div>
+
+<div id="production-orders-buttons">
+    <button class="production-order-btn">
+        ALL
+    </button>
+    <button class="production-order-btn">
+        UNCOMPLETED
+    </button>
+    <button class="production-order-btn">
+        COMPLETED
+    </button>
+    <button class="production-order-btn">
+        PLANNED
+    </button>
+    <button class="production-order-btn">
+        FINISHED
+    </button>
+</div>
+
+<div class="color-list">
+    {% for po in production_orders %}
+    <a href="{% url 'production-details' production_order_id=po.id %}" class="no-decor black" >
+        <div style="{% if po.status == 'FINISHED' %}display: none; {% endif %}"
+             data-orderstatus="{{ po.status }}"
+             data-idnumber="{{ po.id_number }}"
+             data-cardboard="{{ po.cardboard }}"
+             data-cardboarddimensions="{{ po.cardboard_dimensions }}"
+             data-customer="{{ po.customer }}"
+             data-dimensions="{{ po.dimensions }}"
+             data-quantity="{{ po.quantity }}"
+             data-notes="{{ po.notes }}"
+             class="production-order prod-item {% if po.status == 'PLANNED' %}bg-orange{% elif po.status == 'FINISHED' %}bg-green{% elif po.status == 'COMPLETED' %}bg-yellow{% endif %}">
+            <p>{{ po.id_number }}</p>
+            <p>{{ po.customer }}</p>
+            <p>{{ po.dimensions }}</p>
+            <p>{{ po.cardboard }}</p>
+            <p>{{ po.cardboard_dimensions }}</p>
+            <h4 class="red">{{ po.status }}</h4>
+            {% if po.status == 'PLANNED' %}
+            <p>
+                {{ po.planned_end }}
+            </p>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/production-orders.js' %}"></script>
+{% endblock %}

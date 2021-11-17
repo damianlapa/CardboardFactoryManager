@@ -1,0 +1,14 @@
+{% extends '__base2__.html' %}
+{% block title %}Add Production Unit{% endblock %}
+{% block content %}
+<div>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" id="source"  name="source" value="{{ source }}">
+        <input type="submit" value="{% if edit %}Edit{% else %}Add{% endif %}">
+    </form>
+
+</div>
+
+{% endblock %}

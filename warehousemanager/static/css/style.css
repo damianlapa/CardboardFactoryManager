@@ -990,6 +990,27 @@ select{
 	top:1px;
 }
 
+.prod-item {
+    margin: 10px;
+    padding: 10px;
+    border: double 2px white;
+    width: 150px;
+    height: 200px;
+    overflow: hidden;
+    background: white;
+}
+
+.prod-item:hover {
+    cursor: pointer;
+    background: #aaaaaa;
+}
+
+.prod-item p {
+    white-space: nowrap;
+    padding: 2px;
+    margin: 2px;
+}
+
 .a-d-q {
     color: black
 }
@@ -1068,6 +1089,10 @@ select{
 
 .bg-light-orange {
     background: #FFC864;
+}
+
+.bg-green {
+    background: green;
 }
 
 .red {
@@ -1199,4 +1224,47 @@ background-size: 28.28px 28.28px;
 
 .flex-66 {
     width: 666px;
+}
+
+.height-100 {
+    height: 100px;
+}
+
+input.right {
+    width: 22%;
+    padding: 4px 6px;
+    margin: 3px 0;
+    box-sizing: border-box;
+    border: 1px solid grey;
+    border-radius: 4px;
+}
+
+input.right:focus {
+    background-color: lightblue;
+}
+
+.ordinary-form {
+    background: white;
+    color: black;
+}
+
+.productionButton {
+	background-color:#44c767;
+	border-radius:28px;
+	border:1px solid #18ab29;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:17px;
+	padding:16px 31px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #2f6627;
+}
+.productionButton:hover {
+	background-color:#5cbf2a;
+}
+.productionButton:active {
+	position:relative;
+	top:1px;
 }

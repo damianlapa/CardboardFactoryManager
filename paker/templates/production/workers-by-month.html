@@ -1,0 +1,13 @@
+{% extends '__base2__.html' %}
+{% block title %}Workers {{ month_date }}{% endblock %}
+{% block content %}
+<h1 class="white">{{ month_date }}</h1>
+<hr style="border: 2px solid pink">
+{% for worker in active_workers %}
+    <a href="{% url 'worker-efficiency' worker_id=worker.id month=month year=year %}" class="no-decor white">
+        <p class="white">
+            {{ worker }}
+        </p>
+    </a>
+{% endfor %}
+{% endblock %}

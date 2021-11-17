@@ -1,0 +1,61 @@
+{% extends '__base2__.html' %}
+{% block title %}Custom Report{% endblock %}
+{% block content %}
+<div>
+    <h2 class="white">PRACOWNICY</h2>
+    <form method="get" action="">
+        <label>Pracownik:
+            <select name="worker_id">
+                {% for w in workers %}
+                <option value="{{ w.id }}">
+                    {{ w }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        <hr>
+        <label>Od:
+            <input type="date" name="from" required>
+        </label>
+        <label>Do:
+            <input type="date" name="to" required>
+        </label>
+        <hr>
+        <input type="submit" value="GENERUJ">
+
+    </form>
+    {% if report_link %}
+    <div>
+        <a href="{% url 'worker-efficiency-pdf' year='2021' month='1' worker_id=worker.id %}?from={{date_from}}&to={{date_to}}"><p class="bg-white red">{{ report_link }}</p></a>
+    </div>
+    {% endif %}
+    <h2 class="white">MIEJSCA PRACY</h2>
+    <form method="get" action="">
+        <label>Miejsce:
+            <select name="station_id">
+                {% for s in stations %}
+                <option value="{{ s.id }}">
+                    {{ s }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        <hr>
+        <label>Od:
+            <input type="date" name="from" required>
+        </label>
+        <label>Do:
+            <input type="date" name="to" required>
+        </label>
+        <hr>
+        <input type="submit" value="GENERUJ">
+
+    </form>
+    {% if report_link_station %}
+    <div>
+        <a href="{% url 'station-efficiency-pdf' year='2021' month='1' station_id=station.id %}?from={{date_from}}&to={{date_to}}"><p class="bg-white red">{{ report_link_station }}</p></a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

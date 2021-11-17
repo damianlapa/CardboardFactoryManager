@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="UTF-8">
+    <title>
+        {{ worker }} Efficiency {{year}}-{{month}}
+    </title>
+
+    <style type="text/css">
+        @font-face {
+            font-family: Roboto;
+            src: url({{ font_url }}Roboto-Regular.ttf);
+        }
+
+        @font-face {
+            font-family: Roboto;
+            src: url({{ font_url }}Roboto-Bold.ttf);
+            font-weight: bold;
+        }
+        @page {
+        size: a4 portrait;
+        @frame header_frame {           /* Static Frame */
+            -pdf-frame-content: header_content;
+            left: 50pt; width: 512pt; top: 50pt; height: 40pt;
+        }
+        @frame content_frame {          /* Content Frame */
+            left: 50pt; width: 512pt; top: 90pt; height: 632pt;
+        }
+        @frame footer_frame {           /* Another static Frame */
+            -pdf-frame-content: footer_content;
+            left: 50pt; width: 512pt; top: 772pt; height: 20pt;
+        }
+    }
+
+        body {
+             font-family: "Roboto", sans-serif;
+             page-break-inside:auto;
+        }
+
+        td {
+            padding: 1px;
+            text-align: center;
+        }
+
+        h5 {
+            page-break-before:always;
+        }
+    </style>
+
+</head>
+<body>
+<!-- Content for Static Frame 'header_frame' -->
+    <div id="header_content">PAKER - {{ worker }} raport okresowy {{ month_start }} - {{ month_end }}</div>
+
+    <!-- Content for Static Frame 'footer_frame' -->
+    <div id="footer_content" style="text-align: right;">page <pdf:pagenumber>
+        of <pdf:pagecount>
+    </div>
+
+    <!-- HTML Content -->
+<table>
+    <tr>
+
+        <td  colspan="2" style="vertical-align: top; text-align: left; font-size: 10px;">
+            <span>Wygenerowano: {{ now|date:"d.m.Y, H:i:s" }}</span>
+        </td>
+        <td>
+            <img src="{{ logo_url }}">
+        </td>
+    </tr>
+</table>
+<hr>
+<div style="text-align: center;">
+<span style="color: black; font-size: 30px; font-weight: bold; text-align: center;">RAPORT WYDAJNOŚCI</span></div>
+<hr>
+<table>
+    <tr>
+       <th style="text-align: left;">
+           <span style="color: black; font-size: 20px;">Pracownik:</span><br>
+<span style="color: darkblue; font-size: 32px; font-weight: bold;">{{ worker }}</span>
+       </th>
+       <th rowspan="2" style="text-align: right">
+           <span style="color: red; font-size: 55px;">{{ efficiency }}%</span>
+       </th>
+    </tr>
+    <tr>
+       <th style="text-align: left;">
+           <span style="color: black; font-size: 20px;">Okres:</span>
+<span style="color: darkred; font-size: 22px; font-weight: bold;">{{ month_start|date:"d.m.Y" }} - {{ month_end_pdf|date:"d.m.Y" }}</span>
+
+       </th>
+    </tr>
+</table>
+<hr>
+<h1 style="color: black; font-size: 28px; text-align: center;">Frekwencja</h1>
+<h2 class="white">Podsumowanie:</h2>
+<table style="border: 1px solid black">
+    <tr>
+        <th>Dni</th>
+        <th>Godziny</th>
+        <th>Nieobecności</th>
+        <th>Spóźnienia</th>
+        <th>Święta</th>
+    </tr>
+    <tr>
+        <td>
+            {{ days_at_work }}/{{ working_days }}
+
+        </td>
+        <td>
+            {{ work_hours }}/{{ all_hours }}
+        </td>
+        <td>
+
+            {{ absences }}
+        </td>
+        <td>
+            {{ late }}
+        </td>
+        <td>
+            {{ holidays }}
+        </td>
+    </tr>
+</table>
+{% if events_data %}
+<h2 class="white">Wydarzenia:</h2>
+<table style="border: solid 1px black">
+    <tr>
+        <th>
+            Data
+        </th>
+        <th>
+            Typ
+        </th>
+        <th>
+            Dodatkowe informacje
+        </th>
+    </tr>
+    {% for e in events_data %}
+    <tr>
+        <td>
+            {{ e.0 }}
+        </td>
+        <td>
+            {{ e.1 }}
+        </td>
+        <td>
+            {{ e.2 }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+<hr style="color: grey;">
+<h1 style="color: black; font-size: 28px; text-align: center;">Jednostki produkcyjne</h1>
+<table style="border: 1px solid black">
+    <tr>
+        <th rowspan="2">
+            Nr
+        </th>
+        <th colspan="2">
+            Data
+        </th>
+        <th rowspan="2">
+            Stanowisko
+        </th>
+        <th rowspan="2">
+            Zlecenie
+        </th>
+        <th rowspan="2">
+            Ilość
+        </th>
+        <th rowspan="2">
+            Współ- pracownicy
+        </th>
+        <th colspan="2">
+            Czas
+        </th>
+        <th rowspan="2">
+            Wydajność
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Start
+        </th>
+        <th>
+            Koniec
+        </th>
+        <th>
+            Planowany
+        </th>
+        <th>
+            Rzeczywisty
+        </th>
+    </tr>
+    {% for u in data %}
+    <tr>
+        <td>
+            {{ forloop.counter }}
+        </td>
+        <td>
+            {{ u.0.start|date:"d.m, H:i:s" }}
+        </td>
+        <td>
+            {{ u.0.end|date:"d.m, H:i:s" }}
+        </td>
+        <td>
+            {{ u.0.work_station }}
+        </td>
+        <td>
+            {{ u.0.production_order }}
+        </td>
+        <td>
+            {% if u.0.quantity_end %}
+                {{ u.0.quantity_end }}
+            {% else %}
+                {{ u.0.production_order.quantity }}
+            {% endif %}
+        </td>
+        <td>
+            {% for p in u.0.persons.all %}
+                {% if p != worker %}
+                    {{ p }}<br>
+                {% endif %}
+            {% endfor %}
+        </td>
+        <td>
+            {{ u.0.estimated_duration }}
+        </td>
+        <td>
+            {{ u.0.unit_duration }}
+        </td>
+        <td>
+            {{ u.1 }}%
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<hr>
+
+<h1 style="color: black; font-size: 28px; text-align: center;">Miejsca pracy</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Stanowisko
+        </th>
+        <th>
+            Ilość Produkcji
+        </th>
+        <th>
+            Łączny czas
+        </th>
+        <th>
+            Efektywność
+        </th>
+    </tr>
+    {% for u_s in units_stations %}
+    <tr>
+        <th>
+            {{ u_s.0 }}
+        </th>
+        <td>
+            {{ u_s.1 }}
+        </td>
+        <td>
+            {{ u_s.2 }}
+        </td>
+        <td>
+            {{ u_s.3 }}%
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<hr>
+<h1 style="color: black; font-size: 28px; text-align: center;">Współpracuje z:</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Współpracownik
+        </th>
+        <th>
+            Ilość Produkcji
+        </th>
+        <th>
+            Łączny czas
+        </th>
+        <th>
+            Efektywność
+        </th>
+    </tr>
+    {% for u_s in works_with %}
+    <tr>
+        <th>
+            {{ u_s.0 }}
+        </th>
+        <td>
+            {{ u_s.1 }}
+        </td>
+        <td>
+            {{ u_s.2 }}
+        </td>
+        <td>
+            {{ u_s.3 }}%
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<hr>
+{% if bonus %}
+<h1 style="color: black; font-size: 28px; text-align: center;">Premia</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Max
+        </th>
+        <th>
+            Możliwa
+        </th>
+        <th>
+            Sugerowana
+        </th>
+    </tr>
+    <tr>
+        <td>
+            {{ full_pot }}
+        </td>
+        <td>
+            {{ pot }}
+        </td>
+        <td>
+            {{ suggested_bonus }}
+        </td>
+    </tr>
+</table>
+{% endif %}
+</body>
+</html>

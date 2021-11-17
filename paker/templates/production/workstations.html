@@ -1,0 +1,52 @@
+{% extends '__base2__.html' %}
+{% block title %}Workstations{% endblock %}
+{% block content %}
+<div style="width: 82%; box-sizing: border-box; float: left">
+{% for s in stations %}
+
+<div class="conatianer-90 border-solid-2 bg-white height-100" style="margin: 10px;">
+    <a href="{% url 'workstation-details' workstation_id=s.id %}" class="no-decor">
+    <div style="float: left; width: 33%; height: 100%; border-right: solid 3px black; box-sizing: border-box;"  {% if s.currently_in_production != "UNOCCUPIED" %}class="bg-green white"{% else %}class="black"{% endif %}>
+        <h1>{{ s }}</h1>
+    </div>
+        </a>
+    <div style="float: left; width: 67%; height: 100%" class="black">
+        <div style="height: 50%; border-bottom: solid 3px grey; box-sizing: border-box; padding: 5px;">
+            <div style="box-sizing: border-box; width: 25%; float: left;">
+                {% if s.currently_in_production != 'UNOCCUPIED' %}
+                <span class="live-blink bold" style="color: white;">LIVE</span>
+                {% else %}
+                <span style="color: white;">.</span>
+                {% endif %}
+            </div>
+            <div style="box-sizing: border-box; width: 75%; float: left;">
+                <div style="box-sizing: border-box; width: 75%; float: left; text-align: left;">
+                {{ s.currently_in_production }}
+                </div>
+                <div style="box-sizing: border-box; width: 25%; float: left; text-align: left;">
+                    {{ s.currently_in_production.planned_end|date:"d M Y, H:i:s" }}
+                </div>
+                <div style="clear: both;"></div>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+        <div style="height: 50%; box-sizing: border-box; padding: 5px;">
+            <div style="box-sizing: border-box; width: 25%; float: left;"><span>NEXT:</span></div>
+            <div style="box-sizing: border-box; width: 75%; float: left; text-align: left;">{{ s.first_planned }}</div>
+            <div style="clear: both;"></div>
+        </div>
+    </div>
+    <div style="clear: both"></div>
+</div>
+    {% endfor %}
+</div>
+<div style="width: 18%; box-sizing: border-box; float: left">
+{% for w in workers_data %}
+    <div class="{% if w.1 == 'Free' %}white{% else %}red{% endif %}" style="padding: 10px; font-weight: bold; font-size: 15px;">
+        {{ w.0 }} - {{ w.1 }}
+    </div>
+{% endfor %}
+</div>
+<div style="clear: both;"></div>
+
+{% endblock %}

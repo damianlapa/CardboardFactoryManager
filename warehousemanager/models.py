@@ -120,6 +120,13 @@ CONTRACT_TYPES = (
     ('UZ', 'Umowa zlecenie')
 )
 
+OCCUPANCY_TYPE = (
+    ('MECHANIC', 'MECHANIC'),
+    ('PRODUCTION', 'PRODUCTION'),
+    ('OFFICE', 'OFFICE'),
+    ('OTHER', 'OTHER')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -128,6 +135,7 @@ class Person(models.Model):
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
     job_end = models.DateField(blank=True, null=True)
+    occupancy_type = models.CharField(max_length=32, default='PRODUCTION', choices=OCCUPANCY_TYPE)
     medical_examination = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
@@ -267,6 +275,50 @@ class Person(models.Model):
                 active_workers.append(worker)
 
         return len(active_workers)
+
+    @classmethod
+    def active_workers_at_month(cls, year, month):
+        if month == 2:
+            if year % 4 == 0:
+                days = 29
+            else:
+                days = 28
+        elif month in (1, 3, 5, 7, 8, 10, 12):
+            days = 31
+        else:
+            days = 30
+
+        month_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
+        month_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
+
+        active_workers = []
+        workers = cls.objects.filter(job_start__lte=month_end)
+        for worker in workers:
+            if worker.job_end:
+                if month_start <= worker.job_end:
+                    active_workers.append(worker)
+            else:
+                active_workers.append(worker)
+
+        return active_workers
+
+    @classmethod
+    def workers_at_work(cls, day):
+        day_workers = []
+        active_workers = []
+        workers = cls.objects.filter(job_start__lte=day)
+        for worker in workers:
+            if worker.job_end:
+                if day <= worker.job_end:
+                    active_workers.append(worker)
+            else:
+                active_workers.append(worker)
+        for worker_ in active_workers:
+            absence = Absence.objects.filter(worker=worker_, absence_date=day)
+            if absence.count() == 0:
+                day_workers.append(worker_)
+
+        return day_workers
 
 
 class CardboardProvider(models.Model):

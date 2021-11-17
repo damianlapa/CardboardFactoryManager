@@ -22,5 +22,3 @@ def new_messages(request):
     return {
         'new_messages': new_messages_function(request)
     }
-
-
