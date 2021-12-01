@@ -560,8 +560,7 @@ class AbsencesList(PermissionRequiredMixin, View):
 
         months = (
             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-            'November',
-            'December')
+            'November', 'December')
 
         month = request.GET.get('month')
 
@@ -640,7 +639,12 @@ class AbsencesList(PermissionRequiredMixin, View):
 
             return months_list
 
-        end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
+        print(next_month)
+
+        if datetime.date.today().month != 12:
+            end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
+        else:
+            end_list_condition = next_month == f'{months[0]} {str(datetime.date.today().year + 1)}'
         end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=31)
         z = month_list('01-01-2017', datetime.datetime.strftime(end_plus_31, '%d-%m-%Y'))
 
