@@ -464,8 +464,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             })
 
-        monthSelect.addEventListener('click', function () {
-            console.log('done')
+        monthSelect.addEventListener('change', function () {
             $.ajax({
             url: '/get-local-var/PAKER_MAIN/',
             data: {},
@@ -699,32 +698,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         })
     }
-
-    /*
-    if (dimOne !== null){
-
-        dimensionFilters = [dimOne, dimTwo, dimThree]
-
-        for (let i=0; i < dimensionFilters.length; i++){
-            dimensionFilters[i].addEventListener('keyup', function () {
-                if (i === 0){
-                    console.log(dimensionFilters[i].value)
-                    for (let j=0; j < widthFormat.length; j++){
-                        if (parseInt(widthFormat[j].innerText) > parseInt(dimensionFilters[i].value)){
-                            widthFormat[j].parentElement.style.display = 'table-row'
-                        }
-                        else if (dimensionFilters[i].value === '') {
-                            console.log('ok')
-                        }
-                        else {
-                            widthFormat[j].parentElement.style.display = 'none'
-                        }
-                    }
-                }
-            })
-        }
-    }
-    */
 
     function filterWhenExists(input, comparator, element, input2, comparator2) {
         if (input !== null) {

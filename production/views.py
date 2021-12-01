@@ -10,10 +10,21 @@ from django.template.loader import get_template
 
 import os
 from xhtml2pdf import pisa
+import json
 
 from warehousemanager.functions import visit_counter
 
 from warehousemanager.models import Absence, ExtraHour
+
+
+class GetProductionById(View):
+    def get(self, request):
+        production_order_id_number = request.GET.get('id_number')
+        try:
+            ProductionOrder.objects.get(id_number=production_order_id_number)
+            return HttpResponse(json.dumps(True))
+        except ObjectDoesNotExist:
+            return HttpResponse(json.dumps(False))
 
 
 class ProductionMenu(View):
