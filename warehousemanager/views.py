@@ -2453,10 +2453,10 @@ class MonthlyCardPresence(View):
                     day_end += datetime.timedelta(hours=extra_hours_value_h)
                     day_end += datetime.timedelta(minutes=extra_hours_value_m)
                 else:
-                    day_end -= datetime.timedelta(hours=extra_hours_value_h)
-                    day_end += datetime.timedelta(minutes=extra_hours_value_m)
-            end_hour = f'{day_end.hour}' if day_end.hour > 10 else f'0{day_end.hour}'
-            end_minute = f'{day_end.minute}' if day_end.minute > 10 else f'0{day_end.minute}'
+                    day_end -= datetime.timedelta(hours=8 - extra_hours_value_h)
+                    day_end -= datetime.timedelta(minutes=extra_hours_value_m)
+            end_hour = f'{day_end.hour}' if day_end.hour >= 10 else f'0{day_end.hour}'
+            end_minute = f'{day_end.minute}' if day_end.minute >= 10 else f'0{day_end.minute}'
             day_end_str = f'{end_hour}:{end_minute}'
             day_info.append(day_end_str)
 
