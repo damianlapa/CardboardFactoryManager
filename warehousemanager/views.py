@@ -2470,7 +2470,7 @@ class MonthlyCardPresence(View):
                     if not absences:
                         summary[4] += hours_at_work
                     else:
-                        if absence_type == 'SP':
+                        if absence_type == 'SP' or absence_type == 'D':
                             summary[4] += hours_at_work
 
             # sundays and holidays
