@@ -596,6 +596,11 @@ class AbsencesList(PermissionRequiredMixin, View):
             except ObjectDoesNotExist:
                 workers = []
 
+        mcp_month = months.index(month_year[0]) + 1
+        mcp_year = month_year[1]
+
+        print(mcp_month, mcp_year)
+
         '''to_delete = []
         for worker in workers:
             if worker.job_end:
