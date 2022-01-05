@@ -2326,3 +2326,224 @@ class StatsView(View):
             employment_data.append((week, Person.active_workers_at_day(week)))
 
         return render(request, 'whm-stats.html', locals())
+
+
+class MonthlyCardPresence(View):
+    def get(self, request, year, month, worker_id):
+
+        def get_weekday_name(day_num):
+            names = ('Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd')
+            return names[day_num]
+
+        def clear_some_data(some_list, list_of_indexes):
+            for num in list_of_indexes:
+                some_list[num] = ''
+
+        worker = Person.objects.get(id=worker_id)
+        date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
+                                               '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
+        date_to = datetime.datetime.strptime(f"{request.GET.get('to')} 23:59:59",
+                                             '%Y-%m-%d %H:%M:%S') if request.GET.get('to') else None
+
+        now = datetime.datetime.now()
+
+        summary = [0 for _ in range(16)]
+
+        if month == 2:
+            days = 28 if year % 4 != 0 else 29
+        elif month in (4, 6, 9, 11):
+            days = 30
+        else:
+            days = 31
+
+        date_start = datetime.datetime.strptime(f'{year}-{month}-01', '%Y-%m-%d').date()
+        date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
+        data = []
+
+        days_data = [d for d in range(1, days + 1)]
+
+        days_data_expanded = []
+
+        for d in days_data:
+            day = datetime.datetime.strptime(f'{year}-{month}-{d}', '%Y-%m-%d')
+            day_info = []
+
+            absence_type = None
+            delay = None
+
+            extra_hours = None
+            extra_hours_value_h = None
+            extra_hours_value_m = None
+            extra_hours_sign = None
+
+            vacation_day = None
+            vacation_day_quarantine = None
+            vacation_special = None
+            vacation_free = None
+            vacation_care = None
+            vacation_illness = None
+            vacation_other = None
+
+            try:
+                holiday = Holiday.objects.get(holiday_date=day)
+            except ObjectDoesNotExist:
+                holiday = None
+
+            try:
+                absences = Absence.objects.get(worker=worker, absence_date=day)
+            except ObjectDoesNotExist:
+                absences = None
+
+            try:
+                extra_hours = ExtraHour.objects.get(worker=worker, extras_date=day)
+            except ObjectDoesNotExist:
+                extra_hours = None
+
+            if absences:
+                absence_type = absences.absence_type
+                if absence_type == 'SP':
+                    delay = absences.value
+                elif absence_type == 'UW':
+                    vacation_day = 1
+                    summary[9] += 1
+                elif absence_type == 'KW':
+                    vacation_day_quarantine = 1
+                    summary[10] += 1
+                elif absence_type == 'UO':
+                    vacation_special = 1
+                    summary[11] += 1
+                elif absence_type == 'UB':
+                    vacation_free = 1
+                    summary[12] += 1
+                elif absence_type == 'OP':
+                    vacation_care = 1
+                    summary[13] += 1
+                elif absence_type == 'CH':
+                    vacation_illness = 1
+                    summary[14] += 1
+                elif absence_type == 'IN':
+                    vacation_other = absences.additional_info
+                    summary[15] += 1
+
+            if extra_hours:
+                extra_hours_value_h = int(extra_hours.quantity)
+                extra_hours_value_m = int((extra_hours.quantity % 1) * 60)
+                extra_hours_sign = True if extra_hours.full_day else False
+
+            day_info.append(d)
+            day_info.append(get_weekday_name(day.weekday()))
+            # work start hour
+            day_start = day + datetime.timedelta(hours=7)
+            if delay:
+                day_start += datetime.timedelta(minutes=delay)
+            start_hour = f'{day_start.hour}' if day_start.hour > 10 else f'0{day_start.hour}'
+            start_minute = f'{day_start.minute}' if day_start.minute > 10 else f'0{day_start.minute}'
+            day_start_str = f'{start_hour}:{start_minute}'
+            day_info.append(day_start_str)
+
+            # work end hour
+            day_end = day + datetime.timedelta(hours=15)
+            if extra_hours:
+                if extra_hours_sign:
+                    day_end += datetime.timedelta(hours=extra_hours_value_h)
+                    day_end += datetime.timedelta(minutes=extra_hours_value_m)
+                else:
+                    day_end -= datetime.timedelta(hours=extra_hours_value_h)
+                    day_end += datetime.timedelta(minutes=extra_hours_value_m)
+            end_hour = f'{day_end.hour}' if day_end.hour > 10 else f'0{day_end.hour}'
+            end_minute = f'{day_end.minute}' if day_end.minute > 10 else f'0{day_end.minute}'
+            day_end_str = f'{end_hour}:{end_minute}'
+            day_info.append(day_end_str)
+
+            # hours at work
+            hours_at_work = f'{day_end - day_start}'
+            divided_time = hours_at_work.split(':')
+            hours_at_work = round(float(divided_time[0]) + float(divided_time[1]) / 60, 2)
+            day_info.append(hours_at_work)
+            if not holiday:
+                if day_info[1] not in ('So', 'Nd'):
+                    if not absences:
+                        summary[4] += hours_at_work
+                    else:
+                        if absence_type == 'SP':
+                            summary[4] += hours_at_work
+
+            # sundays and holidays
+            day_info.append('')
+
+            # extra free days
+            day_info.append('')
+
+            # night time work
+            day_info.append('')
+
+            # extra_time_work
+            day_info.append('')
+
+            # vacation_day
+            day_info.append(vacation_day) if vacation_day else day_info.append('')
+            if vacation_day:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # vacation quarantine
+            day_info.append(vacation_day_quarantine) if vacation_day_quarantine else day_info.append('')
+            if vacation_day_quarantine:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # vacation special
+            day_info.append(vacation_special) if vacation_special else day_info.append('')
+            if vacation_special:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # free vacation
+            day_info.append(vacation_free) if vacation_free else day_info.append('')
+            if vacation_free:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # home care
+            day_info.append(vacation_free) if vacation_care else day_info.append('')
+            if vacation_care:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # illness
+            day_info.append(vacation_illness) if vacation_illness else day_info.append('')
+            if vacation_illness:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # other
+            day_info.append(vacation_other) if vacation_other else day_info.append('')
+            if vacation_other:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # any absence
+            day_info.append('white')
+            if any((vacation_day, vacation_special, vacation_free, vacation_care, vacation_illness, vacation_other,
+                    vacation_day_quarantine)):
+                clear_some_data(day_info, [2, 3, 4])
+                day_info[16] = '#E9967A'
+
+            if day_info[1] in ('So', 'Nd') or holiday:
+                clear_some_data(day_info, [2, 3, 4])
+                day_info[16] = '#FFEB97'
+
+            days_data_expanded.append(day_info)
+
+        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
+        font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
+
+        template_path = 'whm/workers-timetable.html'
+        context = locals()
+        # Create a Django response object, and specify content_type as pdf
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'filename="report.pdf"'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+            html, dest=response, encoding='UTF-8')
+        # if error
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response
