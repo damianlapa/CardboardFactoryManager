@@ -81,6 +81,7 @@ ABSENCE_TYPES = (
     ('OP', 'Opieka nad członkiem rodziny'),
     ('D', 'Delegacja'),
     ('IN', 'Inne'),
+    ('IZ', 'Izolacja'),
     ('PO', 'Postojowe')
 )
 

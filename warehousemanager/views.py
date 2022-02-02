@@ -2352,7 +2352,7 @@ class MonthlyCardPresence(View):
 
         now = datetime.datetime.now()
 
-        summary = [0 for _ in range(17)]
+        summary = [0 for _ in range(18)]
 
         if month == 2:
             days = 28 if year % 4 != 0 else 29
@@ -2389,6 +2389,7 @@ class MonthlyCardPresence(View):
             vacation_illness = None
             vacation_other = None
 
+            isolation = None
             unexcused_absence = None
 
             work_during_sunday_and_holidays = 0
@@ -2432,12 +2433,15 @@ class MonthlyCardPresence(View):
                 elif absence_type == 'CH':
                     vacation_illness = 1
                     summary[14] += 1
+                elif absence_type == 'IZ':
+                    isolation = 1
+                    summary[15] += 1
                 elif absence_type == 'NN':
                     unexcused_absence = 1
-                    summary[15] += 1
+                    summary[16] += 1
                 elif absence_type == 'IN':
                     vacation_other = absences.additional_info
-                    summary[16] += 1
+                    summary[17] += 1
 
             if extra_hours:
                 extra_hours_value_h = int(extra_hours.quantity)
@@ -2539,6 +2543,11 @@ class MonthlyCardPresence(View):
             if vacation_illness:
                 clear_some_data(day_info, [2, 3, 4])
 
+            # isolation
+            day_info.append(isolation) if isolation else day_info.append('')
+            if isolation:
+                clear_some_data(day_info, [2, 3, 4])
+
             # unexcused absence
             day_info.append(unexcused_absence) if unexcused_absence else day_info.append('')
             if unexcused_absence:
@@ -2552,16 +2561,16 @@ class MonthlyCardPresence(View):
             # any absence
             day_info.append('white')
             if any((vacation_day, vacation_special, vacation_free, vacation_care, vacation_illness, vacation_other,
-                    vacation_day_quarantine, unexcused_absence)):
+                    vacation_day_quarantine, unexcused_absence, isolation)):
                 clear_some_data(day_info, [2, 3, 4])
-                day_info[17] = '#E9967A'
+                day_info[18] = '#E9967A'
 
             if day_info[1] in ('So', 'Nd') or holiday:
                 if not extra_hours:
                     clear_some_data(day_info, [2, 3, 4])
                 else:
                     pass
-                day_info[17] = '#FFEB97'
+                day_info[18] = '#FFEB97'
 
             days_data_expanded.append(day_info)
 
