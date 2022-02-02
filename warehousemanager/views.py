@@ -2352,7 +2352,7 @@ class MonthlyCardPresence(View):
 
         now = datetime.datetime.now()
 
-        summary = [0 for _ in range(16)]
+        summary = [0 for _ in range(17)]
 
         if month == 2:
             days = 28 if year % 4 != 0 else 29
@@ -2388,6 +2388,12 @@ class MonthlyCardPresence(View):
             vacation_care = None
             vacation_illness = None
             vacation_other = None
+
+            unexcused_absence = None
+
+            work_during_sunday_and_holidays = 0
+            work_during_saturdays_and_free_days = 0
+            extra_hours_value_to_add = 0
 
             try:
                 holiday = Holiday.objects.get(holiday_date=day)
@@ -2426,14 +2432,26 @@ class MonthlyCardPresence(View):
                 elif absence_type == 'CH':
                     vacation_illness = 1
                     summary[14] += 1
+                elif absence_type == 'NN':
+                    unexcused_absence = 1
+                    summary[15] += 1
                 elif absence_type == 'IN':
                     vacation_other = absences.additional_info
-                    summary[15] += 1
+                    summary[16] += 1
 
             if extra_hours:
                 extra_hours_value_h = int(extra_hours.quantity)
                 extra_hours_value_m = int((extra_hours.quantity % 1) * 60)
                 extra_hours_sign = True if extra_hours.full_day else False
+
+                if day.isoweekday() == 7:
+                    work_during_sunday_and_holidays += extra_hours.quantity
+                    summary[5] += work_during_sunday_and_holidays
+                elif day.isoweekday() == 6:
+                    work_during_saturdays_and_free_days += extra_hours.quantity
+                    summary[6] += work_during_saturdays_and_free_days
+                else:
+                    extra_hours_value_to_add += extra_hours.quantity if extra_hours_sign else 0
 
             day_info.append(d)
             day_info.append(get_weekday_name(day.weekday()))
@@ -2449,12 +2467,17 @@ class MonthlyCardPresence(View):
             # work end hour
             day_end = day + datetime.timedelta(hours=15)
             if extra_hours:
-                if extra_hours_sign:
-                    day_end += datetime.timedelta(hours=extra_hours_value_h)
-                    day_end += datetime.timedelta(minutes=extra_hours_value_m)
+                if day_info[1] not in ('So', 'Nd'):
+                    if extra_hours_sign:
+                        day_end += datetime.timedelta(hours=extra_hours_value_h)
+                        day_end += datetime.timedelta(minutes=extra_hours_value_m)
+                    else:
+                        day_end -= datetime.timedelta(hours=8 - extra_hours_value_h)
+                        day_end -= datetime.timedelta(minutes=extra_hours_value_m)
                 else:
-                    day_end -= datetime.timedelta(hours=8 - extra_hours_value_h)
-                    day_end -= datetime.timedelta(minutes=extra_hours_value_m)
+                    day_end = day_start + datetime.timedelta(hours=extra_hours_value_h)
+                    day_end += datetime.timedelta(minutes=extra_hours_value_m)
+
             end_hour = f'{day_end.hour}' if day_end.hour >= 10 else f'0{day_end.hour}'
             end_minute = f'{day_end.minute}' if day_end.minute >= 10 else f'0{day_end.minute}'
             day_end_str = f'{end_hour}:{end_minute}'
@@ -2474,16 +2497,17 @@ class MonthlyCardPresence(View):
                             summary[4] += hours_at_work
 
             # sundays and holidays
-            day_info.append('')
+            day_info.append('') if not work_during_sunday_and_holidays else day_info.append(work_during_sunday_and_holidays)
 
             # extra free days
-            day_info.append('')
+            day_info.append('') if not work_during_saturdays_and_free_days else day_info.append(work_during_saturdays_and_free_days)
 
             # night time work
             day_info.append('')
 
             # extra_time_work
-            day_info.append('')
+            day_info.append('') if not extra_hours_value_to_add else day_info.append(extra_hours_value_to_add)
+            summary[8] += extra_hours_value_to_add
 
             # vacation_day
             day_info.append(vacation_day) if vacation_day else day_info.append('')
@@ -2506,13 +2530,18 @@ class MonthlyCardPresence(View):
                 clear_some_data(day_info, [2, 3, 4])
 
             # home care
-            day_info.append(vacation_free) if vacation_care else day_info.append('')
+            day_info.append(vacation_care) if vacation_care else day_info.append('')
             if vacation_care:
                 clear_some_data(day_info, [2, 3, 4])
 
             # illness
             day_info.append(vacation_illness) if vacation_illness else day_info.append('')
             if vacation_illness:
+                clear_some_data(day_info, [2, 3, 4])
+
+            # unexcused absence
+            day_info.append(unexcused_absence) if unexcused_absence else day_info.append('')
+            if unexcused_absence:
                 clear_some_data(day_info, [2, 3, 4])
 
             # other
@@ -2523,13 +2552,16 @@ class MonthlyCardPresence(View):
             # any absence
             day_info.append('white')
             if any((vacation_day, vacation_special, vacation_free, vacation_care, vacation_illness, vacation_other,
-                    vacation_day_quarantine)):
+                    vacation_day_quarantine, unexcused_absence)):
                 clear_some_data(day_info, [2, 3, 4])
-                day_info[16] = '#E9967A'
+                day_info[17] = '#E9967A'
 
             if day_info[1] in ('So', 'Nd') or holiday:
-                clear_some_data(day_info, [2, 3, 4])
-                day_info[16] = '#FFEB97'
+                if not extra_hours:
+                    clear_some_data(day_info, [2, 3, 4])
+                else:
+                    pass
+                day_info[17] = '#FFEB97'
 
             days_data_expanded.append(day_info)
 

@@ -85,7 +85,7 @@
         <td colspan="2">
 
         </td>
-        <td style="background-color: #cccccc" colspan="2">
+        <td style="background-color: #cccccc" colspan="3">
             Wymiar czasu pracy
         </td>
         <td>
@@ -102,7 +102,7 @@
         <td colspan="4" style="background-color: #cccccc">
             Czas przepracowany w godzinach
         </td>
-        <td colspan="7" style="background-color: #cccccc">
+        <td colspan="8" style="background-color: #cccccc">
             Czas nieobecności w pracy w dniach
         </td>
     </tr>
@@ -154,11 +154,14 @@
             L4
         </td>
         <td>
+            NN
+        </td>
+        <td>
             Inne
         </td>
     </tr>
     {% for d in days_data_expanded %}
-    <tr style="background-color: {{ d.16 }}">
+    <tr style="background-color: {{ d.17 }}">
         <td>
             {{ d.0 }}
         </td>
@@ -207,6 +210,9 @@
         <td>
             {{ d.15 }}
         </td>
+        <td>
+            {{ d.16 }}
+        </td>
     </tr>
     {% endfor %}
     <tr>
@@ -249,11 +255,14 @@
         <td>
             {{ summary.15 }}
         </td>
+        <td>
+            {{ summary.16 }}
+        </td>
     </tr>
 </table>
 <span>
     Uw - urlop wypoczynkowy, Uwż - urlop wypoczynkowy "na żądanie", Uok - urlop okolicznościowy, Ub - urlop bezpłatny,
-    Op - opieka nad dzieckiem, L4 - zwolnienie lekarskie
+    Op - opieka nad dzieckiem, L4 - zwolnienie lekarskie, NN - nieobecność nieusprawiedliwiona
 </span>
 </body>
 </html>
