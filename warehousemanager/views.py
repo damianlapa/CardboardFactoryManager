@@ -2570,7 +2570,12 @@ class MonthlyCardPresence(View):
                     clear_some_data(day_info, [2, 3, 4])
                 else:
                     pass
-                day_info[18] = '#FFEB97'
+                if any((vacation_day, vacation_special, vacation_free, vacation_care, vacation_illness, vacation_other,
+                        vacation_day_quarantine, unexcused_absence, isolation)):
+                    clear_some_data(day_info, [2, 3, 4])
+                    day_info[18] = '#E9967A'
+                else:
+                    day_info[18] = '#FFEB97'
 
             days_data_expanded.append(day_info)
 
