@@ -2352,7 +2352,7 @@ class MonthlyCardPresence(View):
 
         now = datetime.datetime.now()
 
-        summary = [0 for _ in range(18)]
+        summary = [0 for _ in range(19)]
 
         if month == 2:
             days = 28 if year % 4 != 0 else 29
@@ -2382,6 +2382,7 @@ class MonthlyCardPresence(View):
             extra_hours_sign = None
 
             vacation_day = None
+            vacation_day_on_demand = None
             vacation_day_quarantine = None
             vacation_special = None
             vacation_free = None
@@ -2418,30 +2419,33 @@ class MonthlyCardPresence(View):
                 elif absence_type == 'UW':
                     vacation_day = 1
                     summary[9] += 1
+                elif absence_type == 'UŻ':
+                    vacation_day_on_demand = 1
+                    summary[10] += 1
                 elif absence_type == 'KW':
                     vacation_day_quarantine = 1
-                    summary[10] += 1
+                    summary[11] += 1
                 elif absence_type == 'UO':
                     vacation_special = 1
-                    summary[11] += 1
+                    summary[12] += 1
                 elif absence_type == 'UB':
                     vacation_free = 1
-                    summary[12] += 1
+                    summary[13] += 1
                 elif absence_type == 'OP':
                     vacation_care = 1
-                    summary[13] += 1
+                    summary[14] += 1
                 elif absence_type == 'CH':
                     vacation_illness = 1
-                    summary[14] += 1
+                    summary[15] += 1
                 elif absence_type == 'IZ':
                     isolation = 1
-                    summary[15] += 1
+                    summary[16] += 1
                 elif absence_type == 'NN':
                     unexcused_absence = 1
-                    summary[16] += 1
+                    summary[17] += 1
                 elif absence_type == 'IN':
                     vacation_other = absences.additional_info
-                    summary[17] += 1
+                    summary[18] += 1
 
             if extra_hours:
                 extra_hours_value_h = int(extra_hours.quantity)
@@ -2518,6 +2522,11 @@ class MonthlyCardPresence(View):
             if vacation_day:
                 clear_some_data(day_info, [2, 3, 4])
 
+            # vacation_day_on_demand
+            day_info.append(vacation_day_on_demand) if vacation_day_on_demand else day_info.append('')
+            if vacation_day_on_demand:
+                clear_some_data(day_info, [2, 3, 4])
+
             # vacation quarantine
             day_info.append(vacation_day_quarantine) if vacation_day_quarantine else day_info.append('')
             if vacation_day_quarantine:
@@ -2561,9 +2570,9 @@ class MonthlyCardPresence(View):
             # any absence
             day_info.append('white')
             if any((vacation_day, vacation_special, vacation_free, vacation_care, vacation_illness, vacation_other,
-                    vacation_day_quarantine, unexcused_absence, isolation)):
+                    vacation_day_quarantine, unexcused_absence, isolation, vacation_day_on_demand)):
                 clear_some_data(day_info, [2, 3, 4])
-                day_info[18] = '#E9967A'
+                day_info[19] = '#E9967A'
 
             if day_info[1] in ('So', 'Nd') or holiday:
                 if not extra_hours:
@@ -2571,11 +2580,11 @@ class MonthlyCardPresence(View):
                 else:
                     pass
                 if any((vacation_day, vacation_special, vacation_free, vacation_care, vacation_illness, vacation_other,
-                        vacation_day_quarantine, unexcused_absence, isolation)):
+                        vacation_day_quarantine, unexcused_absence, isolation, vacation_day_on_demand)):
                     clear_some_data(day_info, [2, 3, 4])
-                    day_info[18] = '#E9967A'
+                    day_info[19] = '#E9967A'
                 else:
-                    day_info[18] = '#FFEB97'
+                    day_info[19] = '#FFEB97'
 
             days_data_expanded.append(day_info)
 

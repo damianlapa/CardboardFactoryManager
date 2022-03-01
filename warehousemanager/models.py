@@ -73,6 +73,7 @@ GENRES = (
 ABSENCE_TYPES = (
     ('NN', 'Nieobecność nieusprawiedliwiona'),
     ('UW', 'Urlop wypoczynkowy'),
+    ('UŻ', 'Urlop na żądanie'),
     ('UO', 'Urlop okolicznościowy'),
     ('SP', 'Spóźnienie'),
     ('UB', 'Urlop bezpłatny'),
