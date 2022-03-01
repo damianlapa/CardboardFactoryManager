@@ -2588,6 +2588,8 @@ class MonthlyCardPresence(View):
 
             days_data_expanded.append(day_info)
 
+        summary[4] = round(summary[4], 2)
+
         logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
         font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
 
