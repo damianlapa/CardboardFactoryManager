@@ -2467,10 +2467,10 @@ class MonthlyCardPresence(View):
             day_start = day + datetime.timedelta(hours=7)
             if delay:
                 day_start += datetime.timedelta(minutes=delay)
-            start_hour = f'{day_start.hour}' if day_start.hour > 10 else f'0{day_start.hour}'
-            start_minute = f'{day_start.minute}' if day_start.minute > 10 else f'0{day_start.minute}'
+            start_hour = f'{day_start.hour}' if day_start.hour >= 10 else f'0{day_start.hour}'
+            start_minute = f'{day_start.minute}' if day_start.minute >= 10 else f'0{day_start.minute}'
             day_start_str = f'{start_hour}:{start_minute}'
-            day_info.append(day_start_str)
+            day_info.append(day_start_str) if day.date() >= worker.job_start else day_info.append('')
 
             # work end hour
             day_end = day + datetime.timedelta(hours=15)
@@ -2489,20 +2489,25 @@ class MonthlyCardPresence(View):
             end_hour = f'{day_end.hour}' if day_end.hour >= 10 else f'0{day_end.hour}'
             end_minute = f'{day_end.minute}' if day_end.minute >= 10 else f'0{day_end.minute}'
             day_end_str = f'{end_hour}:{end_minute}'
-            day_info.append(day_end_str)
+            day_info.append(day_end_str) if day.date() >= worker.job_start else day_info.append('')
 
-            # hours at work
-            hours_at_work = f'{day_end - day_start}'
-            divided_time = hours_at_work.split(':')
-            hours_at_work = round(float(divided_time[0]) + float(divided_time[1]) / 60, 2)
-            day_info.append(hours_at_work)
-            if not holiday:
-                if day_info[1] not in ('So', 'Nd'):
-                    if not absences:
-                        summary[4] += hours_at_work
-                    else:
-                        if absence_type == 'SP' or absence_type == 'D':
+            if day.date() >= worker.job_start:
+
+                # hours at work
+                hours_at_work = f'{day_end - day_start}'
+                divided_time = hours_at_work.split(':')
+                hours_at_work = round(float(divided_time[0]) + float(divided_time[1]) / 60, 2)
+                day_info.append(hours_at_work)
+                if not holiday:
+                    if day_info[1] not in ('So', 'Nd'):
+                        if not absences:
                             summary[4] += hours_at_work
+                        else:
+                            if absence_type == 'SP' or absence_type == 'D':
+                                summary[4] += hours_at_work
+
+            else:
+                day_info.append('')
 
             # sundays and holidays
             day_info.append('') if not work_during_sunday_and_holidays else day_info.append(work_during_sunday_and_holidays)
