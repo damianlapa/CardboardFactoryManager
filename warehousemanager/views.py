@@ -2454,9 +2454,11 @@ class MonthlyCardPresence(View):
 
                 if day.isoweekday() == 7:
                     work_during_sunday_and_holidays += extra_hours.quantity
+                    summary[4] += round(float(work_during_sunday_and_holidays), 2)
                     summary[5] += work_during_sunday_and_holidays
                 elif day.isoweekday() == 6:
                     work_during_saturdays_and_free_days += extra_hours.quantity
+                    summary[4] += round(float(work_during_saturdays_and_free_days), 2)
                     summary[6] += work_during_saturdays_and_free_days
                 else:
                     extra_hours_value_to_add += extra_hours.quantity if extra_hours_sign else 0
