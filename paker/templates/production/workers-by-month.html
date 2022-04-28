@@ -7,7 +7,13 @@
     <a href="{% url 'worker-efficiency' worker_id=worker.id month=month year=year %}" class="no-decor white">
         <p class="white">
             {{ worker }}
+            <a href="{% url 'mcp' worker_id=worker.id month=month year=year %}" target="_blank">
+        <button>
+            Karta Czasu Pracy
+        </button>
+            </a>
         </p>
+
     </a>
 {% endfor %}
 {% endblock %}

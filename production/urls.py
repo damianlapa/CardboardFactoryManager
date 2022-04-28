@@ -42,3 +42,8 @@ urlpatterns += [
 urlpatterns += [
     path('custom-report/', CustomReport.as_view(), name='custom-report')
 ]
+
+# production api
+urlpatterns += [
+    path('get-production-by-id/', GetProductionById.as_view())
+]

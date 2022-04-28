@@ -170,5 +170,10 @@ urlpatterns += [
     path('profile/', ProfileView.as_view(), name='profile')
 ]
 
+# monthly card presence
+urlpatterns += [
+    path('mcp/<int:year>/<int:month>/<int:worker_id>/', MonthlyCardPresence.as_view(), name='mcp')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -5,9 +5,13 @@
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <input type="submit" value="Add">
+        <input type="submit" value="Add" id="submitBtn">
     </form>
 
 </div>
 
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/new-production-order.js' %}"></script>
 {% endblock %}
