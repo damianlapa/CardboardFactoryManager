@@ -704,11 +704,11 @@ class AbsencesAndHolidays(View):
                                                            holiday_date__lt=datetime.date(int(year) + 1, 1, 1))
 
         # deleting vacations on holidays
-        for h in holiday_objects:
+        '''for h in holiday_objects:
             absences = Absence.objects.all().filter(absence_date=h.holiday_date)
             if len(absences) > 0:
                 for a in absences:
-                    a.delete()
+                    a.delete()'''
 
         workers = Person.objects.all()
         non_work_days = []
@@ -2480,7 +2480,7 @@ class MonthlyCardPresence(View):
                     else:
                         day_info.append('')
                 else:
-                    day_info.append('')
+                    day_info.append(day_start_str)
             else:
                 day_info.append('')
 
@@ -2505,11 +2505,11 @@ class MonthlyCardPresence(View):
             if day.date() >= worker.job_start:
                 if worker.job_end:
                     if day.date() <= worker.job_end:
-                        day_info.append(day_start_str)
+                        day_info.append(day_end_str)
                     else:
                         day_info.append('')
                 else:
-                    day_info.append('')
+                    day_info.append(day_end_str)
             else:
                 day_info.append('')
 
