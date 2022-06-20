@@ -722,6 +722,10 @@ document.addEventListener("DOMContentLoaded", function () {
         var lengthValue = dimTwo.value
         var heightValue = dimThree.value
 
+        var toleranceWidth = document.getElementById('dim1t')
+        var toleranceLength = document.getElementById('dim2t')
+        var toleranceHeight = document.getElementById('dim3t')
+
         for (let i=0; i < allRows.length; i++){
             if (onlyDisplayed === true) {
                 if (allRows[i].style.display === 'table-row') {
@@ -771,6 +775,47 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             else {
+                var correctWidth = widthValue === allRows[i].children[2].innerText
+                var correctLength = lengthValue === allRows[i].children[3].innerText
+                var correctHeight = heightValue === allRows[i].children[4].innerText
+
+                if (widthValue === '') {
+                    correctWidth = true
+                }
+                if (lengthValue === '') {
+                    correctLength = true
+                }
+                if (heightValue === ''){
+                    correctHeight = true
+                }
+
+                if (toleranceWidth !== 0) {
+                    if ((parseInt(widthValue) + parseInt(toleranceWidth.value)) >= parseInt(allRows[i].children[2].innerText) && parseInt(allRows[i].children[2].innerText) >= (parseInt(widthValue) - parseInt(toleranceWidth.value))) {
+                        correctWidth = true
+                    }
+                }
+
+                if (toleranceLength !== 0) {
+                    if ((parseInt(lengthValue) + parseInt(toleranceLength.value)) >= parseInt(allRows[i].children[3].innerText) && parseInt(allRows[i].children[3].innerText) >= (parseInt(lengthValue) - parseInt(toleranceLength.value))) {
+                        correctLength = true
+                    }
+                }
+
+                if (toleranceWidth !== 0) {
+                    if ((parseInt(heightValue) + parseInt(toleranceHeight.value)) >= parseInt(allRows[i].children[4].innerText) && parseInt(allRows[i].children[4].innerText) >= (parseInt(heightValue) - parseInt(toleranceHeight.value))) {
+                        correctHeight = true
+                    }
+                }
+
+                if (correctWidth === true && correctLength === true && correctHeight === true) {
+                    allRows[i].style.display = 'table-row'
+                } else {
+                    allRows[i].style.display = 'none'
+                }
+            }
+            }
+            /*
+            else {
                 if (widthValue !== ''){
                     if (widthValue === allRows[i].children[2].innerText) {
                         allRows[i].style.display = 'table-row'
@@ -797,7 +842,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
         }
-
+        */
     }
 
     const filterDimBtn = document.getElementById('dim-filter-btn')
