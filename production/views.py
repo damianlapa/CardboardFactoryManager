@@ -34,8 +34,9 @@ class ToolsUsage(View):
                 usage_number += usage.production_order.quantity if usage.production_order.quantity else 0
             punches_stats.append(
                 (data[0], usage_number, tuple(data[1])[0].end if data[1] else datetime.datetime.strptime(
-                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S"), tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
-                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
+                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S"),
+                 tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
+                     "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
 
         punches_stats = sorted(punches_stats, key=lambda x: x[2], reverse=True)
 
@@ -48,8 +49,9 @@ class ToolsUsage(View):
                 usage_number += usage.production_order.quantity if usage.production_order.quantity else 0
             polymers_stats.append(
                 (data[0], usage_number, tuple(data[1])[0].end if data[1] else datetime.datetime.strptime(
-                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S"), tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
-                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
+                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S"),
+                 tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
+                     "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
 
         polymers_stats = sorted(polymers_stats, key=lambda x: x[2], reverse=True)
 
@@ -225,6 +227,8 @@ class EditProductionUnit(View):
             sequence = data['sequence']
             production_order = data['production_order']
             work_station = data['work_station']
+            punch = data['punch']
+            polymer = data['polymer']
             order = data['order']
             status = data['status']
             estimated_time = data['estimated_time']
@@ -244,6 +248,8 @@ class EditProductionUnit(View):
 
             unit.production_order = production_order
             unit.work_station = work_station
+            unit.punch = punch
+            unit.polymer = polymer
             unit.status = status
             unit.sequence = sequence
             unit.order = order
@@ -258,10 +264,12 @@ class EditProductionUnit(View):
                 unit.persons.clear()
                 for p in persons:
                     unit.persons.add(p)
+            else:
+                unit.persons.clear()
 
             unit.save()
 
-            all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
+            '''all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
 
             all_finished = True
             all_planned = True
@@ -277,7 +285,7 @@ class EditProductionUnit(View):
 
             if all_planned:
                 unit.production_order.status = 'PLANNED'
-                unit.production_order.save()
+                unit.production_order.save()'''
 
             try:
                 return redirect('workstation-details', workstation_id=int(source))
@@ -299,6 +307,8 @@ class AddProductionUnit(View):
             sequence = data['sequence']
             production_order = data['production_order']
             work_station = data['work_station']
+            punch = data['punch']
+            polymer = data['polymer']
             order = data['order']
             status = data['status']
             estimated_time = data['estimated_time']
@@ -310,6 +320,7 @@ class AddProductionUnit(View):
             persons = data['persons']
 
             new_unit = ProductionUnit.objects.create(production_order=production_order, work_station=work_station,
+                                                     punch=punch, polymer=polymer,
                                                      status=status,
                                                      sequence=sequence, order=order, estimated_time=estimated_time,
                                                      start=start,
