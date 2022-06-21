@@ -47,3 +47,8 @@ urlpatterns += [
 urlpatterns += [
     path('get-production-by-id/', GetProductionById.as_view())
 ]
+
+# tools usage
+urlpatterns += [
+    path('tools-usage/', ToolsUsage.as_view(), name='tools-usage')
+]

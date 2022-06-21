@@ -2,7 +2,7 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
-from warehousemanager.models import Person, Buyer, Holiday
+from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 
 import datetime
 
@@ -105,6 +105,8 @@ class ProductionUnit(models.Model):
     production_order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE)
     sequence = models.IntegerField(default=1)
     work_station = models.ForeignKey(WorkStation, on_delete=models.CASCADE)
+    punch = models.ForeignKey(Punch, on_delete=models.PROTECT, blank=True, null=True)
+    polymer = models.ForeignKey(Photopolymer, on_delete=models.PROTECT, blank=True, null=True)
     order = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=PRODUCTION_UNIT_STATUSES, default='NOT STARTED')
     persons = models.ManyToManyField(Person, blank=True)

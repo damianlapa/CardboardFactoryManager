@@ -1,0 +1,49 @@
+{% extends '__base2__.html' %}
+{% block title %}Tools Usage{% endblock %}
+{% block content %}
+<hr>
+<h1 style="color:white" class="center">PUNCHES</h1>
+<hr>
+<table style="color:white" class="center">
+    <tr>
+        <th>PUNCH</th>
+        <th>USAGE</th>
+        <th>FIRST USAGE</th>
+        <th>LAST USAGE</th>
+    </tr>
+
+{% for d in punches_stats %}
+
+    <tr>
+        <td>{{ d.0 }}</td>
+        <td>{{ d.1 }}</td>
+        <td>{{ d.2 }}</td>
+        <td>{{ d.3 }}</td>
+    </tr>
+
+{% endfor %}
+</table>
+<hr>
+<h1 style="color:white" class="center">POLYMERS</h1>
+<hr>
+<table style="color:white" class="center">
+    <tr>
+        <th>POLYMER</th>
+        <th>USAGE</th>
+        <th>FIRST USAGE</th>
+        <th>LAST USAGE</th>
+    </tr>
+
+{% for d in polymers_stats %}
+
+    <tr>
+        <td>{{ d.0 }}</td>
+        <td>{{ d.1 }}</td>
+        <td>{{ d.2 }}</td>
+        <td>{{ d.3 }}</td>
+    </tr>
+
+{% endfor %}
+</table>
+<hr>
+{% endblock %}

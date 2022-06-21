@@ -578,6 +578,11 @@ class Punch(models.Model):
             return f'{self.type}||{self.type_letter}{z}'
         return f'{self.type}||{self.type_letter}{int(z)}'
 
+    def punch_usage(self):
+        from production.models import ProductionUnit
+        units = ProductionUnit.objects.filter(punch=self, status="FINISHED")
+        return units
+
 
 class PunchProduction(models.Model):
     punch = models.ForeignKey(Punch, on_delete=models.PROTECT)
@@ -672,6 +677,11 @@ class Photopolymer(models.Model):
         if self.name != '':
             result += f' {self.name}'
         return result
+
+    def polymer_usage(self):
+        from production.models import ProductionUnit
+        units = ProductionUnit.objects.filter(polymer=self, status="FINISHED")
+        return units
 
     def presence(self):
         if not self.delivery_date or self.delivery_date >= datetime.date.today():

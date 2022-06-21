@@ -14,7 +14,46 @@ import json
 
 from warehousemanager.functions import visit_counter
 
-from warehousemanager.models import Absence, ExtraHour
+from warehousemanager.models import Absence, ExtraHour, Punch, Photopolymer
+
+
+class ToolsUsage(View):
+    def get(self, request):
+        punches = Punch.objects.all()
+        photo_polymers = Photopolymer.objects.all()
+        punches_data = []
+        punches_stats = []
+        polymers_data = []
+        polymers_stats = []
+        for p in punches:
+            punches_data.append((p, p.punch_usage()))
+
+        for data in punches_data:
+            usage_number = 0
+            for usage in data[1]:
+                usage_number += usage.production_order.quantity if usage.production_order.quantity else 0
+            punches_stats.append(
+                (data[0], usage_number, tuple(data[1])[0].end if data[1] else datetime.datetime.strptime(
+                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S"), tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
+                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
+
+        punches_stats = sorted(punches_stats, key=lambda x: x[2], reverse=True)
+
+        for pp in photo_polymers:
+            polymers_data.append((pp, pp.polymer_usage()))
+
+        for data in polymers_data:
+            usage_number = 0
+            for usage in data[1]:
+                usage_number += usage.production_order.quantity if usage.production_order.quantity else 0
+            polymers_stats.append(
+                (data[0], usage_number, tuple(data[1])[0].end if data[1] else datetime.datetime.strptime(
+                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S"), tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
+                    "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
+
+        polymers_stats = sorted(polymers_stats, key=lambda x: x[2], reverse=True)
+
+        return render(request, 'production/tools-usage.html', locals())
 
 
 class GetProductionById(View):
@@ -162,7 +201,6 @@ class WorkStationDetails(View):
         print(result_2[0], result_2[1], result_1, result_2[2])
 
         test_value = final_result // 60'''
-
 
         return render(request, 'production/workstation-details.html', locals())
 
@@ -447,11 +485,12 @@ class WorkerEfficiency(View):
         days_at_work_to_count = days_at_work
 
         if work_hours != days_at_work_to_count * 8:
-            days_at_work_to_count = round(work_hours // 8 + (work_hours % 8)/8, 2)
+            days_at_work_to_count = round(work_hours // 8 + (work_hours % 8) / 8, 2)
 
         month_end += datetime.timedelta(days=1)
 
-        units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end, persons__id=worker_id).order_by('start')
+        units = ProductionUnit.objects.filter(start__gte=month_start, end__lte=month_end,
+                                              persons__id=worker_id).order_by('start')
 
         data = []
 
@@ -460,23 +499,25 @@ class WorkerEfficiency(View):
         for unit in units:
             data.append([unit, ])
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
-                unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
-                unit_efficiency = round(100*unit_fractal, 2)
+                unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
+                unit_efficiency = round(100 * unit_fractal, 2)
                 data[-1].append(unit_efficiency)
                 efficiency[0] += unit.estimated_duration_in_seconds()
                 efficiency[1] += unit.unit_duration_in_seconds()
 
-        efficiency = round(100*efficiency[0]/efficiency[1], 2) if efficiency[1] else 100
+        efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
 
-        pot = round(600 * (days_at_work_to_count/working_days), 2)
+        pot = round(600 * (days_at_work_to_count / working_days), 2)
 
         return render(request, 'production/worker-efficiency.html', locals())
 
 
 class WorkerEfficiencyPrintPDF(View):
     def get(self, request, year, month, worker_id):
-        date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00", '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
-        date_to = datetime.datetime.strptime(f"{request.GET.get('to')} 23:59:59", '%Y-%m-%d %H:%M:%S') if request.GET.get('to') else None
+        date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
+                                               '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
+        date_to = datetime.datetime.strptime(f"{request.GET.get('to')} 23:59:59",
+                                             '%Y-%m-%d %H:%M:%S') if request.GET.get('to') else None
         bonus = True if request.GET.get('bonus') else False
         full_pot = float(600.00)
         now = datetime.datetime.now()
@@ -526,7 +567,8 @@ class WorkerEfficiencyPrintPDF(View):
                                 absence = Absence.objects.filter(worker=worker, absence_date=start_day)
                                 if absence:
                                     late_in_minutes = f'{absence[0].value} minut' if absence[0].value else ''
-                                    events_data.append((absence[0].absence_date, absence[0].absence_type, late_in_minutes))
+                                    events_data.append(
+                                        (absence[0].absence_date, absence[0].absence_type, late_in_minutes))
                                     if absence[0].absence_type == 'SP':
                                         late += 1
 
@@ -617,7 +659,8 @@ class WorkerEfficiencyPrintPDF(View):
                 # work stations
                 if unit.work_station not in worker_stations:
                     worker_stations.append(unit.work_station)
-                    units_stations.append([unit.work_station, 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                    units_stations.append([unit.work_station, 1, unit.unit_duration_in_seconds(),
+                                           [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
                 else:
                     for us in units_stations:
                         if us[0] == unit.work_station:
@@ -640,9 +683,12 @@ class WorkerEfficiencyPrintPDF(View):
                             works_with[0][3][0] += unit.estimated_duration_in_seconds()
                             works_with[0][3][1] += unit.unit_duration_in_seconds()
                         else:
-                            works_with.insert(0, ['-', 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                            works_with.insert(0, ['-', 1, unit.unit_duration_in_seconds(),
+                                                  [unit.estimated_duration_in_seconds(),
+                                                   unit.unit_duration_in_seconds()]])
                     else:
-                        works_with.append(['-', 1, unit.unit_duration_in_seconds(), [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                        works_with.append(['-', 1, unit.unit_duration_in_seconds(),
+                                           [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
                 for coop in works_with:
                     for coworker_person in unit.persons.all():
                         if coworker_person == coop[0]:
@@ -674,7 +720,7 @@ class WorkerEfficiencyPrintPDF(View):
             us[2] = f'{hours}:{minutes}:{seconds}'
             us[3] = round(100 * us[3][0] / us[3][1], 2) if us[3][1] else 100
 
-        units_stations = sorted(units_stations, key=lambda x:x[1], reverse=True)
+        units_stations = sorted(units_stations, key=lambda x: x[1], reverse=True)
 
         efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
 
@@ -683,11 +729,11 @@ class WorkerEfficiencyPrintPDF(View):
         suggested_bonus = 0
 
         if efficiency >= 100:
-            suggested_bonus = 0.5 * pot * (1 + (efficiency - 100)/50)
+            suggested_bonus = 0.5 * pot * (1 + (efficiency - 100) / 50)
             if suggested_bonus > pot:
                 suggested_bonus = pot
         else:
-            suggested_bonus = 0.5 * pot * (100-((100 - efficiency)*4))/100
+            suggested_bonus = 0.5 * pot * (100 - ((100 - efficiency) * 4)) / 100
             if suggested_bonus < 0:
                 suggested_bonus = 0
 
@@ -723,7 +769,8 @@ class WorkStationEfficiency(View):
         date_start = datetime.datetime.strptime('2021-10-01', '%Y-%m-%d').date()
         date_end = datetime.datetime.strptime('2021-10-31', '%Y-%m-%d').date()
 
-        units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1), work_station=station).order_by('start')
+        units = ProductionUnit.objects.filter(start__gte=date_start, end__lte=date_end + datetime.timedelta(days=1),
+                                              work_station=station).order_by('start')
 
         data = []
 
@@ -732,13 +779,13 @@ class WorkStationEfficiency(View):
         for unit in units:
             data.append([unit, ])
             if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
-                unit_fractal = unit.estimated_duration_in_seconds()/unit.unit_duration_in_seconds()
-                unit_efficiency = round(100*unit_fractal, 2)
+                unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
+                unit_efficiency = round(100 * unit_fractal, 2)
                 data[-1].append(unit_efficiency)
                 efficiency[0] += unit.estimated_duration_in_seconds()
                 efficiency[1] += unit.unit_duration_in_seconds()
 
-        efficiency = round(100*efficiency[0]/efficiency[1], 2) if efficiency[1] else 100
+        efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
 
         return render(request, 'production/station-efficiency.html', locals())
 
