@@ -18,11 +18,12 @@ class ProductionUnitForm(ModelForm):
             'end': DateTimeInput(attrs={'type': 'datetime'}),
         }
 
-    def __init__(self, date=None, *args, **kwargs):
+    def __init__(self, day=None, *args, **kwargs):
         super(ProductionUnitForm, self).__init__(*args, **kwargs)
         all_workers = Person.objects.all()
-        if date:
-            c_workers = Person.objects.filter(job_start__lte=date, job_end__isnull=True)
+        if day:
+            print('DATE', day)
+            c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True)
 
             all_workers = c_workers
 

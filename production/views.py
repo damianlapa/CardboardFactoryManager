@@ -182,11 +182,11 @@ class EditProductionUnit(View):
     def get(self, request, unit_id):
         source = request.GET.get('source')
         edit = True
-        form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id))
+        form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id), day=None)
         return render(request, 'production/production-unit-add.html', locals())
 
     def post(self, request, unit_id):
-        form = ProductionUnitForm(request.POST)
+        form = ProductionUnitForm(None, request.POST)
         if form.is_valid():
             data = form.cleaned_data
             sequence = data['sequence']
@@ -263,11 +263,12 @@ class AddProductionUnit(View):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
-        form = ProductionUnitForm(date=today, initial={'production_order': production_order, 'sequence': order_units.count() + 1})
+        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1}, day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
     def post(self, request, order_id):
-        form = ProductionUnitForm(request.POST)
+        today = datetime.datetime.today().date()
+        form = ProductionUnitForm(today, request.POST)
         if form.is_valid():
             data = form.cleaned_data
             sequence = data['sequence']
