@@ -563,14 +563,21 @@ class Punch(models.Model):
     wave_direction = models.BooleanField(default=True)
     customers = models.ManyToManyField(Buyer, blank=True)
 
+    class Meta:
+        ordering = ['type', 'type_letter', 'type_num']
+
     def __str__(self):
+        sign = f'{self.type}'
+        if self.type_letter:
+            sign += f' {self.type_letter}'
+        sign += str(self.type_num) if self.type_num % 1 != 0 else str(int(self.type_num))
         if self.dimension_one and self.dimension_two:
             if self.dimension_three:
-                return f'{self.type}: {self.dimension_one}x{self.dimension_two}x{self.dimension_three}'
+                return f'{sign}: {self.dimension_one}x{self.dimension_two}x{self.dimension_three}'
             else:
-                return f'{self.type}: {self.dimension_one}x{self.dimension_two}'
+                return f'{sign}: {self.dimension_one}x{self.dimension_two}'
         else:
-            return f'{self.type}: {self.size_one}x{self.size_two}'
+            return f'{sign}: {self.size_one}x{self.size_two}'
 
     def punch_name(self):
         z = float(self.type_num)
@@ -670,7 +677,7 @@ class Photopolymer(models.Model):
                                      default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
 
     class Meta:
-        ordering = ['-delivery_date']
+        ordering = ['customer', '-delivery_date']
 
     def __str__(self):
         result = f'{self.identification_number}/{self.customer}'
