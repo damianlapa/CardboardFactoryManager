@@ -11,6 +11,7 @@ from django.template.loader import get_template
 import os
 from xhtml2pdf import pisa
 import json
+import datetime
 
 from warehousemanager.functions import visit_counter
 
@@ -38,7 +39,7 @@ class ToolsUsage(View):
                  tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
                      "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
 
-        punches_stats = sorted(punches_stats, key=lambda x: x[2], reverse=True)
+        punches_stats = sorted(punches_stats, key=lambda x: x[3], reverse=True)
 
         for pp in photo_polymers:
             polymers_data.append((pp, pp.polymer_usage()))
@@ -53,7 +54,7 @@ class ToolsUsage(View):
                  tuple(data[1])[-1].end if data[1] else datetime.datetime.strptime(
                      "2017-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
 
-        polymers_stats = sorted(polymers_stats, key=lambda x: x[2], reverse=True)
+        polymers_stats = sorted(polymers_stats, key=lambda x: x[3], reverse=True)
 
         return render(request, 'production/tools-usage.html', locals())
 
@@ -168,42 +169,6 @@ class WorkStationDetails(View):
         other_units = units.filter(status='NOT STARTED').order_by('order')
         history_units = units.filter(status='FINISHED').order_by('-end')
 
-        # counting machine set up
-        '''def counting_machine_times(some_units):
-            equations = []
-            set_up_values = []
-            for u in some_units:
-                equation = (u.production_order.quantity, u.unit_duration_in_seconds())
-                equations.append(equation)
-
-            for num in range(len(equations)):
-                equation_one = equations[num]
-                for num_2 in range(len(equations)):
-                    if num_2 != num:
-                        equation_two = equations[num_2]
-
-                        set_up_value = abs(equation_two[1] - equation_one[1])/abs(equation_two[0] - equation_one[0])
-
-                        set_up_values.append(set_up_value)
-
-            unit_sum_ups = (sum([x[1] for x in equations]), -sum([x[0] for x in equations]), len(equations))
-
-            print(set_up_values)
-
-            set_up_values = set(set_up_values)
-
-            print(set_up_values)
-
-            return sum(set_up_values)/len(set_up_values), unit_sum_ups
-
-        result_1, result_2 = counting_machine_times(history_units)
-
-        final_result = (result_2[0] + result_2[1] * result_1)/result_2[2]
-
-        print(result_2[0], result_2[1], result_1, result_2[2])
-
-        test_value = final_result // 60'''
-
         return render(request, 'production/workstation-details.html', locals())
 
 
@@ -297,7 +262,8 @@ class AddProductionUnit(View):
     def get(self, request, order_id):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
-        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1})
+        today = datetime.datetime.today().date()
+        form = ProductionUnitForm(date=today, initial={'production_order': production_order, 'sequence': order_units.count() + 1})
         return render(request, 'production/production-unit-add.html', locals())
 
     def post(self, request, order_id):

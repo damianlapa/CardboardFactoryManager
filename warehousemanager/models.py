@@ -276,7 +276,9 @@ class Person(models.Model):
             else:
                 active_workers.append(worker)
 
-        return len(active_workers)
+        print(active_workers)
+
+        return active_workers
 
     @classmethod
     def active_workers_at_month(cls, year, month):
