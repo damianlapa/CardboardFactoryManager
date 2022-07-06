@@ -334,6 +334,24 @@ class ProductionUnit(models.Model):
                         '''
                         pass
 
+            else:
+                holidays_during_period = holiday_between_days(self.start, self.end)
+                difference = difference - datetime.timedelta(hours=holidays_during_period*8)
+                days_difference = int(self.end.strftime('%j')) - int(self.start.strftime('%j'))
+                if self.start.isocalendar()[1] == self.end.isocalendar()[1]:
+                    difference = difference - datetime.timedelta(hours=days_difference*16)
+                    return change_difference_to_time(difference)
+                else:
+                    difference = difference - datetime.timedelta(hours=days_difference * 16)
+                    weekends = self.end.isocalendar()[1] - self.start.isocalendar()[1]
+                    difference = difference - datetime.timedelta(hours=weekends*16)
+                    return change_difference_to_time(difference)
+
+        else:
+            return 'N/D'
+
+
+
     def estimated_duration(self):
         if self.estimated_time:
 
