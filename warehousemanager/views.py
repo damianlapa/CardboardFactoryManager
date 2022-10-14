@@ -1814,7 +1814,7 @@ class PhotoPolymers(View, PermissionRequiredMixin):
         user = request.user
         visit_counter(user, 'polymer_list')
 
-        polymers = Photopolymer.objects.all().order_by('customer__name', 'name')
+        polymers = Photopolymer.objects.all()
         services = PhotopolymerService.objects.all()
         current_services = []
         history_services = []

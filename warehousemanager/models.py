@@ -679,7 +679,7 @@ class Photopolymer(models.Model):
                                      default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
 
     class Meta:
-        ordering = ['customer', '-delivery_date']
+        ordering = ['identification_number']
 
     def __str__(self):
         result = f'{self.identification_number}/{self.customer}'

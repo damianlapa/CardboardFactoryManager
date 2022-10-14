@@ -41,6 +41,7 @@
     <table class="polymers">
         <thead>
             <tr>
+                <td>NR</td>
                 <td>PRODUCENT</td>
                 <td>KLIENT</td>
                 <td>NAZWA</td>
@@ -53,6 +54,7 @@
         <tbody>
             {% for p in polymers %}
                 <tr class="polymer-row" data-polymerid="{{ p.id }}">
+                    <td>{{ p.identification_number }}</td>
                     <td>{{ p.producer }}</td>
                     <td>{{ p.customer }}</td>
                     <td>{{ p.name }}</td>
