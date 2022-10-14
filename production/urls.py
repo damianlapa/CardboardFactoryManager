@@ -52,3 +52,8 @@ urlpatterns += [
 urlpatterns += [
     path('tools-usage/', ToolsUsage.as_view(), name='tools-usage')
 ]
+
+# machines occupancy
+urlpatterns += [
+    path('machines-occupancy/', MachinesOccupancy.as_view(), name='machines-occupancy')
+]

@@ -101,6 +101,29 @@ class WorkStation(models.Model):
             return 'NO PLANNED UNITS'
 
 
+    def workstation_occupancy(self, start, end):
+        all_units = ProductionUnit.objects.filter(work_station=self, end__gte=start, end__lte=end)
+
+        def work_hours_between_dates(date_start, date_end):
+            date_end = date_end + datetime.timedelta(days=1)
+            from warehousemanager.models import Holiday
+            holidays = Holiday.objects.filter(holiday_date__gte=start, holiday_date__lte=end)
+            holidays_num = 0
+            for h in holidays:
+                if h.holiday_date.isoweekday() < 5:
+                    holidays_num += 1
+            difference = (date_end - date_start) - datetime.timedelta(hours=holidays_num * 8)
+            days_difference = int(date_end.strftime('%j')) - int(date_start.strftime('%j'))
+            difference = difference - datetime.timedelta(hours=days_difference * 16)
+            weekends = end.isocalendar()[1] - start.isocalendar()[1]
+            difference = difference - datetime.timedelta(hours=weekends * 16)
+
+            return difference
+
+        return work_hours_between_dates(start, end)
+
+
+
 class ProductionUnit(models.Model):
     production_order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE)
     sequence = models.IntegerField(default=1)

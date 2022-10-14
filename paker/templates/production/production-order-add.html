@@ -2,7 +2,7 @@
 {% block title %}Add Production Order{% endblock %}
 {% block content %}
 <div>
-    <form method="post">
+    <form method="post" style="color: white;">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="submit" value="Add" id="submitBtn">

@@ -169,6 +169,9 @@ class WorkStationDetails(View):
         other_units = units.filter(status='NOT STARTED').order_by('order')
         history_units = units.filter(status='FINISHED').order_by('-end')
 
+        print('%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$')
+        print(station.workstation_occupancy(datetime.datetime.strptime('2022-06-01', '%Y-%m-%d'), datetime.datetime.strptime('2022-06-30', '%Y-%m-%d')))
+
         return render(request, 'production/workstation-details.html', locals())
 
 
@@ -886,3 +889,36 @@ class CustomReport(View):
             report_link_station = f'RAPORT {station} {date_from} - {date_to}'
 
         return render(request, 'production/custom-report.html', locals())
+
+
+class MachinesOccupancy(View):
+    def get(self, request):
+        date_from = None if not request.GET.get("date_from") else request.GET.get("date_from")
+        date_to = None if not request.GET.get("date_to") else request.GET.get("date_to")
+
+        if not date_to:
+            date_to = datetime.datetime.strftime(datetime.datetime.today().date(), '%Y-%m-%d')
+
+        if all((date_from, date_to)):
+            date_from = datetime.datetime.strptime(date_from, '%Y-%m-%d').date()
+            date_to = datetime.datetime.strptime(date_to, '%Y-%m-%d').date()
+
+            days = []
+            units = []
+
+            while date_from <= date_to:
+                days.append(date_from)
+                date_from = date_from + datetime.timedelta(days=1)
+
+            if days:
+                for day in days:
+                    day_units = ProductionUnit.objects.filter(start__gte=day, end__lt=date_to)
+                    for d in day_units:
+                        units.append(d)
+
+            result = ''
+            for u in units:
+                result += str(u)
+                result += '<hr>'
+
+            return HttpResponse(result)
