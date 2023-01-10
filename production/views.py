@@ -896,29 +896,28 @@ class MachinesOccupancy(View):
         date_from = None if not request.GET.get("date_from") else request.GET.get("date_from")
         date_to = None if not request.GET.get("date_to") else request.GET.get("date_to")
 
+        all_workstations = WorkStation.objects.all()
+        workstations_units = [[workstation, ] for workstation in all_workstations]
+
+        if not date_from:
+            date_from = datetime.datetime.strftime(datetime.datetime.today().date(), '%Y-%m-%d')
         if not date_to:
             date_to = datetime.datetime.strftime(datetime.datetime.today().date(), '%Y-%m-%d')
 
-        if all((date_from, date_to)):
-            date_from = datetime.datetime.strptime(date_from, '%Y-%m-%d').date()
-            date_to = datetime.datetime.strptime(date_to, '%Y-%m-%d').date()
+        result = ProductionUnit.units_during_day(date_from)
 
-            days = []
-            units = []
+        for w in all_workstations:
+            pass
 
-            while date_from <= date_to:
-                days.append(date_from)
-                date_from = date_from + datetime.timedelta(days=1)
+        return render(request, 'production/workstations-occupancy.html', locals())
 
-            if days:
-                for day in days:
-                    day_units = ProductionUnit.objects.filter(start__gte=day, end__lt=date_to)
-                    for d in day_units:
-                        units.append(d)
 
-            result = ''
-            for u in units:
-                result += str(u)
-                result += '<hr>'
+class ChangeAllOrders(View):
+    def get(self, request):
+        all_orders = ProductionOrder.objects.all()
+        for a in all_orders:
+            if a.id_number[:6] != '(2022)':
+                a.id_number = '(2022) ' + a.id_number
+                a.save()
 
-            return HttpResponse(result)
+        return HttpResponse('Done!')

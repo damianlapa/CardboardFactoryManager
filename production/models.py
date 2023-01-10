@@ -100,7 +100,6 @@ class WorkStation(models.Model):
         else:
             return 'NO PLANNED UNITS'
 
-
     def workstation_occupancy(self, start, end):
         all_units = ProductionUnit.objects.filter(work_station=self, end__gte=start, end__lte=end)
 
@@ -122,6 +121,17 @@ class WorkStation(models.Model):
 
         return work_hours_between_dates(start, end)
 
+    def workstation_occupancy_during_day(self, day):
+        results = ProductionUnit.workstation_occupancy_during_day(day)
+        results_by_workstation = [[] for _ in range(4)]
+        for num in range(results):
+            for unit in results[num]:
+                if unit.workstation == self:
+                    results_by_workstation[num].append(unit)
+
+        if results_by_workstation[1]:
+            return 1
+        return 0
 
 
 class ProductionUnit(models.Model):
@@ -359,21 +369,19 @@ class ProductionUnit(models.Model):
 
             else:
                 holidays_during_period = holiday_between_days(self.start, self.end)
-                difference = difference - datetime.timedelta(hours=holidays_during_period*8)
+                difference = difference - datetime.timedelta(hours=holidays_during_period * 8)
                 days_difference = int(self.end.strftime('%j')) - int(self.start.strftime('%j'))
                 if self.start.isocalendar()[1] == self.end.isocalendar()[1]:
-                    difference = difference - datetime.timedelta(hours=days_difference*16)
+                    difference = difference - datetime.timedelta(hours=days_difference * 16)
                     return change_difference_to_time(difference)
                 else:
                     difference = difference - datetime.timedelta(hours=days_difference * 16)
                     weekends = self.end.isocalendar()[1] - self.start.isocalendar()[1]
-                    difference = difference - datetime.timedelta(hours=weekends*16)
+                    difference = difference - datetime.timedelta(hours=weekends * 16)
                     return change_difference_to_time(difference)
 
         else:
             return 'N/D'
-
-
 
     def estimated_duration(self):
         if self.estimated_time:
@@ -474,3 +482,22 @@ class ProductionUnit(models.Model):
         if activity:
             return activity[0].work_station
         return 'Free'
+
+    @classmethod
+    def units_duration_during_day_at_specified_workstation(cls, day, workstation):
+        day_start = datetime.datetime.strptime(f'{day} 06:00:00', '%Y-%m-%d %H:%M:%S')
+        day_end = datetime.datetime.strptime(f'{day} 16:00:00', '%Y-%m-%d %H:%M:%S')
+
+        result = 0
+
+        units_started_and_finished_during_day = cls.objects.filter(start__gte=day_start, end__lte=day_end, workstation=workstation)
+        units_started_before_and_ended_today = cls.objects.filter(start__lt=day_start, end__gte=day_start, workstation=workstation)
+        units_started_today_and_not_finished = cls.objects.filter(start__lte=day_end, end__gt=day_end, workstation=workstation)
+        units_started_earlier_and_not_finished = cls.objects.filter(start__lt=day_start, end__gt=day_end, workstation=workstation)
+
+        for u in units_started_and_finished_during_day:
+            result += u.unit_duration_in_seconds()
+        pass
+
+        return [units_started_and_finished_during_day, units_started_earlier_and_not_finished,
+                units_started_before_and_ended_today, units_started_today_and_not_finished]

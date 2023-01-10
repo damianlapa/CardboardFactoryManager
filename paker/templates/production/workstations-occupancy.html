@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{{ result }}
+<table style="border: 1px solid black;">
+    <tr>
+        <th>Day</th>
+        {% for w in all_workstations %}
+        <th>{{ w }}</th>
+        {% endfor %}
+    </tr>
+    {% for d in days %}
+    <tr>
+        <td>{{ d }}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

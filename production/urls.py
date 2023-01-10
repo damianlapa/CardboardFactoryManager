@@ -57,3 +57,8 @@ urlpatterns += [
 urlpatterns += [
     path('machines-occupancy/', MachinesOccupancy.as_view(), name='machines-occupancy')
 ]
+
+# orders change
+urlpatterns += [
+    path('change_to_2022/', ChangeAllOrders.as_view())
+]
