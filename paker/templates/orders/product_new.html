@@ -1,0 +1,17 @@
+{% extends '__base2__.html' %}
+{% block title %}Add New Product{% endblock %}
+{% block content %}
+<div>
+    <form method="post" style="color: white;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Add" id="submitBtn">
+    </form>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<!-- <script src="{% static 'js/new-production-order.js' %}"></script> --!>
+{% endblock %}

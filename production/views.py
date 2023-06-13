@@ -117,8 +117,6 @@ class AddProductionOrder(View):
             dimensions = data['dimensions']
             quantity = data['quantity']
             status = data['status']
-            completed = data['completed']
-            priority = data['priority']
             notes = data['notes']
 
             if customer:
@@ -129,8 +127,7 @@ class AddProductionOrder(View):
             except ObjectDoesNotExist:
                 ProductionOrder.objects.create(id_number=id_number, cardboard=cardboard,
                                                cardboard_dimensions=cardboard_dimensions, customer=customer,
-                                               dimensions=dimensions, quantity=quantity, status=status,
-                                               completed=completed, priority=priority, notes=notes)
+                                               dimensions=dimensions, quantity=quantity, status=status, notes=notes)
         return redirect('all-production-orders')
 
 

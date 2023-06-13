@@ -6,7 +6,7 @@ from warehousemanager.models import Person
 class ProductionOrderForm(ModelForm):
     class Meta:
         model = ProductionOrder
-        fields = '__all__'
+        fields = ('id_number', 'cardboard', 'cardboard_dimensions', 'customer', 'dimensions', 'quantity', 'status', 'notes')
 
 
 class ProductionUnitForm(ModelForm):

@@ -16,4 +16,12 @@
 
     </a>
 {% endfor %}
+<p class="red">
+            Wszyscy pracownicy
+            <a href="{% url 'mcpa' month=month year=year %}" target="_blank">
+        <button>
+            Karty Czasu Pracy
+        </button>
+            </a>
+</p>
 {% endblock %}
