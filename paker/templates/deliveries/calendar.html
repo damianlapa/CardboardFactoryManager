@@ -1,0 +1,28 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
+<div id="calendar" class="calendar-list">
+
+    {% for week in weeks %}
+        {% for day in week %}
+            {% if day == today %}
+                <div class="calendar-item" data-calendar="{{day.year}}-{{day.month}}-{{day.day}}" style="background: lightgreen">
+                    <p style="text-align: right; padding: 0px; margin: 0px;">{{ day.day }}</p>
+                </div>
+            {% else %}
+                <div class="calendar-item" data-calendar="{{day.year}}-{{day.month}}-{{day.day}}">
+                    <p style="text-align: right; padding: 0px; margin: 0px;">{{ day.day }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/calendar.js' %}"></script>
+{% endblock %}

@@ -1268,3 +1268,29 @@ input.right:focus {
 	position:relative;
 	top:1px;
 }
+
+.calendar-list {
+    width: 100%;
+    margin: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: grey;
+}
+
+.calendar-item {
+    margin: 0px;
+    padding: 0px;
+    border: double 1px black;
+    width: 14%;
+    height: 200px;
+    overflow: auto;
+    background: white;
+}
+
+.button-block {
+    display: block;
+    width: 75%;
+    margin: 2%;
+
+}

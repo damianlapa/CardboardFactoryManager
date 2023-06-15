@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'warehousemanager',
     'production',
     'orders',
+    'deliveries',
 
 ]
 
