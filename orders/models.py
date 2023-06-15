@@ -53,7 +53,6 @@ class Cardboard(models.Model):
     layers = models.CharField(max_length=1, choices=CARDBOARD_LAYERS)
     wave = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     grammage = models.IntegerField()
-    ect = models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self):
         return f'{self.supplier.shortcut}|{self.designation}|{self.grammage}|{self.ect}'
@@ -135,10 +134,5 @@ class CardboardPurchase(models.Model):
     delivered_quantity = models.IntegerField(blank=True, null=True)
     price_1000 = models.IntegerField()
 
-    def unit_price(self):
-        dimensions = [int(x) for x in str(self.dimensions).split('x')]
-        price = round(int(self.price_1000)*dimensions[0]*dimensions[1]/1000000, 2)
-        return price
-
     def __str__(self):
-        return f'{self.cardboard} - {self.ordered_quantity} - {self.unit_price()}'
+        return f'{self.cardboard} - {self.ordered_quantity}'
