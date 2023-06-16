@@ -39,7 +39,7 @@ class EventsByDay(View):
         if events:
             result = []
             for e in events:
-                result.append(e.title)
+                result.append((e.title, e.event_type))
             return HttpResponse(json.dumps(result))
         else:
             return HttpResponse('')

@@ -1079,6 +1079,10 @@ select{
     background: yellow;
 }
 
+.bg-pink {
+    background: pink;
+}
+
 .bg-white {
     background: white;
 }
@@ -1093,6 +1097,14 @@ select{
 
 .bg-green {
     background: green;
+}
+
+.bg-blue {
+    background: blue;
+}
+
+.bg-black {
+    background: black;
 }
 
 .red {
@@ -1292,5 +1304,5 @@ input.right:focus {
     display: block;
     width: 75%;
     margin: 2%;
-
-}
+    border-radius: 6px;
+    color: white;

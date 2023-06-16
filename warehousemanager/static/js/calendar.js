@@ -16,9 +16,18 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log(data.length)
             for (let j=0; j < data.length; j++) {
                 var child = document.createElement('button')
-                child.innerHTML = data[j]
-                child.classList.add('red')
+                child.innerHTML = data[j][0]
+                child.classList.add('button-24')
                 child.classList.add('button-block')
+                if (data[j][1] == 'INNE') {
+                    child.classList.add('bg-orange')
+                }else if (data[j][1] == 'PLANOWANA DOSTAWA') {
+                    child.classList.add('bg-blue')
+                }else if (data[j][1] == 'ZREALIZOWANA DOSTAWA') {
+                    child.classList.add('bg-black')
+                }else if (data[j][1] == 'SPOTKANIE') {
+                    child.classList.add('bg-pink')
+                }
                 allDays[i].appendChild(child)
             }
 
