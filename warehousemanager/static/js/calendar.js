@@ -1,5 +1,21 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+    function getLocalLink() {
+        let localLinkURL = ''
+        $.ajax({
+            url: '/get-local-var/PAKER_MAIN/',
+            data: {},
+            type: 'GET',
+            dataType: 'json'
+            }).done(function (data) {
+                localLink = data
+            })
+
+        return localLinkURL
+    }
+
+    let localLink = getLocalLink()
+
     console.log('File loaded correctly')
 
     const allDays = document.getElementsByClassName('calendar-item')
@@ -13,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'GET',
             dataType: 'json'
             }).done(function (data) {
-            console.log(data.length)
             for (let j=0; j < data.length; j++) {
                 var child = document.createElement('button')
                 child.innerHTML = data[j][0]
@@ -27,11 +42,23 @@ document.addEventListener("DOMContentLoaded", function () {
                     child.classList.add('bg-black')
                 }else if (data[j][1] == 'SPOTKANIE') {
                     child.classList.add('bg-pink')
+                    child.style.color = 'black'
+                }else if (data[j][1] == 'ODBIÓR OSOBISTY') {
+                    child.classList.add('bg-yellow')
+                    child.style.color = 'black'
                 }
                 allDays[i].appendChild(child)
             }
 
                 })
+
+        allDays[i].addEventListener('click', function() {
+                date = this.dataset.calendar
+                link = localLink + 'deliveries/day-details/' + date + '/'
+                window.open(link, '_self')
+
+        })
     }
+
 
 })
