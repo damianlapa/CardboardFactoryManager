@@ -47,7 +47,7 @@ class Supplier(models.Model):
         return f'{self.shortcut}'
 
 
-class Cardboard(models.Model):
+'''class Cardboard(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
     designation = models.CharField(max_length=16)
     layers = models.CharField(max_length=1, choices=CARDBOARD_LAYERS)
@@ -58,22 +58,8 @@ class Cardboard(models.Model):
         return f'{self.supplier.shortcut}|{self.designation}|{self.grammage}|{self.ect}'
 
 
-class CardboardPrice(models.Model):
-    cardboard = models.ForeignKey(Cardboard, on_delete=models.PROTECT)
-    price = models.IntegerField()
-    currency = models.CharField(max_length=16, default='PLN')
-    active_from = models.DateField(blank=True, null=True)
-    active_until = models.DateField(blank=True, null=True)
-
-    def is_active(self):
-        pass
-
-    def __str__(self):
-        return f'{self.cardboard.designation} - {self.price} {self.currency}'
-
-
 class Customer(models.Model):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, unique=True)
     shortcut = models.CharField(max_length=32, unique=True)
 
     def __str__(self):
@@ -89,14 +75,16 @@ class Order(models.Model):
         return f'{self.customer} - {self.date}'
 
 
+
 class Product(models.Model):
     type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
     description = models.CharField(max_length=256, default="")
     dimensions = models.CharField(max_length=128, blank=True, null=True)
-    cardboard = models.CharField(max_length=16, choices=CARDBOARD_TYPES, blank=True, null=True)
+    cardboard = models.ForeignKey(Cardboard, on_delete=models.PROTECT, null=True)
 
     def __str__(self):
         return f'{self.type} {self.dimensions} {self.cardboard}'
+
 
 
 class OrderUnit(models.Model):
@@ -135,4 +123,4 @@ class CardboardPurchase(models.Model):
     price_1000 = models.IntegerField()
 
     def __str__(self):
-        return f'{self.cardboard} - {self.ordered_quantity}'
+        return f'{self.cardboard} - {self.ordered_quantity}'''

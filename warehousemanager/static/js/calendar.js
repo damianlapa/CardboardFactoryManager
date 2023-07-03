@@ -47,6 +47,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     child.classList.add('bg-yellow')
                     child.style.color = 'black'
                 }
+                child.addEventListener('click', function() {
+                    link = localLink + 'deliveries/event-details/' + data[j][2] + '/'
+                    window.open(link, '_self')
+                })
                 allDays[i].appendChild(child)
             }
 
