@@ -2675,8 +2675,6 @@ class MonthlyCardPresenceAll(View):
 
         now = datetime.datetime.now()
 
-        summary = [0 for _ in range(19)]
-
         month = int(month)
 
         if month == 2:
@@ -2690,6 +2688,8 @@ class MonthlyCardPresenceAll(View):
         date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
 
         for worker in workers:
+
+            summary = [0 for _ in range(19)]
 
             data = []
 
