@@ -2815,13 +2815,14 @@ class MonthlyCardPresenceAll(View):
                 # work end hour
                 day_end = day + datetime.timedelta(hours=15)
                 if extra_hours:
+                    print(extra_hours_value_h, extra_hours_value_m)
                     if day_info[1] not in ('So', 'Nd'):
                         if extra_hours_sign:
                             day_end += datetime.timedelta(hours=extra_hours_value_h)
                             day_end += datetime.timedelta(minutes=extra_hours_value_m)
                         else:
                             day_end -= datetime.timedelta(hours=8 - extra_hours_value_h)
-                            day_end -= datetime.timedelta(minutes=extra_hours_value_m)
+                            day_end += datetime.timedelta(minutes=extra_hours_value_m)
                     else:
                         day_end = day_start + datetime.timedelta(hours=extra_hours_value_h)
                         day_end += datetime.timedelta(minutes=extra_hours_value_m)
