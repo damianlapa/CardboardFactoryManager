@@ -2629,7 +2629,7 @@ class MonthlyCardPresence(View):
         logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
         font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
 
-        template_path = 'whm/workers-timetable.html'
+        template_path = 'whm/worker-timetable.html'
         context = locals()
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')
@@ -2662,7 +2662,7 @@ class MonthlyCardPresenceAll(View):
 
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'filename="report.pdf"'
+        response['Content-Disposition'] = f'filename="{year}-{month} timetable.pdf"'
         logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
         font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
 
