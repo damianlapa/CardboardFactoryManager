@@ -79,7 +79,7 @@ class ProductionOrder(models.Model):
                 return units[0].planned_end()
 
     class Meta:
-        ordering = ['add_date', 'id_number']
+        ordering = ['add_date']
 
 
 class WorkStation(models.Model):
