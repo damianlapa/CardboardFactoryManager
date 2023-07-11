@@ -67,7 +67,7 @@ class ProductionOrder(models.Model):
     completed = models.DateTimeField(null=True, blank=True)
     priority = models.BooleanField(default=False)
     notes = models.CharField(max_length=1000, null=True, blank=True)
-    add_date = models.DateTimeField(auto_now=True)
+    add_date = models.DateTimeField(auto_created=True)
 
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
