@@ -78,7 +78,7 @@ class AllProductionOrders(View):
     def get(self, request):
         visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
-        production_orders = ProductionOrder.objects.all().order_by('id_number', 'dimensions')
+        production_orders = ProductionOrder.objects.all()
         return render(request, 'production/production-all.html', locals())
 
 

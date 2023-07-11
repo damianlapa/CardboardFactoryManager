@@ -78,6 +78,9 @@ class ProductionOrder(models.Model):
             if units[0].planned_end():
                 return units[0].planned_end()
 
+    class Meta:
+        ordering = ['add_date', 'id_number']
+
 
 class WorkStation(models.Model):
     name = models.CharField(max_length=48)
