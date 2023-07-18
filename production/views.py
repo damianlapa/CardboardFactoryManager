@@ -167,7 +167,8 @@ class WorkStationDetails(View):
         history_units = units.filter(status='FINISHED').order_by('-end')
 
         print('%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$')
-        print(station.workstation_occupancy(datetime.datetime.strptime('2022-06-01', '%Y-%m-%d'), datetime.datetime.strptime('2022-06-30', '%Y-%m-%d')))
+        print(station.workstation_occupancy(datetime.datetime.strptime('2022-06-01', '%Y-%m-%d'),
+                                            datetime.datetime.strptime('2022-06-30', '%Y-%m-%d')))
 
         return render(request, 'production/workstation-details.html', locals())
 
@@ -263,7 +264,8 @@ class AddProductionUnit(View):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
-        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1}, day=today)
+        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1},
+                                  day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
     def post(self, request, order_id):
