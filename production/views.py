@@ -115,6 +115,7 @@ class AddProductionOrder(View):
             cardboard_dimensions = data['cardboard_dimensions']
             customer = data['customer']
             dimensions = data['dimensions']
+            ordered_quantity = data['ordered_quantity']
             quantity = data['quantity']
             status = data['status']
             notes = data['notes']
@@ -125,7 +126,7 @@ class AddProductionOrder(View):
             try:
                 ProductionOrder.objects.get(id_number=id_number)
             except ObjectDoesNotExist:
-                ProductionOrder.objects.create(id_number=id_number, cardboard=cardboard,
+                ProductionOrder.objects.create(ordered_quantity=ordered_quantity, id_number=id_number, cardboard=cardboard,
                                                cardboard_dimensions=cardboard_dimensions, customer=customer,
                                                dimensions=dimensions, quantity=quantity, status=status, notes=notes)
         return redirect('all-production-orders')
