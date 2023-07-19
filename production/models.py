@@ -7,6 +7,7 @@ from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 import datetime
 
 PRODUCTION_ORDER_STATUSES = (
+    ('ORDERED', 'ORDERED'),
     ('UNCOMPLETED', 'UNCOMPLETED'),
     ('COMPLETED', 'COMPLETED'),
     ('PLANNED', 'PLANNED'),
@@ -62,6 +63,7 @@ class ProductionOrder(models.Model):
     cardboard_dimensions = models.CharField(max_length=32, blank=True)
     customer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
+    ordered_quantity = models.PositiveIntegerField(null=True, blank=True)
     quantity = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=PRODUCTION_ORDER_STATUSES, default='UNCOMPLETED')
     completed = models.DateTimeField(null=True, blank=True)

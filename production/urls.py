@@ -62,3 +62,8 @@ urlpatterns += [
 urlpatterns += [
     path('change_to_2022/', ChangeAllOrders.as_view())
 ]
+
+# order quantity change
+urlpatterns += [
+    path('change-order-quantity/', ChangeOrderQuantity.as_view())
+]

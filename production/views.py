@@ -920,3 +920,16 @@ class ChangeAllOrders(View):
                 a.save()
 
         return HttpResponse('Done!')
+
+
+class ChangeOrderQuantity(View):
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+        value = request.GET.get('value')
+        order_id = int(order_id)
+        value = int(value)
+        order = ProductionOrder.objects.get(id=order_id)
+        order.quantity = value
+        order.save()
+
+        return HttpResponse('OK')

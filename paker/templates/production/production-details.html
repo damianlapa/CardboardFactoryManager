@@ -22,6 +22,9 @@
 
 <h3 class="red">DETAILS</h3>
 <table style="border: 1px solid pink" class="center bg-white">
+    <tr style="display: none">
+        <td id="order_id">{{ production_order.id }}</td>
+    </tr>
     <tr>
         <th>id_number</th>
         <th>{{ production_order.id_number }}</th>
@@ -43,8 +46,12 @@
         <th>{{ production_order.dimensions }}</th>
     </tr>
     <tr>
+        <th>ordered</th>
+        <th id="production-order-ordered">{{ production_order.ordered_quantity }}</th>
+    </tr>
+    <tr>
         <th>quantity</th>
-        <th>{{ production_order.quantity }}</th>
+        <th id="production-order-quantity">{{ production_order.quantity }}</th>
     </tr>
     <tr>
         <th>status</th>
