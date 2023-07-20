@@ -87,6 +87,7 @@ ABSENCE_TYPES = (
 )
 
 PUNCH_TYPES = (
+    ('471', 'FEFCO 471'),
     ('427', 'FEFCO 427'),
     ('426', 'FEFCO 426'),
     ('421', 'FEFCO 421'),
