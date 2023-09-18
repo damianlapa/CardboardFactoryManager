@@ -1373,3 +1373,6 @@ input.right:focus {
 	top:1px;
 }
 
+select#id_persons > option {
+    color: green;
+}
