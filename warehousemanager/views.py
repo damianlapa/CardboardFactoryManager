@@ -29,7 +29,6 @@ import datetime
 from warehousemanager.functions import *
 
 import subprocess
-# import models from warehousemanager app
 from warehousemanager.models import *
 from warehousemanager.forms import *
 
@@ -2974,3 +2973,30 @@ class MonthlyCardPresenceAll(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+class WorkRemindersView(View):
+    def get(self, request):
+        if request.GET.get('all') == '+':
+            reminders = WorkReminder.objects.all()
+        else:
+            reminders = WorkReminder.objects.filter(active=True)
+
+        return render(request, 'whm/workreminders.html', locals())
+
+
+class WorkReminderAdd(View):
+    def get(self, request):
+        form = WorkReminderForm()
+        return render(request, 'whm/workreminder-add.html', locals())
+
+    def post(self, request):
+        form = WorkReminderForm(request.POST)
+
+        if form.is_valid():
+            new_reminder = WorkReminder(**form.cleaned_data)
+            new_reminder.save()
+            return redirect('workreminders')
+
+        else:
+            pass

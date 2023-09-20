@@ -116,3 +116,9 @@ class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
         fields = ('recipient', 'title', 'content')
+
+
+class WorkReminderForm(forms.ModelForm):
+    class Meta:
+        model = WorkReminder
+        fields = '__all__'

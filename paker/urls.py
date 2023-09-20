@@ -178,5 +178,11 @@ urlpatterns += [
     path('mcpa/<int:year>/<int:month>/', MonthlyCardPresenceAll.as_view(), name='mcpa')
 ]
 
+# work reminders
+urlpatterns += [
+    path('workreminders/', WorkRemindersView.as_view(), name='workreminders'),
+    path('/workreminders/add/', WorkReminderAdd.as_view(), name='workreminders-add')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
