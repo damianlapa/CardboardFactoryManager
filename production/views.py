@@ -266,7 +266,7 @@ class AddProductionUnit(View):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
-        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1},
+        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1, 'status': 'FINISHED'},
                                   day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
