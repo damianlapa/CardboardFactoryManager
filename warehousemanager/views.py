@@ -1071,6 +1071,8 @@ class PunchEdit(PermissionRequiredMixin, View):
             edited_punch.name = name
             edited_punch.type_letter = type_letter
 
+            edited_punch.customers.clear()
+
             for c in customers:
                 edited_punch.customers.add(c)
 
