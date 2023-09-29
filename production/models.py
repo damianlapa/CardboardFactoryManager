@@ -407,7 +407,7 @@ class ProductionUnit(models.Model):
             elif datetime.datetime.today().date() >= self.end.date() > datetime.datetime.today().date() - datetime.timedelta(
                     days=7):
                 return 'last7 thismonth alltime'
-            elif self.end.date().month == datetime.datetime.today().date().month:
+            elif self.end.date().month == datetime.datetime.today().date().month and self.end.date().year == datetime.datetime.today().date().year:
                 return 'thismonth alltime'
             else:
                 return 'alltime'

@@ -168,10 +168,6 @@ class WorkStationDetails(View):
         other_units = units.filter(status='NOT STARTED').order_by('order')
         history_units = units.filter(status='FINISHED').order_by('-end')
 
-        print('%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$')
-        print(station.workstation_occupancy(datetime.datetime.strptime('2022-06-01', '%Y-%m-%d'),
-                                            datetime.datetime.strptime('2022-06-30', '%Y-%m-%d')))
-
         return render(request, 'production/workstation-details.html', locals())
 
 
