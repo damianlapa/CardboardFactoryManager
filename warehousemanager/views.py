@@ -941,11 +941,24 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+        PUNCH_TYPES_COLORS = (
+            ('471', 'FEFCO 471', '#D49AE9'),
+            ('427', 'FEFCO 427', 'white'),
+            ('426', 'FEFCO 426', '#43E2C8'),
+            ('421', 'FEFCO 421', '#FFD8FF'),
+            ('201', 'FEFCO 201', 'orange'),
+            ('SWT', 'Spody, wieka, tacki', '#FF6CA7'),
+            ('KR', 'Krata', 'blue'),
+            ('NR', 'Narożnik', 'green'),
+            ('PDK', 'Pozostałe do klejenia', 'yellow'),
+            ('WK', 'Wkład', 'red'),
+            ('INNE', 'Inne', 'lightblue')
+        )
         user = request.user
         visit_counter(user, 'punches')
 
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
-        punch_types = PUNCH_TYPES
+        punch_types = PUNCH_TYPES_COLORS
         title = 'PUNCHES'
 
         return render(request, 'warehousemanager-punches-list.html', locals())
@@ -989,6 +1002,9 @@ class PunchAdd(PermissionRequiredMixin, View):
                                              pressure_small=pressure_small, wave_direction=wave_direction, name=name,
                                              type_letter=type_letter)
 
+            for c in customers:
+                new_punch.customers.add(c)
+
             new_punch.save()
 
             return redirect('punches')
@@ -1023,7 +1039,7 @@ class PunchEdit(PermissionRequiredMixin, View):
 
         if punch_form.is_valid():
             punch_type = punch_form.cleaned_data['type']
-            type_letter = type_num = punch_form.cleaned_data['type_letter']
+            type_letter = punch_form.cleaned_data['type_letter']
             type_num = punch_form.cleaned_data['type_num']
             name = punch_form.cleaned_data['name']
             dimension_one = punch_form.cleaned_data['dimension_one']
@@ -1054,6 +1070,9 @@ class PunchEdit(PermissionRequiredMixin, View):
             edited_punch.wave_direction = wave_direction
             edited_punch.name = name
             edited_punch.type_letter = type_letter
+
+            for c in customers:
+                edited_punch.customers.add(c)
 
             edited_punch.save()
 

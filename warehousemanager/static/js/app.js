@@ -689,7 +689,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 }else if (allRows[f].style.display === 'table-row' || allRows[f].style.display === '' || allRows[f].style.display === 'none') {
-                    if (allRows[f].children[5].innerText.toLowerCase().includes(nameFilter.value.toLowerCase())) {
+                    if (allRows[f].children[5].innerText.toLowerCase().includes(nameFilter.value.toLowerCase()) || allRows[f].children[8].innerText.toLowerCase().includes(nameFilter.value.toLowerCase())) {
                         allRows[f].style.display = 'table-row'
                     }else {
                         allRows[f].style.display = 'none'
