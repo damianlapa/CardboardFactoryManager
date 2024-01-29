@@ -504,6 +504,7 @@ class AbsencesList(PermissionRequiredMixin, View):
 
         user = request.user
         visit_counter(user, 'absences')
+        print(request.GET)
 
         def month_days_function(month_and_year):
             if month_and_year.month in (1, 3, 5, 7, 8, 10, 12):
@@ -590,6 +591,24 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            contracts = Contract.objects.all()
+            workers_temp = []
+            for c in contracts:
+                if request.GET.get('uz') == 'yes':
+                    if c.type == 'UZ':
+                        workers_temp.append(c.worker)
+                elif request.GET.get('fz') == 'yes':
+                    if c.type == 'FZ':
+                        workers_temp.append(c.worker)
+                else:
+                    if c.type == 'UOP':
+                        workers_temp.append(c.worker)
+            workers_ = []
+            for w in workers_temp:
+                if w in workers:
+                    if w not in workers_:
+                        workers_.append(w)
+            workers = workers_
         else:
             try:
                 workers = [Person.objects.get(user=request.user)]
@@ -599,15 +618,6 @@ class AbsencesList(PermissionRequiredMixin, View):
         mcp_month = months.index(month_year[0]) + 1
         mcp_year = month_year[1]
 
-        print(mcp_month, mcp_year)
-
-        '''to_delete = []
-        for worker in workers:
-            if worker.job_end:
-                if worker.job_end < datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
-                    to_delete.append(worker.id)
-                    print(worker.first_name, worker.last_name)
-        workers.filter(id__in=to_delete).delete()'''
         absences = Absence.objects.all()
 
         a = datetime.datetime.strftime(month_date, '%d-%m-%Y')
@@ -643,8 +653,6 @@ class AbsencesList(PermissionRequiredMixin, View):
                 month_year = str(start_date_str.month) + ' ' + str(start_date_str.year)
 
             return months_list
-
-        print(next_month)
 
         if datetime.date.today().month != 12:
             end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
@@ -2659,6 +2667,23 @@ class MonthlyCardPresenceAll(View):
                 some_list[num] = ''
 
         workers = Person.active_workers_at_month(int(year), int(month))
+
+        if request.GET.get('uop') == '+':
+            contracts = Contract.objects.all(type='UOP')
+            workers = []
+            for c in contracts:
+                workers.append(c.worker)
+        if request.GET.get('uz') == '+':
+            contracts = Contract.objects.all(type='UZ')
+            workers = []
+            for c in contracts:
+                workers.append(c.worker)
+        if request.GET.get('fz') == '+':
+            contracts = Contract.objects.all(type='FZ')
+            workers = []
+            for c in contracts:
+                workers.append(c.worker)
+
 
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')

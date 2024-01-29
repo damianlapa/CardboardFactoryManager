@@ -119,7 +119,8 @@ POLYMERS_PRODUCERS = (
 
 CONTRACT_TYPES = (
     ('UOP', 'Umowa o pracę'),
-    ('UZ', 'Umowa zlecenie')
+    ('UZ', 'Umowa zlecenie'),
+    ('FZ', 'Firma zewnętrzna')
 )
 
 OCCUPANCY_TYPE = (
