@@ -591,18 +591,21 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
-            contracts = Contract.objects.all()
+            contracts = Contract.objects.filter(date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            # contracts = contracts.exclude(date_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
             workers_temp = []
             for c in contracts:
-                if request.GET.get('uz') == 'yes':
-                    if c.type == 'UZ':
-                        workers_temp.append(c.worker)
-                elif request.GET.get('fz') == 'yes':
-                    if c.type == 'FZ':
-                        workers_temp.append(c.worker)
-                else:
-                    if c.type == 'UOP':
-                        workers_temp.append(c.worker)
+                print(c)
+                if not c.date_end or c.date_end >= datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
+                    if request.GET.get('uz') == 'yes':
+                        if c.type == 'UZ':
+                            workers_temp.append(c.worker)
+                    elif request.GET.get('fz') == 'yes':
+                        if c.type == 'FZ':
+                            workers_temp.append(c.worker)
+                    else:
+                        if c.type == 'UOP':
+                            workers_temp.append(c.worker)
             workers_ = []
             for w in workers_temp:
                 if w in workers:
