@@ -786,6 +786,9 @@ class Contract(models.Model):
     salary = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     extra_info = models.CharField(max_length=255, null=True, blank=True)
 
+    class Meta:
+        ordering = ['worker', 'date_end']
+
     def get_absolute_url(self):
         return reverse('person-details', kwargs={'person_id': self.worker.id})
 
