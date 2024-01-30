@@ -2670,19 +2670,19 @@ class MonthlyCardPresenceAll(View):
 
         workers = Person.active_workers_at_month(int(year), int(month))
 
-        if request.GET.get('uop') == '+':
+        if request.GET.get('uop') == 'yes':
             contracts = Contract.contracts_during_the_month(month, year, 'UOP')
             workers = []
             for c in contracts:
                 if c.worker not in workers:
                     workers.append(c.worker)
-        if request.GET.get('uz') == '+':
+        if request.GET.get('uz') == 'yes':
             contracts = Contract.contracts_during_the_month(month, year, 'UZ')
             workers = []
             for c in contracts:
                 if c.worker not in workers:
                     workers.append(c.worker)
-        if request.GET.get('fz') == '+':
+        if request.GET.get('fz') == 'yes':
             contracts = Contract.contracts_during_the_month(month, year, 'FZ')
             workers = []
             for c in contracts:
