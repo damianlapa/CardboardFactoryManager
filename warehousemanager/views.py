@@ -595,7 +595,6 @@ class AbsencesList(PermissionRequiredMixin, View):
             # contracts = contracts.exclude(date_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
             workers_temp = []
             for c in contracts:
-                print(c)
                 if not c.date_end or c.date_end >= datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
                     if request.GET.get('uz') == 'yes':
                         if c.type == 'UZ':
@@ -2672,20 +2671,23 @@ class MonthlyCardPresenceAll(View):
         workers = Person.active_workers_at_month(int(year), int(month))
 
         if request.GET.get('uop') == '+':
-            contracts = Contract.objects.all(type='UOP')
+            contracts = Contract.contracts_during_the_month(month, year, 'UOP')
             workers = []
             for c in contracts:
-                workers.append(c.worker)
+                if c.worker not in workers:
+                    workers.append(c.worker)
         if request.GET.get('uz') == '+':
-            contracts = Contract.objects.all(type='UZ')
+            contracts = Contract.contracts_during_the_month(month, year, 'UZ')
             workers = []
             for c in contracts:
-                workers.append(c.worker)
+                if c.worker not in workers:
+                    workers.append(c.worker)
         if request.GET.get('fz') == '+':
-            contracts = Contract.objects.all(type='FZ')
+            contracts = Contract.contracts_during_the_month(month, year, 'FZ')
             workers = []
             for c in contracts:
-                workers.append(c.worker)
+                if c.worker not in workers:
+                    workers.append(c.worker)
 
 
         # Create a Django response object, and specify content_type as pdf
@@ -2703,8 +2705,6 @@ class MonthlyCardPresenceAll(View):
 
         now = datetime.datetime.now()
 
-        summary = [0 for _ in range(19)]
-
         month = int(month)
 
         if month == 2:
@@ -2718,6 +2718,7 @@ class MonthlyCardPresenceAll(View):
         date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
 
         for worker in workers:
+            summary = [0 for _ in range(19)]
 
             data = []
 

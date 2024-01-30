@@ -795,6 +795,31 @@ class Contract(models.Model):
         else:
             return f'{self.worker} - {self.position} ({self.date_start} - ∞)'
 
+    @classmethod
+    def contracts_during_the_month(cls, month=None, year=None, contract_type=None):
+        from calendar import monthrange
+        if not month:
+            month = datetime.datetime.today().month
+        if not year:
+            year = datetime.datetime.today().year
+        contracts = cls.objects.filter(date_start__lte=datetime.date(year, month, monthrange(year, month)[1]))
+        temp_contracts = []
+        for contract in contracts:
+            if not contract.date_end:
+                if not contract_type:
+                    temp_contracts.append(contract)
+                elif contract.type == contract_type:
+                    temp_contracts.append(contract)
+            else:
+                if contract.date_end >= datetime.date(year, month, 1):
+                    if not contract_type:
+                        temp_contracts.append(contract)
+                    elif contract.type == contract_type:
+                        temp_contracts.append(contract)
+
+        return temp_contracts
+
+
 
 class Reminder(models.Model):
     worker = models.ForeignKey(Person, on_delete=models.CASCADE)
