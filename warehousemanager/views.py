@@ -18,6 +18,7 @@ from django.views.generic.list import ListView
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
 import io
+import calendar
 import os
 import sys
 import shutil
@@ -504,7 +505,6 @@ class AbsencesList(PermissionRequiredMixin, View):
 
         user = request.user
         visit_counter(user, 'absences')
-        print(request.GET)
 
         def month_days_function(month_and_year):
             if month_and_year.month in (1, 3, 5, 7, 8, 10, 12):
@@ -567,6 +567,8 @@ class AbsencesList(PermissionRequiredMixin, View):
 
         if not month:
             month = datetime.date.today()
+            month_num = month.month
+            year_num = month.year
             aa = today_month()
             month_date = datetime.datetime.today()
             day_num = month_date.day
@@ -574,6 +576,8 @@ class AbsencesList(PermissionRequiredMixin, View):
         else:
             aa = month
             month_split = month.split()
+            month_num = months.index(month_split[0]) + 1
+            year_num = int(month_split[1])
             new_date = f'01-{months.index(month_split[0]) + 1}-{month_split[1]}'
             month_date = datetime.datetime.strptime(new_date, '%d-%m-%Y')
             if month_date.month == datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
@@ -591,7 +595,7 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
-            contracts = Contract.objects.filter(date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            contracts = Contract.objects.filter(date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, calendar.monthrange(year_num, month_num)[1]))
             # contracts = contracts.exclude(date_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
             workers_temp = []
             for c in contracts:
