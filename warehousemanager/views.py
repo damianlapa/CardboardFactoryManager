@@ -836,6 +836,8 @@ class AbsenceAdd(PermissionRequiredMixin, View):
         short_absence_form = AbsenceForm(request.POST)
         extra_hours_form = ExtraHoursForm(request.POST)
 
+        print(request.POST)
+
         if extra_hours_form.is_valid():
             worker = extra_hours_form.cleaned_data['worker']
             extras_date = extra_hours_form.cleaned_data['extras_date']
@@ -907,6 +909,7 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             last_day = request.POST.get('last_day')
             absence_type = request.POST.get('type')
             additional_info = request.POST.get('additional_info')
+            print(additional_info)
 
             worker_s = worker.split()
             worker_object = Person.objects.filter(first_name=worker_s[0], last_name=worker_s[1])[0]
@@ -940,7 +943,7 @@ class AbsenceAdd(PermissionRequiredMixin, View):
                     first_day_date = first_day_date + datetime.timedelta(days=1)
                     if first_day_date == last_day_date:
                         new_absence = Absence(worker=worker_object, absence_date=first_day_date,
-                                              absence_type=absence_type)
+                                              absence_type=absence_type, additional_info=additional_info)
                         new_absence.save()
                 else:
                     break
