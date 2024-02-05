@@ -906,6 +906,7 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             first_day = request.POST.get('first_day')
             last_day = request.POST.get('last_day')
             absence_type = request.POST.get('type')
+            additional_info = request.POST.get('additional_info')
 
             worker_s = worker.split()
             worker_object = Person.objects.filter(first_name=worker_s[0], last_name=worker_s[1])[0]
@@ -916,17 +917,26 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             while first_day_date != last_day_date:
                 if safety_counter < 15:
                     safety_counter += 1
-                    if first_day_date.weekday() < 5:
-                        new_absence = Absence(worker=worker_object, absence_date=first_day_date,
-                                              absence_type=absence_type)
+                    if absence_type == 'IN':
+                        if additional_info:
+                            new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                  absence_type=absence_type, additional_info=additional_info)
+                        else:
+                            new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                  absence_type=absence_type)
                         new_absence.save()
                     else:
-                        if absence_type == 'CH':
+                        if first_day_date.weekday() < 5:
                             new_absence = Absence(worker=worker_object, absence_date=first_day_date,
                                                   absence_type=absence_type)
                             new_absence.save()
                         else:
-                            pass
+                            if absence_type == 'CH':
+                                new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                      absence_type=absence_type)
+                                new_absence.save()
+                            else:
+                                pass
                     first_day_date = first_day_date + datetime.timedelta(days=1)
                     if first_day_date == last_day_date:
                         new_absence = Absence(worker=worker_object, absence_date=first_day_date,
