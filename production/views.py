@@ -939,12 +939,30 @@ class ChangeAllOrdersCustom(View):
         result = ''
         all_orders = ProductionOrder.objects.all()
         for a in all_orders:
-            if date <= a.add_date.date() <= date + datetime.timedelta(days=period):
+            if date:
+                if date <= a.add_date.date() <= date + datetime.timedelta(days=period):
+                    row = ''
+                    if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                        row += a.id_number + ' --->>> '
+                        a.id_number = f'{prefix} ' + a.id_number
+                        row += a.id_number
+                        result += row + '<br />'
+                        a.save()
+            else:
                 row = ''
-                if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
-                    row += a.id_number + ' --->>> '
-                    a.id_number = f'{prefix} ' + a.id_number
-                    row += a.id_number
-                    result += row + '<br />'
-                    a.save()
+                if a.add_date:
+                    if a.add_date.date() < datetime.date(2024, 1, 1):
+                        if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                            row += a.id_number + ' --->>> '
+                            a.id_number = f'{prefix} ' + a.id_number
+                            row += a.id_number
+                            result += row + '<br />'
+                            a.save()
+                else:
+                    if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                        row += a.id_number + ' --->>> '
+                        a.id_number = f'{prefix} ' + a.id_number
+                        row += a.id_number
+                        result += row + '<br />'
+                        a.save()
         return HttpResponse(result)
