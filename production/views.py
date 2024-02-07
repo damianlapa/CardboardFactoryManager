@@ -939,7 +939,7 @@ class ChangeAllOrdersCustom(View):
         result = ''
         all_orders = ProductionOrder.objects.all()
         for a in all_orders:
-            if a.add_date >= date and a.add_date <= date + datetime.timedelta(days=period):
+            if date <= a.add_date.date() <= date + datetime.timedelta(days=period):
                 row = ''
                 if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
                     row += a.id_number + ' --->>> '
