@@ -966,3 +966,17 @@ class ChangeAllOrdersCustom(View):
                         result += row + '<br />'
                         a.save()
         return HttpResponse(result)
+
+
+class ChangeManyOrdersStatus(View):
+    def get(self, request):
+        all_orders = ProductionOrder.objects.all()
+        result = ''
+
+        for o in all_orders:
+            if o.status == 'UNCOMPLETED' and o.id_number[:6] == '(2023)':
+                o.status = 'ARCHIVED'
+                result += f'{o} [[ {o.id_number} ]]<br />'
+                o.save()
+
+        return HttpResponse(result)
