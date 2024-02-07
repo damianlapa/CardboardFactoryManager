@@ -166,9 +166,6 @@ class WorkStationDetails(View):
         other_units = units.filter(status='NOT STARTED').order_by('order')
         history_units = units.filter(status='FINISHED').order_by('-end')
 
-        print('%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$')
-        print(station.workstation_occupancy(datetime.datetime.strptime('2022-06-01', '%Y-%m-%d'), datetime.datetime.strptime('2022-06-30', '%Y-%m-%d')))
-
         return render(request, 'production/workstation-details.html', locals())
 
 
@@ -918,3 +915,36 @@ class ChangeAllOrders(View):
                 a.save()
 
         return HttpResponse('Done!')
+
+
+class ChangeAllOrdersCustom(View):
+    def get(self, request):
+        prefix = request.GET.get('prefix')
+        suffix = request.GET.get('suffix')
+        year = request.GET.get('year')
+        month = request.GET.get('month')
+        day = request.GET.get('day')
+        period = request.GET.get('period')
+        if all((year, month, day)):
+            year = int(year)
+            month = int(month)
+            day = int(day)
+            date = datetime.date(year, month, day)
+        else:
+            date = None
+        if not period:
+            period = 365
+        else:
+            period = int(period)
+        result = ''
+        all_orders = ProductionOrder.objects.all()
+        for a in all_orders:
+            if a.add_date >= date and a.add_date <= date + datetime.timedelta(days=period):
+                row = ''
+                if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                    row += a.id_number + ' --->>> '
+                    a.id_number = f'{prefix} ' + a.id_number
+                    row += a.id_number
+                    result += row + '<br />'
+                    a.save()
+        return HttpResponse(result)
