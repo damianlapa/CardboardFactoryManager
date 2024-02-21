@@ -262,7 +262,7 @@ def create_or_send_reminder(worker, days_left, topic):
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
                     reminder.save()
-            except ObjectDoesNotExist:
+            except IndexError:
                 Reminder.objects.create(worker=worker, title=f'{topic}*0*{date}', create_date=datetime.date.today())
         elif 8 > days_left > 0:
             try:
@@ -272,7 +272,7 @@ def create_or_send_reminder(worker, days_left, topic):
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
                     reminder.save()
-            except ObjectDoesNotExist:
+            except IndexError:
                 Reminder.objects.create(worker=worker, title=f'{topic}*7*{date}', create_date=datetime.date.today())
         elif 29 > days_left > 7:
             try:
@@ -282,7 +282,7 @@ def create_or_send_reminder(worker, days_left, topic):
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
                     reminder.save()
-            except ObjectDoesNotExist:
+            except IndexError:
                 Reminder.objects.create(worker=worker, title=f'{topic}*28*{date}', create_date=datetime.date.today())
 
 
