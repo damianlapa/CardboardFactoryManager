@@ -920,6 +920,7 @@ class ChangeAllOrders(View):
         return HttpResponse('Done!')
 
 
+
 class ChangeOrderQuantity(View):
     def get(self, request):
         order_id = request.GET.get('order_id')
@@ -931,3 +932,67 @@ class ChangeOrderQuantity(View):
         order.save()
 
         return HttpResponse('OK')
+      
+class ChangeAllOrdersCustom(View):
+    def get(self, request):
+        prefix = request.GET.get('prefix')
+        suffix = request.GET.get('suffix')
+        year = request.GET.get('year')
+        month = request.GET.get('month')
+        day = request.GET.get('day')
+        period = request.GET.get('period')
+        if all((year, month, day)):
+            year = int(year)
+            month = int(month)
+            day = int(day)
+            date = datetime.date(year, month, day)
+        else:
+            date = None
+        if not period:
+            period = 365
+        else:
+            period = int(period)
+        result = ''
+        all_orders = ProductionOrder.objects.all()
+        for a in all_orders:
+            if date:
+                if date <= a.add_date.date() <= date + datetime.timedelta(days=period):
+                    row = ''
+                    if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                        row += a.id_number + ' --->>> '
+                        a.id_number = f'{prefix} ' + a.id_number
+                        row += a.id_number
+                        result += row + '<br />'
+                        a.save()
+            else:
+                row = ''
+                if a.add_date:
+                    if a.add_date.date() < datetime.date(2024, 1, 1):
+                        if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                            row += a.id_number + ' --->>> '
+                            a.id_number = f'{prefix} ' + a.id_number
+                            row += a.id_number
+                            result += row + '<br />'
+                            a.save()
+                else:
+                    if a.id_number[:len(prefix)] != prefix and a.id_number[:2] != '(2':
+                        row += a.id_number + ' --->>> '
+                        a.id_number = f'{prefix} ' + a.id_number
+                        row += a.id_number
+                        result += row + '<br />'
+                        a.save()
+        return HttpResponse(result)
+
+
+class ChangeManyOrdersStatus(View):
+    def get(self, request):
+        all_orders = ProductionOrder.objects.all()
+        result = ''
+
+        for o in all_orders:
+            if o.status == 'UNCOMPLETED' and o.id_number[:6] == '(2023)':
+                o.status = 'ARCHIVED'
+                result += f'{o} [[ {o.id_number} ]]<br />'
+                o.save()
+
+        return HttpResponse(result)

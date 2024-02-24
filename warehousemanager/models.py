@@ -120,7 +120,8 @@ POLYMERS_PRODUCERS = (
 
 CONTRACT_TYPES = (
     ('UOP', 'Umowa o pracę'),
-    ('UZ', 'Umowa zlecenie')
+    ('UZ', 'Umowa zlecenie'),
+    ('FZ', 'Firma zewnętrzna')
 )
 
 OCCUPANCY_TYPE = (
@@ -786,6 +787,9 @@ class Contract(models.Model):
     salary = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     extra_info = models.CharField(max_length=255, null=True, blank=True)
 
+    class Meta:
+        ordering = ['worker', 'date_end']
+
     def get_absolute_url(self):
         return reverse('person-details', kwargs={'person_id': self.worker.id})
 
@@ -794,6 +798,31 @@ class Contract(models.Model):
             return f'{self.worker} - {self.position} ({self.date_start} - {self.date_end})'
         else:
             return f'{self.worker} - {self.position} ({self.date_start} - ∞)'
+
+    @classmethod
+    def contracts_during_the_month(cls, month=None, year=None, contract_type=None):
+        from calendar import monthrange
+        if not month:
+            month = datetime.datetime.today().month
+        if not year:
+            year = datetime.datetime.today().year
+        contracts = cls.objects.filter(date_start__lte=datetime.date(year, month, monthrange(year, month)[1]))
+        temp_contracts = []
+        for contract in contracts:
+            if not contract.date_end:
+                if not contract_type:
+                    temp_contracts.append(contract)
+                elif contract.type == contract_type:
+                    temp_contracts.append(contract)
+            else:
+                if contract.date_end >= datetime.date(year, month, 1):
+                    if not contract_type:
+                        temp_contracts.append(contract)
+                    elif contract.type == contract_type:
+                        temp_contracts.append(contract)
+
+        return temp_contracts
+
 
 
 class Reminder(models.Model):

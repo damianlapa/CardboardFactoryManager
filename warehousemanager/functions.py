@@ -256,33 +256,33 @@ def create_or_send_reminder(worker, days_left, topic):
         date = datetime.date.strftime(date, '%Y-%m-%d')
         if days_left == 0:
             try:
-                reminder = Reminder.objects.get(worker=worker, title=f'{topic}*0*{date}')
+                reminder = Reminder.objects.filter(worker=worker, title=f'{topic}*0*{date}')[0]
                 if not reminder.sent_date:
                     title, text = compose_mail(reminder)
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
                     reminder.save()
-            except ObjectDoesNotExist:
+            except IndexError:
                 Reminder.objects.create(worker=worker, title=f'{topic}*0*{date}', create_date=datetime.date.today())
         elif 8 > days_left > 0:
             try:
-                reminder = Reminder.objects.get(worker=worker, title=f'{topic}*7*{date}')
+                reminder = Reminder.objects.filter(worker=worker, title=f'{topic}*7*{date}')[0]
                 if not reminder.sent_date:
                     # title, text = compose_mail(reminder)
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
                     reminder.save()
-            except ObjectDoesNotExist:
+            except IndexError:
                 Reminder.objects.create(worker=worker, title=f'{topic}*7*{date}', create_date=datetime.date.today())
         elif 29 > days_left > 7:
             try:
-                reminder = Reminder.objects.get(worker=worker, title=f'{topic}*28*{date}')
+                reminder = Reminder.objects.filter(worker=worker, title=f'{topic}*28*{date}')[0]
                 if not reminder.sent_date:
                     title, text = compose_mail(reminder)
                     # send_mail(title, '', '', [os.environ.get('MAIL_RECIPIENT')], html_message=text)
                     # reminder.sent_date = datetime.date.today()
                     reminder.save()
-            except ObjectDoesNotExist:
+            except IndexError:
                 Reminder.objects.create(worker=worker, title=f'{topic}*28*{date}', create_date=datetime.date.today())
 
 

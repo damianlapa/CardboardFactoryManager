@@ -18,6 +18,7 @@ from django.views.generic.list import ListView
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
 import io
+import calendar
 import os
 import sys
 import shutil
@@ -565,6 +566,8 @@ class AbsencesList(PermissionRequiredMixin, View):
 
         if not month:
             month = datetime.date.today()
+            month_num = month.month
+            year_num = month.year
             aa = today_month()
             month_date = datetime.datetime.today()
             day_num = month_date.day
@@ -572,6 +575,8 @@ class AbsencesList(PermissionRequiredMixin, View):
         else:
             aa = month
             month_split = month.split()
+            month_num = months.index(month_split[0]) + 1
+            year_num = int(month_split[1])
             new_date = f'01-{months.index(month_split[0]) + 1}-{month_split[1]}'
             month_date = datetime.datetime.strptime(new_date, '%d-%m-%Y')
             if month_date.month == datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
@@ -589,6 +594,26 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            contracts = Contract.objects.filter(date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, calendar.monthrange(year_num, month_num)[1]))
+            # contracts = contracts.exclude(date_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            workers_temp = []
+            for c in contracts:
+                if not c.date_end or c.date_end >= datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
+                    if request.GET.get('uz') == 'yes':
+                        if c.type == 'UZ':
+                            workers_temp.append(c.worker)
+                    elif request.GET.get('fz') == 'yes':
+                        if c.type == 'FZ':
+                            workers_temp.append(c.worker)
+                    else:
+                        if c.type == 'UOP':
+                            workers_temp.append(c.worker)
+            workers_ = []
+            for w in workers_temp:
+                if w in workers:
+                    if w not in workers_:
+                        workers_.append(w)
+            workers = workers_
         else:
             try:
                 workers = [Person.objects.get(user=request.user)]
@@ -598,15 +623,6 @@ class AbsencesList(PermissionRequiredMixin, View):
         mcp_month = months.index(month_year[0]) + 1
         mcp_year = month_year[1]
 
-        print(mcp_month, mcp_year)
-
-        '''to_delete = []
-        for worker in workers:
-            if worker.job_end:
-                if worker.job_end < datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
-                    to_delete.append(worker.id)
-                    print(worker.first_name, worker.last_name)
-        workers.filter(id__in=to_delete).delete()'''
         absences = Absence.objects.all()
 
         a = datetime.datetime.strftime(month_date, '%d-%m-%Y')
@@ -642,8 +658,6 @@ class AbsencesList(PermissionRequiredMixin, View):
                 month_year = str(start_date_str.month) + ' ' + str(start_date_str.year)
 
             return months_list
-
-        print(next_month)
 
         if datetime.date.today().month != 12:
             end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
@@ -821,6 +835,8 @@ class AbsenceAdd(PermissionRequiredMixin, View):
         short_absence_form = AbsenceForm(request.POST)
         extra_hours_form = ExtraHoursForm(request.POST)
 
+        print(request.POST)
+
         if extra_hours_form.is_valid():
             worker = extra_hours_form.cleaned_data['worker']
             extras_date = extra_hours_form.cleaned_data['extras_date']
@@ -891,6 +907,8 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             first_day = request.POST.get('first_day')
             last_day = request.POST.get('last_day')
             absence_type = request.POST.get('type')
+            additional_info = request.POST.get('additional_info')
+            print(additional_info)
 
             worker_s = worker.split()
             worker_object = Person.objects.filter(first_name=worker_s[0], last_name=worker_s[1])[0]
@@ -901,21 +919,30 @@ class AbsenceAdd(PermissionRequiredMixin, View):
             while first_day_date != last_day_date:
                 if safety_counter < 15:
                     safety_counter += 1
-                    if first_day_date.weekday() < 5:
-                        new_absence = Absence(worker=worker_object, absence_date=first_day_date,
-                                              absence_type=absence_type)
+                    if absence_type == 'IN':
+                        if additional_info:
+                            new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                  absence_type=absence_type, additional_info=additional_info)
+                        else:
+                            new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                  absence_type=absence_type)
                         new_absence.save()
                     else:
-                        if absence_type == 'CH':
+                        if first_day_date.weekday() < 5:
                             new_absence = Absence(worker=worker_object, absence_date=first_day_date,
                                                   absence_type=absence_type)
                             new_absence.save()
                         else:
-                            pass
+                            if absence_type == 'CH':
+                                new_absence = Absence(worker=worker_object, absence_date=first_day_date,
+                                                      absence_type=absence_type)
+                                new_absence.save()
+                            else:
+                                pass
                     first_day_date = first_day_date + datetime.timedelta(days=1)
                     if first_day_date == last_day_date:
                         new_absence = Absence(worker=worker_object, absence_date=first_day_date,
-                                              absence_type=absence_type)
+                                              absence_type=absence_type, additional_info=additional_info)
                         new_absence.save()
                 else:
                     break
@@ -2680,6 +2707,26 @@ class MonthlyCardPresenceAll(View):
 
         workers = Person.active_workers_at_month(int(year), int(month))
 
+        if request.GET.get('uop') == 'yes':
+            contracts = Contract.contracts_during_the_month(month, year, 'UOP')
+            workers = []
+            for c in contracts:
+                if c.worker not in workers:
+                    workers.append(c.worker)
+        if request.GET.get('uz') == 'yes':
+            contracts = Contract.contracts_during_the_month(month, year, 'UZ')
+            workers = []
+            for c in contracts:
+                if c.worker not in workers:
+                    workers.append(c.worker)
+        if request.GET.get('fz') == 'yes':
+            contracts = Contract.contracts_during_the_month(month, year, 'FZ')
+            workers = []
+            for c in contracts:
+                if c.worker not in workers:
+                    workers.append(c.worker)
+
+
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'filename="{year}-{month} timetable.pdf"'
@@ -2708,6 +2755,7 @@ class MonthlyCardPresenceAll(View):
         date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
 
         for worker in workers:
+            summary = [0 for _ in range(19)]
 
             summary = [0 for _ in range(19)]
 
