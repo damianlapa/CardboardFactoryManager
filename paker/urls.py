@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('production/', include('production.urls')),
     path('orders/', include('orders.urls')),
+    path('deliveries/', include('deliveries.urls')),
 
     path('admin/', admin.site.urls, name='admin'),
     path('print-test/', PrintTest.as_view(), name='print-test'),
@@ -175,6 +176,12 @@ urlpatterns += [
 urlpatterns += [
     path('mcp/<int:year>/<int:month>/<int:worker_id>/', MonthlyCardPresence.as_view(), name='mcp'),
     path('mcpa/<int:year>/<int:month>/', MonthlyCardPresenceAll.as_view(), name='mcpa')
+]
+
+# work reminders
+urlpatterns += [
+    path('workreminders/', WorkRemindersView.as_view(), name='workreminders'),
+    path('/workreminders/add/', WorkReminderAdd.as_view(), name='workreminders-add')
 ]
 
 if settings.DEBUG:

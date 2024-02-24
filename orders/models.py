@@ -1,4 +1,5 @@
 from django.db import models
+from warehousemanager.models import Buyer
 
 import datetime
 
@@ -40,11 +41,11 @@ CARDBOARD_LAYERS = (
 
 
 class Supplier(models.Model):
-    name = models.CharField(max_length=64)
-    shortcut = models.CharField(max_length=8)
+    name = models.CharField(max_length=64, unique=True)
+    shortcut = models.CharField(max_length=8, unique=True)
 
     def __str__(self):
-        return f'{self.shortcut}'
+        return f'{self.name}({self.shortcut})'
 
 
 class Cardboard(models.Model):
@@ -53,27 +54,53 @@ class Cardboard(models.Model):
     layers = models.CharField(max_length=1, choices=CARDBOARD_LAYERS)
     wave = models.CharField(max_length=8, choices=CARDBOARD_TYPES)
     grammage = models.IntegerField()
+    ect = models.DecimalField(max_digits=4, decimal_places=2)
 
     def __str__(self):
         return f'{self.supplier.shortcut}|{self.designation}|{self.grammage}|{self.ect}'
 
 
-class CardboardPrice(models.Model):
-    cardboard = models.ForeignKey(Cardboard, on_delete=models.PROTECT)
-    price = models.IntegerField()
-    currency = models.CharField(max_length=16, default='PLN')
-    active_from = models.DateField(blank=True, null=True)
-    active_until = models.DateField(blank=True, null=True)
-
-    def is_active(self):
-        pass
+class Product(models.Model):
+    type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
+    description = models.CharField(max_length=256, default="")
+    dimensions = models.CharField(max_length=128, blank=True, null=True)
+    cardboard = models.ForeignKey(Cardboard, on_delete=models.PROTECT, null=True)
 
     def __str__(self):
-        return f'{self.cardboard.designation} - {self.price} {self.currency}'
+        return f'{self.type} {self.dimensions} {self.cardboard}'
 
+
+class ProductPrice(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    price = models.DecimalField(max_digits=6, decimal_places=3)
+
+    def __str__(self):
+        return f'{self.product} - {self.price}'
+
+
+class ProductSell(models.Model):
+    product_price = models.ForeignKey(ProductPrice, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    quantity = models.IntegerField()
+    date = models.DateField()
+
+
+class CardboardPurchase(models.Model):
+    date = models.DateField()
+    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
+    cardboard = models.ForeignKey(Cardboard, on_delete=models.PROTECT)
+    dimensions = models.CharField(max_length=16)
+    ordered_quantity = models.IntegerField()
+    delivered_quantity = models.IntegerField(blank=True, null=True)
+    price_1000 = models.IntegerField()
+
+    def __str__(self):
+        return f'{self.cardboard} - {self.ordered_quantity}'
+
+'''
 
 class Customer(models.Model):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, unique=True)
     shortcut = models.CharField(max_length=32, unique=True)
 
     def __str__(self):
@@ -89,14 +116,9 @@ class Order(models.Model):
         return f'{self.customer} - {self.date}'
 
 
-class Product(models.Model):
-    type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
-    description = models.CharField(max_length=256, default="")
-    dimensions = models.CharField(max_length=128, blank=True, null=True)
-    cardboard = models.CharField(max_length=16, choices=CARDBOARD_TYPES, blank=True, null=True)
 
-    def __str__(self):
-        return f'{self.type} {self.dimensions} {self.cardboard}'
+
+
 
 
 class OrderUnit(models.Model):
@@ -126,13 +148,4 @@ class DeliveryUnit(models.Model):
         return f'{self.delivery} {self.order_unit.order.customer} {self.order.product} q:{self.quantity}'
 
 
-class CardboardPurchase(models.Model):
-    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
-    cardboard = models.ForeignKey(Cardboard, on_delete=models.PROTECT)
-    dimensions = models.CharField(max_length=16)
-    ordered_quantity = models.IntegerField()
-    delivered_quantity = models.IntegerField(blank=True, null=True)
-    price_1000 = models.IntegerField()
-
-    def __str__(self):
-        return f'{self.cardboard} - {self.ordered_quantity}'
+'''

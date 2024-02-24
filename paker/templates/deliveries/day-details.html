@@ -1,0 +1,43 @@
+{% extends '__base2__.html' %}
+
+{% block title %}{{ day }} details{% endblock %}
+
+{% block content %}
+
+<h1 class="white">Day {{ date }} details</h1>
+
+<div style="margin: 5px;">
+<a href="{% url 'add-event' %}?day={{date}}">
+    <button class='aEventBTN' value="Add Event">Add Event</button>
+</a>
+    </div>
+<div style="margin: 5px;">
+<a href="{% url 'deliveries-calendar' %}">
+    <button class='navBTN' value="Calendar">Calendar</button>
+</a>
+    </div>
+
+<div class="day-details">
+    <table style="width: 100%">
+        <tr>
+            <th>ID</th>
+            <th>TYPE</th>
+            <th>TITLE</th>
+            <th>DETAILS</th>
+        </tr>
+        {% for event in events %}
+        <tr class="day-details-row" data-eventid="{{event.id}}">
+            <td>{{ event.id }}</td>
+            <td>{{ event.event_type }}</td>
+            <td>{{ event.title }}</td>
+            <td>{{ event.details }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/day-details.js' %}"></script>
+{% endblock %}

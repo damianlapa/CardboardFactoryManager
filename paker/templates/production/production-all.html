@@ -27,7 +27,12 @@
     <button class="production-order-btn">
         FINISHED
     </button>
+    <button class="production-order-btn">
+        ORDERED
+    </button>
 </div>
+
+<div><h2 style="color: white; display: inline">Number of orders: </h2><h1 id="orders-num" style="color: darkgrey; display: inline">{{ number }}</h1></div>
 
 <div class="color-list">
     {% for po in production_orders %}
@@ -41,7 +46,7 @@
              data-dimensions="{{ po.dimensions }}"
              data-quantity="{{ po.quantity }}"
              data-notes="{{ po.notes }}"
-             class="production-order prod-item {% if po.status == 'PLANNED' %}bg-orange{% elif po.status == 'FINISHED' %}bg-green{% elif po.status == 'COMPLETED' %}bg-yellow{% endif %}">
+             class="production-order prod-item {% if po.status == 'PLANNED' %}bg-orange{% elif po.status == 'FINISHED' %}bg-green{% elif po.status == 'COMPLETED' %}bg-yellow{% elif po.status == 'ORDERED' %}bg-pink{% endif %}">
             <p>{{ po.id_number }}</p>
             <p>{{ po.customer }}</p>
             <p>{{ po.dimensions }}</p>

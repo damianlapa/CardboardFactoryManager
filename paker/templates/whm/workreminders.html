@@ -1,0 +1,23 @@
+{% extends '__base2__.html' %}
+{% block title %}Reminders{% endblock %}
+{% block content %}
+<hr>
+<a href="{% url 'workreminders-add' %}">
+<button>Add Reminder</button></a>
+<hr>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-around;">
+{% for r in reminders %}
+<div style="background: #FCEC71; border: 1px solid green; flex-basis: 45%; margin: 10px;">
+    <div style="display: flex; justify-content: space-between">
+        <p>{{ r.add_date|date:"d M Y H:m" }}</p>
+        <p>{{ r.alert_date }}</p>
+    </div>
+    <h2>{{ r.title }}</h2>
+    <p>
+        {{ r.content|linebreaks }}
+    </p>
+</div>
+{% endfor %}
+</div>
+<hr>
+{% endblock %}

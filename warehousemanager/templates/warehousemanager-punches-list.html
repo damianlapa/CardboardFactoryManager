@@ -23,7 +23,7 @@
             {% for pt in punch_types %}
 
                 <div>
-                    <button class='fefco-type' value="{{ pt.0 }}">{{ pt.1 }}</button>
+                    <button class='fefco-type' value="{{ pt.0 }}" style="background: {{ pt.2 }}">{{ pt.1 }}</button>
                 </div>
             {% endfor %}
         </div>
@@ -63,6 +63,7 @@
             <th>NAZWA</th>
             <th>FALA</th>
             <th>FORMAT</th>
+            <th>KLIENCI</th>
         </tr>
         {% for p in punches %}
         <tr id="row{{ p.id }}" class="punch-row" data-punch_id="{{ p.id }}">
@@ -78,6 +79,11 @@
             {% else %}
                 <td>{{ p.size_two }}x{{ p.size_one }}</td>
             {% endif %}
+            <td>
+            {% for c in p.customers.all %}
+                {{ c }}<br>
+            {% endfor %}
+            </td>
         </tr>
         {% endfor %}
     </table>

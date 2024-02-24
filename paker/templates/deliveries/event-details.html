@@ -1,0 +1,39 @@
+{% extends '__base2__.html' %}
+
+{% block content %}
+
+<div style="margin: 5px;">
+<a href="{% url 'day-details' date=str_date %}">
+    <button class='aEventBTN' value="Back">Return back</button>
+</a>
+    </div>
+
+<div style="width: 75%;" class="center">
+    <div  style="width: 50%" class="center">
+    <table style="background: white; color: black; width:100% " class="center">
+        <tr>
+            <td>Event type</td>
+            <th>{{ event.event_type }}</th>
+        </tr>
+        <tr>
+            <td>Event day</td>
+            <th>{{ event.day }}</th>
+        </tr>
+        <tr>
+            <td>Event title</td>
+            <th>{{ event.title }}</th>
+        </tr>
+        <tr>
+            <td>Event details</td>
+            <th>{{ event.details }}</th>
+        </tr>
+    </table>
+        </div>
+</div>
+<a href="{% url 'event-edit' event_id=event.id %}">
+    <button class="monthNavButton">Edit</button>
+</a>
+<a href="{% url 'event-delete' event_id=event.id %}">
+    <button class="navBTN">DELETE</button>
+</a>
+{% endblock %}

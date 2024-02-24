@@ -422,8 +422,6 @@ input[type=button], input[type=submit], input[type=reset] {
 }
 
 .fefco-type {
-    background:linear-gradient(to bottom, #ffc477 5%, #fb9e25 100%);
-	background-color:#ffc477;
 	border-radius:6px;
 	border:1px solid #eeb44f;
 	display:inline-block;
@@ -438,8 +436,6 @@ input[type=button], input[type=submit], input[type=reset] {
 }
 
 .fefco-type-click {
-    background:linear-gradient(to bottom, white 5%, #FF6F00 100%);
-    background-color: #FF6F00;
     border: solid 2px red;
 
 }
@@ -1079,6 +1075,10 @@ select{
     background: yellow;
 }
 
+.bg-pink {
+    background: pink;
+}
+
 .bg-white {
     background: white;
 }
@@ -1093,6 +1093,14 @@ select{
 
 .bg-green {
     background: green;
+}
+
+.bg-blue {
+    background: blue;
+}
+
+.bg-black {
+    background: black;
 }
 
 .red {
@@ -1267,4 +1275,100 @@ input.right:focus {
 .productionButton:active {
 	position:relative;
 	top:1px;
+}
+
+.calendar-list {
+    width: 100%;
+    margin: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: grey;
+}
+
+.calendar-item {
+    margin: 0px;
+    padding: 0px;
+    border: double 1px black;
+    width: 14%;
+    height: 200px;
+    overflow: auto;
+    background: white;
+}
+
+.calendar-item:hover {
+    background: lightgrey;
+}
+
+.day-details-row {
+    color: red
+}
+
+.day-details-row:hover {
+    background: lightgrey
+}
+
+.button-block {
+    display: block;
+    width: 75%;
+    margin: 2%;
+    border-radius: 6px;
+    color: white;
+    }
+
+.day-details {
+    width: 95%;
+    background: white;
+    color: black;
+}
+
+.aEventBTN {
+	box-shadow: 0px 1px 0px 0px #f0f7fa;
+	background:linear-gradient(to bottom, #33bdef 5%, #019ad2 100%);
+	background-color:#33bdef;
+	border-radius:6px;
+	border:1px solid #057fd0;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+	padding:6px 24px;
+	text-decoration:none;
+	text-shadow:0px -1px 0px #5b6178;
+}
+.aEventBTN:hover {
+	background:linear-gradient(to bottom, #019ad2 5%, #33bdef 100%);
+	background-color:#019ad2;
+}
+.aEventBTN:active {
+	position:relative;
+	top:1px;
+}
+
+.navBTN {
+	box-shadow:inset 0px 39px 0px -24px #e67a73;
+	background-color:#e4685d;
+	border-radius:4px;
+	border:1px solid #ffffff;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	padding:6px 15px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #b23e35;
+}
+.navBTN:hover {
+	background-color:#eb675e;
+}
+.navBTN:active {
+	position:relative;
+	top:1px;
+}
+
+select#id_persons > option {
+    color: green;
 }

@@ -30,7 +30,6 @@ import datetime
 from warehousemanager.functions import *
 
 import subprocess
-# import models from warehousemanager app
 from warehousemanager.models import *
 from warehousemanager.forms import *
 
@@ -969,11 +968,24 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+        PUNCH_TYPES_COLORS = (
+            ('471', 'FEFCO 471', '#D49AE9'),
+            ('427', 'FEFCO 427', 'white'),
+            ('426', 'FEFCO 426', '#43E2C8'),
+            ('421', 'FEFCO 421', '#FFD8FF'),
+            ('201', 'FEFCO 201', 'orange'),
+            ('SWT', 'Spody, wieka, tacki', '#FF6CA7'),
+            ('KR', 'Krata', 'blue'),
+            ('NR', 'Narożnik', 'green'),
+            ('PDK', 'Pozostałe do klejenia', 'yellow'),
+            ('WK', 'Wkład', 'red'),
+            ('INNE', 'Inne', 'lightblue')
+        )
         user = request.user
         visit_counter(user, 'punches')
 
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
-        punch_types = PUNCH_TYPES
+        punch_types = PUNCH_TYPES_COLORS
         title = 'PUNCHES'
 
         return render(request, 'warehousemanager-punches-list.html', locals())
@@ -1017,6 +1029,9 @@ class PunchAdd(PermissionRequiredMixin, View):
                                              pressure_small=pressure_small, wave_direction=wave_direction, name=name,
                                              type_letter=type_letter)
 
+            for c in customers:
+                new_punch.customers.add(c)
+
             new_punch.save()
 
             return redirect('punches')
@@ -1051,7 +1066,7 @@ class PunchEdit(PermissionRequiredMixin, View):
 
         if punch_form.is_valid():
             punch_type = punch_form.cleaned_data['type']
-            type_letter = type_num = punch_form.cleaned_data['type_letter']
+            type_letter = punch_form.cleaned_data['type_letter']
             type_num = punch_form.cleaned_data['type_num']
             name = punch_form.cleaned_data['name']
             dimension_one = punch_form.cleaned_data['dimension_one']
@@ -1082,6 +1097,11 @@ class PunchEdit(PermissionRequiredMixin, View):
             edited_punch.wave_direction = wave_direction
             edited_punch.name = name
             edited_punch.type_letter = type_letter
+
+            edited_punch.customers.clear()
+
+            for c in customers:
+                edited_punch.customers.add(c)
 
             edited_punch.save()
 
@@ -2656,7 +2676,7 @@ class MonthlyCardPresence(View):
         logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
         font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
 
-        template_path = 'whm/workers-timetable.html'
+        template_path = 'whm/worker-timetable.html'
         context = locals()
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')
@@ -2709,7 +2729,7 @@ class MonthlyCardPresenceAll(View):
 
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'filename="report.pdf"'
+        response['Content-Disposition'] = f'filename="{year}-{month} timetable.pdf"'
         logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
         font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
 
@@ -2735,6 +2755,8 @@ class MonthlyCardPresenceAll(View):
         date_end = datetime.datetime.strptime(f'{year}-{month}-{days}', '%Y-%m-%d').date()
 
         for worker in workers:
+            summary = [0 for _ in range(19)]
+
             summary = [0 for _ in range(19)]
 
             data = []
@@ -2861,13 +2883,14 @@ class MonthlyCardPresenceAll(View):
                 # work end hour
                 day_end = day + datetime.timedelta(hours=15)
                 if extra_hours:
+                    print(extra_hours_value_h, extra_hours_value_m)
                     if day_info[1] not in ('So', 'Nd'):
                         if extra_hours_sign:
                             day_end += datetime.timedelta(hours=extra_hours_value_h)
                             day_end += datetime.timedelta(minutes=extra_hours_value_m)
                         else:
                             day_end -= datetime.timedelta(hours=8 - extra_hours_value_h)
-                            day_end -= datetime.timedelta(minutes=extra_hours_value_m)
+                            day_end += datetime.timedelta(minutes=extra_hours_value_m)
                     else:
                         day_end = day_start + datetime.timedelta(hours=extra_hours_value_h)
                         day_end += datetime.timedelta(minutes=extra_hours_value_m)
@@ -3019,3 +3042,30 @@ class MonthlyCardPresenceAll(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+class WorkRemindersView(View):
+    def get(self, request):
+        if request.GET.get('all') == '+':
+            reminders = WorkReminder.objects.all()
+        else:
+            reminders = WorkReminder.objects.filter(active=True)
+
+        return render(request, 'whm/workreminders.html', locals())
+
+
+class WorkReminderAdd(View):
+    def get(self, request):
+        form = WorkReminderForm()
+        return render(request, 'whm/workreminder-add.html', locals())
+
+    def post(self, request):
+        form = WorkReminderForm(request.POST)
+
+        if form.is_valid():
+            new_reminder = WorkReminder(**form.cleaned_data)
+            new_reminder.save()
+            return redirect('workreminders')
+
+        else:
+            pass

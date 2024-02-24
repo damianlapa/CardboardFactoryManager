@@ -78,7 +78,8 @@ class AllProductionOrders(View):
     def get(self, request):
         visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
-        production_orders = ProductionOrder.objects.all().order_by('id_number', 'dimensions')
+        production_orders = ProductionOrder.objects.all()
+        number = production_orders.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED')).count()
         return render(request, 'production/production-all.html', locals())
 
 
@@ -115,6 +116,7 @@ class AddProductionOrder(View):
             cardboard_dimensions = data['cardboard_dimensions']
             customer = data['customer']
             dimensions = data['dimensions']
+            ordered_quantity = data['ordered_quantity']
             quantity = data['quantity']
             status = data['status']
             notes = data['notes']
@@ -125,7 +127,7 @@ class AddProductionOrder(View):
             try:
                 ProductionOrder.objects.get(id_number=id_number)
             except ObjectDoesNotExist:
-                ProductionOrder.objects.create(id_number=id_number, cardboard=cardboard,
+                ProductionOrder.objects.create(ordered_quantity=ordered_quantity, id_number=id_number, cardboard=cardboard,
                                                cardboard_dimensions=cardboard_dimensions, customer=customer,
                                                dimensions=dimensions, quantity=quantity, status=status, notes=notes)
         return redirect('all-production-orders')
@@ -260,7 +262,8 @@ class AddProductionUnit(View):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
-        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1}, day=today)
+        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1, 'status': 'FINISHED'},
+                                  day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
     def post(self, request, order_id):
@@ -917,6 +920,19 @@ class ChangeAllOrders(View):
         return HttpResponse('Done!')
 
 
+
+class ChangeOrderQuantity(View):
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+        value = request.GET.get('value')
+        order_id = int(order_id)
+        value = int(value)
+        order = ProductionOrder.objects.get(id=order_id)
+        order.quantity = value
+        order.save()
+
+        return HttpResponse('OK')
+      
 class ChangeAllOrdersCustom(View):
     def get(self, request):
         prefix = request.GET.get('prefix')

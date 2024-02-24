@@ -1,0 +1,40 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center" class="white">{{ month_desc }}</h1>
+<div>
+<a href="{% url 'deliveries-calendar' %}?start={{p_month}}"><button class="navBTN">Previous month</button></a>
+<a href="{% url 'deliveries-calendar' %}?start={{n_month}}"><button class="navBTN">Next month</button></a>
+</div>
+
+<div style="margin: 5px;">
+<a href="{% url 'add-event' %}">
+    <button class='aEventBTN' value="Add Event">Add Event</button>
+</a>
+    </div>
+
+<div id="calendar" class="calendar-list">
+
+    {% for week in weeks %}
+        {% for day in week %}
+            {% if day.0 == today %}
+                <div class="calendar-item" data-calendar="{{day.1}}" style="background: lightgreen">
+                    <p style="text-align: right; padding: 0px; margin: 0px;">{{ day.0.day }}</p>
+                </div>
+            {% else %}
+                <div class="calendar-item" data-calendar="{{day.1}}">
+                    <p style="text-align: right; padding: 0px; margin: 0px;">{{ day.0.day }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/calendar.js' %}"></script>
+{% endblock %}

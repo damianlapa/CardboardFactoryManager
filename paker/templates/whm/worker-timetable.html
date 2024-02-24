@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="UTF-8">
+    <title>
+        {{ station }} Karta czasu pracy: {{ worker }}({{ date_start }} - {{ date_end }})
+    </title>
+
+    <style type="text/css">
+        @font-face {
+            font-family: Roboto;
+            src: url({{ font_url }}Roboto-Regular.ttf);
+        }
+
+        @font-face {
+            font-family: Roboto;
+            src: url({{ font_url }}Roboto-Bold.ttf);
+            font-weight: bold;
+        }
+        @page {
+        size: a4 landscape;
+        @frame content_frame {          /* Content Frame */
+            left: 50pt; width: 750pt; top: 10pt; height: 777pt;
+        }
+        @frame footer_frame {           /* Another static Frame */
+            -pdf-frame-content: footer_content;
+            left: 50pt; width: 512pt; top: 772pt; height: 20pt;
+        }
+    }
+
+        body {
+             font-family: "Roboto", sans-serif;
+             page-break-inside:auto;
+        }
+
+        td {
+            padding: 1px;
+            text-align: center;
+        }
+
+        h5 {
+            page-break-before:always;
+        }
+    </style>
+
+</head>
+<body>
+<table style="text-align: left;">
+    <tr>
+
+        <td  colspan="2" style="vertical-align: top; text-align: left; font-size: 10px;">
+            <span>Wygenerowano: {{ now|date:"d.m.Y, H:i:s" }}</span>
+        </td>
+        <td>
+            <img src="{{ logo_url }}">
+        </td>
+    </tr>
+</table>
+<hr>
+<table style="border: solid 1px black; font-size: 8px;">
+    <tr>
+        <td style="background-color: #cccccc" >
+            ROK
+        </td>
+        <td colspan="2" style="font-size: 14px;">
+            {{ year }}
+        </td>
+        <td style="background-color: #cccccc">
+            Miesiąc
+        </td>
+        <td colspan="2" style="font-size: 14px;">
+            {{ month }}
+        </td>
+        <td style="background-color: #cccccc">
+            Imię i nazwisko
+        </td>
+        <td colspan="4" style="font-size: 14px;">
+            {{ worker }}
+        </td>
+        <td style="background-color: #cccccc">
+            Stanowisko
+        </td>
+        <td colspan="2">
+
+        </td>
+        <td style="background-color: #cccccc" colspan="4">
+            Wymiar czasu pracy
+        </td>
+        <td>
+
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="background-color: #cccccc">
+            Oznaczenie dni
+        </td>
+        <td colspan="3" style="background-color: #cccccc">
+            Czas pracy
+        </td>
+        <td colspan="4" style="background-color: #cccccc">
+            Czas przepracowany w godzinach
+        </td>
+        <td colspan="10" style="background-color: #cccccc">
+            Czas nieobecności w pracy w dniach
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Dzień miesiąca
+        </td>
+        <td>
+            Dzień tygodnia
+        </td>
+        <td>
+            Godzina rozpoczęcia
+        </td>
+        <td>
+            Godzina zakończenia
+        </td>
+        <td>
+            Ilość godzin
+        </td>
+        <td>
+            Niedziele i święta
+        </td>
+        <td>
+            W dodatkowe dni wolne
+        </td>
+        <td>
+            W porze nocnej
+        </td>
+        <td>
+            W godzinach
+            nadliczbowych
+        </td>
+        <td>
+            Uw
+        </td>
+        <td>
+            UWż
+        </td>
+        <td>
+            Kw
+        </td>
+        <td>
+            Uok
+        </td>
+        <td>
+            Ub
+        </td>
+        <td>
+            Op
+        </td>
+        <td>
+            L4
+        </td>
+        <td>
+            IZ
+        </td>
+        <td>
+            NN
+        </td>
+        <td>
+            Inne
+        </td>
+    </tr>
+    {% for d in days_data_expanded %}
+    <tr style="background-color: {{ d.19 }}">
+        <td>
+            {{ d.0 }}
+        </td>
+        <td>
+            {{ d.1 }}
+        </td>
+        <td>
+            {{ d.2 }}
+        </td>
+        <td>
+            {{ d.3 }}
+        </td>
+        <td>
+            {{ d.4 }}
+        </td>
+        <td>
+            {{ d.5 }}
+        </td>
+        <td>
+            {{ d.6 }}
+        </td>
+        <td>
+            {{ d.7 }}
+        </td>
+        <td>
+            {{ d.8 }}
+        </td>
+        <td>
+            {{ d.9 }}
+        </td>
+        <td>
+            {{ d.10 }}
+        </td>
+        <td>
+            {{ d.11 }}
+        </td>
+        <td>
+            {{ d.12 }}
+        </td>
+        <td>
+            {{ d.13 }}
+        </td>
+        <td>
+            {{ d.14 }}
+        </td>
+        <td>
+            {{ d.15 }}
+        </td>
+        <td>
+            {{ d.16 }}
+        </td>
+        <td>
+            {{ d.17 }}
+        </td>
+        <td>
+            {{ d.18 }}
+        </td>
+    </tr>
+    {% endfor %}
+    <tr>
+        <td style="border: solid 2px black; font-size: 14px;" colspan="4">
+            RAZEM
+        </td>
+        <td>
+            {{ summary.4 }}
+        </td>
+        <td>
+            {{ summary.5 }}
+        </td>
+        <td>
+            {{ summary.6 }}
+        </td>
+        <td>
+            {{ summary.7 }}
+        </td>
+        <td>
+            {{ summary.8 }}
+        </td>
+        <td>
+            {{ summary.9 }}
+        </td>
+        <td>
+            {{ summary.10 }}
+        </td>
+        <td>
+            {{ summary.11 }}
+        </td>
+        <td>
+            {{ summary.12 }}
+        </td>
+        <td>
+            {{ summary.13 }}
+        </td>
+        <td>
+            {{ summary.14 }}
+        </td>
+        <td>
+            {{ summary.15 }}
+        </td>
+        <td>
+            {{ summary.16 }}
+        </td>
+        <td>
+            {{ summary.17 }}
+        </td>
+        <td>
+            {{ summary.18 }}
+        </td>
+    </tr>
+</table>
+<span>
+    Uw - urlop wypoczynkowy, Uwż - urlop wypoczynkowy "na żądanie", Uok - urlop okolicznościowy, Ub - urlop bezpłatny,
+    Op - opieka nad dzieckiem, L4 - zwolnienie lekarskie, IZ - izolacja, NN - nieobecność nieusprawiedliwiona
+</span>
+<div>
+    <pdf:nextpage />
+</div>
+</body>
+</html>

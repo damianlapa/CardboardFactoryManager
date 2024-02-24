@@ -87,6 +87,7 @@ ABSENCE_TYPES = (
 )
 
 PUNCH_TYPES = (
+    ('471', 'FEFCO 471'),
     ('427', 'FEFCO 427'),
     ('426', 'FEFCO 426'),
     ('421', 'FEFCO 421'),
@@ -894,3 +895,14 @@ class WorkerWorkWear(models.Model):
 
     class Meta:
         ordering = ['-date']
+
+
+class WorkReminder(models.Model):
+    title = models.CharField(max_length=64, default='Reminder')
+    add_date = models.DateTimeField(auto_now_add=True)
+    content = models.TextField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+    alert_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.title} - {self.add_date}'

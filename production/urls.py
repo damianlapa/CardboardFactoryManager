@@ -64,3 +64,8 @@ urlpatterns += [
     path('change_custom/', ChangeAllOrdersCustom.as_view()),
     path('change_many/', ChangeManyOrdersStatus.as_view())
 ]
+
+# order quantity change
+urlpatterns += [
+    path('change-order-quantity/', ChangeOrderQuantity.as_view())
+]

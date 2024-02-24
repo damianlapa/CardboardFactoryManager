@@ -7,6 +7,7 @@ from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 import datetime
 
 PRODUCTION_ORDER_STATUSES = (
+    ('ORDERED', 'ORDERED'),
     ('UNCOMPLETED', 'UNCOMPLETED'),
     ('COMPLETED', 'COMPLETED'),
     ('PLANNED', 'PLANNED'),
@@ -15,10 +16,10 @@ PRODUCTION_ORDER_STATUSES = (
 )
 
 PRODUCTION_UNIT_STATUSES = (
+    ('FINISHED', 'FINISHED'),
     ('NOT STARTED', 'NOT STARTED'),
     ('PLANNED', 'PLANNED'),
     ('IN PROGRESS', 'IN PROGRESS'),
-    ('FINISHED', 'FINISHED')
 )
 
 
@@ -63,12 +64,13 @@ class ProductionOrder(models.Model):
     cardboard_dimensions = models.CharField(max_length=32, blank=True)
     customer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
+    ordered_quantity = models.PositiveIntegerField(null=True, blank=True)
     quantity = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=PRODUCTION_ORDER_STATUSES, default='UNCOMPLETED')
     completed = models.DateTimeField(null=True, blank=True)
     priority = models.BooleanField(default=False)
     notes = models.CharField(max_length=1000, null=True, blank=True)
-    add_date = models.DateTimeField(auto_now=True)
+    add_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
@@ -78,6 +80,9 @@ class ProductionOrder(models.Model):
             units = ProductionUnit.objects.filter(production_order=self).order_by('-sequence')
             if units[0].planned_end():
                 return units[0].planned_end()
+
+    class Meta:
+        ordering = ['add_date']
 
 
 class WorkStation(models.Model):
@@ -403,7 +408,7 @@ class ProductionUnit(models.Model):
             elif datetime.datetime.today().date() >= self.end.date() > datetime.datetime.today().date() - datetime.timedelta(
                     days=7):
                 return 'last7 thismonth alltime'
-            elif self.end.date().month == datetime.datetime.today().date().month:
+            elif self.end.date().month == datetime.datetime.today().date().month and self.end.date().year == datetime.datetime.today().date().year:
                 return 'thismonth alltime'
             else:
                 return 'alltime'
