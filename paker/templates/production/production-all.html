@@ -30,6 +30,9 @@
     <button class="production-order-btn">
         ORDERED
     </button>
+    <button class="production-order-btn">
+        ARCHIVED
+    </button>
 </div>
 
 <div><h2 style="color: white; display: inline">Number of orders: </h2><h1 id="orders-num" style="color: darkgrey; display: inline">{{ number }}</h1></div>
@@ -37,7 +40,7 @@
 <div class="color-list">
     {% for po in production_orders %}
     <a href="{% url 'production-details' production_order_id=po.id %}" class="no-decor black" >
-        <div style="{% if po.status == 'FINISHED' %}display: none; {% endif %}"
+        <div style="{% if po.status == 'FINISHED' %}display: none;{% elif po.status == 'ARCHIVED' %}display: none;  {% endif %}"
              data-orderstatus="{{ po.status }}"
              data-idnumber="{{ po.id_number }}"
              data-cardboard="{{ po.cardboard }}"
