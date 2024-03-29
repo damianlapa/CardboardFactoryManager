@@ -79,7 +79,7 @@ class AllProductionOrders(View):
         visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
         production_orders = ProductionOrder.objects.all()
-        number = production_orders.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED', 'ARCHIVED')).count()
+        number = production_orders.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED')).count()
         return render(request, 'production/production-all.html', locals())
 
 

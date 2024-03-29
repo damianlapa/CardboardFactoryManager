@@ -50,7 +50,8 @@ class CalendarView(View):
         for _ in range(5):
             week = []
             for _ in range(7):
-                week.append((day_start, f'{day_start.year}-{day_start.month}-{day_start.day}'))
+                if day_start.isoweekday() <= 5:
+                    week.append((day_start, f'{day_start.year}-{day_start.month}-{day_start.day}'))
                 day_start += datetime.timedelta(days=1)
             weeks.append(week)
 
