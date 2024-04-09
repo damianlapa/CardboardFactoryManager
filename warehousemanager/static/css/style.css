@@ -1372,3 +1372,16 @@ input.right:focus {
 select#id_persons > option {
     color: green;
 }
+
+form label {
+    color: orange;
+    font-size: 18px;
+}
+
+form input {
+    font-size: 16px;
+}
+
+form select {
+    font-size: 16px;
+}
