@@ -39,8 +39,15 @@ CARDBOARD_LAYERS = (
     ('7', '7')
 )
 
+ORDER_STATUSES = (
+    ("FINISHED", 'FINISHED'),
+    ('ACCEPTED', 'ACCEPTED'),
+    ('IN PROGRESS', 'IN PROGRESS'),
+    ('NOT STARTED', 'NOT STARTED')
+)
 
-class Supplier(models.Model):
+
+'''class Supplier(models.Model):
     name = models.CharField(max_length=64, unique=True)
     shortcut = models.CharField(max_length=8, unique=True)
 
@@ -96,6 +103,7 @@ class CardboardPurchase(models.Model):
 
     def __str__(self):
         return f'{self.cardboard} - {self.ordered_quantity}'
+'''
 
 '''
 
@@ -146,6 +154,50 @@ class DeliveryUnit(models.Model):
 
     def __str__(self):
         return f'{self.delivery} {self.order_unit.order.customer} {self.order.product} q:{self.quantity}'
-
-
 '''
+
+
+class Customer(models.Model):
+    name = models.CharField(max_length=128, unique=True)
+    shortcut = models.CharField(max_length=8, unique=True)
+
+    def __str__(self):
+        return f'{self.name}({self.shortcut})'
+
+
+class Product(models.Model):
+    name = models.CharField(max_length=64)
+    product_type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
+
+    def __str__(self):
+        return f'{self.product_type} - {self.name}'
+
+
+class Order(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    date = models.DateField()
+    deadline = models.DateField()
+    status = models.CharField(max_length=32, choices=ORDER_STATUSES, default='NOT STARTED')
+
+    def __str__(self):
+        return f'{self.customer}({self.date})[{self.id}]'
+
+
+class OrderProduct(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    deadline = models.DateField(null=True, blank=True)
+    cardboard = models.BooleanField(default=False)
+    realized = models.BooleanField(default=False)
+
+    def time_to_realize(self):
+        deadline = self.deadline if self.deadline else self.order.deadline
+        difference = deadline - datetime.date.today()
+        return difference.days
+
+
+class Delivery(models.Model):
+    date = models.DateField()
+    quantity = models.PositiveIntegerField()
+

@@ -1290,7 +1290,7 @@ input.right:focus {
     margin: 0px;
     padding: 0px;
     border: double 1px black;
-    width: 14%;
+    width: 19%;
     height: 200px;
     overflow: auto;
     background: white;
@@ -1371,4 +1371,17 @@ input.right:focus {
 
 select#id_persons > option {
     color: green;
+}
+
+form label {
+    color: orange;
+    font-size: 18px;
+}
+
+form input {
+    font-size: 16px;
+}
+
+form select {
+    font-size: 16px;
 }

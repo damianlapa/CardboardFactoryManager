@@ -676,7 +676,7 @@ class Photopolymer(models.Model):
     colors = models.ManyToManyField(Color)
     identification_number = models.IntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    name = models.CharField(max_length=32, default='')
+    name = models.CharField(max_length=128, default='')
     delivery_date = models.DateField(blank=True, null=True,
                                      default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
 
