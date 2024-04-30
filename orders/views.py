@@ -23,6 +23,7 @@ from orders.models import *
 
             return HttpResponse('Product created!')'''
 
+
 class OrdersView(View):
     def get(self, request):
         orders = OrderProduct.objects.filter(realized=False)
@@ -30,4 +31,9 @@ class OrdersView(View):
         return render(request, 'orders/orders-list.html', locals())
 
 
+class CardboardOrders(View):
+    def get(self, request):
+        orders = CardboardOrder.objects.all()
+
+        return render(request, "orders/cardboard-orders.html", locals())
 

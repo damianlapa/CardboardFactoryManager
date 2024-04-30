@@ -566,6 +566,7 @@ class Punch(models.Model):
     pressure_small = models.IntegerField(default=0)
     wave_direction = models.BooleanField(default=True)
     customers = models.ManyToManyField(Buyer, blank=True)
+    active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['type', 'type_letter', 'type_num']
