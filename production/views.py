@@ -1003,6 +1003,18 @@ class ChangeManyOrdersStatus(View):
 class SetEstimatedTimeView(View):
     def get(self, request):
         units = ProductionUnit.objects.filter(estimated_time=None)
+        worker = request.GET.get('worker_id')
+        try:
+            worker = Person.objects.get(id=int(worker))
+        except ObjectDoesNotExist:
+            worker = None
+        if worker:
+            units_ = []
+            for u in units:
+                if worker in u.persons.all():
+                    units_.append(u)
+
+            units = units_
         return render(request, 'production/set-estimated-time.html', {'units': units})
 
 
