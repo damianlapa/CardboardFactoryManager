@@ -319,6 +319,8 @@ class ProductionUnit(models.Model):
                     if len(Holiday.objects.filter(holiday_date=first_date)) > 0:
                         holidays += 1
                 return holidays
+            else:
+                return 0
 
         if self.start and self.end:
             self.start += datetime.timedelta(hours=2)
