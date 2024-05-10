@@ -1003,14 +1003,6 @@ class ChangeManyOrdersStatus(View):
 class SetEstimatedTimeView(View):
     def get(self, request):
         units = ProductionUnit.objects.filter(estimated_time=None)
-        units_new = []
-        for unit in units:
-            try:
-                unit.estimated_time()
-                units_new.append(unit)
-            except Exception as e:
-                pass
-        units = units_new
         return render(request, 'production/set-estimated-time.html', {'units': units})
 
 
