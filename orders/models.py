@@ -203,7 +203,7 @@ class OrderProduct(models.Model):
         return difference.days
 
     def __str__(self):
-        pass
+        return f'{self.order} {self.product}'
 
 
 class Delivery(models.Model):

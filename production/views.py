@@ -1,6 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
+from django.http import JsonResponse
+
 from django.db.models import Q
 
 from production.models import *
@@ -996,3 +998,31 @@ class ChangeManyOrdersStatus(View):
                 o.save()
 
         return HttpResponse(result)
+
+
+class SetEstimatedTimeView(View):
+    def get(self, request):
+        units = ProductionUnit.objects.filter(estimated_time=None)
+        return render(request, 'production/set-estimated-time.html', {'units': units})
+
+
+class UpdateEstimatedTime(View):
+    def post(self, request):
+        if request:
+            import json
+            body_data = request.body.decode('utf-8')
+            data = json.loads(body_data)
+
+            unit_id = data['unit_id']
+            new_value = data['new_value']
+
+            # Update database logic here
+
+            unit = ProductionUnit.objects.get(id=int(unit_id))
+            unit.estimated_time = int(new_value)
+            unit.save()
+
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': 'Invalid request method or not AJAX'})
+

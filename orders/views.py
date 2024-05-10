@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
 from orders.forms import *
@@ -29,6 +29,18 @@ class OrdersView(View):
         orders = OrderProduct.objects.filter(realized=False)
         orders = sorted(orders, key=lambda x: x.time_to_realize())
         return render(request, 'orders/orders-list.html', locals())
+
+
+class AddOrder(View):
+    def get(self, request):
+        form = OrderForm()
+        return render(request, 'orders/add-order.html', locals())
+
+    def post(self, request):
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('orders-view')
 
 
 class CardboardOrders(View):

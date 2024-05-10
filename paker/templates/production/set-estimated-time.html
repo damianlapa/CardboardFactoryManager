@@ -1,0 +1,51 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Set Estimated Time{% endblock %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/estimated-time.css' %}">
+{% endblock %}
+{% block content %}
+<div>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Klient</th>
+      <th>Tektura</th>
+      <th>Wymiar</th>
+      <th>Produkt</th>
+      <th>Stanowisko</th>
+      <th>Ilość osób</th>
+      <th>Czas trwania</th>
+      <th>Ilość</th>
+      <th>Czas przewidziany</th>
+    </tr>
+    {% for unit in units %}
+    <tr>
+      <td>{{ unit.production_order.id_number }}</td>
+      <td>{{ unit.production_order.customer }}</td>
+      <td>{{ unit.production_order.cardboard }}</td>
+      <td>{{ unit.production_order.cardboard_dimensions }}</td>
+      <td>{{ unit.production_order.dimensions }}</td>
+      <td>{{ unit.work_station }}</td>
+      <td>
+        {{ unit.persons.all.count }}
+      </td>
+      <td>{{ unit.unit_duration }}</td>
+      {% if unit.quantity_end %}
+      <td>{{ unit.quantity_end }}</td>
+      {% else %}
+      <td>{{ unit.production_order.quantity }}</td>
+      {% endif %}
+      <td>
+        <input type="number" class="custom-input" data-unit-id="{{ unit.id }}">
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/estimated-time.js' %}"></script>
+{% endblock %}
