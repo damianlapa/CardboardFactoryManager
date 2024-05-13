@@ -1004,9 +1004,12 @@ class SetEstimatedTimeView(View):
     def get(self, request):
         units = ProductionUnit.objects.filter(estimated_time=None)
         worker = request.GET.get('worker_id')
-        try:
-            worker = Person.objects.get(id=int(worker))
-        except ObjectDoesNotExist:
+        if worker:
+            try:
+                worker = Person.objects.get(id=int(worker))
+            except ObjectDoesNotExist:
+                worker = None
+        else:
             worker = None
         if worker:
             units_ = []
