@@ -23,7 +23,11 @@
     </tr>
     {% for unit in units %}
     <tr>
-      <td>{{ unit.production_order.id_number }}</td>
+      <td>
+        <a href="{% url 'production-details' production_order_id=unit.production_order.id %}">
+        {{ unit.production_order.id_number }}
+        </a>
+      </td>
       <td>{{ unit.production_order.customer }}</td>
       <td>{{ unit.production_order.cardboard }}</td>
       <td>{{ unit.production_order.cardboard_dimensions }}</td>
