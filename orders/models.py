@@ -46,6 +46,11 @@ ORDER_STATUSES = (
     ('NOT STARTED', 'NOT STARTED')
 )
 
+PRODUCTION_PROCESSES = (
+    ('ROT + SKL', 'ROT + SKL'),
+    ('SLO + SKL', 'SLO + SKL')
+)
+
 
 '''class Supplier(models.Model):
     name = models.CharField(max_length=64, unique=True)
@@ -168,6 +173,7 @@ class Customer(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=64)
     product_type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return f'{self.product_type} - {self.name}'
@@ -196,8 +202,41 @@ class OrderProduct(models.Model):
         difference = deadline - datetime.date.today()
         return difference.days
 
+    def __str__(self):
+        return f'{self.order} {self.product}'
+
 
 class Delivery(models.Model):
     date = models.DateField()
     quantity = models.PositiveIntegerField()
+
+
+class Provider(models.Model):
+    name = models.CharField(max_length=64)
+    shortcut = models.CharField(max_length=16)
+
+    def __str__(self):
+        return f'{self.shortcut}'
+
+
+class CardboardOrder(models.Model):
+    provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
+    number = models.CharField(max_length=32)
+    order_date = models.DateField()
+    delivery_date = models.DateField(null=True, blank=True)
+    production_process = models.CharField(max_length=128, choices=PRODUCTION_PROCESSES)
+    print = models.CharField(max_length=64, null=True, blank=True)
+    dimension_1 = models.PositiveIntegerField()
+    dimension_2 = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField()
+    delivered_quantity = models.PositiveIntegerField(default=0)
+    scores = models.CharField(max_length=64, null=True, blank=True)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, blank=True)
+    specification = models.CharField(max_length=128, null=True, blank=True)
+    dimensions = models.CharField(max_length=64, null=True, blank=True)
+    name = models.CharField(max_length=64, null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.provider.shortcut} {self.number}'
 

@@ -1080,6 +1080,7 @@ class PunchEdit(PermissionRequiredMixin, View):
             pressure_small = punch_form.cleaned_data['pressure_small']
             wave_direction = punch_form.cleaned_data['wave_direction']
             customers = punch_form.cleaned_data['customers']
+            active = punch_form.cleaned_data['active']
 
             edited_punch = Punch.objects.get(id=punch_id)
 
@@ -1097,6 +1098,7 @@ class PunchEdit(PermissionRequiredMixin, View):
             edited_punch.wave_direction = wave_direction
             edited_punch.name = name
             edited_punch.type_letter = type_letter
+            edited_punch.active = active
 
             edited_punch.customers.clear()
 

@@ -13,6 +13,7 @@ urlpatterns = [
     path('production-unit-add/<order_id>/', AddProductionUnit.as_view(), name='production-unit-add'),
     path('production-unit-delete/<int:unit_id>/', DeleteProductionUnit.as_view(), name='delete-production-unit'),
     path('unit/edit/<int:unit_id>/', EditProductionUnit.as_view(), name='unit-edit'),
+    path('set-estimated-time/', SetEstimatedTimeView.as_view(), name='set-estimated-time')
 ]
 
 # production units
@@ -68,4 +69,9 @@ urlpatterns += [
 # order quantity change
 urlpatterns += [
     path('change-order-quantity/', ChangeOrderQuantity.as_view())
+]
+
+# estimated time
+urlpatterns += [
+    path('update-estimated-time/', UpdateEstimatedTime.as_view(), name='update-time')
 ]

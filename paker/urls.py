@@ -181,7 +181,7 @@ urlpatterns += [
 # work reminders
 urlpatterns += [
     path('workreminders/', WorkRemindersView.as_view(), name='workreminders'),
-    path('/workreminders/add/', WorkReminderAdd.as_view(), name='workreminders-add')
+    path('workreminders/add/', WorkReminderAdd.as_view(), name='workreminders-add')
 ]
 
 if settings.DEBUG:

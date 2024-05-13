@@ -319,6 +319,8 @@ class ProductionUnit(models.Model):
                     if len(Holiday.objects.filter(holiday_date=first_date)) > 0:
                         holidays += 1
                 return holidays
+            else:
+                return 0
 
         if self.start and self.end:
             self.start += datetime.timedelta(hours=2)
@@ -363,7 +365,6 @@ class ProductionUnit(models.Model):
                                 difference = datetime.timedelta(hours=difference.days * 8) + datetime.timedelta(
                                     seconds=difference.seconds)
                                 difference = difference - holidays_to_count * datetime.timedelta(hours=8)
-                                print(difference)
                                 return change_difference_to_time(difference)
                             else:
                                 difference = difference - holidays_to_count * datetime.timedelta(hours=8)

@@ -1,0 +1,20 @@
+{% extends '__base2__.html' %}
+
+{% block title %}
+New Order
+{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<div style="display: inline-block">
+    <form class="new-order" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Add">
+    </form>
+</div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}
