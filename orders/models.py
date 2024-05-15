@@ -174,15 +174,17 @@ class Product(models.Model):
     name = models.CharField(max_length=64)
     product_type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
     active = models.BooleanField(default=True)
+    customers = models.CharField(null=True, blank=True)
 
     def __str__(self):
-        return f'{self.product_type} - {self.name}'
+        return f'{self.product_type} - {self.name} [{self.customers}]'
 
 
 class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     date = models.DateField()
     deadline = models.DateField()
+    finished = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=ORDER_STATUSES, default='NOT STARTED')
 
     def __str__(self):
