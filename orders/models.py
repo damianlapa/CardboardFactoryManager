@@ -174,7 +174,7 @@ class Product(models.Model):
     name = models.CharField(max_length=64)
     product_type = models.CharField(max_length=64, choices=PRODUCT_TYPES)
     active = models.BooleanField(default=True)
-    customers = models.CharField(null=True, blank=True)
+    customers = models.CharField(max_length=256, null=True, blank=True)
 
     def __str__(self):
         return f'{self.product_type} - {self.name} [{self.customers}]'
