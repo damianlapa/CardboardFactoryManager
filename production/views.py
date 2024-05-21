@@ -1004,6 +1004,7 @@ class SetEstimatedTimeView(View):
     def get(self, request):
         units = ProductionUnit.objects.filter(estimated_time=None)
         worker = request.GET.get('worker_id')
+        station = request.GET.get('station')
         if worker:
             try:
                 worker = Person.objects.get(id=int(worker))
@@ -1011,6 +1012,12 @@ class SetEstimatedTimeView(View):
                 worker = None
         else:
             worker = None
+        if station:
+            try:
+                station = WorkStation.objects.get(name=station)
+                units = ProductionUnit.objects.filter(estimated_time=None, work_station=station)
+            except ObjectDoesNotExist:
+                pass
         if worker:
             units_ = []
             for u in units:
