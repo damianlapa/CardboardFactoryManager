@@ -91,6 +91,23 @@ class ProductionOrder(models.Model):
             return layers
         return None
 
+    def cardboard_area(self):
+        cardboard_area = None
+        cardboard_dimensions = [] if not self.cardboard_dimensions else self.cardboard_dimensions.lower().split('x')
+        try:
+            cardboard_dimensions = [int(dimension) for dimension in cardboard_dimensions]
+        except Exception:
+            cardboard_dimensions = []
+
+        if cardboard_dimensions:
+            try:
+                cardboard_area = cardboard_dimensions[0] * cardboard_dimensions[1] / 1000000
+                cardboard_area = round(cardboard_area, 2)
+            except Exception:
+                cardboard_area = 0
+
+        return cardboard_area
+
 
     class Meta:
         ordering = ['add_date']
@@ -496,11 +513,9 @@ class ProductionUnit(models.Model):
         return self.estimated_time * 60 if self.estimated_time else None
 
     def suggested_time(self):
-        print('nok')
+        quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
+        layers = self.production_order.cardboard_layers()
         if self.work_station.name == 'SKLEJARKA':
-            print('ok')
-            quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
-            layers = self.production_order.cardboard_layers()
             if quantity:
                 if layers == 3:
                     time_value = int((quantity / 1200) * 60 + 20)
@@ -509,6 +524,13 @@ class ProductionUnit(models.Model):
                 else:
                     time_value = None
                 return time_value
+        elif self.work_station.name == 'ROTACJA':
+            # dimensions = self.production_order.dimensions.lower().split('x')
+            # dimensions = [int(dimension) for dimension in dimensions]
+            #
+            # if dimensions[1]:
+            #     pass
+            pass
         return None
 
 
