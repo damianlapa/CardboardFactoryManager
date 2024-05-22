@@ -81,6 +81,17 @@ class ProductionOrder(models.Model):
             if units[0].planned_end():
                 return units[0].planned_end()
 
+    def cardboard_layers(self):
+        if self.cardboard:
+            layers = 0
+            for letter in self.cardboard:
+                if letter.isdigit():
+                    layers = int(letter)
+                    break
+            return layers
+        return None
+
+
     class Meta:
         ordering = ['add_date']
 
@@ -483,6 +494,23 @@ class ProductionUnit(models.Model):
 
     def estimated_duration_in_seconds(self):
         return self.estimated_time * 60 if self.estimated_time else None
+
+    def suggested_time(self):
+        print('nok')
+        if self.work_station.name == 'SKLEJARKA':
+            print('ok')
+            quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
+            layers = self.production_order.cardboard_layers()
+            if quantity:
+                if layers == 3:
+                    time_value = int((quantity / 1200) * 60 + 20)
+                elif layers == 5:
+                    time_value = int((quantity / 600) * 60 + 20)
+                else:
+                    time_value = None
+                return time_value
+        return None
+
 
     @classmethod
     def worker_occupancy(cls, worker):

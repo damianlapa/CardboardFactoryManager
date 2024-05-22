@@ -20,6 +20,7 @@
       <th>Czas trwania</th>
       <th>Ilość</th>
       <th>Czas przewidziany</th>
+      <th>Czas sugerowany</th>
     </tr>
     {% for unit in units %}
     <tr>
@@ -44,6 +45,9 @@
       {% endif %}
       <td>
         <input type="number" class="custom-input" data-unit-id="{{ unit.id }}">
+      </td>
+      <td>
+        {{ unit.suggested_time }}
       </td>
     </tr>
     {% endfor %}
