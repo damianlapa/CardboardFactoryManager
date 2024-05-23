@@ -108,7 +108,6 @@ class ProductionOrder(models.Model):
 
         return cardboard_area
 
-
     class Meta:
         ordering = ['add_date']
 
@@ -525,14 +524,37 @@ class ProductionUnit(models.Model):
                     time_value = None
                 return time_value
         elif self.work_station.name == 'ROTACJA':
-            # dimensions = self.production_order.dimensions.lower().split('x')
-            # dimensions = [int(dimension) for dimension in dimensions]
-            #
-            # if dimensions[1]:
-            #     pass
-            pass
-        return None
+            dimensions = self.production_order.dimensions.lower().split('x')
+            dimensions = [int(dimension) for dimension in dimensions]
+            if len(dimensions) == 3:
+                base_value = int(quantity * 60 / 4500) if layers == 3 else int(quantity * 60/ 2000)
+                setup = 30
+                if dimensions[0] < 160 or dimensions[1] < 160:
+                    base_value = base_value * 2
+                    setup += 10
+                if dimensions[2] >= 750:
+                    setup += 20
 
+                if self.production_order.cardboard_dimensions:
+                    cardboard_dimensions = [int(dimension) for dimension in
+                                            self.production_order.cardboard_dimensions.lower().split('x')]
+                    if cardboard_dimensions:
+                        if cardboard_dimensions[0] > 2268:
+                            base_value *= 1.5
+                        elif cardboard_dimensions[0] < 500:
+                            base_value *= 1.2
+
+                if self.punch:
+                    base_value *= 2
+                    setup += 30
+                if self.polymer:
+                    base_value *= 1.5
+                    setup += 30
+
+                return int(base_value + setup)
+            return None
+
+        return None
 
     @classmethod
     def worker_occupancy(cls, worker):
@@ -548,10 +570,14 @@ class ProductionUnit(models.Model):
 
         result = 0
 
-        units_started_and_finished_during_day = cls.objects.filter(start__gte=day_start, end__lte=day_end, workstation=workstation)
-        units_started_before_and_ended_today = cls.objects.filter(start__lt=day_start, end__gte=day_start, workstation=workstation)
-        units_started_today_and_not_finished = cls.objects.filter(start__lte=day_end, end__gt=day_end, workstation=workstation)
-        units_started_earlier_and_not_finished = cls.objects.filter(start__lt=day_start, end__gt=day_end, workstation=workstation)
+        units_started_and_finished_during_day = cls.objects.filter(start__gte=day_start, end__lte=day_end,
+                                                                   workstation=workstation)
+        units_started_before_and_ended_today = cls.objects.filter(start__lt=day_start, end__gte=day_start,
+                                                                  workstation=workstation)
+        units_started_today_and_not_finished = cls.objects.filter(start__lte=day_end, end__gt=day_end,
+                                                                  workstation=workstation)
+        units_started_earlier_and_not_finished = cls.objects.filter(start__lt=day_start, end__gt=day_end,
+                                                                    workstation=workstation)
 
         for u in units_started_and_finished_during_day:
             result += u.unit_duration_in_seconds()
