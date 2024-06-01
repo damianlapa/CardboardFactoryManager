@@ -81,6 +81,33 @@ class ProductionOrder(models.Model):
             if units[0].planned_end():
                 return units[0].planned_end()
 
+    def cardboard_layers(self):
+        if self.cardboard:
+            layers = 0
+            for letter in self.cardboard:
+                if letter.isdigit():
+                    layers = int(letter)
+                    break
+            return layers
+        return None
+
+    def cardboard_area(self):
+        cardboard_area = None
+        cardboard_dimensions = [] if not self.cardboard_dimensions else self.cardboard_dimensions.lower().split('x')
+        try:
+            cardboard_dimensions = [int(dimension) for dimension in cardboard_dimensions]
+        except Exception:
+            cardboard_dimensions = []
+
+        if cardboard_dimensions:
+            try:
+                cardboard_area = cardboard_dimensions[0] * cardboard_dimensions[1] / 1000000
+                cardboard_area = round(cardboard_area, 2)
+            except Exception:
+                cardboard_area = 0
+
+        return cardboard_area
+
     class Meta:
         ordering = ['add_date']
 
@@ -484,6 +511,63 @@ class ProductionUnit(models.Model):
     def estimated_duration_in_seconds(self):
         return self.estimated_time * 60 if self.estimated_time else None
 
+    def suggested_time(self):
+        quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
+        layers = self.production_order.cardboard_layers()
+        if self.work_station.name == 'SKLEJARKA':
+            if quantity:
+                if layers == 3:
+                    time_value = int((quantity / 1200) * 60 + 20)
+                elif layers == 5:
+                    time_value = int((quantity / 600) * 60 + 20)
+                else:
+                    time_value = None
+                return time_value
+        elif self.work_station.name == 'ROTACJA':
+            dimensions = self.production_order.dimensions.lower().split('x')
+            try:
+                dimensions = [int(dimension) for dimension in dimensions]
+            except Exception:
+                dimensions = []
+            if len(dimensions) == 3:
+                base_value = int(quantity * 60 / 4500) if layers == 3 else int(quantity * 60 / 2000)
+                setup = 30
+                if dimensions[0] < 160 or dimensions[1] < 160:
+                    base_value = base_value * 2
+                    setup += 10
+                if dimensions[2] >= 750:
+                    setup += 20
+
+                if self.production_order.cardboard_dimensions:
+                    cardboard_dimensions = [int(dimension) for dimension in
+                                            self.production_order.cardboard_dimensions.lower().split('x')]
+                    if cardboard_dimensions:
+                        if cardboard_dimensions[0] > 2268:
+                            base_value *= 1.5
+                        elif cardboard_dimensions[0] < 500:
+                            base_value *= 1.2
+
+                if self.punch:
+                    base_value *= 2
+                    setup += 30
+                if self.polymer:
+                    base_value *= 1.5
+                    setup += 30
+
+                if self.production_order.cardboard_area():
+                    area = self.production_order.cardboard_area()
+                    if area > 2:
+                        area = 2
+                    elif area < 0.5:
+                        area = 0.5
+
+                    base_value *= area
+
+                return int(base_value + setup)
+            return None
+
+        return None
+
     @classmethod
     def worker_occupancy(cls, worker):
         activity = cls.objects.filter(status='IN PROGRESS', persons__in=[worker])
@@ -498,10 +582,14 @@ class ProductionUnit(models.Model):
 
         result = 0
 
-        units_started_and_finished_during_day = cls.objects.filter(start__gte=day_start, end__lte=day_end, workstation=workstation)
-        units_started_before_and_ended_today = cls.objects.filter(start__lt=day_start, end__gte=day_start, workstation=workstation)
-        units_started_today_and_not_finished = cls.objects.filter(start__lte=day_end, end__gt=day_end, workstation=workstation)
-        units_started_earlier_and_not_finished = cls.objects.filter(start__lt=day_start, end__gt=day_end, workstation=workstation)
+        units_started_and_finished_during_day = cls.objects.filter(start__gte=day_start, end__lte=day_end,
+                                                                   workstation=workstation)
+        units_started_before_and_ended_today = cls.objects.filter(start__lt=day_start, end__gte=day_start,
+                                                                  workstation=workstation)
+        units_started_today_and_not_finished = cls.objects.filter(start__lte=day_end, end__gt=day_end,
+                                                                  workstation=workstation)
+        units_started_earlier_and_not_finished = cls.objects.filter(start__lt=day_start, end__gt=day_end,
+                                                                    workstation=workstation)
 
         for u in units_started_and_finished_during_day:
             result += u.unit_duration_in_seconds()
