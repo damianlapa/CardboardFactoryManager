@@ -530,40 +530,41 @@ class ProductionUnit(models.Model):
             except Exception:
                 dimensions = []
             if len(dimensions) == 3:
-                base_value = int(quantity * 60 / 4500) if layers == 3 else int(quantity * 60 / 2000)
-                setup = 30
-                if dimensions[0] < 160 or dimensions[1] < 160:
-                    base_value = base_value * 2
-                    setup += 10
-                if dimensions[2] >= 750:
-                    setup += 20
+                if quantity:
+                    base_value = int(quantity * 60 / 4500) if layers == 3 else int(quantity * 60 / 2000)
+                    setup = 30
+                    if dimensions[0] < 160 or dimensions[1] < 160:
+                        base_value = base_value * 2
+                        setup += 10
+                    if dimensions[2] >= 750:
+                        setup += 20
 
-                if self.production_order.cardboard_dimensions:
-                    cardboard_dimensions = [int(dimension) for dimension in
-                                            self.production_order.cardboard_dimensions.lower().split('x')]
-                    if cardboard_dimensions:
-                        if cardboard_dimensions[0] > 2268:
-                            base_value *= 1.5
-                        elif cardboard_dimensions[0] < 500:
-                            base_value *= 1.2
+                    if self.production_order.cardboard_dimensions:
+                        cardboard_dimensions = [int(dimension) for dimension in
+                                                self.production_order.cardboard_dimensions.lower().split('x')]
+                        if cardboard_dimensions:
+                            if cardboard_dimensions[0] > 2268:
+                                base_value *= 1.5
+                            elif cardboard_dimensions[0] < 500:
+                                base_value *= 1.2
 
-                if self.punch:
-                    base_value *= 2
-                    setup += 30
-                if self.polymer:
-                    base_value *= 1.5
-                    setup += 30
+                    if self.punch:
+                        base_value *= 2
+                        setup += 30
+                    if self.polymer:
+                        base_value *= 1.5
+                        setup += 30
 
-                if self.production_order.cardboard_area():
-                    area = self.production_order.cardboard_area()
-                    if area > 2:
-                        area = 2
-                    elif area < 0.5:
-                        area = 0.5
+                    if self.production_order.cardboard_area():
+                        area = self.production_order.cardboard_area()
+                        if area > 2:
+                            area = 2
+                        elif area < 0.5:
+                            area = 0.5
 
-                    base_value *= area
+                        base_value *= area
 
-                return int(base_value + setup)
+                    return int(base_value + setup)
             return None
 
         return None
