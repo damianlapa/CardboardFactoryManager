@@ -1053,4 +1053,11 @@ class WrongDateUnits(View):
     def get(self, request):
         units = ProductionUnit.objects.all()
         wrong_units = []
+        for u in units:
+            if u.start and u.end:
+                if u.end > u.start:
+                    wrong_units.append(u)
+
+        units = wrong_units
+
         return render(request, 'production/wrong-date-units.html', locals())

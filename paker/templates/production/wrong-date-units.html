@@ -14,14 +14,11 @@
       <th>Klient</th>
       <th>Tektura</th>
       <th>Wymiar</th>
-      <th>Powierzchnia</th>
       <th>Produkt</th>
       <th>Stanowisko</th>
-      <th>Ilość osób</th>
-      <th>Czas trwania</th>
       <th>Ilość</th>
-      <th>Czas przewidziany</th>
-      <th>Czas sugerowany</th>
+      <th>Start</th>
+      <th>Koniec</th>
     </tr>
     {% for unit in units %}
     <tr>
@@ -32,13 +29,8 @@
       </td>
       <td>{{ unit.production_order.customer }}</td>
       <td>{{ unit.production_order.cardboard }}</td>
-      <td>{{ unit.production_order.cardboard_dimensions }}</td>
-      <td>{{ unit.production_order.cardboard_area }}</td>
       <td>{{ unit.production_order.dimensions }}</td>
       <td>{{ unit.work_station }}</td>
-      <td>
-        {{ unit.persons.all.count }}
-      </td>
       <td>{{ unit.unit_duration }}</td>
       {% if unit.quantity_end %}
       <td>{{ unit.quantity_end }}</td>
@@ -46,10 +38,10 @@
       <td>{{ unit.production_order.quantity }}</td>
       {% endif %}
       <td>
-        <input type="number" class="custom-input" data-unit-id="{{ unit.id }}">
+        {{ unit.start }}
       </td>
       <td>
-        
+        {{ unit.end }}
       </td>
     </tr>
     {% endfor %}
