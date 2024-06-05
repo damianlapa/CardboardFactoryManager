@@ -1048,3 +1048,9 @@ class UpdateEstimatedTime(View):
         else:
             return JsonResponse({'success': False, 'error': 'Invalid request method or not AJAX'})
 
+
+class WrongDateUnits(View):
+    def get(self, request):
+        units = ProductionUnit.objects.all()
+        wrong_units = []
+        return render(request, 'production/wrong-date-units.html', locals())

@@ -13,7 +13,8 @@ urlpatterns = [
     path('production-unit-add/<order_id>/', AddProductionUnit.as_view(), name='production-unit-add'),
     path('production-unit-delete/<int:unit_id>/', DeleteProductionUnit.as_view(), name='delete-production-unit'),
     path('unit/edit/<int:unit_id>/', EditProductionUnit.as_view(), name='unit-edit'),
-    path('set-estimated-time/', SetEstimatedTimeView.as_view(), name='set-estimated-time')
+    path('set-estimated-time/', SetEstimatedTimeView.as_view(), name='set-estimated-time'),
+    path('wrong-date-units/', WrongDateUnits.as_view(), name='wrong-date-units')
 ]
 
 # production units
