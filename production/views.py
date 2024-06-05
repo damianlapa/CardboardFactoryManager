@@ -1055,7 +1055,7 @@ class WrongDateUnits(View):
         wrong_units = []
         for u in units:
             if u.start and u.end:
-                if u.end > u.start:
+                if u.end < u.start:
                     wrong_units.append(u)
 
         units = wrong_units
