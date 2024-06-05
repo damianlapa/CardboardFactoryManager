@@ -513,6 +513,7 @@ class ProductionUnit(models.Model):
 
     def suggested_time(self):
         quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
+        quantity = 0 if not quantity else quantity
         layers = self.production_order.cardboard_layers()
         if self.work_station.name == 'SKLEJARKA':
             if quantity:
