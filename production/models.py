@@ -541,8 +541,11 @@ class ProductionUnit(models.Model):
                         setup += 20
 
                     if self.production_order.cardboard_dimensions:
-                        cardboard_dimensions = [int(dimension) for dimension in
-                                                self.production_order.cardboard_dimensions.lower().split('x')]
+                        try:
+                            cardboard_dimensions = [int(dimension) for dimension in
+                                                    self.production_order.cardboard_dimensions.lower().split('x')]
+                        except ValueError:
+                            cardboard_dimensions = None
                         if cardboard_dimensions:
                             if cardboard_dimensions[0] > 2268:
                                 base_value *= 1.5
