@@ -571,6 +571,34 @@ class ProductionUnit(models.Model):
                     return int(base_value + setup)
             return None
 
+        elif self.work_station.name == 'TYGIEL MAŁY':
+            setup_value = 15
+            base_value = 0
+            if quantity:
+                base_value = int(quantity * 60 / 550) if layers == 3 else int(quantity * 60 / 450)
+            return setup_value + base_value
+
+        elif self.work_station.name == 'TYGIEL DUŻY':
+            setup_value = 15
+            base_value = 0
+            if quantity:
+                base_value = int(quantity * 60 / 450) if layers == 3 else int(quantity * 60 / 400)
+
+            if self.production_order.cardboard_dimensions:
+                try:
+                    cardboard_dimensions = [int(dimension) for dimension in
+                                            self.production_order.cardboard_dimensions.lower().split('x')]
+                except ValueError:
+                    cardboard_dimensions = None
+                if cardboard_dimensions:
+                    if cardboard_dimensions[0] > 1200:
+                        base_value *= 1.1
+                    if cardboard_dimensions[1] > 800:
+                        base_value *= 1.1
+
+            return setup_value + base_value
+
+
         return None
 
     @classmethod
