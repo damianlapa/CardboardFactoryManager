@@ -1013,7 +1013,7 @@ class SetEstimatedTimeView(View):
                 units = units.filter(start__gte=datetime.datetime.strptime(start, '%Y-%m-%d'))
             if end:
                 units = units.filter(
-                    start__gte=datetime.datetime.strptime(end, '%Y-%m-%d') + datetime.timedelta(days=1))
+                    start__lte=datetime.datetime.strptime(end, '%Y-%m-%d') + datetime.timedelta(days=1))
         else:
             units = ProductionUnit.objects.filter(estimated_time=None)
         worker = request.GET.get('worker_id')
