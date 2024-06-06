@@ -129,7 +129,8 @@ class AddProductionOrder(View):
             try:
                 ProductionOrder.objects.get(id_number=id_number)
             except ObjectDoesNotExist:
-                ProductionOrder.objects.create(ordered_quantity=ordered_quantity, id_number=id_number, cardboard=cardboard,
+                ProductionOrder.objects.create(ordered_quantity=ordered_quantity, id_number=id_number,
+                                               cardboard=cardboard,
                                                cardboard_dimensions=cardboard_dimensions, customer=customer,
                                                dimensions=dimensions, quantity=quantity, status=status, notes=notes)
         return redirect('all-production-orders')
@@ -264,8 +265,9 @@ class AddProductionUnit(View):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
-        form = ProductionUnitForm(initial={'production_order': production_order, 'sequence': order_units.count() + 1, 'status': 'FINISHED'},
-                                  day=today)
+        form = ProductionUnitForm(
+            initial={'production_order': production_order, 'sequence': order_units.count() + 1, 'status': 'FINISHED'},
+            day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
     def post(self, request, order_id):
@@ -922,7 +924,6 @@ class ChangeAllOrders(View):
         return HttpResponse('Done!')
 
 
-
 class ChangeOrderQuantity(View):
     def get(self, request):
         order_id = request.GET.get('order_id')
@@ -934,7 +935,8 @@ class ChangeOrderQuantity(View):
         order.save()
 
         return HttpResponse('OK')
-      
+
+
 class ChangeAllOrdersCustom(View):
     def get(self, request):
         prefix = request.GET.get('prefix')
@@ -1002,7 +1004,18 @@ class ChangeManyOrdersStatus(View):
 
 class SetEstimatedTimeView(View):
     def get(self, request):
-        units = ProductionUnit.objects.filter(estimated_time=None)
+        correct = request.GET.get('correct')
+        start = request.GET.get('start')
+        end = request.GET.get('end')
+        if correct == 'yes':
+            units = ProductionUnit.objects.all()
+            if start:
+                units = units.filter(start__gte=datetime.datetime.strptime(start, '%Y-%m-%d'))
+            if end:
+                units = units.filter(
+                    start__gte=datetime.datetime.strptime(end, '%Y-%m-%d') + datetime.timedelta(days=1))
+        else:
+            units = ProductionUnit.objects.filter(estimated_time=None)
         worker = request.GET.get('worker_id')
         station = request.GET.get('station')
         if worker:
