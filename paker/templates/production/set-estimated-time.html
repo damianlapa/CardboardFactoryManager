@@ -20,7 +20,7 @@
       <th>Ilość osób</th>
       <th>Czas trwania</th>
       <th>Ilość</th>
-      {% if correct==yes %}
+      {% if correct == "yes" %}
       <th>Czas wpisany</th>
       {% endif %}
       <th>Czas przewidziany</th>
@@ -48,7 +48,7 @@
       {% else %}
       <td>{{ unit.production_order.quantity }}</td>
       {% endif %}
-      {% if correct==yes %}
+      {% if correct == "yes" %}
       <td>{{ unit.estimated_time }}</td>
       {% endif %}
       <td>
