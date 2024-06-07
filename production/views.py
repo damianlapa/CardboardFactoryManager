@@ -1008,7 +1008,7 @@ class SetEstimatedTimeView(View):
         start = request.GET.get('start')
         end = request.GET.get('end')
         if correct == 'yes':
-            units = ProductionUnit.objects.all()
+            units = ProductionUnit.objects.all().order_by('work_station')
             if start:
                 units = units.filter(start__gte=datetime.datetime.strptime(start, '%Y-%m-%d'))
             if end:
