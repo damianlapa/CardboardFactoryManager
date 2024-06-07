@@ -1038,6 +1038,7 @@ class SetEstimatedTimeView(View):
                     units_.append(u)
 
             units = units_
+
         return render(request, 'production/set-estimated-time.html', {'units': units})
 
 
