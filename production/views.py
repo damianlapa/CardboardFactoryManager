@@ -1039,7 +1039,7 @@ class SetEstimatedTimeView(View):
 
             units = units_
 
-        return render(request, 'production/set-estimated-time.html', {'units': units})
+        return render(request, 'production/set-estimated-time.html', locals())
 
 
 class UpdateEstimatedTime(View):
