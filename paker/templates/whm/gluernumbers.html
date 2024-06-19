@@ -1,0 +1,29 @@
+{% extends '__base2__.html' %}
+{% block title %}Gluer Numbers{% endblock %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/gluernumbers.css' %}">
+{% endblock %}
+{% block content %}
+<h1>Gluer Numbers List</h1>
+<hr>
+<hr>
+<table class="gluer-table">
+    <tr class="table-header">
+        <th>Number</th>
+        <th>Customer</th>
+        <th>Dimensions</th>
+        <th>Name</th>
+        <th>Comments</th>
+    </tr>
+    {% for n in gluer_numbers %}
+    <tr class="table-row">
+        <td>{{ n.number }}</td>
+        <td>{{ n.customer }}</td>
+        <td>{{ n.dimensions }}</td>
+        <td>{{ n.name }}</td>
+        <td>{{ n.comments }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

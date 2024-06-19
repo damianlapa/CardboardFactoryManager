@@ -1,0 +1,38 @@
+h1 {
+    text-align: center;
+    color: #ff8c00; /* Dark orange for heading */
+}
+
+.gluer-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.gluer-table th, .gluer-table
+.gluer-table th, .gluer-table td {
+    border: 1px solid #ffcc80; /* Light orange for borders */
+    padding: 12px;
+    text-align: center;
+}
+
+.gluer-table th {
+    background-color: #ffa726; /* Medium orange for header background */
+    color: #ffffff; /* White text for header */
+}
+
+.gluer-table tr:nth-child(even) {
+    background-color: #ffe0b2; /* Very light orange for even rows */
+}
+
+.gluer-table tr:nth-child(odd) {
+    background-color: #eed0a1; /* Very light orange for even rows */
+}
+
+.gluer-table tr:hover {
+    background-color: #ffd180; /* Light orange for hover effect */
+}
+
+.table-header th, .table-row td {
+    text-align: center;
+}

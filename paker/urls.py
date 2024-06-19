@@ -184,5 +184,9 @@ urlpatterns += [
     path('workreminders/add/', WorkReminderAdd.as_view(), name='workreminders-add')
 ]
 
+urlpatterns += [
+    path('gluernumbers/', GluerNumberView.as_view(), name='gluernumbers')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3071,3 +3071,9 @@ class WorkReminderAdd(View):
 
         else:
             pass
+
+
+class GluerNumberView(View):
+    def get(self, request):
+        gluer_numbers = GluerNumber.objects.all().order_by('number')
+        return render(request, 'whm/gluernumbers.html', locals())
