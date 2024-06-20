@@ -26,6 +26,9 @@ class Provider(models.Model):
     name = models.CharField(max_length=128)
     shortcut = models.CharField(max_length=16)
 
+    def __str__(self):
+        return f'{self.shortcut}'
+
 
 class Delivery(models.Model):
     date = models.DateField()
@@ -36,9 +39,15 @@ class Delivery(models.Model):
     palette_number = models.PositiveIntegerField(default=0)
     worker = models.ForeignKey(Person, on_delete=models.PROTECT)
 
+    def __str__(self):
+        return f'{self.date} | {self.provider.shortcut} | {self.id}'
+
 
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order_item = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'{self.delivery} - {self.order_item} - {self.quantity}'
 
