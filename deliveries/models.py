@@ -1,6 +1,6 @@
 from django.db import models
 from warehousemanager.models import Person
-from orders.models import OrderProduct
+from orders.models import OrderProduct, CardboardOrder
 
 
 EVENT_TYPES = (
@@ -47,7 +47,7 @@ class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order_item = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
+    cardboard_order = models.ForeignKey(CardboardOrder, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.delivery} - {self.order_item} - {self.quantity}'
-
+        return f'{self.delivery} - {self.order_item} - {self.quantity} - {self.cardboard_order}'
