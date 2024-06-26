@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views import View
 from django.contrib import messages
 from django.http import FileResponse
@@ -3077,3 +3077,17 @@ class GluerNumberView(View):
     def get(self, request):
         gluer_numbers = GluerNumber.objects.all().order_by('number')
         return render(request, 'whm/gluernumbers.html', locals())
+
+
+class GluerNumberGet(View):
+    def get(self, request):
+        dimensions = request.GET.get('dimensions')
+        # customer = request.GET.get('customer')
+        try:
+            gluer_number = GluerNumber.objects.get(dimensions=dimensions)
+            data = {
+                'number': gluer_number.number
+            }
+            return JsonResponse(data)
+        except Exception as e:
+            pass

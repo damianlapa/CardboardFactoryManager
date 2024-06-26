@@ -185,7 +185,8 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    path('gluernumbers/', GluerNumberView.as_view(), name='gluernumbers')
+    path('gluernumbers/', GluerNumberView.as_view(), name='gluernumbers'),
+    path('gluernumberget', GluerNumberGet.as_view())
 ]
 
 if settings.DEBUG:
