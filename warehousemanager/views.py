@@ -3099,10 +3099,10 @@ class PolymerNumberGet(View):
         print(name)
         # customer = request.GET.get('customer')
         try:
-            polymer = Photopolymer.objects.filter(name='DSM 220')
+            polymer = None
             if polymer:
                 data = {
-                    'number': polymer.number
+                    'number': 1
                 }
             else:
                 data = {
@@ -3110,4 +3110,4 @@ class PolymerNumberGet(View):
                 }
             return JsonResponse(data)
         except Exception as e:
-            return JsonResponse({'data': e})
+            return JsonResponse({'data': f'{e}'})
