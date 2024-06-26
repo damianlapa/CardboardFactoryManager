@@ -3116,8 +3116,13 @@ class PolymerNumberGet(View):
             else:
                 polymer = None
             if polymer:
+                colors = ''
+                colors_polymer = polymer.colors.all()
+                for c in colors_polymer:
+                    colors += c.number + ', '
                 data = {
-                    'number': polymer.identification_number
+                    'number': polymer.identification_number,
+                    'colors': colors
                 }
             else:
                 data = {}
