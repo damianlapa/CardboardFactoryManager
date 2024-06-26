@@ -3098,7 +3098,7 @@ class PolymerNumberGet(View):
         name = request.GET.get('name')
         # customer = request.GET.get('customer')
         try:
-            polymer = Photopolymer.objects.get(name__icontains=name)
+            polymer = Photopolymer.objects.get(name=name)
             data = {
                 'number': polymer.number,
                 'colors': polymer.colors.all()
