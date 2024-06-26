@@ -3096,18 +3096,31 @@ class GluerNumberGet(View):
 class PolymerNumberGet(View):
     def get(self, request):
         name = request.GET.get('name')
-        print(name)
-        # customer = request.GET.get('customer')
+        dimensions = request.GET.get('dimensions')
+        customer = request.GET.get('customer')
         try:
-            polymer = Photopolymer.objects.get(name=name)
+            if name and dimensions and customer:
+                polymer = Photopolymer.objects.get(name=name, dimensions=dimensions, customer=customer)
+            elif name and dimensions:
+                polymer = Photopolymer.objects.get(name=name, dimensions=dimensions)
+            elif name and customer:
+                polymer = Photopolymer.objects.get(name=name, customer=customer)
+            elif customer and dimensions:
+                polymer = Photopolymer.objects.get(dimensions=dimensions, customer=customer)
+            elif name:
+                polymer = Photopolymer.objects.get(name=name)
+            elif dimensions:
+                polymer = Photopolymer.objects.get(dimensions=dimensions)
+            elif customer:
+                polymer = Photopolymer.objects.get(customer=customer)
+            else:
+                polymer = None
             if polymer:
                 data = {
-                    'number': 1
+                    'number': polymer.identification_number
                 }
             else:
-                data = {
-                    'name': name
-                }
+                data = {}
             return JsonResponse(data)
         except Exception as e:
             return JsonResponse({'data': f'{e}'})
