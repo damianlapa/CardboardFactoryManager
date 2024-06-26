@@ -3099,7 +3099,7 @@ class PolymerNumberGet(View):
         print(name)
         # customer = request.GET.get('customer')
         try:
-            polymer = None
+            polymer = Photopolymer.objects.get(name=name)
             if polymer:
                 data = {
                     'number': 1
