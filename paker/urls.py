@@ -189,6 +189,7 @@ urlpatterns += [
     path('gluernumberget/', GluerNumberGet.as_view()),
     path('polymernumberget/', PolymerNumberGet.as_view()),
     path('punchnumberget/', PunchNumberGet.as_view()),
+    path('pngt/', PunchNumberGet.as_view()),
 ]
 
 if settings.DEBUG:

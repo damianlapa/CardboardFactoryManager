@@ -3162,3 +3162,32 @@ class PunchNumberGet(View):
             return JsonResponse(data)
         except Exception as e:
             pass
+
+
+class PunchNumberGetTest(View):
+    def get(self, request):
+        result = ''
+        name = request.GET.get('name')
+        dimensions = request.GET.get('dimensions')
+        result += f'name: {name}<br>'
+        result += f'dimensions: {dimensions}<br><hr>'
+        try:
+            if name and dimensions:
+                punch = Punch.objects.filter(name=name, dimensions=dimensions)
+            elif name:
+                punch = Punch.objects.filter(name=name)
+            elif dimensions:
+                punch = Punch.objects.filter(dimensions=dimensions)
+            else:
+                punch = None
+            result += f'{punch}'
+            if punch:
+
+                data = {
+                    'punch': punch[0],
+                }
+            else:
+                data = {}
+            return HttpResponse(result)
+        except Exception as e:
+            pass
