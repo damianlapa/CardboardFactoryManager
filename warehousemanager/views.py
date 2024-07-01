@@ -3168,6 +3168,7 @@ class PolymerNumberGetTest(View):
                     'number': numbers,
                     'colors': colors
                 }
+                return HttpResponse(f'{colors} ||| {polymers}')
             else:
                 data = {}
             return HttpResponse(data)
