@@ -3119,10 +3119,15 @@ class PolymerNumberGet(View):
                 colors = ''
                 numbers = ''
                 for p in polymers:
-                    numbers += p.identification_number
+                    numbers += str(p.identification_number) + ', '
                     for c in p.colors.all():
                         colors += c.number + ', '
-                numbers = numbers[:-1]
+                numbers = numbers[:-2]
+                colors = colors[:-2]
+                data = {
+                    'number': numbers,
+                    'colors': colors
+                }
                 data = {
                     'number': numbers,
                     'colors': colors
@@ -3160,10 +3165,11 @@ class PolymerNumberGetTest(View):
                 colors = ''
                 numbers = ''
                 for p in polymers:
-                    numbers += p.identification_number
+                    numbers += str(p.identification_number) + ', '
                     for c in p.colors.all():
                         colors += c.number + ', '
-                numbers = numbers[:-1]
+                numbers = numbers[:-2]
+                colors = colors[:-2]
                 data = {
                     'number': numbers,
                     'colors': colors
