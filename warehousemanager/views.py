@@ -3138,45 +3138,27 @@ class PolymerNumberGet(View):
         except Exception as e:
             pass
 
-class PolymerNumberGetTest(View):
+
+class PunchNumberGet(View):
     def get(self, request):
         name = request.GET.get('name')
         dimensions = request.GET.get('dimensions')
-        customer = request.GET.get('customer')
         try:
-            if name and dimensions and customer:
-                polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions, customer=customer)
-            elif name and dimensions:
-                polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions)
-            elif name and customer:
-                polymers = Photopolymer.objects.filter(name=name, customer=customer)
-            elif customer and dimensions:
-                polymers = Photopolymer.objects.filter(dimensions=dimensions, customer=customer)
+            if name and dimensions:
+                punch = Punch.objects.filter(name=name, dimensions=dimensions)
             elif name:
-                polymers = Photopolymer.objects.filter(name=name)
+                punch = Punch.objects.filter(name=name)
             elif dimensions:
-                polymers = Photopolymer.objects.filter(dimensions=dimensions)
-            elif customer:
-                polymers = Photopolymer.objects.filter(customer=customer)
+                punch = Punch.objects.filter(dimensions=dimensions)
             else:
-                polymers = None
+                punch = None
+            if punch:
 
-            if polymers:
-                colors = ''
-                numbers = ''
-                for p in polymers:
-                    numbers += str(p.identification_number) + ', '
-                    for c in p.colors.all():
-                        colors += c.number + ', '
-                numbers = numbers[:-2]
-                colors = colors[:-2]
                 data = {
-                    'number': numbers,
-                    'colors': colors
+                    'punch': punch[0],
                 }
-                return HttpResponse(f'{colors} ||| {polymers}')
             else:
                 data = {}
-            return HttpResponse(data)
+            return JsonResponse(data)
         except Exception as e:
-            return HttpResponse(e)
+            pass
