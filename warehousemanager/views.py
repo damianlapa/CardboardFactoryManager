@@ -3132,3 +3132,43 @@ class PolymerNumberGet(View):
             return JsonResponse(data)
         except Exception as e:
             pass
+        
+class PolymerNumberGetTest(View):
+    def get(self, request):
+        name = request.GET.get('name')
+        dimensions = request.GET.get('dimensions')
+        customer = request.GET.get('customer')
+        try:
+            if name and dimensions and customer:
+                polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions, customer=customer)
+            elif name and dimensions:
+                polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions)
+            elif name and customer:
+                polymers = Photopolymer.objects.filter(name=name, customer=customer)
+            elif customer and dimensions:
+                polymers = Photopolymer.objects.filter(dimensions=dimensions, customer=customer)
+            elif name:
+                polymers = Photopolymer.objects.filter(name=name)
+            elif dimensions:
+                polymers = Photopolymer.objects.filter(dimensions=dimensions)
+            elif customer:
+                polymers = Photopolymer.objects.filter(customer=customer)
+            else:
+                polymers = None
+            if polymers:
+                colors = ''
+                numbers = ''
+                for p in polymers:
+                    numbers += p.identification_number
+                    for c in p.colors.all():
+                        colors += c.number + ', '
+                numbers = numbers[:-1]
+                data = {
+                    'number': numbers,
+                    'colors': colors
+                }
+            else:
+                data = {}
+            return HttpResponse(data)
+        except Exception as e:
+            return HttpResponse(e)
