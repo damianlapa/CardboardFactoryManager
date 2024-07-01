@@ -3132,7 +3132,7 @@ class PolymerNumberGet(View):
             return JsonResponse(data)
         except Exception as e:
             pass
-        
+
 class PolymerNumberGetTest(View):
     def get(self, request):
         name = request.GET.get('name')
@@ -3155,6 +3155,7 @@ class PolymerNumberGetTest(View):
                 polymers = Photopolymer.objects.filter(customer=customer)
             else:
                 polymers = None
+            return HttpResponse(polymers)
             if polymers:
                 colors = ''
                 numbers = ''
@@ -3169,6 +3170,6 @@ class PolymerNumberGetTest(View):
                 }
             else:
                 data = {}
-            return HttpResponse(data)
+            return HttpResponse(data, polymers)
         except Exception as e:
             return HttpResponse(e)
