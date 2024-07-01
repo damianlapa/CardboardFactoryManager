@@ -3180,14 +3180,16 @@ class PunchNumberGetTest(View):
                 punch = Punch.objects.filter(dimensions=dimensions)
             else:
                 punch = None
-            result += f'{punch}'
             if punch:
-
-                data = {
-                    'punch': punch[0],
-                }
+                for p in punch:
+                    result += f'{p}'
+            # if punch:
+            #
+            #     data = {
+            #         'punch': punch[0],
+            #     }
             else:
                 data = {}
             return HttpResponse(result)
         except Exception as e:
-            pass
+            return HttpResponse(str(e))
