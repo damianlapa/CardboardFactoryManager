@@ -3155,7 +3155,7 @@ class PolymerNumberGetTest(View):
                 polymers = Photopolymer.objects.filter(customer=customer)
             else:
                 polymers = None
-            return HttpResponse(polymers)
+
             if polymers:
                 colors = ''
                 numbers = ''
@@ -3170,6 +3170,6 @@ class PolymerNumberGetTest(View):
                 }
             else:
                 data = {}
-            return HttpResponse(data, polymers)
+            return HttpResponse(data)
         except Exception as e:
             return HttpResponse(e)
