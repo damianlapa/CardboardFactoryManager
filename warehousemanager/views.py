@@ -3100,32 +3100,35 @@ class PolymerNumberGet(View):
         customer = request.GET.get('customer')
         try:
             if name and dimensions and customer:
-                polymer = Photopolymer.objects.get(name=name, dimensions=dimensions, customer=customer)
+                polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions, customer=customer)
             elif name and dimensions:
-                polymer = Photopolymer.objects.get(name=name, dimensions=dimensions)
+                polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions)
             elif name and customer:
-                polymer = Photopolymer.objects.get(name=name, customer=customer)
+                polymers = Photopolymer.objects.filter(name=name, customer=customer)
             elif customer and dimensions:
-                polymer = Photopolymer.objects.get(dimensions=dimensions, customer=customer)
+                polymers = Photopolymer.objects.filter(dimensions=dimensions, customer=customer)
             elif name:
-                polymer = Photopolymer.objects.get(name=name)
+                polymers = Photopolymer.objects.filter(name=name)
             elif dimensions:
-                polymer = Photopolymer.objects.get(dimensions=dimensions)
+                polymers = Photopolymer.objects.filter(dimensions=dimensions)
             elif customer:
-                polymer = Photopolymer.objects.get(customer=customer)
+                polymers = Photopolymer.objects.filter(customer=customer)
             else:
-                polymer = None
-            if polymer:
+                polymers = None
+            if polymers:
                 colors = ''
-                colors_polymer = polymer.colors.all()
-                for c in colors_polymer:
-                    colors += c.number + ', '
+                numbers = ''
+                for p in polymers:
+                    numbers += p.identification_number
+                    for c in p.colors.all():
+                        colors += c.number + ', '
+                numbers = numbers[:-1]
                 data = {
-                    'number': polymer.identification_number,
+                    'number': numbers,
                     'colors': colors
                 }
             else:
                 data = {}
             return JsonResponse(data)
         except Exception as e:
-            return JsonResponse({'data': f'{e}'})
+            pass
