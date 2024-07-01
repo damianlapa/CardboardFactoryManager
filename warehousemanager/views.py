@@ -3172,7 +3172,8 @@ class PunchNumberGetTest(View):
         result += f'name: {name}<br>'
         result += f'dimensions: {dimensions}<br><hr>'
         try:
-            if name and dimensions:
+
+            """if name and dimensions:
                 punch = Punch.objects.filter(name=name, dimensions=dimensions)
             elif name:
                 punch = Punch.objects.filter(name=name)
@@ -3189,7 +3190,7 @@ class PunchNumberGetTest(View):
             #         'punch': punch[0],
             #     }
             else:
-                data = {}
+                data = {}"""
             return HttpResponse(result)
         except Exception as e:
             return HttpResponse(str(e))
