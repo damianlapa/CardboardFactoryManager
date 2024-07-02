@@ -3166,14 +3166,19 @@ class PunchNumberGet(View):
 
 class PunchNumberGetTest(View):
     def get(self, request):
-        return HttpResponse('osdfasdfasfasf')
         result = ''
         name = request.GET.get('name')
         dimensions = request.GET.get('dimensions')
         result += f'name: {name}</br>'
         result += f'dimensions: {dimensions}</br><hr>'
         punches = Punch.objects.all()
+        punches2 = Punch.objects.filter(name=name)
+        for p in punches2:
+            result += f'{p}<hr>'
+        result += '<hr>'
         for p in punches:
             result += f'{p}<hr>'
+
+
 
         return HttpResponse(result)
