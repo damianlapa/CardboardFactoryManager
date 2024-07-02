@@ -3176,8 +3176,17 @@ class PunchNumberGetTest(View):
         for p in punches2:
             result += f'{p}<hr>'
         result += '<hr>'
-        for p in punches:
-            result += f'{p}<hr>'
+
+        if name and dimensions:
+            punch = Punch.objects.filter(name=name, dimensions=dimensions)
+        elif name:
+            punch = Punch.objects.filter(name=name)
+        elif dimensions:
+            punch = Punch.objects.filter(dimensions=dimensions)
+        else:
+            punch = None
+
+        result += f'{punch}'
 
 
 
