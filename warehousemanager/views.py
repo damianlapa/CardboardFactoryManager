@@ -3166,6 +3166,7 @@ class PunchNumberGet(View):
 
 class PunchNumberGetTest(View):
     def get(self, request):
+        return HttpResponse('osdfasdfasfasf')
         result = ''
         name = request.GET.get('name')
         dimensions = request.GET.get('dimensions')
