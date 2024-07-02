@@ -3174,3 +3174,5 @@ class PunchNumberGetTest(View):
         punches = Punch.objects.all()
         for p in punches:
             result += f'{p}<hr>'
+
+        return HttpResponse(result)
