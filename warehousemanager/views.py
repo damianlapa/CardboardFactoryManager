@@ -3169,28 +3169,8 @@ class PunchNumberGetTest(View):
         result = ''
         name = request.GET.get('name')
         dimensions = request.GET.get('dimensions')
-        result += f'name: {name}<br>'
-        result += f'dimensions: {dimensions}<br><hr>'
-        try:
-
-            """if name and dimensions:
-                punch = Punch.objects.filter(name=name, dimensions=dimensions)
-            elif name:
-                punch = Punch.objects.filter(name=name)
-            elif dimensions:
-                punch = Punch.objects.filter(dimensions=dimensions)
-            else:
-                punch = None
-            if punch:
-                for p in punch:
-                    result += f'{p}'
-            # if punch:
-            #
-            #     data = {
-            #         'punch': punch[0],
-            #     }
-            else:
-                data = {}"""
-            return HttpResponse(result)
-        except Exception as e:
-            return HttpResponse(str(e))
+        result += f'name: {name}</br>'
+        result += f'dimensions: {dimensions}</br><hr>'
+        punches = Punch.objects.all()
+        for p in punches:
+            result += f'{p}<hr>'
