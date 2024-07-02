@@ -3186,7 +3186,7 @@ class PunchNumberGetTest(View):
         else:
             punch = None
 
-        result += f'{punch}'
+        result += f'{punch[0]}'
 
 
 
