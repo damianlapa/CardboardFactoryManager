@@ -3147,42 +3147,12 @@ class PunchNumberGet(View):
     def get(self, request):
         name = request.GET.get('name')
         dimensions = request.GET.get('dimensions')
-        dims = []
-        if dimensions:
-            dimensions = dimensions.lower().split('x')
-            dims = dimensions
-        try:
-            if name and dims:
-                if len(dims) == 3:
-                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1],
-                                                 dimension_three=dims[2])
-                elif len(dims) == 2:
-                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1])
-                else:
-                    punch = Punch.objects.filter(name=name, dimension_one=dims[0])
-            elif name:
-                punch = Punch.objects.filter(name=name)
-            elif dims:
-                if len(dims) == 3:
-                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1],
-                                                 dimension_three=dims[2])
-                elif len(dims) == 2:
-                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1])
-                else:
-                    punch = Punch.objects.filter(name=name, dimension_one=dims[0])
-            else:
-                punch = None
-            if punch:
 
-                data = {
-                    'punch': punch[0],
-                    'punches': len(punch)
-                }
-            else:
-                data = {}
-            return JsonResponse(data)
-        except Exception as e:
-            pass
+        data = {
+            'dimensions': dimensions,
+            'name': name
+        }
+        return JsonResponse(data)
 
 
 class PunchNumberGetTest(View):
