@@ -594,11 +594,14 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
-            contracts = Contract.objects.filter(date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, calendar.monthrange(year_num, month_num)[1]))
+            contracts = Contract.objects.filter(
+                date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1,
+                                              calendar.monthrange(year_num, month_num)[1]))
             # contracts = contracts.exclude(date_end__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
             workers_temp = []
             for c in contracts:
-                if not c.date_end or c.date_end >= datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1):
+                if not c.date_end or c.date_end >= datetime.date(int(month_year[1]), months.index(month_year[0]) + 1,
+                                                                 1):
                     if request.GET.get('uz') == 'yes':
                         if c.type == 'UZ':
                             workers_temp.append(c.worker)
@@ -2521,7 +2524,7 @@ class MonthlyCardPresence(View):
             start_hour = f'{day_start.hour}' if day_start.hour >= 10 else f'0{day_start.hour}'
             start_minute = f'{day_start.minute}' if day_start.minute >= 10 else f'0{day_start.minute}'
             day_start_str = f'{start_hour}:{start_minute}'
-            #day_info.append(day_start_str) if day.date() >= worker.job_start else day_info.append('')
+            # day_info.append(day_start_str) if day.date() >= worker.job_start else day_info.append('')
             if day.date() >= worker.job_start:
                 if worker.job_end:
                     if day.date() <= worker.job_end:
@@ -2590,10 +2593,12 @@ class MonthlyCardPresence(View):
                 day_info.append('')
 
             # sundays and holidays
-            day_info.append('') if not work_during_sunday_and_holidays else day_info.append(work_during_sunday_and_holidays)
+            day_info.append('') if not work_during_sunday_and_holidays else day_info.append(
+                work_during_sunday_and_holidays)
 
             # extra free days
-            day_info.append('') if not work_during_saturdays_and_free_days else day_info.append(work_during_saturdays_and_free_days)
+            day_info.append('') if not work_during_saturdays_and_free_days else day_info.append(
+                work_during_saturdays_and_free_days)
 
             # night time work
             day_info.append('')
@@ -2727,7 +2732,6 @@ class MonthlyCardPresenceAll(View):
             for c in contracts:
                 if c.worker not in workers:
                     workers.append(c.worker)
-
 
         # Create a Django response object, and specify content_type as pdf
         response = HttpResponse(content_type='application/pdf')
@@ -3143,19 +3147,36 @@ class PunchNumberGet(View):
     def get(self, request):
         name = request.GET.get('name')
         dimensions = request.GET.get('dimensions')
+        dims = []
+        if dimensions:
+            dimensions = dimensions.lower().split('x')
+            dims = dimensions
         try:
-            if name and dimensions:
-                punch = Punch.objects.filter(name=name, dimensions=dimensions)
+            if name and dims:
+                if len(dims) == 3:
+                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1],
+                                                 dimension_three=dims[2])
+                elif len(dims) == 2:
+                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1])
+                else:
+                    punch = Punch.objects.filter(name=name, dimension_one=dims[0])
             elif name:
                 punch = Punch.objects.filter(name=name)
-            elif dimensions:
-                punch = Punch.objects.filter(dimensions=dimensions)
+            elif dims:
+                if len(dims) == 3:
+                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1],
+                                                 dimension_three=dims[2])
+                elif len(dims) == 2:
+                    punch = Punch.objects.filter(name=name, dimension_one=dims[0], dimension_two=dims[1])
+                else:
+                    punch = Punch.objects.filter(name=name, dimension_one=dims[0])
             else:
                 punch = None
             if punch:
 
                 data = {
                     'punch': punch[0],
+                    'punches': len(punch)
                 }
             else:
                 data = {}
@@ -3187,7 +3208,5 @@ class PunchNumberGetTest(View):
             punch = None
 
         result += f'{punch[0]}'
-
-
 
         return HttpResponse(result)
