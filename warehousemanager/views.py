@@ -3149,16 +3149,24 @@ class PunchNumberGet(View):
         dimensions = request.GET.get('dimensions')
 
         punches = Punch.objects.filter(name=name)
-        punch = None
+        punch_data = None
 
         if punches:
             punch = punches[0]
+            punch_data = str(punch.type) + '||'
+            if punch.type_letter:
+                punch_data += punch.type_letter
+            if punch.type_num:
+                if float(punch.type_num) % int(punch.type_num) != 0:
+                    punch_data += str(punch.type_num)
+                else:
+                    punch_data += str(int(punch.type_num))
 
         data = {
             'dimensions': dimensions,
             'name': name,
             'count': len(punches),
-            'punch': punch
+            'punch': punch_data
         }
         return JsonResponse(data)
 
