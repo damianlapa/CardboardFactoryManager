@@ -3103,6 +3103,11 @@ class PolymerNumberGet(View):
         dimensions = request.GET.get('dimensions')
         customer = request.GET.get('customer')
         try:
+            if customer:
+                try:
+                    customer = Buyer.objects.get(name=customer)
+                except Exception:
+                    customer = None
             if name and dimensions and customer:
                 polymers = Photopolymer.objects.filter(name=name, dimensions=dimensions, customer=customer)
             elif name and dimensions:
