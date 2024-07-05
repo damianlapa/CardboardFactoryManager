@@ -675,7 +675,8 @@ class Photopolymer(models.Model):
     producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
     project = models.FileField(upload_to='projects', null=True, blank=True)
     colors = models.ManyToManyField(Color)
-    identification_number = models.CharField(max_length=16)
+    identification_number = models.IntegerField()
+    identification_letter = models.CharField(max_length=8, blank=True, null=True)
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     dimensions = models.CharField(max_length=32, default='', blank='')
     name = models.CharField(max_length=128, default='')
@@ -686,7 +687,7 @@ class Photopolymer(models.Model):
         ordering = ['identification_number']
 
     def __str__(self):
-        result = f'{self.identification_number}/{self.customer}'
+        result = f'{self.identification_number}{self.identification_letter}/{self.customer}'
         if self.name != '':
             result += f' {self.name}'
         return result
