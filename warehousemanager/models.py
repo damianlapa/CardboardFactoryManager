@@ -678,7 +678,7 @@ class Photopolymer(models.Model):
     identification_number = models.IntegerField()
     identification_letter = models.CharField(max_length=8, blank=True, null=True)
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    dimensions = models.CharField(max_length=32, blank='', null=True)
+    dimensions = models.CharField(max_length=32, blank=True, null=True)
     name = models.CharField(max_length=128, default='')
     delivery_date = models.DateField(blank=True, null=True,
                                      default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
