@@ -678,16 +678,20 @@ class Photopolymer(models.Model):
     identification_number = models.IntegerField()
     identification_letter = models.CharField(max_length=8, blank=True, null=True)
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    dimensions = models.CharField(max_length=32, default='', blank='')
+    dimensions = models.CharField(max_length=32, blank='', null=True)
     name = models.CharField(max_length=128, default='')
     delivery_date = models.DateField(blank=True, null=True,
                                      default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
+    active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['identification_number']
 
     def __str__(self):
-        result = f'{self.identification_number}{self.identification_letter}/{self.customer}'
+        if self.identification_letter:
+            result = f'{self.identification_number}{self.identification_letter}/{self.customer}'
+        else:
+            result = f'{self.identification_number}/{self.customer}'
         if self.name != '':
             result += f' {self.name}'
         return result
