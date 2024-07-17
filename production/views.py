@@ -1125,7 +1125,7 @@ class PrepareOrders(View):
             for num in range(int(numbers[0]), int(numbers[1])):
                 data = get_data(num)
 
-                customer = Buyer.objects.get_or_create(name=data[18].upper())
+                customer = Buyer.objects.get(name=data[18].upper())
 
                 ProductionOrder.objects.get_or_create(
                     id_number=f'{data[0]} {data[1]}/{data[2]}',
