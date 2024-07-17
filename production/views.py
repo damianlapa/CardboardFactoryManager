@@ -1082,6 +1082,7 @@ class WrongDateUnits(View):
 class PrepareOrders(View):
     def get(self, request):
         number = request.GET.get('number')
+        numbers = request.GET.get('numbers')
 
         def get_data(row_number, year='2024'):
             GOOGLE_SHEETS_CREDENTIALS = {
@@ -1108,7 +1109,7 @@ class PrepareOrders(View):
             number = int(number)
             data = get_data(number)
 
-            ProductionOrder.objects.create(
+            ProductionOrder.objects.get_or_create(
                 id_number=f'{data[0]} {data[1]}/{data[2]}',
                 cardboard=f'{data[19]}{data[20]}{data[21]}',
                 cardboard_dimensions=f'{data[12]}x{data[13]}',
@@ -1118,5 +1119,23 @@ class PrepareOrders(View):
                 quantity=data[15],
             )
 
-            return redirect('production-menu')
+        elif numbers:
+            numbers = numbers.split(',')
+
+            for num in range(int(numbers[0]), int(numbers[1])):
+                data = get_data(number)
+
+                customer = Buyer.objects.get_or_create(name=data[18].upper())
+
+                ProductionOrder.objects.get_or_create(
+                    id_number=f'{data[0]} {data[1]}/{data[2]}',
+                    cardboard=f'{data[19]}{data[20]}{data[21]}',
+                    cardboard_dimensions=f'{data[12]}x{data[13]}',
+                    customer=customer,
+                    dimensions=data[23],
+                    ordered_quantity=data[14],
+                    quantity=data[15],
+                )
+
+        return redirect('production-menu')
 
