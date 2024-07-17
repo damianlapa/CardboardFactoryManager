@@ -14,6 +14,8 @@ import os
 from xhtml2pdf import pisa
 import json
 import datetime
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 from warehousemanager.functions import visit_counter
 
@@ -1075,3 +1077,46 @@ class WrongDateUnits(View):
         units = wrong_units
 
         return render(request, 'production/wrong-date-units.html', locals())
+
+
+class PrepareOrders(View):
+    def get(self, request):
+        number = request.GET.get('number')
+
+        def get_data(row_number, year='2024'):
+            GOOGLE_SHEETS_CREDENTIALS = {
+                "type": os.environ['PE_TYPE'],
+                "project_id": os.environ['PE_PROJECT_ID'],
+                "private_key_id": os.environ['PE_PRIVATE_KEY_ID'],
+                "private_key": os.environ['PE_PRIVATE_KEY'].replace('\\n', '\n'),
+                "client_email": os.environ['PE_CLIENT_EMAIL'],
+                "client_id": os.environ['PE_CLIENT_ID'],
+                "auth_uri": os.environ['PE_AUTH_URI'],
+                "token_uri": os.environ['PE_TOKEN_URI'],
+                "auth_provider_x509_cert_url": os.environ['PE_AUTH_PROVIDER_X509_CERT_URL'],
+                "client_x509_cert_url": os.environ['PE_CLIENT_X509_CERT_URL'],
+            }
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+            creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_SHEETS_CREDENTIALS, scope)
+            client = gspread.authorize(creds)
+            spreadsheet = client.open("PAKER TEKTURA ZAMÓWIENIA")
+            sheet = spreadsheet.worksheet(f"ZAMÓWIENIA {year}")
+
+            return sheet.row_values(row_number)
+
+        if number:
+            number = int(number)
+            data = get_data(number)
+
+            ProductionOrder.objects.create(
+                id_number=f'{data[0]} {data[1]}/{data[2]}',
+                cardboard=f'{data[19]}{data[20]}{data[21]}',
+                cardboard_dimensions=f'{data[12]}x{data[13]}',
+                customer=Buyer.objects.get(name=data[18].capitalize()),
+                dimensions=data[23],
+                ordered_quantity=data[14],
+                quantity=data[15],
+            )
+
+            return redirect('production-menu')
+

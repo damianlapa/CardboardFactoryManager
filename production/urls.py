@@ -76,3 +76,8 @@ urlpatterns += [
 urlpatterns += [
     path('update-estimated-time/', UpdateEstimatedTime.as_view(), name='update-time')
 ]
+
+#prepare orders
+urlpatterns += [
+    path('prepare-orders/', PrepareOrders.as_view(), name='prepare-orders')
+]
