@@ -1123,7 +1123,7 @@ class PrepareOrders(View):
             numbers = numbers.split(',')
 
             for num in range(int(numbers[0]), int(numbers[1])):
-                data = get_data(number)
+                data = get_data(num)
 
                 customer = Buyer.objects.get_or_create(name=data[18].upper())
 
