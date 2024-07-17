@@ -1112,7 +1112,7 @@ class PrepareOrders(View):
                 id_number=f'{data[0]} {data[1]}/{data[2]}',
                 cardboard=f'{data[19]}{data[20]}{data[21]}',
                 cardboard_dimensions=f'{data[12]}x{data[13]}',
-                customer=Buyer.objects.get_or_create(name=data[18].capitalize(), shortcut=data[18].capitalize()[:3]),
+                customer=Buyer.objects.get(name=data[18].upper(), shortcut=data[18].upper()[:3]),
                 dimensions=data[23],
                 ordered_quantity=data[14],
                 quantity=data[15],
