@@ -1097,7 +1097,7 @@ class PrepareOrders(View):
                 "client_x509_cert_url": os.environ['PE_CLIENT_X509_CERT_URL'],
             }
             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_SHEETS_CREDENTIALS, scope)
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_SHEETS_CREDENTIALS, scope)
             client = gspread.authorize(creds)
             spreadsheet = client.open("PAKER TEKTURA ZAMÓWIENIA")
             sheet = spreadsheet.worksheet(f"ZAMÓWIENIA {year}")
