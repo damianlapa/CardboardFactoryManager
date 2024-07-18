@@ -91,6 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var results = response.results;
 
         results.forEach(function (item) {
+        if (item.exception !== false) {
             var newElement = document.createElement('p');
             var textNode = document.createTextNode('Klient: ' + item.klient + ', Numer zamówienia: ' + item.order_number);
             newElement.appendChild(textNode);
@@ -98,6 +99,15 @@ document.addEventListener("DOMContentLoaded", function () {
             // Dodanie nowego elementu do istniejącego diva
             var parentDiv = document.getElementById('result');
             parentDiv.appendChild(newElement);
+        }else {
+            var newElement = document.createElement('p');
+            var textNode = document.createTextNode('Numer zamówienia: ' + item.order_number + ' <span style="color: red">' + item.exception + '</span>');
+            newElement.appendChild(textNode);
+
+            // Dodanie nowego elementu do istniejącego diva
+            var parentDiv = document.getElementById('result');
+            parentDiv.appendChild(newElement);
+        }
     });
 })
 });

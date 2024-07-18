@@ -1137,26 +1137,37 @@ class PrepareOrders(View):
             numbers = int(number), int(number2)
 
             for num in range(int(numbers[0]), int(numbers[1])):
-                data = get_data(num)
+                try:
+                    data = get_data(num)
 
-                customer = Buyer.objects.get(name=data[18].upper())
+                    customer = Buyer.objects.get(name=data[18].upper())
 
-                order = ProductionOrder.objects.get_or_create(
-                    id_number=f'{data[0]} {data[1]}/{data[2]}',
-                    cardboard=f'{data[19]}{data[20]}{data[21]}',
-                    cardboard_dimensions=f'{data[12]}x{data[13]}',
-                    customer=customer,
-                    dimensions=data[23],
-                    ordered_quantity=data[14],
-                    quantity=data[15],
-                )
+                    order = ProductionOrder.objects.get_or_create(
+                        id_number=f'{data[0]} {data[1]}/{data[2]}',
+                        cardboard=f'{data[19]}{data[20]}{data[21]}',
+                        cardboard_dimensions=f'{data[12]}x{data[13]}',
+                        customer=customer,
+                        dimensions=data[23],
+                        ordered_quantity=data[14],
+                        quantity=data[15],
+                    )
 
-                result = {
-                    'klient': order[0].customer.name,
-                    'number': number,
-                    'order_number': order[0].id_number,
-                    'created': order[1]
-                }
+                    result = {
+                        'klient': order[0].customer.name,
+                        'number': number,
+                        'order_number': order[0].id_number,
+                        'created': order[1],
+                        'exception': False
+                    }
+
+                except Exception as e:
+                    result = {
+                        'klient': False,
+                        'number': number,
+                        'order_number': False,
+                        'created': False,
+                        'exception': e
+                    }
 
                 results.append(result)
 
