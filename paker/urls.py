@@ -192,5 +192,10 @@ urlpatterns += [
     path('pngt/', PunchNumberGetTest.as_view()),
 ]
 
+# print polymers
+urlpatterns += [
+    path('print-polymers/', PrintPolymers.as_view(), name='print-polymers')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

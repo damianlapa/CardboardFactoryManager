@@ -3201,3 +3201,33 @@ class PunchNumberGetTest(View):
         result += f'{punch[0]}'
 
         return HttpResponse(result)
+
+
+class PrintPolymers(View):
+    def get(self, request):
+        polymers = Photopolymer.objects.filter(active=True)
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'filename="polymers.pdf"'
+        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
+        font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
+
+        html = None
+
+        now = datetime.datetime.now()
+
+        template_path = 'whm/polymers-all-list.html'
+        context = locals()
+        template = get_template(template_path)
+        if not html:
+            html = template.render(context)
+        else:
+            html = html + template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+            html, dest=response, encoding='UTF-8')
+        # if error
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response

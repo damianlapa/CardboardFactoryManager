@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="UTF-8">
+    <title>LISTA POLIMERÓW({{ now|date:"d.m.Y" }})</title>
+    <style type="text/css">
+        @page {
+            size: A4;
+            margin: 20mm;
+            @frame content_frame {          /* Content Frame */
+                left: 20mm; width: 170mm; top: 20mm; height: 247mm;
+            }
+            @frame footer_frame {           /* Another static Frame */
+                -pdf-frame-content: footer_content;
+                left: 20mm; width: 170mm; top: 277mm; height: 20mm;
+            }
+        }
+
+        body {
+            font-family: "Roboto", sans-serif;
+            page-break-inside: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid black;
+        }
+
+        th, td {
+            border: 1px solid black;
+            text-align: center;
+            vertical-align: middle;
+            padding: 2px;
+            word-wrap: break-word;
+        }
+
+        th {
+            font-size: 14px;
+            background-color: black;
+            color: white;
+        }
+
+        td {
+            font-size: 12px;
+        }
+
+        tr:nth-child(even) {
+            background-color: lightgrey;
+        }
+
+        th:nth-child(1), td:nth-child(1) {
+            width: 10%;
+        }
+
+        th:nth-child(2), td:nth-child(2) {
+            width: 20%;
+        }
+
+        th:nth-child(3), td:nth-child(3) {
+            width: 60%;
+        }
+
+        th:nth-child(4), td:nth-child(4) {
+            width: 10%;
+        }
+
+        h5 {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <table style="text-align: left;">
+        <tr>
+            <td colspan="2" style="vertical-align: top; text-align: left; font-size: 10px;">
+                <span>Wygenerowano: {{ now|date:"d.m.Y, H:i:s" }}</span>
+            </td>
+            <td>
+                <img src="{{ logo_url }}" alt="Logo">
+            </td>
+        </tr>
+    </table>
+    <hr>
+    <table>
+        <tr>
+            <th>NUMER</th>
+            <th>KLIENT</th>
+            <th>NAZWA</th>
+            <th>FARBY</th>
+        </tr>
+        {% for p in polymers %}
+        <tr>
+            <td>{{ p.identification_number }}{% if p.identification_letter %}{{ p.identification_letter }}{% endif %}</td>
+            <td>{{ p.customer }}</td>
+            <td>{{ p.name }}</td>
+            <td>
+                {% for c in p.colors.all %}{{ c.number }} {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div>
+        <pdf:nextpage />
+    </div>
+</body>
+</html>

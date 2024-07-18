@@ -81,3 +81,4 @@ urlpatterns += [
 urlpatterns += [
     path('prepare-orders/', PrepareOrders.as_view(), name='prepare-orders')
 ]
+
