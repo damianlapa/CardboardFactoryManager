@@ -1123,9 +1123,10 @@ class PrepareOrders(View):
             )
 
             result = {
-                'klient': order.customer.name,
+                'klient': order[0].customer.name,
                 'number': number,
-                'order_number': order.id_number
+                'order_number': order[0].id_number,
+                'created': order[1]
             }
 
             results.append(result)
