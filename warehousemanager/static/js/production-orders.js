@@ -86,9 +86,20 @@ document.addEventListener("DOMContentLoaded", function () {
                    'number2': value2},
             type: 'GET',
             dataType: 'json'
-        }).done(function (data) {
-        console.log(data)
-        })
+        }).done(function (response) {
+        // Przetwarzanie danych otrzymanych z zapytania AJAX
+        var results = response.results;
+
+        results.forEach(function (item) {
+            var newElement = document.createElement('p');
+            var textNode = document.createTextNode('Klient: ' + item.klient + ', Numer zamówienia: ' + item.order_number);
+            newElement.appendChild(textNode);
+
+            // Dodanie nowego elementu do istniejącego diva
+            var parentDiv = document.getElementById('result');
+            parentDiv.appendChild(newElement);
+    });
+})
 });
 });
 
