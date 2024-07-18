@@ -8,24 +8,18 @@
         @page {
             size: A4;
             margin: 20mm;
-            @frame content_frame {          /* Content Frame */
-                left: 20mm; width: 170mm; top: 20mm; height: 247mm;
-            }
-            @frame footer_frame {           /* Another static Frame */
-                -pdf-frame-content: footer_content;
-                left: 20mm; width: 170mm; top: 277mm; height: 20mm;
-            }
         }
 
         body {
             font-family: "Roboto", sans-serif;
-            page-break-inside: auto;
+            page-break-inside: avoid;
         }
 
         table {
             border-collapse: collapse;
             width: 100%;
             border: 1px solid black;
+            page-break-inside: auto;
         }
 
         th, td {
@@ -66,8 +60,10 @@
             width: 10%;
         }
 
-        h5 {
-            page-break-before: always;
+        /* Ensure that rows do not break across pages */
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
         }
     </style>
 </head>
