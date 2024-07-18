@@ -5,9 +5,20 @@
     <a href="{% url 'production-order-add' %}">
         <button>ADD PRODUCTION ORDER</button>
     </a>
+    <button id="showButton">ADD FROM FILE</button>
+    <div id="hiddenDiv" style="display: none">
+        <form id="myForm">
+        <label for="value1">Wartość 1:</label>
+        <input type="text" id="value1" name="value1"><br><br>
+        <label for="value2">Wartość 2:</label>
+        <input type="text" id="value2" name="value2"><br><br>
+        <button type="button" id="submitButton">Zatwierdź</button>
+    </form>
+    <div id="result"></div>
+    </div>
 </div>
 
-<div>
+<div style="color: red">
     SEARCH: <input type="text" id="production-orders-filter">
 </div>
 

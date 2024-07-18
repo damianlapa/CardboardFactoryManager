@@ -67,4 +67,29 @@ document.addEventListener("DOMContentLoaded", function () {
     ordersFilterInput.addEventListener('keyup', function(){
         ordersFilter(allOrders, this.value.toLowerCase())
     })
+
+    document.getElementById('showButton').addEventListener('click', function() {
+    const hiddenDiv = document.getElementById('hiddenDiv');
+    if (hiddenDiv.style.display === 'none') {
+        hiddenDiv.style.display = 'block';
+    } else {
+        hiddenDiv.style.display = 'none';
+    }
+
+    document.getElementById('submitButton').addEventListener('click', function() {
+    const value1 = document.getElementById('value1').value;
+    const value2 = document.getElementById('value2').value;
+
+    $.ajax({
+            url: 'https://paker-wroclaw.herokuapp.com/production/prepare-orders/',
+            data: {'number': value1,
+                   'number2': value2},
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (data) {
+        console.log(data)
+        })
+});
+});
+
 })

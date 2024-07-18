@@ -1081,8 +1081,6 @@ class WrongDateUnits(View):
 
 class PrepareOrders(View):
     def get(self, request):
-        number = request.GET.get('number')
-        numbers = request.GET.get('numbers')
 
         def get_data(row_number, year='2024'):
             GOOGLE_SHEETS_CREDENTIALS = {
@@ -1105,11 +1103,16 @@ class PrepareOrders(View):
 
             return sheet.row_values(row_number)
 
-        if number:
+        number = request.GET.get('number')
+        number2 = request.GET.get('number2')
+
+        result = []
+
+        if number and not number2:
             number = int(number)
             data = get_data(number)
 
-            ProductionOrder.objects.get_or_create(
+            order = ProductionOrder.objects.get_or_create(
                 id_number=f'{data[0]} {data[1]}/{data[2]}',
                 cardboard=f'{data[19]}{data[20]}{data[21]}',
                 cardboard_dimensions=f'{data[12]}x{data[13]}',
@@ -1119,8 +1122,12 @@ class PrepareOrders(View):
                 quantity=data[15],
             )
 
-        elif numbers:
-            numbers = numbers.split(',')
+            result.append(order)
+
+            return JsonResponse({'result': result})
+
+        elif number and number2:
+            numbers = int(number), int(number2)
 
             for num in range(int(numbers[0]), int(numbers[1])):
                 data = get_data(num)
