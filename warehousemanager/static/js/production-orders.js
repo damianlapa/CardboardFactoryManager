@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
             parentDiv.appendChild(newElement);
         }else {
             var newElement = document.createElement('p');
-            var textNode = document.createTextNode('Numer zamówienia: ' + item.order_number + ' <span style="color: red">' + item.exception + '</span>');
+            var textNode = document.createTextNode('Numer zamówienia: ' + item.order_number + 'Exception: ' + item.exception);
             newElement.appendChild(textNode);
 
             // Dodanie nowego elementu do istniejącego diva

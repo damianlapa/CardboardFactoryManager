@@ -1137,6 +1137,7 @@ class PrepareOrders(View):
             numbers = int(number), int(number2)
 
             for num in range(int(numbers[0]), int(numbers[1])):
+                result = {}
                 try:
                     data = get_data(num)
 
@@ -1160,6 +1161,8 @@ class PrepareOrders(View):
                         'exception': False
                     }
 
+                    results.append(result)
+
                 except Exception as e:
                     result = {
                         'klient': False,
@@ -1169,7 +1172,7 @@ class PrepareOrders(View):
                         'exception': str(e)
                     }
 
-                results.append(result)
+                    results.append(result)
 
             return JsonResponse({'results': results})
 
