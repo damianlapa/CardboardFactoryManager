@@ -1106,7 +1106,7 @@ class PrepareOrders(View):
         number = request.GET.get('number')
         number2 = request.GET.get('number2')
 
-        result = []
+        results = []
 
         if number and not number2:
             number = int(number)
@@ -1122,9 +1122,15 @@ class PrepareOrders(View):
                 quantity=data[15],
             )
 
-            result.append(order)
+            result = {
+                'klient': order.customer.name,
+                'number': number,
+                'order_number': order.id_number
+            }
 
-            return JsonResponse({'result': result})
+            results.append(result)
+
+            return JsonResponse({'results': results})
 
         elif number and number2:
             numbers = int(number), int(number2)
