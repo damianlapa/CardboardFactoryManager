@@ -83,22 +83,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const value2 = document.getElementById('value2').value;
 
     $.ajax({
-            url: 'https://paker-wroclaw.herokuapp.com/production/prepare-orders/',
-            data: {'number': value1,
-                   'number2': value2},
-            type: 'GET',
-            dataType: 'json'
-        }).done(function (data) {
-            for (let i=0; i.length; i++) {
-                var newElement = document.createElement('p');
-                var textNode = document.createTextNode('Nowy paragraf dodany za pomocą JavaScript!');
-                newElement.appendChild(textNode);
+    url: 'https://paker-wroclaw.herokuapp.com/production/prepare-orders/',
+    data: {
+        'number': value1,
+        'number2': value2
+    },
+    type: 'GET',
+    dataType: 'json'
+    }).done(function (data) {
+    console.log(data)
+    // Przetwarzanie danych otrzymanych z zapytania AJAX
+    data.results.forEach(function (item) {
+        var newElement = document.createElement('p');
+        var textNode = document.createTextNode('Klient: ' + item.klient + ', Numer zamówienia: ' + item.order_number);
+        newElement.appendChild(textNode);
 
-                // Dodanie nowego elementu do istniejącego diva
-                var parentDiv = document.getElementById('result');
-                parentDiv.appendChild(newElement);
-            }
-        })
+        // Dodanie nowego elementu do istniejącego diva
+        var parentDiv = document.getElementById('result');
+        parentDiv.appendChild(newElement);
+    });
+    }).fail(function (xhr, status, error) {
+    console.error('Wystąpił błąd AJAX:', status, error);
 });
 });
 
