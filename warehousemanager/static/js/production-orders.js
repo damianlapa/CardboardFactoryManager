@@ -68,6 +68,14 @@ document.addEventListener("DOMContentLoaded", function () {
         ordersFilter(allOrders, this.value.toLowerCase())
     })
 
+    function displayData(data) {
+        var html = '<ul>';
+        data.forEach(function(item) {
+        html += '<li>' + item.klient + ' - ' + item.created + '</li>';
+        });
+        html += '</ul>';
+    }
+
     document.getElementById('showButton').addEventListener('click', function() {
     const hiddenDiv = document.getElementById('hiddenDiv');
     if (hiddenDiv.style.display === 'none') {
@@ -87,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'GET',
             dataType: 'json'
         }).done(function (data) {
-        console.log(data)
+        displayData(data)
         })
 });
 });
