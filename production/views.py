@@ -1141,7 +1141,7 @@ class PrepareOrders(View):
 
                 customer = Buyer.objects.get(name=data[18].upper())
 
-                ProductionOrder.objects.get_or_create(
+                order = ProductionOrder.objects.get_or_create(
                     id_number=f'{data[0]} {data[1]}/{data[2]}',
                     cardboard=f'{data[19]}{data[20]}{data[21]}',
                     cardboard_dimensions=f'{data[12]}x{data[13]}',
@@ -1150,6 +1150,17 @@ class PrepareOrders(View):
                     ordered_quantity=data[14],
                     quantity=data[15],
                 )
+
+                result = {
+                    'klient': order[0].customer.name,
+                    'number': number,
+                    'order_number': order[0].id_number,
+                    'created': order[1]
+                }
+
+                results.append(result)
+
+            return JsonResponse({'results': results})
 
         return redirect('production-menu')
 
