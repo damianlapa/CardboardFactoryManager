@@ -1166,7 +1166,7 @@ class PrepareOrders(View):
                         'number': number,
                         'order_number': False,
                         'created': False,
-                        'exception': e
+                        'exception': str(e)
                     }
 
                 results.append(result)
