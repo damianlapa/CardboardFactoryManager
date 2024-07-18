@@ -68,16 +68,10 @@ document.addEventListener("DOMContentLoaded", function () {
         ordersFilter(allOrders, this.value.toLowerCase())
     })
 
-    function displayData(data) {
-        var html = '<ul>';
-        data.forEach(function(item) {
-        html += '<li>' + item.klient + ' - ' + item.created + '</li>';
-        });
-        html += '</ul>';
-    }
 
     document.getElementById('showButton').addEventListener('click', function() {
     const hiddenDiv = document.getElementById('hiddenDiv');
+    const result = document.getElementById('result');
     if (hiddenDiv.style.display === 'none') {
         hiddenDiv.style.display = 'block';
     } else {
@@ -95,7 +89,15 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'GET',
             dataType: 'json'
         }).done(function (data) {
-        displayData(data)
+            for (let i=0; i.length; i++) {
+                var newElement = document.createElement('p');
+                var textNode = document.createTextNode('Nowy paragraf dodany za pomocą JavaScript!');
+                newElement.appendChild(textNode);
+
+                // Dodanie nowego elementu do istniejącego diva
+                var parentDiv = document.getElementById('result');
+                parentDiv.appendChild(newElement);
+            }
         })
 });
 });
