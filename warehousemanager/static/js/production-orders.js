@@ -68,10 +68,8 @@ document.addEventListener("DOMContentLoaded", function () {
         ordersFilter(allOrders, this.value.toLowerCase())
     })
 
-
     document.getElementById('showButton').addEventListener('click', function() {
     const hiddenDiv = document.getElementById('hiddenDiv');
-    const result = document.getElementById('result');
     if (hiddenDiv.style.display === 'none') {
         hiddenDiv.style.display = 'block';
     } else {
@@ -83,27 +81,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const value2 = document.getElementById('value2').value;
 
     $.ajax({
-    url: 'https://paker-wroclaw.herokuapp.com/production/prepare-orders/',
-    data: {
-        'number': value1,
-        'number2': value2
-    },
-    type: 'GET',
-    dataType: 'json'
-    }).done(function (data) {
-    console.log(data)
-    // Przetwarzanie danych otrzymanych z zapytania AJAX
-    data.results.forEach(function (item) {
-        var newElement = document.createElement('p');
-        var textNode = document.createTextNode('Klient: ' + item.klient + ', Numer zamówienia: ' + item.order_number);
-        newElement.appendChild(textNode);
-
-        // Dodanie nowego elementu do istniejącego diva
-        var parentDiv = document.getElementById('result');
-        parentDiv.appendChild(newElement);
-    });
-    }).fail(function (xhr, status, error) {
-    console.error('Wystąpił błąd AJAX:', status, error);
+            url: 'https://paker-wroclaw.herokuapp.com/production/prepare-orders/',
+            data: {'number': value1,
+                   'number2': value2},
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (data) {
+        console.log(data)
+        })
 });
 });
 
