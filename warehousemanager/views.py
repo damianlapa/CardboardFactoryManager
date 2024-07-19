@@ -3128,8 +3128,8 @@ class PolymerNumberGet(View):
                 colors = ''
                 numbers = ''
                 for p in polymers:
-                    letter = '' if not p.letter else p.identification_letter
-                    numbers += f'{p.identification_number}{p.identification_letter}' + ', '
+                    letter = '' if not p.identification_letter else p.identification_letter
+                    numbers += f'{p.identification_number}{letter}' + ', '
                     for c in p.colors.all():
                         colors += c.number + ', '
                 numbers = numbers[:-2]
