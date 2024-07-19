@@ -1174,8 +1174,6 @@ class PrepareOrders(View):
 
                     results.append(result)
 
-                    return HttpResponse(str(e))
-
             return JsonResponse({'results': results})
 
         return redirect('production-menu')
