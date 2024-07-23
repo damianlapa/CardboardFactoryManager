@@ -554,7 +554,7 @@ class Punch(models.Model):
     type = models.CharField(max_length=8, choices=PUNCH_TYPES)
     type_letter = models.CharField(max_length=4, default='', blank=True)
     type_num = models.DecimalField(max_digits=4, decimal_places=1)
-    name = models.CharField(max_length=24, default='', blank=True)
+    name = models.CharField(max_length=96, default='', blank=True)
     dimension_one = models.IntegerField(blank=True, null=True)
     dimension_two = models.IntegerField(blank=True, null=True)
     dimension_three = models.IntegerField(blank=True, null=True)
