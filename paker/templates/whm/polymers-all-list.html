@@ -41,13 +41,13 @@
         }
 
         th {
-            font-size: 14px;
+            font-size: 16px;
             background-color: black;
             color: white;
         }
 
         td {
-            font-size: 12px;
+            font-size: 14px;
         }
 
         tr:nth-child(even) {
@@ -99,7 +99,7 @@
         <tr>
             <td>{{ p.identification_number }}{% if p.identification_letter %}{{ p.identification_letter }}{% endif %}</td>
             <td>{{ p.customer }}</td>
-            <td>{{ p.name }}</td>
+            <td><b>{{ p.name }}</b></td>
             <td>
                 {% for c in p.colors.all %}{{ c.number }} {% endfor %}
             </td>

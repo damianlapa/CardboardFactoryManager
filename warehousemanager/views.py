@@ -2002,7 +2002,7 @@ class AvailableVacation(PermissionRequiredMixin, View):
             except ObjectDoesNotExist:
                 persons = []
         for p in persons:
-            used_vacation_in_year = 0
+            '''used_vacation_in_year = 0
             previous_year = year - 1
             absences = Absence.objects.filter(worker=p, absence_date__gt=datetime.date(int(previous_year), 12, 31),
                                               absence_date__lte=datetime.date(int(year), 12, 31))
@@ -2011,7 +2011,28 @@ class AvailableVacation(PermissionRequiredMixin, View):
                     used_vacation_in_year += 1
             left_vacation = p.yearly_vacation_limit - used_vacation_in_year
             persons_data.append((p, p.yearly_vacation_limit, p.end_year_vacation(previous_year), used_vacation_in_year,
-                                 p.end_year_vacation(year)))
+                                 p.end_year_vacation(year)))'''
+            # wszystkie kontrakty - komentarz
+            contracts = Contract.objects.filter(worker=p, type='UOP').order_by('date_start')
+            # contract = None
+            # days = 0
+            # if contracts:
+            #     contract = contracts[0].date_start
+            # base_amount = p.yearly_vacation_limit
+            # if p.date26:
+            #     if contracts:
+            #         dayss = (p.date26 - datetime.datetime.strptime(f'{p.date26.year}-1-1', '%Y-%M-%d').date()).days
+            #         daysss = (list(contracts)[-1].date_end - p.date26).days if list(contracts)[-1].date_end else 0
+            #         days = (p.date26 - list(contracts)[-1].date_start).days if contracts and list(contracts)[-1].first else 0
+            #         days = dayss*base_amount/365 + daysss*26/365
+            #
+            # persons_data.append((p, base_amount, len(contracts), contract, days))
+            # first_contract = contracts[0]
+            # last_contract = list(contracts)[-1]
+            #
+            # if len(contracts) > 1:
+            #     pass
+            persons_data.append((p, p.all_vacation_days(), p.used_vacation_during_year(year)))
 
         return render(request, 'warehousemanager-vacation-list.html', locals())
 
