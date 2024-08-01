@@ -3253,3 +3253,60 @@ class PrintPolymers(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+class ActiveHours(View):
+    def get(self, request):
+        d = request.GET.get('d')
+        m = request.GET.get('m')
+        y = request.GET.get('y')
+
+        first_day = datetime.date(2024, 1, 1)
+        if all((y, m , d)):
+            d = int(d)
+            m = int(m)
+            y = int(y)
+            first_day = datetime.date(y, m, d)
+        day = first_day
+        last_day = datetime.date.today()
+
+        weeks = []
+        months = []
+        week = []
+        month = []
+        months_results = []
+        weeks_results = []
+
+        while day != last_day:
+            holiday = Holiday.objects.filter(holiday_date=day)
+            if not holiday:
+                day_data = Person.active_hours_per_day(day)
+                if day.isoweekday() <= 5:
+                    week.append(day_data)
+
+                else:
+                    if week:
+                        weeks.append(week)
+                        week = []
+                if day.month == len(months) + 1:
+                    if day.isoweekday() <= 5:
+                        month.append(day_data)
+                else:
+                    months.append(month)
+                    month = []
+            day += datetime.timedelta(days=1)
+
+        for m in months:
+            result = [0 for _ in range(6)]
+            for day in m:
+                result = [x + y for x, y in zip(result, day)]
+            months_results.append(result)
+
+        for w in weeks:
+            result = [0 for _ in range(6)]
+            for day in w:
+                result = [x + y for x, y in zip(result, day)]
+            weeks_results.append(result)
+
+        return render(request, 'whm/active_hours.html', locals())
+

@@ -197,5 +197,9 @@ urlpatterns += [
     path('print-polymers/', PrintPolymers.as_view(), name='print-polymers')
 ]
 
+urlpatterns += [
+    path('active_hours/', ActiveHours.as_view(), name='active-hours')
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

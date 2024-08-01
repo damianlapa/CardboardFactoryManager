@@ -1,0 +1,52 @@
+{% extends '__base2__.html' %}
+{% block title %}Active Hours{% endblock %}
+{% block content %}
+<h1>MONTHS</h1>
+<table style="color: white">
+    <tr>
+        <th>MONTH</th>
+        <th>PRODUCTION</th>
+        <th>OFFICE</th>
+        <th>MANAGEMENT</th>
+        <th>LOGISTIC</th>
+        <th>MECHANIC</th>
+        <th>OTHER</th>
+    </tr>
+    {% for m in months_results %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ m.0 }}</td>
+        <td>{{ m.1 }}</td>
+        <td>{{ m.2 }}</td>
+        <td>{{ m.3 }}</td>
+        <td>{{ m.4 }}</td>
+        <td>{{ m.5 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<hr>
+<hr>
+<h1>WEEKS</h1>
+<table style="color: white">
+    <tr>
+        <th>WEEK</th>
+        <th>PRODUCTION</th>
+        <th>OFFICE</th>
+        <th>MANAGEMENT</th>
+        <th>LOGISTIC</th>
+        <th>MECHANIC</th>
+        <th>OTHER</th>
+    </tr>
+    {% for m in weeks_results %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ m.0 }}</td>
+        <td>{{ m.1 }}</td>
+        <td>{{ m.2 }}</td>
+        <td>{{ m.3 }}</td>
+        <td>{{ m.4 }}</td>
+        <td>{{ m.5 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

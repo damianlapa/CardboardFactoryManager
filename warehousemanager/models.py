@@ -128,7 +128,9 @@ OCCUPANCY_TYPE = (
     ('MECHANIC', 'MECHANIC'),
     ('PRODUCTION', 'PRODUCTION'),
     ('OFFICE', 'OFFICE'),
-    ('OTHER', 'OTHER')
+    ('OTHER', 'OTHER'),
+    ('MANAGEMENT', 'MANAGEMENT'),
+    ('LOGISTIC', 'LOGISTIC')
 )
 
 
@@ -143,6 +145,7 @@ class Person(models.Model):
     medical_examination = models.DateField(blank=True, null=True)
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
+    date26 = models.DateField(null=True, blank=True)
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
@@ -190,6 +193,50 @@ class Person(models.Model):
             else:
                 return self.end_year_vacation(year - 1) + self.yearly_vacation_limit
 
+    def available_vacation_days(self):
+        contracts = Contract.objects.filter(worker=self, type='UOP').order_by('date_start')
+        days = 0
+        if contracts:
+            start_day = contracts[0].date_start
+            start_year = contracts[0].date_start.year
+            while start_year != datetime.datetime.today().year:
+                days += 26
+                start_year += 1
+        return days
+
+    def all_vacation_days(self):
+        contracts = Contract.objects.filter(worker=self, type='UOP').order_by('date_start')
+        days = 0
+        if contracts:
+            first_contract_start = contracts[0].date_start
+            last_contract_end = list(contracts)[-1].date_end
+            base_value = 26
+            for year in range(first_contract_start.year, datetime.date.today().year + 1):
+                year_days = 366 if year % 4 == 0 and year % 100 != 0 else 365
+                days_until_start = 0
+                days_till_end = 0
+                if year == first_contract_start.year:
+                    days_until_start = (first_contract_start - datetime.date(year, 1, 1)).days
+                if last_contract_end:
+                    if year == last_contract_end.year:
+                        days_till_end = (datetime.date(year, 12, 31) - last_contract_end).days
+
+                days += base_value * ((year_days - days_till_end - days_until_start)/year_days)
+                days = int(round(days, 0))
+
+                print(self, year, days, days_till_end, days_until_start)
+        return days
+
+    def used_vacation_during_year(self, year):
+        start = datetime.date(year, 1, 1)
+        end = datetime.date(year, 12, 31)
+        used_vacation = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end,
+                                               absence_type__in=['UW', 'UŻ'])
+        return len(used_vacation)
+
+    def vacation_from_last_year(self):
+        pass
+
     def status(self):
         if self.job_end:
             return 'not active'
@@ -222,7 +269,8 @@ class Person(models.Model):
         holidays = Holiday.objects.filter(holiday_date__gte=start, holiday_date__lte=end)
         workdays = work_days_during_period(year=year, start=start, end=end)
 
-        absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end, absence_type__in=['UW', 'UB', 'CH', 'OP', 'NN', 'KW', 'UO'])
+        absences = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end,
+                                          absence_type__in=['UW', 'UB', 'CH', 'OP', 'NN', 'KW', 'UO'])
 
         new_holidays = [h for h in holidays if h.holiday_date.weekday() < 5]
 
@@ -326,6 +374,29 @@ class Person(models.Model):
 
         return day_workers
 
+    @classmethod
+    def active_hours_per_day(cls, day):
+        workers = cls.workers_at_work(day)
+        data = [0 for _ in range(6)]
+        for w in workers:
+            hours = 8
+            extra_hours = ExtraHour.objects.filter(worker=w, extras_date=day)
+            if extra_hours:
+                hours = 8 + extra_hours[0].quantity if extra_hours[0].full_day else extra_hours[0].quantity
+            if w.occupancy_type == 'PRODUCTION':
+                data[0] += hours
+            elif w.occupancy_type == 'OFFICE':
+                data[1] += hours
+            elif w.occupancy_type == 'MANAGEMENT':
+                data[2] += hours
+            elif w.occupancy_type == 'LOGISTIC':
+                data[3] += hours
+            elif w.occupancy_type == 'MECHANIC':
+                data[4] += hours
+            else:
+                data[5] += hours
+        return data
+
 
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
@@ -425,7 +496,7 @@ class Delivery(models.Model):
             chart_data.append([m[0], m[1], 0])
 
         for d in result:
-            chart_data[d[1]-1][2] += 1
+            chart_data[d[1] - 1][2] += 1
 
         chart_data = list(filter(lambda x: x[2] > 0, chart_data))
 
@@ -449,7 +520,8 @@ class PaletteQuantity(models.Model):
     status = models.CharField(max_length=4, choices=PALETTES_STATUS, default='DEL')
 
     @classmethod
-    def all_quantities_between_dates(cls, provider=None, palette_type=None, palette_dimensions=None, status=None, date_from=None,
+    def all_quantities_between_dates(cls, provider=None, palette_type=None, palette_dimensions=None, status=None,
+                                     date_from=None,
                                      date_to=None):
 
         provider = 'AQ' if not provider else provider
@@ -793,6 +865,7 @@ class Contract(models.Model):
     date_end = models.DateField(null=True, blank=True)
     salary = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     extra_info = models.CharField(max_length=255, null=True, blank=True)
+    first = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['worker', 'date_end']
@@ -829,7 +902,6 @@ class Contract(models.Model):
                         temp_contracts.append(contract)
 
         return temp_contracts
-
 
 
 class Reminder(models.Model):
@@ -924,4 +996,3 @@ class GluerNumber(models.Model):
 
     def __str__(self):
         return f'[{self.number}] {self.customer} - {self.dimensions}'
-
