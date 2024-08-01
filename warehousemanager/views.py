@@ -3268,7 +3268,7 @@ class ActiveHours(View):
             y = int(y)
             first_day = datetime.date(y, m, d)
         day = first_day
-        last_day = datetime.date.today()
+        last_day = datetime.date.today() + datetime.timedelta(days=1)
 
         weeks = []
         months = []
@@ -3300,12 +3300,14 @@ class ActiveHours(View):
             result = [0 for _ in range(6)]
             for day in m:
                 result = [x + y for x, y in zip(result, day)]
+            result.append(sum(result))
             months_results.append(result)
 
         for w in weeks:
             result = [0 for _ in range(6)]
             for day in w:
                 result = [x + y for x, y in zip(result, day)]
+            result.append(sum(result))
             weeks_results.append(result)
 
         return render(request, 'whm/active_hours.html', locals())
