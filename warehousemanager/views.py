@@ -3256,13 +3256,14 @@ class PrintPolymers(View):
 
 
 class ActiveHours(View):
+    import calendar
     def get(self, request):
         d = request.GET.get('d')
         m = request.GET.get('m')
         y = request.GET.get('y')
 
         first_day = datetime.date(2024, 1, 1)
-        if all((y, m , d)):
+        if all((y, m, d)):
             d = int(d)
             m = int(m)
             y = int(y)
@@ -3288,20 +3289,20 @@ class ActiveHours(View):
                     if week:
                         weeks.append(week)
                         week = []
-                if day.month == len(months) + 1:
+                if calendar.monthrange(day.year, day.month)[1] != day.day:
                     if day.isoweekday() <= 5:
                         month.append(day_data)
                 else:
-                    months.append(month)
+                    months.append([f'{day.year}.{day.month}'] + month)
                     month = []
             day += datetime.timedelta(days=1)
 
         for m in months:
             result = [0 for _ in range(6)]
-            for day in m:
+            for day in m[1]:
                 result = [x + y for x, y in zip(result, day)]
             result.append(sum(result))
-            months_results.append(result)
+            months_results.append([m[0]] + result)
 
         for w in weeks:
             result = [0 for _ in range(6)]
