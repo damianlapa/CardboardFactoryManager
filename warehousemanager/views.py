@@ -3293,11 +3293,12 @@ class ActiveHours(View):
                     if day.isoweekday() <= 5:
                         month.append(day_data)
                 else:
-                    months.append([f'{day.year}.{day.month}'] + month)
+                    months.append([f'{day.year}.{day.month}'] + [month])
                     month = []
             day += datetime.timedelta(days=1)
 
         for m in months:
+            print(m)
             result = [0 for _ in range(6)]
             for day in m[1]:
                 result = [x + y for x, y in zip(result, day)]
