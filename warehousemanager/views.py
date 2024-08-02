@@ -3271,6 +3271,16 @@ class ActiveHours(View):
         day = first_day
         last_day = datetime.date.today() + datetime.timedelta(days=1)
 
+        ld = request.GET.get('ld')
+        lm = request.GET.get('lm')
+        ly = request.GET.get('ly')
+
+        if all((ly, lm, ld)):
+            ld = int(ld)
+            lm = int(lm)
+            ly = int(ly)
+            last_day = datetime.date(ly, lm, ld)
+
         weeks = []
         months = []
         week = []
