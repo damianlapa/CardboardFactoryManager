@@ -3313,6 +3313,7 @@ class ActiveHours(View):
             for day in m[1]:
                 result = [x + y for x, y in zip(result, day)]
             result.append(sum(result))
+            result = list(map(int, result))
             months_results.append([m[0]] + result)
 
         for w in weeks:
