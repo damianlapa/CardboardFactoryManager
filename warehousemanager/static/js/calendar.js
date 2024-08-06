@@ -43,6 +43,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }else if (data[j][1] == 'SPOTKANIE') {
                     child.classList.add('bg-pink')
                     child.style.color = 'black'
+                }else if (data[j][1] == 'SPEDYCJA') {
+                    child.style.background = 'red'
+                    child.style.color = 'black'
                 }else if (data[j][1] == 'ODBIÓR OSOBISTY') {
                     child.classList.add('bg-yellow')
                     child.style.color = 'black'
