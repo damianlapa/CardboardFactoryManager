@@ -971,6 +971,10 @@ class PunchesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_punch'
 
     def get(self, request):
+        if request.GET.get('all') == 'yes':
+            only_active = False
+        else:
+            only_active = True
         PUNCH_TYPES_COLORS = (
             ('471', 'FEFCO 471', '#D49AE9'),
             ('427', 'FEFCO 427', 'white'),
@@ -988,6 +992,8 @@ class PunchesList(PermissionRequiredMixin, View):
         visit_counter(user, 'punches')
 
         punches = Punch.objects.all().order_by('type', 'type_letter', 'type_num')
+        if only_active:
+            punches = punches.filter(active=True)
         punch_types = PUNCH_TYPES_COLORS
         title = 'PUNCHES'
 
@@ -3308,7 +3314,6 @@ class ActiveHours(View):
             day += datetime.timedelta(days=1)
 
         for m in months:
-            print(m)
             result = [0 for _ in range(6)]
             for day in m[1]:
                 result = [x + y for x, y in zip(result, day)]
