@@ -23,8 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log(this);
             var self = this
             $.ajax({
-            //url: localLink + 'deliveries/event-check/' + this.dataset['eventid']+ '/',
-            url: "http://127.0.0.1:8000/deliveries/event-check/3/",
+            url: localLink + 'deliveries/event-check/' + this.dataset['eventid']+ '/',
             data: {},
             type: 'GET',
             dataType: 'json'
