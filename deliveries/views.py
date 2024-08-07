@@ -2,7 +2,7 @@ from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 from deliveries.models import Event
 from deliveries.forms import EventForm
-
+from django.http import JsonResponse
 import json
 
 import datetime
@@ -80,6 +80,17 @@ class EventsByDay(View):
             return HttpResponse(json.dumps(result))
         else:
             return HttpResponse('')
+
+
+class EventCheck(View):
+    def get(self, request, event_id):
+        event = Event.objects.get(id=event_id)
+        if event.event_type == 'ZREALIZOWANA DOSTAWA':
+            return JsonResponse({'success': False})
+        else:
+            event.event_type = 'ZREALIZOWANA DOSTAWA'
+            event.save()
+            return JsonResponse({'success': True})
 
 
 class DayDetails(View):

@@ -18,9 +18,28 @@ document.addEventListener("DOMContentLoaded", function () {
     allEvents = document.getElementsByClassName('day-details-row')
 
     for (let i=0; i < allEvents.length; i++) {
-        allEvents[i].addEventListener('click', function() {
-            link = localLink + 'deliveries/event-details/' + allEvents[i].dataset.eventid + '/'
-            window.open(link, '_self')
+        allEvents[i].addEventListener('click', function(event) {
+        if (event.target.classList.contains('checkbox')) {
+            console.log(this);
+            var self = this
+            $.ajax({
+            //url: localLink + 'deliveries/event-check/' + this.dataset['eventid']+ '/',
+            url: "http://127.0.0.1:8000/deliveries/event-check/3/",
+            data: {},
+            type: 'GET',
+            dataType: 'json'
+            }).done(function (data) {
+                var eventType = self.getElementsByTagName("td")[1];
+                var checkbox = self.getElementsByTagName("input")[0]
+                eventType.innerText = "ZREALIZOWANA DOSTAWA";
+                checkbox.checked = true;
+            })
+            event.stopPropagation();
+        }
+        else {
+            //link = localLink + 'deliveries/event-details/' + allEvents[i].dataset.eventid + '/'
+            //window.open(link, '_self')
+        }
         })
     }
 })

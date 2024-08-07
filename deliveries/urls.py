@@ -9,5 +9,6 @@ urlpatterns = [
     path('add-event/', AddEvent.as_view(), name='add-event'),
     path('event-details/<int:event_id>/', EventDetail.as_view(), name='event-detail'),
     path('event-edit/<int:event_id>/', EventEdit.as_view(), name='event-edit'),
-    path('event-delete/<int:event_id>/', EventDelete.as_view(), name='event-delete')
+    path('event-delete/<int:event_id>/', EventDelete.as_view(), name='event-delete'),
+    path('event-check/<int:event_id>/', EventCheck.as_view(), name='event-check')
 ]

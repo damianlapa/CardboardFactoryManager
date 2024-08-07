@@ -17,13 +17,49 @@
 </a>
     </div>
 
+<style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        th, td {
+            border: 1px solid #000;
+            text-align: center;
+            padding: 8px;
+        }
+        .col-1 {
+            width: 3%;
+        }
+        .col-2 {
+            width: 17%;
+        }
+        .col-3 {
+            width: 50%;
+        }
+        .col-4 {
+            width: 25%;
+        }
+        .col-5 {
+            width: 5%;
+        }
+</style>
+
 <div class="day-details">
-    <table style="width: 100%">
+    <table>
+        <colgroup>
+            <col class="col-1">
+            <col class="col-2">
+            <col class="col-3">
+            <col class="col-4">
+            <col class="col-5">
+        </colgroup>
         <tr>
             <th>ID</th>
             <th>TYPE</th>
             <th>TITLE</th>
             <th>DETAILS</th>
+            <th>REALIZED</th>
         </tr>
         {% for event in events %}
         <tr class="day-details-row" data-eventid="{{event.id}}">
@@ -31,6 +67,9 @@
             <td>{{ event.event_type }}</td>
             <td>{{ event.title }}</td>
             <td>{{ event.details }}</td>
+            <td class='checkbox'>
+                <input type="checkbox" class='checkbox' {% if event.event_type == 'ZREALIZOWANA DOSTAWA' %}checked{% endif %}>
+            </td>
         </tr>
         {% endfor %}
     </table>
