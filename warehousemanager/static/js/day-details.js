@@ -36,8 +36,8 @@ document.addEventListener("DOMContentLoaded", function () {
             event.stopPropagation();
         }
         else {
-            //link = localLink + 'deliveries/event-details/' + allEvents[i].dataset.eventid + '/'
-            //window.open(link, '_self')
+            link = localLink + 'deliveries/event-details/' + allEvents[i].dataset.eventid + '/'
+            window.open(link, '_self')
         }
         })
     }
