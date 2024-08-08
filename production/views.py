@@ -529,8 +529,6 @@ class WorkerEfficiencyPrintPDF(View):
         if month_end > datetime.datetime.today().date():
             month_end = datetime.datetime.today().date()
 
-        print(month_start, month_end)
-
         working_days = 0
         absences = 0
         extra_hours = 0

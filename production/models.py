@@ -352,10 +352,14 @@ class ProductionUnit(models.Model):
         if self.start and self.end:
             self.start += datetime.timedelta(hours=2)
             self.end += datetime.timedelta(hours=2)
+            print(self.start, self.end)
             difference = self.end - self.start
             if self.end.month == self.start.month:
                 same_day = self.end.day == self.start.day
                 if same_day:
+                    if self.end > datetime.datetime(self.end.year, self.end.month, self.end.day, 11, 0,
+                                                    0) + datetime.timedelta(hours=2) > self.start:
+                        difference -= datetime.timedelta(minutes=20)
                     return change_difference_to_time(difference)
 
                 else:
@@ -366,6 +370,11 @@ class ProductionUnit(models.Model):
                             # the same week
                             if self.end.isoweekday() > self.start.isoweekday():
                                 difference = difference - datetime.timedelta(hours=16 * days_difference)
+                                if self.start.hour < 11:
+                                    if self.end.hour < 11:
+                                        difference -= datetime.timedelta(minutes=20*days_difference)
+                                    else:
+                                        difference -= datetime.timedelta(minutes=20 * (days_difference + 1))
                             # ends next week
                             else:
                                 difference = difference - datetime.timedelta(hours=(days_difference - 2) * 16)
@@ -396,6 +405,9 @@ class ProductionUnit(models.Model):
                             else:
                                 difference = difference - holidays_to_count * datetime.timedelta(hours=8)
                                 return change_difference_to_time(difference)
+
+                        break_minutes = 0
+                        start_day = self.start
                     else:
                         '''
                         TO DO
@@ -597,7 +609,6 @@ class ProductionUnit(models.Model):
                         base_value *= 1.1
 
             return setup_value + base_value
-
 
         return None
 

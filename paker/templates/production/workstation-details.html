@@ -195,7 +195,7 @@
                     </button>
                 </a>
             </td>
-            <td>{{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
+            <td>({{ unit.production_order.id_number }}) {{ unit.production_order.customer }} {{ unit.production_order.dimensions }}</td>
             <td>{{ unit.production_order.cardboard }} {{ unit.production_order.cardboard_dimensions }}</td>
             <td>
                 {% if unit.quantity_end %}
