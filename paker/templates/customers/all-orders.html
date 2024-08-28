@@ -5,8 +5,33 @@
     <title>Title</title>
 </head>
 <body>
-{% for d in data %}
-<p>{{ d }}</p>
-{% endfor %}
+<table>
+    <tr>
+        <th>Nr zamówienia</th>
+        <th>Data zam.</th>
+        <th>Proces</th>
+        <th>Arkusz</th>
+        <th>Ilość</th>
+        <th>Klient</th>
+        <th>Tektura</th>
+        <th>Wymiar</th>
+        <th>Nazwa</th>
+    </tr>
+    {% for d in data %}
+        {% if d.15 %}
+            <tr>
+                <td>{{ {{ d.0 }} {{ d.1 }}/{{ d.2 }} }}</td>
+                <td>{{ d.6 }}</td>
+                <td>{{ d.9 }}</td>
+                <td>{{ d.12 }}x{{ d.13 }}</td>
+                <td>{{ d.15 }}</td>
+                <td>{{ d.18 }}</td>
+                <td>{{ d.19 }}{{ d.20 }}{{ d.21 }}</td>
+                <td>{{ d.23 }}</td>
+            </tr>
+        {% endif %}
+    {% endfor %}
+</table>
+
 </body>
 </html>
