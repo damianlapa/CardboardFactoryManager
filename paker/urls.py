@@ -8,7 +8,7 @@ urlpatterns = [
     path('production/', include('production.urls')),
     path('orders/', include('orders.urls')),
     path('deliveries/', include('deliveries.urls')),
-    # path('customers/', include('customers.urls')),
+    path('customers/', include('customers.urls')),
 
     path('admin/', admin.site.urls, name='admin'),
     path('print-test/', PrintTest.as_view(), name='print-test'),
