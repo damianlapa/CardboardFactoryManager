@@ -704,7 +704,7 @@ class WorkerEfficiencyPrintPDF(View):
 
         units_stations = sorted(units_stations, key=lambda x: x[1], reverse=True)
 
-        efficiency = round(100 * efficiency[0] / efficiency[1], 2) if efficiency[1] else 100
+        efficiency = round(100 * efficiency[0] / (efficiency[1] - 10800), 2) if efficiency[1] else 100
 
         pot = round(full_pot * float((days_at_work_to_count / working_days)), 2)
 
