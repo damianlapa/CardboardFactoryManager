@@ -844,7 +844,7 @@ class StationEfficiencyPrintPDF(View):
 
         works_with = sorted(works_with, key=lambda x: x[1], reverse=True)
 
-        efficiency = round(100 * efficiency[0] / (efficiency[1]-10800), 2) if efficiency[1] else 100
+        efficiency = round(100 * efficiency[0] / (efficiency[1]-10800), 5) if efficiency[1] else 100
 
         logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
         font_url = os.environ['PAKER_MAIN'] + 'static/fonts/roboto/'
