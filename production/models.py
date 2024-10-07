@@ -372,7 +372,7 @@ class ProductionUnit(models.Model):
                                 difference = difference - datetime.timedelta(hours=16 * days_difference)
                                 if self.start.hour < 11:
                                     if self.end.hour < 11:
-                                        difference -= datetime.timedelta(minutes=20*days_difference)
+                                        difference -= datetime.timedelta(minutes=20 * days_difference)
                                     else:
                                         difference -= datetime.timedelta(minutes=20 * (days_difference + 1))
                             # ends next week
@@ -429,6 +429,58 @@ class ProductionUnit(models.Model):
 
         else:
             return 'N/D'
+
+    def unit_duration2(self):
+        start = self.start
+        end = self.end
+
+        if start and end:
+            # error handling when start is later than end
+            if start > end:
+                return None
+            # correct times for start and end
+            else:
+                base = 0
+                # same day - WORKS
+                if start.date() == end.date():
+                    result = (end - start).seconds // 60
+                    if start.time().hour < 11 and ((end.time().hour == 11 and end.time().minute >= 20) or end.time().hour > 11):
+                        result -= 20
+                    return result * 60
+                # different days - WORKS
+                else:
+                    # same week - WORKS
+                    if start.isocalendar()[1] == end.isocalendar()[1]:
+                        # start time <= end time // base counting - WORKS
+                        if start.time() <= end.time():
+                            base = ((end - start).seconds + (end - start).days * 8 * 60 * 60) // 60
+                        # start time > end time // base counting - WORKS
+                        else:
+                            base = (((end - start).days + 1) * 8 * 60 * 60 - (start - end).seconds) // 60
+                    # different week - WORKS
+                    else:
+                        # start time <= end time // base counting - WORKS
+                        if start.time() <= end.time():
+                            base = ((end - start).seconds + ((end - start).days - 2) * 8 * 60 * 60) // 60
+                        # start time > end time // base counting - WORKS
+                        else:
+                            base = (((end - start).days - 1) * 8 * 60 * 60 - (start - end).seconds) // 60
+
+                    # breaks counting - minutes to subtract
+                    # start time <= end time
+                        # start before 11 and end 11+ // same day - WORKS // same week - WORKS // different week - WORKS
+                    if start.time().hour < 11 and end.time().hour >= 11:
+                        base -= (end - start).days * 20 + 20
+                    elif start.time().hour >= 11 and end.time().hour >= 11 or start.time().hour <= 11 and end.time().hour <= 11:
+                        base -= (end - start).days * 20
+                    elif start.time().hour >= 11 and end.time().hour <= 11:
+                        base -= ((end - start).days) * 20
+                    weeks = end.isocalendar()[1] - start.isocalendar()[1]
+                    base += weeks * 2 * 20
+                    return base * 60
+
+        else:
+            return None
 
     def estimated_duration(self):
         if self.estimated_time:

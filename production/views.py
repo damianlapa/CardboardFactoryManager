@@ -630,26 +630,33 @@ class WorkerEfficiencyPrintPDF(View):
 
         for unit in units:
             data.append([unit, ])
-            if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+            # if unit.estimated_duration_in_seconds() and unit.unit_duration_in_seconds():
+            if unit.estimated_duration_in_seconds() and unit.unit_duration2():
 
-                unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
+                # unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration_in_seconds()
+                unit_fractal = unit.estimated_duration_in_seconds() / unit.unit_duration2()
                 unit_efficiency = round(100 * unit_fractal, 2)
                 data[-1].append(unit_efficiency)
                 efficiency[0] += unit.estimated_duration_in_seconds()
-                efficiency[1] += unit.unit_duration_in_seconds()
+                # efficiency[1] += unit.unit_duration_in_seconds()
+                efficiency[1] += unit.unit_duration2()
 
                 # work stations
                 if unit.work_station not in worker_stations:
                     worker_stations.append(unit.work_station)
-                    units_stations.append([unit.work_station, 1, unit.unit_duration_in_seconds(),
-                                           [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                    # units_stations.append([unit.work_station, 1, unit.unit_duration_in_seconds(),
+                    #                        [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                    units_stations.append([unit.work_station, 1, unit.unit_duration2(),
+                                           [unit.estimated_duration_in_seconds(), unit.unit_duration2()]])
                 else:
                     for us in units_stations:
                         if us[0] == unit.work_station:
                             us[1] += 1
-                            us[2] += unit.unit_duration_in_seconds()
+                            # us[2] += unit.unit_duration_in_seconds()
+                            us[2] += unit.unit_duration2()
                             us[3][0] += unit.estimated_duration_in_seconds()
-                            us[3][1] += unit.unit_duration_in_seconds()
+                            # us[3][1] += unit.unit_duration_in_seconds()
+                            us[3][1] += unit.unit_duration2()
 
                 # works with
                 for coworker in unit.persons.all():
@@ -661,23 +668,32 @@ class WorkerEfficiencyPrintPDF(View):
                     if works_with:
                         if works_with[0][0] == '-':
                             works_with[0][1] += 1
-                            works_with[0][2] += unit.unit_duration_in_seconds()
+                            # works_with[0][2] += unit.unit_duration_in_seconds()
+                            works_with[0][2] += unit.unit_duration2()
                             works_with[0][3][0] += unit.estimated_duration_in_seconds()
-                            works_with[0][3][1] += unit.unit_duration_in_seconds()
+                            # works_with[0][3][1] += unit.unit_duration_in_seconds()
+                            works_with[0][3][1] += unit.unit_duration2()
                         else:
-                            works_with.insert(0, ['-', 1, unit.unit_duration_in_seconds(),
+                            # works_with.insert(0, ['-', 1, unit.unit_duration_in_seconds(),
+                            #                       [unit.estimated_duration_in_seconds(),
+                            #                        unit.unit_duration_in_seconds()]])
+                            works_with.insert(0, ['-', 1, unit.unit_duration2(),
                                                   [unit.estimated_duration_in_seconds(),
-                                                   unit.unit_duration_in_seconds()]])
+                                                   unit.unit_duration2()]])
                     else:
-                        works_with.append(['-', 1, unit.unit_duration_in_seconds(),
-                                           [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                        # works_with.append(['-', 1, unit.unit_duration_in_seconds(),
+                        #                    [unit.estimated_duration_in_seconds(), unit.unit_duration_in_seconds()]])
+                        works_with.append(['-', 1, unit.unit_duration2(),
+                                           [unit.estimated_duration_in_seconds(), unit.unit_duration2()]])
                 for coop in works_with:
                     for coworker_person in unit.persons.all():
                         if coworker_person == coop[0]:
                             coop[1] += 1
-                            coop[2] += unit.unit_duration_in_seconds()
+                            # coop[2] += unit.unit_duration_in_seconds()
+                            coop[2] += unit.unit_duration2()
                             coop[3][0] += unit.estimated_duration_in_seconds()
-                            coop[3][1] += unit.unit_duration_in_seconds()
+                            # coop[3][1] += unit.unit_duration_in_seconds()
+                            coop[3][1] += unit.unit_duration2()
 
         for coworker_data in works_with:
             hours = coworker_data[2] // 3600
@@ -1176,3 +1192,11 @@ class PrepareOrders(View):
 
         return redirect('production-menu')
 
+
+class UnitTest(View):
+    def get(self, request):
+        units = ProductionUnit.objects.all()
+        for u in units:
+            print(u.unit_duration2())
+
+        return HttpResponse('ok')

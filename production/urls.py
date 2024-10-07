@@ -82,3 +82,7 @@ urlpatterns += [
     path('prepare-orders/', PrepareOrders.as_view(), name='prepare-orders')
 ]
 
+#test
+urlpatterns += [
+    path('udt/', UnitTest.as_view())
+]
