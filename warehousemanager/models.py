@@ -156,6 +156,48 @@ class Person(models.Model):
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
 
+    # new
+    def worker_vacation_in_year(self, year=2024):
+        def year_days(year_):
+            if year_ % 4 == 0 and year % 100 != 0:
+                return 366
+            return 365
+
+        contracts = Contract.objects.filter(worker=self, date_start__lte=datetime.date(year, 12, 31))
+        days = 0
+
+        for contract in contracts:
+            if not contract.date_end:
+                if datetime.date(year, 12, 31) > contract.date_start >= datetime.date(year, 1, 1)and not contract.date_end:
+                    days_fractal = (datetime.date(year+1, 1, 1) - contract.date_start).days/year_days(year)
+                    days += round(self.yearly_vacation_limit * days_fractal, 2)
+                elif contract.date_start < datetime.date(year, 1, 1) and not contract.date_end:
+                    days += self.yearly_vacation_limit
+            else:
+                if contract.date_start >= datetime.date(year, 1, 1) and contract.date_end >= datetime.date(year, 12, 31):
+                    days_fractal = (datetime.date(year, 12, 31) - contract.date_start).days / year_days(year)
+                    days += round(self.yearly_vacation_limit * days_fractal,2)
+                elif contract.date_start >= datetime.date(year, 1, 1) and contract.date_end < datetime.date(year, 12, 31):
+                    days_fractal = (contract.date_end - contract.date_start).days / year_days(year)
+                    days += round(self.yearly_vacation_limit * days_fractal, 2)
+                elif contract.date_start < datetime.date(year, 1, 1) and datetime.date(year, 1, 1) <= contract.date_end <= datetime.date(year, 12, 31):
+                    days_fractal = (contract.date_end - datetime.date(year-1, 12, 31)).days / year_days(year)
+                    days += round(self.yearly_vacation_limit * days_fractal, 2)
+                elif contract.date_start < datetime.date(year, 1, 1) and contract.date_end >= datetime.date(year, 12, 31):
+                    days += self.yearly_vacation_limit
+        return int(round(days, 0))
+
+    # new
+    def worker_vacations(self, year=2024):
+        result = {}
+        absences = Absence.objects.filter(worker=self, absence_date__gte=datetime.date(year, 1, 1), absence_date__lte=datetime.date(year, 12, 31))
+        for a in absences:
+            if a.absence_type in result.keys():
+                result[a.absence_type] += 1
+            else:
+                result[a.absence_type] = 1
+        return result
+
     # def vacation_days(self, year):
     #     r = 0
     #     if year == '2021':

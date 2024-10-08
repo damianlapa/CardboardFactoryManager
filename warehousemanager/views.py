@@ -3330,3 +3330,18 @@ class ActiveHours(View):
 
         return render(request, 'whm/active_hours.html', locals())
 
+
+class WorkersVacationsTest(View):
+    def get(self, request):
+        result = ''
+        workers = Person.objects.all()
+        for y in range(2017, datetime.date.today().year + 1):
+            result += f'<h1>{y}</h1>'
+            for w in workers:
+                if w.worker_vacation_in_year(y):
+                    if not w.job_end:
+                        dts = w.worker_vacation_in_year(y) if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacation_in_year(y) - w.worker_vacations(y)['UW']
+                        result += f'<h3>{w} - [{dts}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
+            result += '<hr>'
+
+        return HttpResponse(result)

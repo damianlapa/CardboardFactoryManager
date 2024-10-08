@@ -202,5 +202,9 @@ urlpatterns += [
     path('active_hours/', ActiveHours.as_view(), name='active-hours')
 ]
 
+urlpatterns += [
+    path('wwtest/', WorkersVacationsTest.as_view())
+]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

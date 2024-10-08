@@ -433,6 +433,7 @@ class ProductionUnit(models.Model):
     def unit_duration2(self):
         start = self.start
         end = self.end
+        holidays = Holiday.objects.filter(holiday_date__lte=end, holiday_date__gte=start)
 
         if start and end:
             # error handling when start is later than end
@@ -477,6 +478,7 @@ class ProductionUnit(models.Model):
                         base -= ((end - start).days) * 20
                     weeks = end.isocalendar()[1] - start.isocalendar()[1]
                     base += weeks * 2 * 20
+                    base -= (len(holidays) * 8 * 60) - len(holidays) * 20
                     return base * 60
 
         else:
