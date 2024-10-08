@@ -3340,8 +3340,10 @@ class WorkersVacationsTest(View):
             for w in workers:
                 if w.worker_vacation_in_year(y):
                     if not w.job_end:
-                        dts = w.worker_vacation_in_year(y) if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacation_in_year(y) - w.worker_vacations(y)['UW']
-                        result += f'<h3>{w} - [{dts}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
+                        vacations = 0 if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UW']
+                        vacations_on_demand = 0 if not 'UŻ' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UŻ']
+                        vacations += vacations_on_demand
+                        result += f'<h3>{w} - [{w.worker_vacation_in_year(y) - vacations}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
             result += '<hr>'
 
         return HttpResponse(result)
