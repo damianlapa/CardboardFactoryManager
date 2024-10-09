@@ -3335,6 +3335,7 @@ class WorkersVacationsTest(View):
     def get(self, request):
         result = ''
         workers = Person.objects.all()
+        workers_cumulative = {}
         for y in range(2017, datetime.date.today().year + 1):
             result += f'<h1>{y}</h1>'
             for w in workers:
@@ -3344,6 +3345,18 @@ class WorkersVacationsTest(View):
                         vacations_on_demand = 0 if not 'UŻ' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UŻ']
                         vacations += vacations_on_demand
                         result += f'<h3>{w} - [{w.worker_vacation_in_year(y) - vacations}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
+                        if w in workers_cumulative.keys():
+                            workers_cumulative[w] += w.worker_vacation_in_year(y) - vacations
+                        else:
+                            workers_cumulative[w] = w.worker_vacation_in_year(y) - vacations
             result += '<hr>'
+
+        result += '<hr>'
+        workers_data = [(worker, workers_cumulative[worker]) for worker in workers_cumulative.keys()]
+        workers_data.sort(key=lambda x:x[0].last_name)
+
+        for data in workers_data:
+            result += f'<h2>{data[0]} :: {data[1]}<h2>'
+
 
         return HttpResponse(result)

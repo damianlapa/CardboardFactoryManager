@@ -163,9 +163,9 @@ class Person(models.Model):
                 return 366
             return 365
 
-        contracts = Contract.objects.filter(worker=self, date_start__lte=datetime.date(year, 12, 31))
+        contracts = Contract.objects.filter(worker=self, date_start__lte=datetime.date(year, 12, 31), type='UOP')
         days = 0
-
+        print(self)
         for contract in contracts:
             if not contract.date_end:
                 if datetime.date(year, 12, 31) > contract.date_start >= datetime.date(year, 1, 1)and not contract.date_end:
