@@ -165,7 +165,7 @@ class Person(models.Model):
 
         contracts = Contract.objects.filter(worker=self, date_start__lte=datetime.date(year, 12, 31), type='UOP')
         days = 0
-        print(self)
+
         for contract in contracts:
             if not contract.date_end:
                 if datetime.date(year, 12, 31) > contract.date_start >= datetime.date(year, 1, 1)and not contract.date_end:
@@ -197,6 +197,21 @@ class Person(models.Model):
             else:
                 result[a.absence_type] = 1
         return result
+
+    def vacation_left(self, year=2024):
+        days = 0
+        for y in range(2017, year):
+            limit = self.worker_vacation_in_year(y)
+            vacations = self.worker_vacations(y)
+            vacation = vacations['UW'] if 'UW' in vacations.keys() else 0
+            vacation_on_demand = vacations['UŻ'] if 'UŻ' in vacations.keys() else 0
+            vacations_summary = vacation + vacation_on_demand
+
+            days += (limit - vacations_summary)
+
+        return days
+
+
 
     # def vacation_days(self, year):
     #     r = 0
