@@ -190,7 +190,7 @@ class Person(models.Model):
     # new
     def worker_vacations(self, year=2024):
         result = {}
-        absences = Absence.objects.filter(worker=self, absence_date__gte=datetime.date(year, 1, 1), absence_date__lte=datetime.date.today())
+        absences = Absence.objects.filter(worker=self, absence_date__gte=datetime.date(year, 1, 1), absence_date__lte=datetime.date(year, 12, 31))
         for a in absences:
             if a.absence_type in result.keys():
                 result[a.absence_type] += 1
