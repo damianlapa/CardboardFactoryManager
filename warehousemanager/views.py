@@ -2000,7 +2000,7 @@ class AvailableVacation(PermissionRequiredMixin, View):
             request.GET.get('year-choice'))
         years = [x for x in range(2020, datetime.datetime.now().year + 2)]
         persons_data = []
-        if request.user.is_superuser:
+        if request.user.username == 'damian':
             persons = Person.objects.filter(job_end=None)
         else:
             try:
