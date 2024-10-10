@@ -2013,7 +2013,7 @@ class AvailableVacation(PermissionRequiredMixin, View):
             vacation = person_vacations['UW'] if 'UW' in person_vacations.keys() else 0
             vacation_on_demand = person_vacations['UŻ'] if 'UŻ' in person_vacations.keys() else 0
             vacations_summary = vacation + vacation_on_demand
-            persons_data.append((p, vacation_in_year, p.vacation_left(year), vacations_summary, p.vacation_left(year) - vacations_summary))
+            persons_data.append((p, vacation_in_year, p.vacation_left(year), vacations_summary, vacation_in_year + p.vacation_left(year) - vacations_summary))
 
         return render(request, 'warehousemanager-vacation-list.html', locals())
 
