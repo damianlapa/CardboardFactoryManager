@@ -1055,4 +1055,7 @@ class GluerNumber(models.Model):
         ordering = ('number', )
 
     def __str__(self):
-        return f'[{self.number}] {self.customer} - {self.dimensions}'
+        if not self.comments:
+            return f'[{self.number}] {self.customer} - {self.dimensions}'
+        else:
+            return f'*[{self.number}] {self.customer} - {self.dimensions}'
