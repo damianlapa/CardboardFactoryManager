@@ -3089,7 +3089,6 @@ class GluerNumberGet(View):
     def get(self, request):
         dimensions = request.GET.get('dimensions')
         customer = request.GET.get('customer')
-        print(dimensions, customer)
         try:
             gluer_number = GluerNumber.objects.get(dimensions=dimensions, customer=Buyer.objects.get(name=customer))
             data = {
