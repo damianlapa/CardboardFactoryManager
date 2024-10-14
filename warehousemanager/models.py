@@ -1046,9 +1046,12 @@ class WorkReminder(models.Model):
 class GluerNumber(models.Model):
     number = models.PositiveIntegerField()
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    dimensions = models.CharField(max_length=32, unique=True)
+    dimensions = models.CharField(max_length=32)
     name = models.CharField(max_length=32)
     comments = models.TextField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('customer', 'dimensions')
 
     def __str__(self):
         return f'[{self.number}] {self.customer} - {self.dimensions}'
