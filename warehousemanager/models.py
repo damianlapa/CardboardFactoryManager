@@ -1048,7 +1048,7 @@ class GluerNumber(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     dimensions = models.CharField(max_length=32, unique=True)
     name = models.CharField(max_length=32)
-    comments = models.CharField(max_length=128, null=True, blank=True)
+    comments = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f'[{self.number}] {self.customer} - {self.dimensions}'
