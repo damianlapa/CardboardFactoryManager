@@ -1052,6 +1052,7 @@ class GluerNumber(models.Model):
 
     class Meta:
         unique_together = ('customer', 'dimensions')
+        ordering = ('number', )
 
     def __str__(self):
         return f'[{self.number}] {self.customer} - {self.dimensions}'

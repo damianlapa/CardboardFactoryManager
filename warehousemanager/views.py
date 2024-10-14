@@ -3088,11 +3088,12 @@ class GluerNumberView(View):
 class GluerNumberGet(View):
     def get(self, request):
         dimensions = request.GET.get('dimensions')
-        # customer = request.GET.get('customer')
+        customer = request.GET.get('customer')
         try:
-            gluer_number = GluerNumber.objects.get(dimensions=dimensions)
+            gluer_number = GluerNumber.objects.get(dimensions=dimensions, customer=customer)
             data = {
-                'number': gluer_number.number
+                'number': gluer_number.number,
+                'comments': gluer_number.comments
             }
             return JsonResponse(data)
         except Exception as e:
