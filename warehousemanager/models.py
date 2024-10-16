@@ -159,42 +159,42 @@ class Person(models.Model):
 
     # new
     def worker_vacation_in_year(self, year=2024):
-        def year_days(year_):
-            if year_ % 4 == 0 and year % 100 != 0:
-                return 366
-            return 365
-
-        contracts = Contract.objects.filter(worker=self, date_start__lte=datetime.date(year, 12, 31), type='UOP')
-        days = 0
-
-        for contract in contracts:
-            if not contract.date_end:
-                if datetime.date(year, 12, 31) > contract.date_start >= datetime.date(year, 1, 1)and not contract.date_end:
-                    # days_fractal = (datetime.date(year+1, 1, 1) - contract.date_start).days/year_days(year)
-                    # days += round(self.yearly_vacation_limit * days_fractal, 2)
-                    months_fractal = (12 - contract.date_start.month + 1) / 12
-                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
-                elif contract.date_start < datetime.date(year, 1, 1) and not contract.date_end:
-                    days += self.yearly_vacation_limit
+        def months_data(start, end, year_):
+            result = []
+            month = (start.year, start.month)
+            if not end:
+                while month[0] <= year_:
+                    result.append(month)
+                    month = (month[0], month[1] + 1)
+                    if month[1] == 13:
+                        month = (month[0] + 1, 1)
             else:
-                if contract.date_start >= datetime.date(year, 1, 1) and contract.date_end >= datetime.date(year, 12, 31):
-                    # days_fractal = (datetime.date(year, 12, 31) - contract.date_start).days / year_days(year)
-                    # days += round(self.yearly_vacation_limit * days_fractal,2)
-                    months_fractal = (12 - contract.date_start.month + 1) / 12
-                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
-                elif contract.date_start >= datetime.date(year, 1, 1) and contract.date_end < datetime.date(year, 12, 31):
-                    # days_fractal = (contract.date_end - contract.date_start).days / year_days(year)
-                    # days += round(self.yearly_vacation_limit * days_fractal, 2)
-                    months_fractal = (contract.date_end.month - contract.date_start.month + 1) / 12
-                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
-                elif contract.date_start < datetime.date(year, 1, 1) and datetime.date(year, 1, 1) <= contract.date_end <= datetime.date(year, 12, 31):
-                    # days_fractal = (contract.date_end - datetime.date(year-1, 12, 31)).days / year_days(year)
-                    # days += round(self.yearly_vacation_limit * days_fractal, 2)
-                    months_fractal = contract.date_end.month / 12
-                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
-                elif contract.date_start < datetime.date(year, 1, 1) and contract.date_end >= datetime.date(year, 12, 31):
-                    days += self.yearly_vacation_limit
-        return days
+                while month != (end.year, end.month):
+                    result.append(month)
+                    month = (month[0], month[1] + 1)
+                    if month[1] == 13:
+                        month = (month[0] + 1, 1)
+                result.append((end.year, end.month))
+            return result
+
+        contracts = Contract.objects.filter(worker=self, type='UOP')
+        data = {}
+        data_ = []
+        for contract in contracts:
+            data_ += months_data(contract.date_start, contract.date_end, year)
+        for d in data_:
+            if d[0] not in data.keys():
+                data[d[0]] = [d[1]]
+            else:
+                if d[1] not in data[d[0]]:
+                    data[d[0]].append(d[1])
+
+        if year in data.keys():
+            return math.ceil(self.yearly_vacation_limit * (len(data[year])/12))
+        else:
+            return 0
+
+
 
     # new
     def worker_vacations(self, year=2024):
