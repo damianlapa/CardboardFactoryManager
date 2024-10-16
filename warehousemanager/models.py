@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.urls import reverse
 import decimal
+import math
 import datetime
 from warehousemanager.clear_funcs import work_days_during_period
 
@@ -169,23 +170,31 @@ class Person(models.Model):
         for contract in contracts:
             if not contract.date_end:
                 if datetime.date(year, 12, 31) > contract.date_start >= datetime.date(year, 1, 1)and not contract.date_end:
-                    days_fractal = (datetime.date(year+1, 1, 1) - contract.date_start).days/year_days(year)
-                    days += round(self.yearly_vacation_limit * days_fractal, 2)
+                    # days_fractal = (datetime.date(year+1, 1, 1) - contract.date_start).days/year_days(year)
+                    # days += round(self.yearly_vacation_limit * days_fractal, 2)
+                    months_fractal = (12 - contract.date_start.month + 1) / 12
+                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
                 elif contract.date_start < datetime.date(year, 1, 1) and not contract.date_end:
                     days += self.yearly_vacation_limit
             else:
                 if contract.date_start >= datetime.date(year, 1, 1) and contract.date_end >= datetime.date(year, 12, 31):
-                    days_fractal = (datetime.date(year, 12, 31) - contract.date_start).days / year_days(year)
-                    days += round(self.yearly_vacation_limit * days_fractal,2)
+                    # days_fractal = (datetime.date(year, 12, 31) - contract.date_start).days / year_days(year)
+                    # days += round(self.yearly_vacation_limit * days_fractal,2)
+                    months_fractal = (12 - contract.date_start.month + 1) / 12
+                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
                 elif contract.date_start >= datetime.date(year, 1, 1) and contract.date_end < datetime.date(year, 12, 31):
-                    days_fractal = (contract.date_end - contract.date_start).days / year_days(year)
-                    days += round(self.yearly_vacation_limit * days_fractal, 2)
+                    # days_fractal = (contract.date_end - contract.date_start).days / year_days(year)
+                    # days += round(self.yearly_vacation_limit * days_fractal, 2)
+                    months_fractal = (contract.date_end.month - contract.date_start.month + 1) / 12
+                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
                 elif contract.date_start < datetime.date(year, 1, 1) and datetime.date(year, 1, 1) <= contract.date_end <= datetime.date(year, 12, 31):
-                    days_fractal = (contract.date_end - datetime.date(year-1, 12, 31)).days / year_days(year)
-                    days += round(self.yearly_vacation_limit * days_fractal, 2)
+                    # days_fractal = (contract.date_end - datetime.date(year-1, 12, 31)).days / year_days(year)
+                    # days += round(self.yearly_vacation_limit * days_fractal, 2)
+                    months_fractal = contract.date_end.month / 12
+                    days += math.ceil(self.yearly_vacation_limit * months_fractal)
                 elif contract.date_start < datetime.date(year, 1, 1) and contract.date_end >= datetime.date(year, 12, 31):
                     days += self.yearly_vacation_limit
-        return int(round(days, 0))
+        return days
 
     # new
     def worker_vacations(self, year=2024):
