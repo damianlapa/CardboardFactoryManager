@@ -2,6 +2,7 @@ from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 from deliveries.models import Event
 from deliveries.forms import EventForm
+from warehousemanager.models import Note
 from django.http import JsonResponse
 import json
 
@@ -64,7 +65,9 @@ class CalendarView(View):
 
         today = datetime.datetime(today.year, today.month, today.day)
 
-        return render(request, 'deliveries/calendar.html', locals())
+        notes = Note.objects.all()
+
+        return render(request, 'deliveries/calendar2.html', locals())
 
 
 class EventsByDay(View):

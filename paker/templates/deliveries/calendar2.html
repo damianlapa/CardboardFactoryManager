@@ -1,0 +1,68 @@
+{% extends '__base2__.html' %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center" class="white">{{ month_desc }}</h1>
+
+<!-- Nawigacja pomiędzy miesiącami -->
+<div>
+    <a href="{% url 'deliveries-calendar' %}?start={{p_month}}">
+        <button class="navBTN">Previous month</button>
+    </a>
+    <a href="{% url 'deliveries-calendar' %}?start={{n_month}}">
+        <button class="navBTN">Next month</button>
+    </a>
+</div>
+
+<div style="margin: 5px;">
+    <a href="{% url 'add-event' %}">
+        <button class='aEventBTN' value="Add Event">Add Event</button>
+    </a>
+</div>
+
+<!-- Układ w dwóch kolumnach: Kalendarz po lewej, notatki po prawej -->
+<div style="display: flex; justify-content: space-between;">
+    
+    <!-- Sekcja kalendarza -->
+    <div id="calendar" class="calendar-list" style="width: 85%;">
+
+        {% for week in weeks %}
+        {% for day in week %}
+            {% if day.0 == today %}
+                <div class="calendar-item" data-calendar="{{day.1}}" style="background: lightgreen">
+                    <p style="text-align: right; padding: 0px; margin: 0px;">{{ day.0.day }}</p>
+                </div>
+            {% else %}
+                <div class="calendar-item" data-calendar="{{day.1}}">
+                    <p style="text-align: right; padding: 0px; margin: 0px;">{{ day.0.day }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+        
+    </div>
+
+    <!-- Sekcja notatek -->
+    <div id="notes" style="width: 15%; background: white;">
+        <div style="margin: 5px;">
+            <a href="{% url 'add-note' %}">
+            <button class='aEventBTN' value="Add Note">Add Note</button>
+        </a>
+    </div>
+        <h2>Notes</h2>
+        <ul>
+            {% for note in notes %}
+                <li>{{ note.title }} - {{ note.content }}</li>
+            {% empty %}
+                <li>No notes available.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/calendar.js' %}"></script>
+{% endblock %}

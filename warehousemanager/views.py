@@ -485,7 +485,7 @@ class NoteAdd(PermissionRequiredMixin, View):
 
             new_note.save()
 
-            return redirect('notes')
+            return redirect('deliveries-calendar')
 
 
 # wszystkie notatki
