@@ -16,6 +16,8 @@ urlpatterns = [
     path('format-converter/', FormatConverter.as_view(), name='format-converter'),
     path('add-note/', NoteAdd.as_view(), name='add-note'),
     path('notes/', AllNotes.as_view(), name='notes'),
+    path('note-details/<int:note_id>/', NoteDetailsView.as_view(), name='note-details'),
+    path('note-delete/<int:note_id>/', NoteDeleteView.as_view(), name='note-delete'),
 
     path('buyer-add/', AddBuyer.as_view(), name='buyer-add'),
     path('buyers/', BuyersList.as_view(), name='buyers'),

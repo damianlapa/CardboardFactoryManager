@@ -497,6 +497,23 @@ class AllNotes(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-all-notes.html', locals())
 
 
+class NoteDetailsView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_note'
+
+    def get(self, request, note_id):
+        note = Note.objects.get(id=note_id)
+        return render(request, 'note-details.html', locals())
+
+
+class NoteDeleteView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_note'
+
+    def get(self, request, note_id):
+        note = Note.objects.get(id=note_id)
+        note.delete()
+        return redirect('deliveries-calendar')
+
+
 class AbsencesList(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_absence'
 

@@ -1,7 +1,9 @@
 {% extends '__base2__.html' %}
 
 {% block title %}Calendar{% endblock %}
-
+{% block style %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
 {% block content %}
 <h1 style="text-align: center" class="white">{{ month_desc }}</h1>
 
@@ -51,13 +53,21 @@
         </a>
     </div>
         <h2>Notes</h2>
-        <ul>
             {% for note in notes %}
-                <li>{{ note.title }} - {{ note.content }}</li>
+    <div style="background: lightgreen; padding: 5px; margin: 2px;;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">{{ note.title }}</h3>
+            <a href="{% url 'note-delete' note_id=note.id %}" style="color: red; margin-left: 10px;" title="Usuń">
+                <i class="fas fa-trash-alt"></i>
+            </a>
+        </div>
+        <h4>{{ note.content }}</h4>
+    </div>
+</a>
+
             {% empty %}
                 <li>No notes available.</li>
             {% endfor %}
-        </ul>
     </div>
 </div>
 {% endblock %}
