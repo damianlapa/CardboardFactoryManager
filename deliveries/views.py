@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse, redirect
+from django.shortcuts import render, HttpResponse, redirect, reverse
 from django.views import View
 from deliveries.models import Event
 from deliveries.forms import EventForm
@@ -30,10 +30,10 @@ class CalendarView(View):
         another_start = request.GET.get('start')
 
         if another_start:
-            y, m = another_start.split('-')
+            another_start = another_start.split('-')
 
-            y = int(y)
-            m = int(m)
+            y = int(another_start[0])
+            m = int(another_start[1])
 
             today = datetime.datetime(y, m, 1)
         else:
@@ -131,7 +131,7 @@ class AddEvent(View):
 
             e.save()
 
-            return redirect('deliveries-calendar')
+            return redirect(f'{reverse("deliveries-calendar")}?start={day.year}-{day.month}')
 
 
 class EventDetail(View):
