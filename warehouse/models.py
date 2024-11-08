@@ -36,7 +36,7 @@ class Product(models.Model):
 class Order(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
-    order_id = models.CharField(max_length=32)
+    order_id = models.CharField(max_length=32, unique=True)
     customer_date = models.DateField()
     order_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
