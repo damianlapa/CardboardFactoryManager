@@ -32,6 +32,9 @@ class Product(models.Model):
     def __str__(self):
         return f'{self.name}'
 
+    class Meta:
+        ordering = ['name']
+
 
 class Order(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
@@ -53,6 +56,9 @@ class Order(models.Model):
 
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
+
+    class Meta:
+        ordering = ['provider', 'order_id']
 
 
 class Delivery(models.Model):
