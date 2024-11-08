@@ -25,7 +25,7 @@ class TestView(View):
 
         for row in rows:
             try:
-                data = data_all(row)
+                data = data_all[row]
 
                 try:
                     customer = Buyer.objects.get(name=data[18])
