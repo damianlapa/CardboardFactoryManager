@@ -46,7 +46,7 @@ class TestView(View):
                 try:
                     order = Order.objects.get(order_id=f'{data[1]}/{data[2]}')
                     result += f'{order} already exists<br>'
-                except Order.ObjectDoesNotExist:
+                except Order.DoesNotExist:
                     order = Order(
                         customer=customer,
                         provider=provider,
