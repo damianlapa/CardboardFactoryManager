@@ -8,6 +8,7 @@ from warehousemanager.models import Buyer
 
 class TestView(View):
     def get(self, request):
+        data_all = get_all()
         result = ''
         row = request.GET.get('row')
         division = request.GET.get('division')
@@ -24,7 +25,7 @@ class TestView(View):
 
         for row in rows:
             try:
-                data = get_data(row)
+                data = data_all(row)
 
                 try:
                     customer = Buyer.objects.get(name=data[18])
