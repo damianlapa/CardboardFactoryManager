@@ -60,7 +60,7 @@ class TestView(View):
                         weight=0,
                         order_quantity=data[14],
                         delivered_quantity=data[15],
-                        price=data[22],
+                        price=int(data[22].replace('\xa0', '').replace(',', '.')),
                         product=product
                     )
                     order.save()
