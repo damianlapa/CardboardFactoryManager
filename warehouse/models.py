@@ -28,6 +28,8 @@ class StockType(models.Model):
 class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
+    dimensions = models.CharField(max_length=32, null=True, blank=True)
+    weight = models.PositiveIntegerField(null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
@@ -37,7 +39,7 @@ class Stock(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
-    supplies = models.ManyToManyField(StockSupply)
+    supplies = models.ManyToManyField(StockSupply, null=True, blank=True)
 
     def __str__(self):
         return f'{self.stock_type._type}: {self.quantity} {self.stock_type.unit}'
@@ -57,7 +59,7 @@ class Stock(models.Model):
 
 class Warehouse(models.Model):
     name = models.CharField(max_length=64)
-    stocks = models.ManyToManyField(Stock)
+    stocks = models.ManyToManyField(Stock, null=True, blank=True)
 
     def __str__(self):
         return f'{self.name}'
