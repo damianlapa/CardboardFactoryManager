@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'deliveries',
     'finances',
     'customers',
+    'warehouse'
 
 ]
 
