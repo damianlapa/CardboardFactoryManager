@@ -8,6 +8,7 @@ from warehousemanager.models import Buyer
 
 class TestView(View):
     def get(self, request):
+        result = ''
         row = request.GET.get('row')
         division = request.GET.get('division')
         if row:
@@ -44,6 +45,7 @@ class TestView(View):
                     product.save()
                 try:
                     order = Order.objects.get(order_id=f'{data[1]}/{data[2]}')
+                    result += f'{order} already exists<br>'
                 except Order.ObjectDoesNotExist:
                     order = Order(
                         customer=customer,
@@ -62,9 +64,10 @@ class TestView(View):
                         product=product
                     )
                     order.save()
+                    result += f'{order} saved<br>'
 
             except Exception as e:
-                pass
-        return HttpResponse('ok')
+                result += f'{e}<br>'
+        return HttpResponse(result)
 
 
