@@ -8,6 +8,7 @@ urlpatterns = [
     path('production/', include('production.urls')),
     path('orders/', include('orders.urls')),
     path('deliveries/', include('deliveries.urls')),
+    path('warehouse/', include('warehouse.urls')),
     # path('customers/', include('customers.urls')),
 
     path('admin/', admin.site.urls, name='admin'),
