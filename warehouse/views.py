@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse
 from django.views import View
 
-from gs_connection import *
+from warehouse.gs_connection import *
 
 
 class TestView(View):
