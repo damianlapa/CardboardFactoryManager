@@ -76,7 +76,7 @@ class TestView(View):
 
 class LoadExcelView(View):
     def get(self, request):
-        return render(request, "import_excel.html")
+        return render(request, "warehouse/load_excel.html")
     def post(self, request):
         result = ''
         # Odczytaj plik Excel bezpośrednio z pamięci
