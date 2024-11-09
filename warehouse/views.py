@@ -5,6 +5,8 @@ from warehouse.gs_connection import *
 from warehouse.models import *
 from warehousemanager.models import Buyer
 
+import pandas as pd
+
 
 class TestView(View):
     def get(self, request):
@@ -70,5 +72,27 @@ class TestView(View):
             except Exception as e:
                 result += f'{e}<br>'
         return HttpResponse(result)
+
+
+class LoadExcelView(View):
+    def get(self, request):
+        return render(request, "import_excel.html")
+    def post(self, request):
+        result = ''
+        # Odczytaj plik Excel bezpośrednio z pamięci
+        excel_file = request.FILES["excel_file"]
+
+        # Wczytaj dane z Excela bez zapisywania pliku
+        df = pd.read_excel(excel_file, engine="openpyxl")
+
+        # Przechodzenie przez wiersze i zapisywanie w bazie
+        for _, row in df.iterrows():
+            result += f'{row["DATA DOSTAWY"]} {row["NR WZ."]}<br>'
+
+        return HttpResponse(result)
+        # if request.method == "POST" and request.FILES["excel_file"]:
+
+
+
 
 
