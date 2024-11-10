@@ -55,7 +55,7 @@ class TestView(View):
                         customer=customer,
                         provider=provider,
                         order_id=f'{data[1]}/{data[2]}',
-                        customer_date=data[5] if data[5] else None,
+                        customer_date=data[5] if data[5] else data[6],
                         order_date=data[6] if data[6] else None,
                         delivery_date=data[7] if data[7] else None,
                         production_date=None,
@@ -157,7 +157,7 @@ class LoadWZ(View):
                     p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
         orders[-1].append(p_quantity)
 
-        date = date.replace('-', '.').split('.')
+        date = date.replace('­', '.').split('.')
 
         delivery = Delivery.objects.create(
             provider=Provider.objects.get(shortcut=provider),
@@ -179,7 +179,7 @@ class LoadWZ(View):
             except Exception as e:
                 result += f'{order}<br>'
                 result += f'{e}<br>'
-                
+
         return HttpResponse(result)
 
 
