@@ -6,6 +6,7 @@ from warehouse.models import *
 from warehousemanager.models import Buyer
 
 import pandas as pd
+import pdfplumber
 
 
 class TestView(View):
@@ -92,6 +93,51 @@ class LoadExcelView(View):
         return HttpResponse(result)
         # if request.method == "POST" and request.FILES["excel_file"]:
 
+
+class LoadWZ(View):
+    def get(self, request):
+        return render(request, "warehouse/load_wz.html")
+
+    def post(self, request):
+        result = ''
+        pdf_file = request.FILES["wz_file"]
+
+        with pdfplumber.open(pdf_file) as pdf:
+            all_text = ""
+            for page in pdf.pages:
+                all_text += page.extract_text() + "\n"
+
+        # Podział tekstu na linie
+        lines = all_text.splitlines()
+
+        wz_number = ''
+        registration_plate = ''
+        orders = []
+
+        for num in range(len(lines)):
+            line = lines[num]
+            if "Kopia WZ Nr." in line and not wz_number:
+                wz_number = line.split('.:')[1].strip()
+            if "Nr rej./Nazwisko" in line and not registration_plate:
+                registration_plate = line.split('.:')[1].split('/')[0].strip()
+            if "Nr zam. klienta:" in line:
+                number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                line_data = lines[num - 4].split(' ')
+                cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
+                dimensions = line_data[2]
+                quantity = (line_data[3] + line_data[4]).split(',')[0]
+                if cardboard == 'netto':
+                    line_data = lines[num - 31].split(' ')
+                    cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
+                    dimensions = line_data[2]
+                    quantity = (line_data[3] + line_data[4]).split(',')[0]
+                orders.append([number, cardboard, dimensions, quantity])
+
+        # print(wz_number)
+        # print(registration_plate)
+        for o in orders:
+            result += f'{o}<br>'
+        return HttpResponse(result)
 
 
 

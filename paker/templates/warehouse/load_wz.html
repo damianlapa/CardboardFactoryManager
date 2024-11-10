@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Import WZ</title>
+</head>
+<body>
+    <h1>Importuj dane z pliku PDF</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="pdf_file" accept=".pdf">
+        <button type="submit">Importuj</button>
+    </form>
+</body>
+</html>

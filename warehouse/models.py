@@ -77,6 +77,7 @@ class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
+    palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
 
     def __str__(self):
         return f'{self.delivery} :: {self.order}'
