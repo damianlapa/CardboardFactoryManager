@@ -58,7 +58,7 @@ class Order(models.Model):
         return f'{self.provider} {self.order_id} {self.name}'
 
     class Meta:
-        ordering = ['provider', 'order_id']
+        ordering = ['order_date', 'provider', 'order_id']
 
 
 class Delivery(models.Model):
