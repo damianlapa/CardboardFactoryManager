@@ -158,6 +158,8 @@ class LoadWZ(View):
         orders[-1].append(p_quantity)
 
         date = date.replace('­', '.').split('.')
+        if int(date[0]) > 31:
+            date = (date[0], date[1], date[2])
 
         delivery = Delivery.objects.create(
             provider=Provider.objects.get(shortcut=provider),
@@ -168,6 +170,7 @@ class LoadWZ(View):
         delivery.save()
 
         for order in orders:
+            result += f'{order}<br>'
             try:
                 delivery_item = DeliveryItem.objects.create(
                     delivery=delivery,
@@ -177,7 +180,6 @@ class LoadWZ(View):
                 )
                 delivery_item.save()
             except Exception as e:
-                result += f'{order}<br>'
                 result += f'{e}<br>'
 
         return HttpResponse(result)
