@@ -67,7 +67,7 @@ class Delivery(models.Model):
     car_number = models.CharField(max_length=16, null=True, blank=True)
     telephone = models.CharField(max_length=16, null=True, blank=True)
     description = models.CharField(max_length=256, null=True, blank=True)
-    palettes = models.ManyToManyField(Palette, through='DeliveryPalette')
+    palettes = models.ManyToManyField(Palette, through='DeliveryPalette', null=True)
 
     def __str__(self):
         return f'{self.provider}({self.car_number}) {self.date}'

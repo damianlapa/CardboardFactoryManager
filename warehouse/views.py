@@ -107,19 +107,34 @@ class LoadWZ(View):
             for page in pdf.pages:
                 all_text += page.extract_text() + "\n"
 
-        # Podział tekstu na linie
         lines = all_text.splitlines()
 
+        provider = ''
         wz_number = ''
-        registration_plate = ''
+        car_number = ''
+        date = ''
+        phone = ''
+        palettes = ''
         orders = []
+        p_quantity = ''
+        order_num = 1
 
         for num in range(len(lines)):
             line = lines[num]
+            if 'TFP Sp. z o.o.' in line:
+                provider = "TFP"
+            if "Data..." in line:
+                date = line.split('.:')[1].strip()
+            if "( " in line and " )" in line:
+                phone = line.replace("( ", "").replace(" )", "").strip()
             if "Kopia WZ Nr." in line and not wz_number:
                 wz_number = line.split('.:')[1].strip()
-            if "Nr rej./Nazwisko" in line and not registration_plate:
-                registration_plate = line.split('.:')[1].split('/')[0].strip()
+            if "Nr rej./Nazwisko" in line and not car_number:
+                car_number = line.split('.:')[1].split('/')[0].strip()
+            if "Rodzaj palety Typ platności Ilość pobrana" in line:
+                p_line = lines[num + 1]
+                p_line = p_line.split(' ')
+                palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
             if "Nr zam. klienta:" in line:
                 number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
                 line_data = lines[num - 4].split(' ')
@@ -132,9 +147,38 @@ class LoadWZ(View):
                     dimensions = line_data[2]
                     quantity = (line_data[3] + line_data[4]).split(',')[0]
                 orders.append([number, cardboard, dimensions, quantity])
+            if "Ilość na palecie: " in line:
+                print(order_num, len(orders) + 1)
+                if order_num == len(orders):
+                    p_quantity += f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+                else:
+                    orders[-2].append(p_quantity)
+                    order_num += 1
+                    p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+        orders[-1].append(p_quantity)
 
-        # print(wz_number)
-        # print(registration_plate)
+        date=date.split('.')
+
+        delivery = Delivery.objects.create(
+            provider=Provider.objects.get(shortcut=provider),
+            date=datetime.date(int(date[2]), int(date[1]), int(date[0])),
+            car_number=car_number,
+            telephone=phone.replace(' ', ''),
+        )
+        delivery.save()
+
+        for order in orders:
+            try:
+                delivery_item = DeliveryItem.objects.create(
+                    delivery=delivery,
+                    order=Order.objects.get(provider=delivery.provider, order_id=order[0]),
+                    quantity=order[3],
+                    palettes_quantity=order[4]
+                )
+                delivery_item.save()
+            except Exception as e:
+                pass
+
         for o in orders:
             result += f'{o}<br>'
         return HttpResponse(result)
