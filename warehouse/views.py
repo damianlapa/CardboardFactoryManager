@@ -157,7 +157,7 @@ class LoadWZ(View):
                     p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
         orders[-1].append(p_quantity)
 
-        date=date.split('.')
+        date = date.replace('-', '.').split('.')
 
         delivery = Delivery.objects.create(
             provider=Provider.objects.get(shortcut=provider),
@@ -177,10 +177,9 @@ class LoadWZ(View):
                 )
                 delivery_item.save()
             except Exception as e:
-                pass
-
-        for o in orders:
-            result += f'{o}<br>'
+                result += f'{order}<br>'
+                result += f'{e}<br>'
+                
         return HttpResponse(result)
 
 
