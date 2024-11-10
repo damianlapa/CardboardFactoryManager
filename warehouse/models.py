@@ -1,5 +1,7 @@
 from django.db import models
 from warehousemanager.models import Buyer
+from django.db.models import UniqueConstraint
+from django.db.models.functions import ExtractYear
 
 
 UNITS = (
@@ -59,6 +61,13 @@ class Order(models.Model):
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
+        constraints = [
+            UniqueConstraint(
+                fields=['order_id', 'provider'],
+                name='unique_order_provider_year',
+                condition=ExtractYear('customer_date')
+            )
+        ]
 
 
 class Delivery(models.Model):
