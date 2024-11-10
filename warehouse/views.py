@@ -37,34 +37,34 @@ class TestView(View):
                     customer.save()
 
                 try:
-                    provider = Provider.objects.get(shortcut=data[0])
+                    provider = Provider.objects.get(shortcut=data[0].upper().strip())
                 except Provider.DoesNotExist:
                     provider = Provider(name=data[0], shortcut=data[0])
                     provider.save()
 
                 try:
-                    product = Product.objects.get(name=f'{data[23]} {data[18]}')
+                    product = Product.objects.get(name=f'{data[23].upper().strip()} {data[18].upper().strip()}')
                 except Product.DoesNotExist:
-                    product = Product(name=f'{data[23]} {data[18]}')
+                    product = Product(name=f'{data[23].upper().strip()} {data[18].upper().strip()}')
                     product.save()
                 try:
-                    order = Order.objects.get(order_id=f'{data[1]}/{data[2]}')
+                    order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}')
                     result += f'{order} already exists<br>'
                 except Order.DoesNotExist:
                     order = Order(
                         customer=customer,
                         provider=provider,
-                        order_id=f'{data[1]}/{data[2]}',
-                        customer_date=data[5] if data[5] else data[6],
-                        order_date=data[6] if data[6] else None,
-                        delivery_date=data[7] if data[7] else None,
+                        order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                        customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
+                        order_date=data[6].upper().strip() if data[6].upper().strip() else None,
+                        delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
                         production_date=None,
-                        dimensions=f'{data[12]}x{data[13]}',
-                        name=data[19],
+                        dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
+                        name=data[19].upper().strip(),
                         weight=0,
-                        order_quantity=data[14],
-                        delivered_quantity=data[15] if data[15] else 0,
-                        price=int(float(data[22].replace('\xa0', '').replace(',', '.'))) if data[22] else 0,
+                        order_quantity=data[14].upper().strip(),
+                        delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
+                        price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[22] else 0,
                         product=product
                     )
                     order.save()
