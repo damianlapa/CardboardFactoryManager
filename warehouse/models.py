@@ -41,7 +41,7 @@ class Product(models.Model):
 class Order(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
-    order_id = models.CharField(max_length=32, unique=True)
+    order_id = models.CharField(max_length=32)
     customer_date = models.DateField()
     order_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
@@ -61,7 +61,6 @@ class Order(models.Model):
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
-        unique_together = ('order_id', 'provider')
 
 
 class Delivery(models.Model):
@@ -70,7 +69,7 @@ class Delivery(models.Model):
     car_number = models.CharField(max_length=16, null=True, blank=True)
     telephone = models.CharField(max_length=16, null=True, blank=True)
     description = models.CharField(max_length=256, null=True, blank=True)
-    palettes = models.ManyToManyField(Palette, through='DeliveryPalette', null=True)
+    palettes = models.ManyToManyField(Palette, through='DeliveryPalette', blank=True)
 
     def __str__(self):
         return f'{self.provider}({self.car_number}) {self.date}'
@@ -117,7 +116,7 @@ class Stock(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
-    supplies = models.ManyToManyField(StockSupply, null=True, blank=True)
+    supplies = models.ManyToManyField(StockSupply, blank=True)
 
     def __str__(self):
         return f'{self.stock_type._type}: {self.quantity} {self.stock_type.unit}'
@@ -137,7 +136,7 @@ class Stock(models.Model):
 
 class Warehouse(models.Model):
     name = models.CharField(max_length=64)
-    stocks = models.ManyToManyField(Stock, null=True, blank=True)
+    stocks = models.ManyToManyField(Stock, blank=True)
 
     def __str__(self):
         return f'{self.name}'
