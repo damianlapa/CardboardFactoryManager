@@ -61,13 +61,7 @@ class Order(models.Model):
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
-        constraints = [
-            UniqueConstraint(
-                fields=['order_id', 'provider'],
-                name='unique_order_provider_year',
-                condition=ExtractYear('customer_date')
-            )
-        ]
+        unique_together = ('order_id', 'provider')
 
 
 class Delivery(models.Model):
