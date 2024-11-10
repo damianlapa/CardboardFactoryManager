@@ -31,9 +31,9 @@ class TestView(View):
                 data = data_all[row]
 
                 try:
-                    customer = Buyer.objects.get(name=data[18])
+                    customer = Buyer.objects.get(name=data[18].upper().strip())
                 except Buyer.DoesNotExist:
-                    customer = Buyer(name=data[18], shortcut=data[18][:5])
+                    customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
                     customer.save()
 
                 try:
