@@ -43,12 +43,13 @@ class TestView(View):
                     provider.save()
 
                 try:
-                    product = Product.objects.get(name=f'{data[23].upper().strip()} {data[18].upper().strip()}')
+                    product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
                 except Product.DoesNotExist:
-                    product = Product(name=f'{data[23].upper().strip()} {data[18].upper().strip()}')
+                    product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
                     product.save()
                 try:
-                    order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}')
+                    order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                                              provider=Provider.objects.get(shortcut=data[0].upper().strip()))
                     result += f'{order} already exists<br>'
                 except Order.DoesNotExist:
                     order = Order(
@@ -64,7 +65,8 @@ class TestView(View):
                         weight=0,
                         order_quantity=data[14].upper().strip(),
                         delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
-                        price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[22] else 0,
+                        price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
+                            22] else 0,
                         product=product
                     )
                     order.save()
@@ -78,6 +80,7 @@ class TestView(View):
 class LoadExcelView(View):
     def get(self, request):
         return render(request, "warehouse/load_excel.html")
+
     def post(self, request):
         result = ''
         # Odczytaj plik Excel bezpośrednio z pamięci
@@ -183,7 +186,3 @@ class LoadWZ(View):
                 result += f'{e}<br>'
 
         return HttpResponse(result)
-
-
-
-
