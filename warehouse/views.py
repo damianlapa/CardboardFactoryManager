@@ -159,7 +159,7 @@ class LoadWZ(View):
 
         date = date.replace('­', '.').split('.')
         if int(date[0]) > 31:
-            date = (date[0], date[1], date[2])
+            date = (date[2], date[1], date[0])
 
         delivery = Delivery.objects.create(
             provider=Provider.objects.get(shortcut=provider),
