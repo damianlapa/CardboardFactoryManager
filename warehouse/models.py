@@ -44,6 +44,7 @@ class Order(models.Model):
     order_id = models.CharField(max_length=32)
     customer_date = models.DateField()
     order_date = models.DateField(null=True, blank=True)
+    order_year = models.CharField(max_length=4, null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_date = models.DateField(null=True, blank=True)
     dimensions = models.CharField(max_length=32)
@@ -61,6 +62,7 @@ class Order(models.Model):
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
+        unique_together = ('provider', 'order_id', 'order_year')
 
 
 class Delivery(models.Model):
