@@ -8,6 +8,7 @@ from warehousemanager.models import Buyer
 import pandas as pd
 import pdfplumber
 
+from django.views.generic import ListView
 
 class TestView(View):
     def get(self, request):
@@ -187,3 +188,10 @@ class LoadWZ(View):
                 result += f'{e}<br>'
 
         return HttpResponse(result)
+
+
+class OrderListView(ListView):
+    def get(self, request):
+        orders = Order.objects.all()
+        # paginate_by = 10  # optional: pagination to limit orders per page
+        return render(request, 'warehouse/order_list.html', locals())
