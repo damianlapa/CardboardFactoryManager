@@ -18,11 +18,6 @@ class Migration(migrations.Migration):
             name='product',
             options={'ordering': ['name']},
         ),
-        migrations.AddField(
-            model_name='deliveryitem',
-            name='palettes_quantity',
-            field=models.CharField(blank=True, max_length=128, null=True),
-        ),
         migrations.AlterField(
             model_name='delivery',
             name='palettes',
