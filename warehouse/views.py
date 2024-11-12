@@ -190,8 +190,14 @@ class LoadWZ(View):
         return HttpResponse(result)
 
 
-class OrderListView(ListView):
+class OrderListView(View):
     def get(self, request):
         orders = Order.objects.all()
         # paginate_by = 10  # optional: pagination to limit orders per page
         return render(request, 'warehouse/order_list.html', locals())
+
+
+class DeliveriesView(View):
+    def get(self, request):
+        deliveries = Delivery.objects.all()
+        return render(request, 'warehouse/delivery_list.html', locals())
