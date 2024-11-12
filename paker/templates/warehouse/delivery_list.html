@@ -26,7 +26,7 @@
         <td>{{ delivery.telephone }}</td>
         <td>{{ delivery.description }}</td>
         <td>{[ delivery.palettes ]}</td>
-        <td><a href="{% url 'delivery-detail-view' order_id=order.id %}"></a></td>
+        <td><a href="{% url 'delivery-detail-view' delivery_id=delivery.id %}"></a></td>
       </tr>
       {% empty %}
       <tr>
