@@ -19,7 +19,7 @@ class Palette(models.Model):
         return f'{self.name}'
 
 
-class Provider(models.Model):
+'''class Provider(models.Model):
     name = models.CharField(max_length=64)
     shortcut = models.CharField(max_length=24, null=True, blank=True)
 
@@ -140,3 +140,4 @@ class Warehouse(models.Model):
 
     def __str__(self):
         return f'{self.name}'
+'''
