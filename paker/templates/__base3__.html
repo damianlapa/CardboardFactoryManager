@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock title %}</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
+    <script
+            src="https://code.jquery.com/jquery-3.5.1.min.js"
+            integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+            crossorigin="anonymous">
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!--Chart js-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" integrity="sha256-Uv9BNBucvCPipKQ2NS9wYpJmi8DTOEfTA/nH2aoJALw=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" integrity="sha256-aa0xaJgmK/X74WM224KMQeNQC2xYKwlAt08oZqjeF0E=" crossorigin="anonymous" />
+    {% block style %}
+    {% endblock %}
+</head>
+
+<body>
+<div id="main-container">
+    {% block header %}
+    <div class="header">
+        <div>
+            <a href="{% url 'main-page' %}">
+                <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
+            </a>
+        </div>
+        <div id="page-title">
+            {{ title }}
+        </div>
+        <div class="welcome-text">
+            <div>
+            WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
+                <a href="{% url 'logout' %}">LOGOUT</a></div>
+            {% if new_messages %}
+            <a href="{% url 'messages' %}">
+                <div>
+                    <i class="demo-icon icon-mail white"></i>({{ new_messages }})
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endblock %}
+    <div class="nav-bar">
+        {% if user.is_superuser %}
+        <a href="{% url 'persons' %}">
+            <div class="nav-item" {% if new_reminders %}id="div-workers-att"{% endif %}>
+                WORKERS
+            </div>
+        </a>
+        {% else %}
+            <div class="nav-item">
+                MAIN
+            </div>
+        {% endif %}
+        <a href="{% url 'production-menu' %}">
+            <div class="nav-item">
+                PRODUCTION
+            </div>
+        </a>
+        <a href="{% url 'deliveries-calendar' %}">
+        <div class="nav-item">
+            CALENDAR
+        </div>
+        </a>
+        <a href="{% url 'workreminders' %}">
+        <div class="nav-item">
+            REMINDERS
+        </div>
+        </a>
+        <a href="{% url 'absence-list' %}">
+        <div class="nav-item">
+            ABSENCES
+        </div>
+            </a>
+        <a href="{% url 'punches' %}">
+            <div class="nav-item">
+                PUNCHES
+            </div>
+        </a>
+        <a href="{% url 'photopolymers' %}">
+        <div class="nav-item">
+            POLYMERS
+        </div>
+        </a>
+        <a href="{% url 'gluernumbers' %}">
+        <div class="nav-item">
+            GLUER
+        </div>
+        </a>
+        <div style="clear: both;"></div>
+    </div>
+    <div class="content-div">
+        {% block content %}{% endblock %}
+    </div>
+    {% block footer %}
+    {% endblock %}
+</div>
+<script src="{% static 'js/app.js' %}"></script>
+<script src="{% static 'js/change_password.js' %}"></script>
+
+{% block scripts %}
+{% endblock %}
+</body>
+</html>

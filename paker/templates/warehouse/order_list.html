@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+{% block content %}
+  <h1>Orders</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Provider</th>
+        <th>Order ID</th>
+        <th>Name</th>
+        <th>Customer</th>
+        <th>Order Date</th>
+        <th>Delivery Date</th>
+        <th>Quantity</th>
+        <th>Delivered Quantity</th>
+        <th>Price</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td>{{ order.provider }}</td>
+        <td>{{ order.order_id }}</td>
+        <td>{{ order.name }}</td>
+        <td>{{ order.customer }}</td>
+        <td>{{ order.order_date|date:"Y-m-d" }}</td>
+        <td>{{ order.delivery_date|date:"Y-m-d" }}</td>
+        <td>{{ order.order_quantity }}</td>
+        <td>{{ order.delivered_quantity }}</td>
+        <td>{{ order.price }}</td>
+        <td>
+          {% if order.delivered %}
+            Delivered
+          {% elif order.finished %}
+            Finished
+          {% else %}
+            In Progress
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No orders available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination Controls -->
+  <div class="pagination">
+    {% if is_paginated %}
+      <span class="step-links">
+        {% if page_obj.has_previous %}
+          <a href="?page=1">&laquo; first</a>
+          <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}">next</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+      </span>
+    {% endif %}
+  </div>
+
+{% endblock %}
