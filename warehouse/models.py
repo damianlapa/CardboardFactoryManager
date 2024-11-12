@@ -41,7 +41,7 @@ class Product(models.Model):
 class Order(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
-    order_id = models.CharField(max_length=32)
+    order_id = models.CharField(max_length=32, unique=False)
     customer_date = models.DateField()
     order_date = models.DateField(null=True, blank=True)
     order_year = models.CharField(max_length=4, null=True, blank=True)
@@ -77,14 +77,14 @@ class Delivery(models.Model):
         return f'{self.provider}({self.car_number}) {self.date}'
 
 
-class DeliveryItem(models.Model):
-    delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField(default=0)
-    palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
-
-    def __str__(self):
-        return f'{self.delivery} :: {self.order}'
+# class DeliveryItem(models.Model):
+#     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
+#     order = models.ForeignKey(Order, on_delete=models.PROTECT)
+#     quantity = models.PositiveIntegerField(default=0)
+#     palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
+#
+#     def __str__(self):
+#         return f'{self.delivery} :: {self.order}'
 
 
 class DeliveryPalette(models.Model):
