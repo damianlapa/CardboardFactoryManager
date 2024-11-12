@@ -58,7 +58,7 @@ class TestView(View):
                         order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                         customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
                         order_date=data[6].upper().strip() if data[6].upper().strip() else None,
-                        order_year=data[5].year if data[5] else data[6].year,
+                        order_year=data[5][:4] if data[5] else data[6][:4],
                         delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
                         production_date=None,
                         dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
