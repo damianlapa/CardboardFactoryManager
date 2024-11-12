@@ -3,30 +3,33 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 {% endblock %}
+class DeliveryItem(models.Model):
+    delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+    palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
 {% block content %}
   <h1>Orders</h1>
   <table>
     <thead>
       <tr>
         <th>Provider</th>
-        <th>Date</th>
-        <th>Car number</th>
-        <th>Telephone</th>
-        <th>Description</th>
-        <th>Palettes</th>
-        <th>Details</th>
+        <th>Delivery</th>
+        <th>Delivery date</th>
+        <th>Order</th>
+        <th>Quantity</th>
+        <th>Palettes quantity</th>
       </tr>
     </thead>
     <tbody>
-      {% for delivery in deliveries %}
+      {% for item in items %}
       <tr>
         <td>{{ delivery.provider }}</td>
+        <td>{{ delivery }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
-        <td>{{ delivery.car_number }}</td>
-        <td>{{ delivery.telephone }}</td>
-        <td>{{ delivery.description }}</td>
-        <td>{[ delivery.palettes ]}</td>
-        <td><a href="{% url 'delivery-details-view' order_id=order.id %}"></a></td>
+        <td>{{ item.order }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.palettes_quantity }}</td>
       </tr>
       {% empty %}
       <tr>

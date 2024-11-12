@@ -8,4 +8,5 @@ urlpatterns = [
     path('load_wz/', LoadWZ.as_view()),
     path('orders/', OrderListView.as_view(), name='order_list'),
     path('deliveries/', DeliveriesView.as_view(), name='delivery_list'),
+    path('delivery_detail/<int:delivery_id>/', DeliveryDetailView.as_view(), name="delivery-detail-view")
 ]

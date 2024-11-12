@@ -35,65 +35,9 @@
             <div>
             WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
                 <a href="{% url 'logout' %}">LOGOUT</a></div>
-            {% if new_messages %}
-            <a href="{% url 'messages' %}">
-                <div>
-                    <i class="demo-icon icon-mail white"></i>({{ new_messages }})
-                </div>
-            </a>
-            {% endif %}
         </div>
     </div>
     {% endblock %}
-    <div class="nav-bar">
-        {% if user.is_superuser %}
-        <a href="{% url 'persons' %}">
-            <div class="nav-item" {% if new_reminders %}id="div-workers-att"{% endif %}>
-                WORKERS
-            </div>
-        </a>
-        {% else %}
-            <div class="nav-item">
-                MAIN
-            </div>
-        {% endif %}
-        <a href="{% url 'production-menu' %}">
-            <div class="nav-item">
-                PRODUCTION
-            </div>
-        </a>
-        <a href="{% url 'deliveries-calendar' %}">
-        <div class="nav-item">
-            CALENDAR
-        </div>
-        </a>
-        <a href="{% url 'workreminders' %}">
-        <div class="nav-item">
-            REMINDERS
-        </div>
-        </a>
-        <a href="{% url 'absence-list' %}">
-        <div class="nav-item">
-            ABSENCES
-        </div>
-            </a>
-        <a href="{% url 'punches' %}">
-            <div class="nav-item">
-                PUNCHES
-            </div>
-        </a>
-        <a href="{% url 'photopolymers' %}">
-        <div class="nav-item">
-            POLYMERS
-        </div>
-        </a>
-        <a href="{% url 'gluernumbers' %}">
-        <div class="nav-item">
-            GLUER
-        </div>
-        </a>
-        <div style="clear: both;"></div>
-    </div>
     <div class="content-div">
         {% block content %}{% endblock %}
     </div>

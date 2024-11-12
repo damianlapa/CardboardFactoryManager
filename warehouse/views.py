@@ -201,3 +201,10 @@ class DeliveriesView(View):
     def get(self, request):
         deliveries = Delivery.objects.all()
         return render(request, 'warehouse/delivery_list.html', locals())
+
+
+class DeliveryDetailView(View):
+    def get(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        items = DeliveryItem.objects.filter(delivery=delivery)
+        return render(request, 'warehouse/delivery_details.html', locals())
