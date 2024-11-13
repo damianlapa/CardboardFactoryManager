@@ -26,7 +26,13 @@
         <td>{{ delivery.car_number }}</td>
         <td>{{ delivery.telephone }}</td>
         <td>{{ delivery.description }}</td>
-        <td>{{ delivery.palettes }}</td>
+        <td><ul>
+          {% for delivery_palette in delivery.deliverypalette_set.all %}
+            <li>{{ delivery_palette.palette }}: {{ delivery_palette.quantity }}</li>
+          {% empty %}
+            <li>No palettes in this delivery.</li>
+          {% endfor %}
+        </ul></td>
       </tr>
       {% empty %}
       <tr>
