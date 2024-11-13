@@ -199,7 +199,8 @@ class LoadWZ(View):
             try:
                 p_quantity_counted = 0
                 for p in order[4].split(';'):
-                    p_quantity_counted += int(p)
+                    if p:
+                        p_quantity_counted += int(p)
                 if p_quantity_counted != int(order[3]):
                     order[3] = p_quantity_counted
                     result += f'Korekta ilości<br>'
