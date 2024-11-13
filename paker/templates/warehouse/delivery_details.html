@@ -26,7 +26,7 @@
         <td>{{ delivery }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
-        <td>{{ delivery.order.customer }}</td>
+        <td>{{ item.order.customer }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
       </tr>
