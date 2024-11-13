@@ -168,11 +168,12 @@ class LoadWZ(View):
         if int(date[0]) > 31:
             date = (date[2], date[1], date[0])
 
-        try:
-            palette = Palette.objects.get(name=f'{palettes.split(';')[0]} {palettes.split(';')[1]}')
-        except Palette.DoesNotExist:
-            palette = Palette.objects.create(name=f'{palettes.split(';')[0]} {palettes.split(';')[1]}')
-            palette.save()
+        # try:
+        #     palette = Palette.objects.get(name=f'{palettes.split(';')[0]} {palettes.split(';')[1]}')
+        # except Palette.DoesNotExist:
+        #     palette = Palette.objects.create(name=f'{palettes.split(';')[0]} {palettes.split(';')[1]}')
+        #     palette.save()
+        palette = Palette.objects.create(name=f'{palettes.split(';')[0]} {palettes.split(';')[1]}')
 
 
         delivery = Delivery.objects.create(
@@ -184,12 +185,12 @@ class LoadWZ(View):
         )
         delivery.save()
 
-        delivery_palette = DeliveryPalette.objects.create(
-            delivery=delivery,
-            palette=palette,
-            quantity=int(palettes.split(';')[2])
-        )
-        delivery_palette.save()
+        # delivery_palette = DeliveryPalette.objects.create(
+        #     delivery=delivery,
+        #     palette=palette,
+        #     quantity=int(palettes.split(';')[2])
+        # )
+        # delivery_palette.save()
 
         for order in orders:
             result += f'{order}<br>'
