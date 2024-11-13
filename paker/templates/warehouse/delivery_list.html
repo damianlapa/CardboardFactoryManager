@@ -8,25 +8,25 @@
   <table>
     <thead>
       <tr>
+        <th>Number</th>
         <th>Provider</th>
         <th>Date</th>
         <th>Car number</th>
         <th>Telephone</th>
         <th>Description</th>
         <th>Palettes</th>
-        <th>Details</th>
       </tr>
     </thead>
     <tbody>
       {% for delivery in deliveries %}
       <tr>
+        <td><a href="{% url 'delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
         <td>{{ delivery.provider }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td>{{ delivery.car_number }}</td>
         <td>{{ delivery.telephone }}</td>
         <td>{{ delivery.description }}</td>
         <td>{[ delivery.palettes ]}</td>
-        <td><a href="{% url 'delivery-detail-view' delivery_id=delivery.id %}">DETAILS</a></td>
       </tr>
       {% empty %}
       <tr>

@@ -168,6 +168,13 @@ class LoadWZ(View):
         if int(date[0]) > 31:
             date = (date[2], date[1], date[0])
 
+        try:
+            palette = Palette.objects.get(name=f'{palettes.split(';')[0]} {palettes.split(';')[0]}')
+        except Buyer.DoesNotExist:
+            palette = Palette.objects.create(name=f'{palettes.split(';')[0]} {palettes.split(';')[0]}')
+            palette.save()
+
+
         delivery = Delivery.objects.create(
             number=wz_number,
             provider=Provider.objects.get(shortcut=provider),
@@ -176,6 +183,12 @@ class LoadWZ(View):
             telephone=phone.replace(' ', ''),
         )
         delivery.save()
+
+        delivery_palette = DeliveryPalette.objects.create(
+            delivery=delivery,
+            palette=palette,
+            quantity=int(palettes.split(';')[2])
+        )
 
         for order in orders:
             result += f'{order}<br>'
