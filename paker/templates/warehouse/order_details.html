@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 {% endblock %}
 {% block content %}
-  <h1>{{ order }}</h1>
+  <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
   <h2>Deliveries</h2>
   <table>
     <thead>
@@ -45,6 +45,8 @@
         <th>Start</th>
         <th>Finish</th>
         <th>Duration</th>
+        <th>Quantity start</th>
+        <th>Quantity end</th>
         <th>Workers</th>
       </tr>
     </thead>
@@ -53,10 +55,12 @@
       <tr>
         <td>{{ unit.sequence }}</td>
         <td>{{ unit.work_station }}</td>
-        <td>{{ unit.start|date:"Y-m-d H:M:s" }}</td>
-        <td>{{ unit.end|date:"Y-m-d H:M:s" }}</td>
-        <td>{{ unit.unit_duration2 }}</td>
-        <td>{% for person in unit.persons.all %}{{ person }},{% endfor %}</td>
+        <td>{{ unit.start|date:"Y-m-d H:i:s" }}</td>
+        <td>{{ unit.end|date:"Y-m-d H:i:s" }}</td>
+        <td>{{ unit.duration_in_minutes }}</td>
+        <td>{{ unit.quantity_start }}</td>
+        <td>{{ unit.quantity_end }}</td>
+        <td>{{ unit.persons.all|join:", " }}</td>
       </tr>
       {% empty %}
       <tr>

@@ -484,6 +484,12 @@ class ProductionUnit(models.Model):
         else:
             return None
 
+    def duration_in_minutes(self):
+        if self.unit_duration2():
+            return self.unit_duration2() // 60
+        else:
+            return None
+
     def estimated_duration(self):
         if self.estimated_time:
 
