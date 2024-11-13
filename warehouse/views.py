@@ -189,6 +189,7 @@ class LoadWZ(View):
             palette=palette,
             quantity=int(palettes.split(';')[2])
         )
+        delivery_palette.save()
 
         for order in orders:
             result += f'{order}<br>'
