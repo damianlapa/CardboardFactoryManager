@@ -77,6 +77,9 @@ class Delivery(models.Model):
     def __str__(self):
         return f'{self.provider}({self.car_number}) {self.date}'
 
+    class Meta:
+        ordering = ['-date']
+
 
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
