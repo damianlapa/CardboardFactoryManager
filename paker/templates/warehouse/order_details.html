@@ -20,9 +20,9 @@
     <tbody>
       {% for item in items %}
       <tr>
-        <td>{{ delivery.provider }}</td>
-        <td>{{ delivery }}</td>
-        <td>{{ delivery.date|date:"Y-m-d" }}</td>
+        <td>{{ item.delivery.provider }}</td>
+        <td><a href="{% url 'delivery-detail-view' delivery_id=item.delivery.id %}">{{ item.delivery.number }}</a></td>
+        <td>{{ item.delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
@@ -30,6 +30,37 @@
       {% empty %}
       <tr>
         <td colspan="10">No deliveries available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- production -->
+  <h2>Production</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Sequence</th>
+        <th>Work station</th>
+        <th>Start</th>
+        <th>Finish</th>
+        <th>Duration</th>
+        <th>Workers</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for unit in production_units %}
+      <tr>
+        <td>{{ unit.sequence }}</td>
+        <td>{{ unit.work_station }}</td>
+        <td>{{ unit.start|date:"Y-m-d H:M:s" }}</td>
+        <td>{{ unit.end|date:"Y-m-d H:M:s" }}</td>
+        <td>{{ unit.unit_duration2 }}</td>
+        <td>{% for person in unit.persons.all %}{{ person }},{% endfor %}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No production units available.</td>
       </tr>
       {% endfor %}
     </tbody>

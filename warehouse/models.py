@@ -66,6 +66,7 @@ class Order(models.Model):
 
 
 class Delivery(models.Model):
+    number = models.CharField(max_length=64, default='')
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
     date = models.DateField()
     car_number = models.CharField(max_length=16, null=True, blank=True)

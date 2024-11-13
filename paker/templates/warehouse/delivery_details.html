@@ -4,10 +4,11 @@
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 {% endblock %}
 {% block content %}
-  <h1>Orders</h1>
+  <h1>Delivery # {{ delivery.number }} {{delivery }}</h1>
   <table>
     <thead>
       <tr>
+        <th>Number</th>
         <th>Provider</th>
         <th>Delivery</th>
         <th>Delivery date</th>
@@ -19,6 +20,7 @@
     <tbody>
       {% for item in items %}
       <tr>
+        <td>{{ delivery.number }}</td>
         <td>{{ delivery.provider }}</td>
         <td>{{ delivery }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>

@@ -5,6 +5,8 @@ from warehouse.gs_connection import *
 from warehouse.models import *
 from warehousemanager.models import Buyer
 
+from production.models import ProductionOrder, ProductionUnit
+
 import pandas as pd
 import pdfplumber
 
@@ -167,6 +169,7 @@ class LoadWZ(View):
             date = (date[2], date[1], date[0])
 
         delivery = Delivery.objects.create(
+            number=wz_number,
             provider=Provider.objects.get(shortcut=provider),
             date=datetime.date(int(date[2]), int(date[1]), int(date[0])),
             car_number=car_number,
@@ -201,6 +204,8 @@ class OrderDetailView(View):
     def get(self, request, order_id):
         order = Order.objects.get(id=order_id)
         items = DeliveryItem.objects.filter(order=order)
+        production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
+        production_units = ProductionUnit.objects.filter(production_order=production_order)
         return render(request, 'warehouse/order_details.html', locals())
 
 
