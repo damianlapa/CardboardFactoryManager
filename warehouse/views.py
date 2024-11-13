@@ -162,6 +162,9 @@ class LoadWZ(View):
                     orders[-2].append(p_quantity)
                     order_num += 1
                     p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+
+
+
         orders[-1].append(p_quantity)
 
         date = date.replace('­', '.').split('.')
@@ -193,6 +196,15 @@ class LoadWZ(View):
 
         for order in orders:
             result += f'{order}<br>'
+            try:
+                p_quantity_counted = 0
+                for p in order[4]:
+                    p_quantity_counted += int(p)
+                if p_quantity_counted != int(order[3]):
+                    order[3] = p_quantity_counted
+                    result += f'Korekta ilości<br>'
+            except Exception as e:
+                result += f'{e}<br>'
             try:
                 delivery_item = DeliveryItem.objects.create(
                     delivery=delivery,
