@@ -197,6 +197,13 @@ class OrderListView(View):
         return render(request, 'warehouse/order_list.html', locals())
 
 
+class OrderDetailView(View):
+    def get(self, request, order_id):
+        order = Order.objects.get(id=order_id)
+        items = DeliveryItem.objects.filter(order=order)
+        return render(request, 'warehouse/order_details.html', locals())
+
+
 class DeliveriesView(View):
     def get(self, request):
         deliveries = Delivery.objects.all()
