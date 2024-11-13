@@ -126,6 +126,10 @@ class LoadWZ(View):
         p_quantity = ''
         order_num = 1
 
+        cardboard = ''
+        dimensions = ''
+        quantity = ''
+
         for num in range(len(lines)):
             line = lines[num]
             if 'TFP Sp. z o.o.' in line:
@@ -144,18 +148,14 @@ class LoadWZ(View):
                 palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
             if "Nr zam. klienta:" in line:
                 number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
-                line_data = lines[num - 4].split(' ')
+                orders.append([number, cardboard, dimensions, quantity])
+            if "Waga netto (ilość x waga jednostkowa(kg))" in line:
+                line_data = lines[num - 1].split(' ')
                 cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
                 dimensions = line_data[2]
                 quantity = (line_data[3] + line_data[4]).split(',')[0]
-                if cardboard == 'netto':
-                    line_data = lines[num - 31].split(' ')
-                    cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
-                    dimensions = line_data[2]
-                    quantity = (line_data[3] + line_data[4]).split(',')[0]
-                orders.append([number, cardboard, dimensions, quantity])
+
             if "Ilość na palecie: " in line:
-                print(order_num, len(orders) + 1)
                 if order_num == len(orders):
                     p_quantity += f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
                 else:
