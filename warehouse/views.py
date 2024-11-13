@@ -232,7 +232,7 @@ class OrderDetailView(View):
         items = DeliveryItem.objects.filter(order=order)
         try:
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
-            production_units = ProductionUnit.objects.filter(production_order=production_order)
+            production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
         except ProductionOrder.DoesNotExist:
             production_units = []
         return render(request, 'warehouse/order_details.html', locals())
