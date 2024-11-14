@@ -2,9 +2,38 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<style>
+  .processed-label {
+    color: red;
+    font-weight: bold;
+    margin-left: 10px;
+  }
+  .process-button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #4CAF50; /* Green */
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .process-button:hover {
+    background-color: #45a049;
+  }
+</style>
 {% endblock %}
 {% block content %}
-  <h1>Delivery # {{ delivery.number }} {{delivery }}</h1>
+  <h1>
+    Delivery # {{ delivery.number }} {{ delivery }}
+    {% if delivery.processed %}
+      <span class="processed-label">PROCESSED</span>
+    {% else %}
+      <form action="{% url 'process-delivery' delivery_id=delivery.id %}" method="post" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="process-button">Mark as Processed</button>
+      </form>
+    {% endif %}
+  </h1>
+
   <table>
     <thead>
       <tr>
@@ -58,5 +87,4 @@
       </span>
     {% endif %}
   </div>
-
 {% endblock %}

@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from warehousemanager.models import Buyer
 from django.db.models import UniqueConstraint
@@ -73,6 +75,7 @@ class Delivery(models.Model):
     telephone = models.CharField(max_length=16, null=True, blank=True)
     description = models.CharField(max_length=256, null=True, blank=True)
     palettes = models.ManyToManyField(Palette, through='DeliveryPalette', blank=True)
+    processed = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.provider}({self.car_number}) {self.date}'
@@ -80,15 +83,69 @@ class Delivery(models.Model):
     class Meta:
         ordering = ['-date']
 
+    def add_to_warehouse(self, warehouse=None):
+        items = DeliveryItem.objects.filter(delivery=self)
+
+        for item in items:
+            if not warehouse:
+                warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
+            item.add_to_warehouse()
+
+        if self.check_if_processed():
+            self.processed = True
+            self.save()
+
+    def check_if_processed(self):
+        items = DeliveryItem.objects.filter(delivery=self)
+        for item in items:
+            if not item.processed:
+                return False
+        return True
+
 
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
     palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
+    processed = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.delivery} :: {self.order}'
+
+    def add_to_warehouse(self, warehouse=None, quantity=False):
+        try:
+            stock_type = StockType.objects.get(_type='Material', unit='PIECE')
+        except StockType.DoesNotExist:
+            stock_type = StockType.objects.create(_type='Material', unit='PIECE')
+
+        try:
+            stock_supply = StockSupply.objects.get(
+                delivery_item=self,
+            )
+        except StockSupply.DoesNotExist:
+            stock_supply = StockSupply.objects.create(
+                stock_type=stock_type,
+                delivery_item=self,
+                dimensions=self.order.dimensions,
+                date=datetime.datetime.today().date(),
+                quantity=self.quantity if not quantity else quantity,
+                name=f'{self.order.name}[{self.order.dimensions}]'
+            )
+
+        try:
+            stock = Stock.objects.get(
+                name=f'{self.order.name}[{self.order.dimensions}]'
+            )
+        except Stock.DoesNotExist:
+            stock = Stock.objects.create(
+                stock_type=stock_type,
+                name=f'{self.order.name}[{self.order.dimensions}]'
+            )
+
+        stock.update_stock(stock_supply)
+        self.processed = True
+        self.save()
 
 
 class DeliveryPalette(models.Model):
@@ -110,7 +167,7 @@ class StockType(models.Model):
 
 class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
-    provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
+    delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     weight = models.PositiveIntegerField(null=True, blank=True)
     date = models.DateField(null=True, blank=True)
@@ -146,3 +203,8 @@ class Warehouse(models.Model):
 
     def __str__(self):
         return f'{self.name}'
+
+    def add_stock(self, stock: Stock):
+        if stock not in self.stocks.all():
+            self.stocks.add(stock)
+            self.save()

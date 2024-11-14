@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
 from warehouse.gs_connection import *
@@ -190,7 +190,7 @@ class LoadWZ(View):
                 if "PALETA" in line:
                     p_line = line.split(' ')
                     palette = p_line[0].split('_')
-                    palette_type = ''
+                    palette_type = 'Paleta'
                     if palette[1] == 'EURO':
                         palette_type = 'EPAL'
                     palette_dimensions = palette[2].lower().split('x')
@@ -295,3 +295,12 @@ class DeliveryDetailView(View):
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
         return render(request, 'warehouse/delivery_details.html', locals())
+
+
+class AddDeliveryToWarehouse(View):
+    def post(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        items = DeliveryItem.objects.filter(delivery=delivery)
+        delivery.add_to_warehouse()
+
+        return redirect("delivery-detail-view", delivery_id=delivery_id)
