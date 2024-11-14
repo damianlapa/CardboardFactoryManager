@@ -116,6 +116,8 @@ class LoadWZ(View):
 
         lines = all_text.splitlines()
 
+
+
         provider = ''
         wz_number = ''
         car_number = ''
@@ -125,51 +127,94 @@ class LoadWZ(View):
         orders = []
         p_quantity = ''
         order_num = 1
+        number = ''
 
         cardboard = ''
         dimensions = ''
         quantity = ''
+        order_numbers = []
 
-        for num in range(len(lines)):
-            line = lines[num]
-            if 'TFP Sp. z o.o.' in line:
-                provider = "TFP"
-            if "Data..." in line:
-                date = line.split('.:')[1].strip()
-            if "( " in line and " )" in line:
-                phone = line.replace("( ", "").replace(" )", "").strip()
-            if "Kopia WZ Nr." in line and not wz_number:
-                wz_number = line.split('.:')[1].strip()
-            if "Nr rej./Nazwisko" in line and not car_number:
-                car_number = line.split('.:')[1].split('/')[0].strip()
-            if "Rodzaj palety Typ platności Ilość pobrana" in line:
-                p_line = lines[num + 1]
-                p_line = p_line.split(' ')
-                palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
-            if "Nr zam. klienta:" in line:
-                number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
-                orders.append([number, cardboard, dimensions, quantity])
-            if "Waga netto (ilość x waga jednostkowa(kg))" in line:
-                line_data = lines[num - 1].split(' ')
-                cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
-                dimensions = line_data[2]
-                quantity = (line_data[3] + line_data[4]).split(',')[0]
+        if 'tfp' in all_text or 'TFP' in all_text:
 
-            if "Ilość na palecie: " in line:
-                if order_num == len(orders):
-                    p_quantity += f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
-                else:
-                    orders[-2].append(p_quantity)
-                    order_num += 1
-                    p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+            for num in range(len(lines)):
+                line = lines[num]
+                if 'TFP Sp. z o.o.' in line:
+                    provider = "TFP"
+                if "Data..." in line:
+                    date = line.split('.:')[1].strip()
+                if "( " in line and " )" in line:
+                    phone = line.replace("( ", "").replace(" )", "").strip()
+                if "Kopia WZ Nr." in line and not wz_number:
+                    wz_number = line.split('.:')[1].strip()
+                if "Nr rej./Nazwisko" in line and not car_number:
+                    car_number = line.split('.:')[1].split('/')[0].strip()
+                if "Rodzaj palety Typ platności Ilość pobrana" in line:
+                    p_line = lines[num + 1]
+                    p_line = p_line.split(' ')
+                    palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
+                if "Nr zam. klienta:" in line:
+                    number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                    orders.append([number, cardboard, dimensions, quantity])
+                if "Waga netto (ilość x waga jednostkowa(kg))" in line:
+                    line_data = lines[num - 1].split(' ')
+                    cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
+                    dimensions = line_data[2]
+                    quantity = (line_data[3] + line_data[4]).split(',')[0]
 
+                if "Ilość na palecie: " in line:
+                    if order_num == len(orders):
+                        p_quantity += f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+                    else:
+                        orders[-2].append(p_quantity)
+                        order_num += 1
+                        p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
 
+            orders[-1].append(p_quantity)
 
-        orders[-1].append(p_quantity)
+            date = date.replace('­', '.').split('.')
+            if int(date[0]) > 31:
+                date = (date[2], date[1], date[0])
 
-        date = date.replace('­', '.').split('.')
-        if int(date[0]) > 31:
-            date = (date[2], date[1], date[0])
+        else:
+            for num in range(len(lines)):
+                line = lines[num]
+                if 'JASSBOARD SP. Z O.O.' in line:
+                    provider = "JASS"
+                if "Data wystawienia: " in line:
+                    date = line.split('wystawienia: ')[1].strip().replace('-', '.').split('.')
+                    date = date[2], date[1], date[0]
+                if "Nr rejestracyjny: " in line:
+                    phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
+                if "Numer WZ" in line and not wz_number:
+                    wz_number = lines[num + 1].strip()
+                if "PALETA" in line:
+                    p_line = line.split(' ')
+                    palette = p_line[0].split('_')
+                    palette_type = ''
+                    if palette[1] == 'EURO':
+                        palette_type = 'EPAL'
+                    palette_dimensions = palette[2].lower().split('x')
+                    palette_dimensions = f'{palette_dimensions[1]}x{palette_dimensions[0]}'
+                    palettes = f'{palette_type};{palette_dimensions};{p_line[1]}'
+                if "nr zam.:" in line.lower():
+                    number = line.lower().split("nr zam.:")[1].replace('jass', '').strip()
+                    if number not in order_numbers:
+                        order_numbers.append(number)
+                if "ark" in line and 'm2' in line and not "RAZEM" in line and not 'Ilość wysłana' in line:
+                    cardboard_line = line.split(' ')
+                    cardboard = cardboard_line[1][:-9] if cardboard_line[1][2].isdigit() else cardboard_line[1][:-8]
+                    dimensions = cardboard_line[1][-9:] if cardboard_line[1][2].isdigit() else cardboard_line[1][-8:]
+                    p_quantity += f'{cardboard_line[3]};'
+                if cardboard in line and "RAZEM" in line:
+                    quantity_line = line.split(" ")
+                    quantity = quantity_line[3].replace(',', '')
+                    if len(dimensions) == 9:
+                        dimensions_data = dimensions.split('*')
+                    else:
+                        dimensions_data = dimensions[:-4], dimensions[4:]
+                    dimensions = f'{str(int(dimensions_data[1]))}x{str(int(dimensions_data[0]))}'
+                    orders.append([number, cardboard, dimensions, quantity, p_quantity])
+                    p_quantity = ''
 
         try:
             palette = Palette.objects.get(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
