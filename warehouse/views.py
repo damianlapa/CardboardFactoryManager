@@ -137,7 +137,7 @@ class LoadWZ(View):
             return render(request, "warehouse/load_wz_result.html", {
                 "errors": ["No file was uploaded. Please select a file and try again."]
             })
-        result = ''
+        result = []
         pdf_file = request.FILES["wz_file"]
         errors = []
 
