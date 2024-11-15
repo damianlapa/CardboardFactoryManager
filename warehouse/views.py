@@ -354,3 +354,9 @@ class WarehouseView(View):
     def get(self, request, warehouse_id):
         warehouse = Warehouse.objects.get(id=warehouse_id)
         return render(request, 'warehouse/warehouse_details.html', locals())
+
+
+class WarehouseListView(View):
+    def get(self, request):
+        warehouses = Warehouse.objects.all()
+        return render(request, 'warehouse/warehouse_list.html', locals())
