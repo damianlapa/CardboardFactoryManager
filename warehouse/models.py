@@ -114,36 +114,17 @@ class DeliveryItem(models.Model):
         return f'{self.delivery} :: {self.order}'
 
     def add_to_warehouse(self, warehouse=None, quantity=False):
-        try:
-            stock_type = StockType.objects.get(_type='Material', unit='PIECE')
-        except StockType.DoesNotExist:
-            stock_type = StockType.objects.create(_type='Material', unit='PIECE')
+        if not warehouse:
+            warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
-        try:
-            stock_supply = StockSupply.objects.get(
-                delivery_item=self,
-            )
-        except StockSupply.DoesNotExist:
-            stock_supply = StockSupply.objects.create(
-                stock_type=stock_type,
-                delivery_item=self,
-                dimensions=self.order.dimensions,
-                date=datetime.datetime.today().date(),
-                quantity=self.quantity if not quantity else quantity,
-                name=f'{self.order.name}[{self.order.dimensions}]'
-            )
+        # Aktualizacja zapasów w magazynie
+        stock, created = Stock.objects.get_or_create(
+            name=f'{self.order.name}[{self.order.dimensions}]',
+            stock_type=StockType.objects.get(_type='Material', unit='PIECE')
+        )
+        warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
+        warehouse_stock.increase_quantity(self.quantity if not quantity else quantity)
 
-        try:
-            stock = Stock.objects.get(
-                name=f'{self.order.name}[{self.order.dimensions}]'
-            )
-        except Stock.DoesNotExist:
-            stock = Stock.objects.create(
-                stock_type=stock_type,
-                name=f'{self.order.name}[{self.order.dimensions}]'
-            )
-
-        stock.update_stock(stock_supply)
         self.processed = True
         self.save()
 
@@ -182,16 +163,13 @@ class Stock(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
-    supplies = models.ManyToManyField(StockSupply, blank=True)
 
     def __str__(self):
         return f'{self.stock_type._type}: {self.quantity} {self.stock_type.unit}'
 
-    def update_stock(self, supply: StockSupply):
-        if supply not in self.supplies.all():
-            self.supplies.add(supply)
-            self.quantity += supply.quantity
-            self.save()
+    def update_stock(self, supply_quantity):
+        self.quantity += supply_quantity
+        self.save()
 
     def __decrease_stock(self, supply: StockSupply):
         if supply not in self.supplies.all():
@@ -202,12 +180,29 @@ class Stock(models.Model):
 
 class Warehouse(models.Model):
     name = models.CharField(max_length=64)
-    stocks = models.ManyToManyField(Stock, blank=True)
 
     def __str__(self):
         return f'{self.name}'
 
-    def add_stock(self, stock: Stock):
-        if stock not in self.stocks.all():
-            self.stocks.add(stock)
-            self.save()
+    def add_stock(self, stock, quantity):
+        warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=self, stock=stock)
+        warehouse_stock.increase_quantity(quantity)
+
+
+class WarehouseStock(models.Model):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='warehouse_stocks')
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='warehouse_stocks')
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.stock.name} in {self.warehouse.name}: {self.quantity}'
+
+    def increase_quantity(self, quantity):
+        self.quantity += quantity
+        self.save()
+
+    def decrease_quantity(self, quantity):
+        if quantity > self.quantity:
+            raise ValueError("Cannot decrease quantity below zero.")
+        self.quantity -= quantity
+        self.save()

@@ -353,6 +353,8 @@ class AddDeliveryToWarehouse(View):
 class WarehouseView(View):
     def get(self, request, warehouse_id):
         warehouse = Warehouse.objects.get(id=warehouse_id)
+        stocks = WarehouseStock.objects.filter(warehouse=warehouse)
+        print(stocks)
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 

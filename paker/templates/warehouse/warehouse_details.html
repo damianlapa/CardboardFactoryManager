@@ -12,21 +12,15 @@
       <th>Stock Type</th>
       <th>Stock Name</th>
       <th>Quantity</th>
-      <th>Supply</th>
-      <th>Supply Quantity</th>
     </tr>
   </thead>
   <tbody>
-    {% for stock in warehouse.stocks.all %}
-      {% for supply in stock.supplies.all %}
+    {% for stock in stocks %}
       <tr>
-        <td>{{ stock.stock_type.get_stock_type }}</td>
-        <td>{{ stock.name }}</td>
+        <td>{{ stock.stock.stock_type.get_stock_type }}</td>
+        <td>{{ stock.stock.name }}</td>
         <td>{{ stock.quantity }}</td>
-        <td>{{ supply.name }}</td>
-        <td>{{ supply.quantity }}</td>
       </tr>
-      {% endfor %}
     {% empty %}
       <tr>
         <td colspan="5">No supplies available for this warehouse.</td>
