@@ -1,0 +1,37 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>Warehouse: {{ warehouse.name }}</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Stock Type</th>
+      <th>Stock Name</th>
+      <th>Quantity</th>
+      <th>Supply</th>
+      <th>Supply Quantity</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for stock in warehouse.stocks.all %}
+      {% for supply in stock.supplies.all %}
+      <tr>
+        <td>{{ stock.stock_type.get_stock_type }}</td>
+        <td>{{ stock.name }}</td>
+        <td>{{ stock.quantity }}</td>
+        <td>{{ supply.name }}</td>
+        <td>{{ supply.quantity }}</td>
+      </tr>
+      {% endfor %}
+    {% empty %}
+      <tr>
+        <td colspan="5">No supplies available for this warehouse.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

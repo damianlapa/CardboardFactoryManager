@@ -164,6 +164,9 @@ class StockType(models.Model):
     def __str__(self):
         return f'{self._type} [{self.unit}]'
 
+    def get_stock_type(self):
+        return f'{self._type}'
+
 
 class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)

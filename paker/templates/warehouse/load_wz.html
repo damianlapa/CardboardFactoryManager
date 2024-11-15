@@ -1,15 +1,24 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <title>Import WZ</title>
-</head>
-<body>
-    <h1>Importuj dane z pliku PDF</h1>
-    <form method="post" enctype="multipart/form-data">
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+{% block content %}
+  <div class="import-container">
+    <h1>Import Data from PDF</h1>
+    <p>Upload a PDF file to import WZ data.</p>
+    <form method="post" enctype="multipart/form-data" class="import-form">
         {% csrf_token %}
-        <input type="file" name="wz_file" accept=".pdf">
-        <button type="submit">Importuj</button>
+        <label for="wz_file" class="file-label">
+          Choose a file:
+          <input type="file" name="wz_file" id="wz_file" accept=".pdf" onchange="updateFileName()">
+        </label>
+        <span id="file-name" class="file-name">No file chosen</span>
+        <button type="submit" class="btn">Import</button>
     </form>
-</body>
-</html>
+  </div>
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/load_wz.js' %}"></script>
+{% endblock %}

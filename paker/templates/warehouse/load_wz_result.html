@@ -1,0 +1,33 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/load_wz.css' %}">
+{% endblock %}
+{% block content %}
+  <div class="import-results">
+    <h1>Import Results</h1>
+
+    {% if results %}
+      <h2>Processed Orders</h2>
+      <ul class="results-list">
+        {% for result in results %}
+          <li>{{ result|safe }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No results to display.</p>
+    {% endif %}
+
+    {% if errors %}
+      <h2>Errors</h2>
+      <ul class="error-list">
+        {% for error in errors %}
+          <li class="error">{{ error|safe }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <a href="" class="btn">Upload Another File</a>
+  </div>
+{% endblock %}

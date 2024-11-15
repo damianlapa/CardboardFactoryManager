@@ -21,26 +21,41 @@
 
 <body>
 <div id="main-container">
-    {% block header %}
     <div class="header">
+    <div>
+        <a href="{% url 'main-page' %}">
+            <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
+        </a>
+    </div>
+    <div id="page-title">
+        {{ title }}
+    </div>
+    <div class="welcome-text">
         <div>
-            <a href="{% url 'main-page' %}">
-                <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
-            </a>
-        </div>
-        <div id="page-title">
-            {{ title }}
-        </div>
-        <div class="welcome-text">
-            <div>
-            WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
-                <a href="{% url 'logout' %}">LOGOUT</a></div>
+            WELCOME <a href="{% url 'profile' %}">{{ user }}</a>!
+            {% if user.is_superuser %}
+            | <a href="{% url 'admin:index' %}">Administracja</a>
+            {% endif %}
+            | <a href="{% url 'logout' %}">LOGOUT</a>
         </div>
     </div>
-    {% endblock %}
-    <div class="content-div">
-        {% block content %}{% endblock %}
-    </div>
+</div>
+
+<!-- Sekcja nawigacji -->
+{% block nav %}
+<nav class="navbar">
+    <ul class="nav-list">
+        <li><a href="{% url 'import_excel' %}">Import Excel</a></li>
+        <li><a href="{% url 'order_list' %}">Orders</a></li>
+        <li><a href="{% url 'delivery_list' %}">Deliveries</a></li>
+        <li><a href="">Warehouses</a></li>
+    </ul>
+</nav>
+{% endblock %}
+
+<div class="content-div">
+    {% block content %}{% endblock %}
+</div>
     {% block footer %}
     {% endblock %}
 </div>

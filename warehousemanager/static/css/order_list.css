@@ -18,3 +18,242 @@ th {
   margin-top: 20px;
   text-align: center;
 }
+.processed-label {
+color: red;
+font-weight: bold;
+margin-left: 10px;
+}
+.process-button {
+margin-top: 10px;
+padding: 5px 10px;
+background-color: #4CAF50; /* Green */
+color: white;
+border: none;
+cursor: pointer;
+}
+.process-button:hover {
+background-color: #45a049;
+}
+
+/* Nagłówek */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.welcome-text {
+    font-size: 18px; /* Powiększono z 14px */
+    font-weight: bold; /* Dodano pogrubienie */
+    color: #333;
+}
+
+#welcome-text a {
+    font-size: 18px; /* Powiększono linki */
+    text-decoration: none;
+}
+
+/* Nawigacja */
+.navbar {
+    background-color: #007bff;
+    padding: 15px 20px; /* Zwiększono padding */
+}
+
+.nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px; /* Zwiększono odstępy między linkami */
+}
+
+.nav-list li a {
+    font-size: 20px; /* Powiększono z 16px */
+    font-weight: bold; /* Pogrubienie dla większej czytelności */
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.nav-list li a:hover {
+    color: #ffcc00;
+}
+
+/* Treść główna */
+.content-div {
+    padding: 20px;
+    font-size: 18px; /* Opcjonalnie dla większej czcionki treści */
+}
+
+/* Ogólne stylowanie tabeli */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 16px;
+    text-align: left;
+}
+
+table thead tr {
+    background-color: #007bff;
+    color: black;
+    text-align: left;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+table th, table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #f3f3f3;
+}
+
+table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Stylowanie linków */
+a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Stylowanie paginacji */
+.pagination {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.pagination .step-links {
+    display: inline-block;
+}
+
+.pagination a {
+    color: #007bff;
+    margin: 0 5px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.pagination a:hover {
+    color: #0056b3;
+}
+
+.pagination .current {
+    font-weight: bold;
+    color: #333;
+    margin: 0 5px;
+}
+
+.action-buttons {
+    margin-bottom: 20px; /* Dodanie przestrzeni pod przycisk */
+    text-align: left; /* Wyrównanie przycisków do lewej */
+}
+
+.action-buttons .btn {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.action-buttons .btn:hover {
+    background-color: #0056b3;
+    color: #fff;
+}
+
+/* Stylowanie kontenera importu */
+.import-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Nagłówek */
+.import-container h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+/* Podtytuł */
+.import-container p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* Stylowanie formularza */
+.import-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.file-label {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    background-color: #f3f3f3;
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.file-label:hover {
+    background-color: #e9e9e9;
+}
+
+/* Ukrycie domyślnego inputa */
+input[type="file"] {
+    display: none;
+}
+
+/* Przycisk */
+.btn {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.file-name {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+    font-style: italic;
+}

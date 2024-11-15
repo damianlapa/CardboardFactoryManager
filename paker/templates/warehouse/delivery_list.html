@@ -2,10 +2,14 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/delivery-list.css' %}">
 {% endblock %}
 {% block content %}
   <h1>Deliveries</h1>
-  <table>
+<div class="action-buttons">
+    <a href="{% url 'load-transport-document' %}" class="btn">Load Document</a>
+  </div>
+  <table class="deliveries-table">
     <thead>
       <tr>
         <th>Number</th>
@@ -15,6 +19,7 @@
         <th>Telephone</th>
         <th>Description</th>
         <th>Palettes</th>
+        <th>Delete</th>
       </tr>
     </thead>
     <tbody>
@@ -26,29 +31,42 @@
         <td>{{ delivery.car_number }}</td>
         <td>{{ delivery.telephone }}</td>
         <td>{{ delivery.description }}</td>
-        <td><ul>
-          {% for delivery_palette in delivery.deliverypalette_set.all %}
-            <li>{{ delivery_palette.palette }}: {{ delivery_palette.quantity }}</li>
-          {% empty %}
-            <li>No palettes in this delivery.</li>
-          {% endfor %}
-        </ul></td>
+        <td>
+          <ul>
+            {% for delivery_palette in delivery.deliverypalette_set.all %}
+              <li>{{ delivery_palette.palette }}: {{ delivery_palette.quantity }}</li>
+            {% empty %}
+              <li>No palettes in this delivery.</li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td>
+          <button class="btn btn-danger delete-btn" data-id="{{ delivery.id }}" data-number="{{ delivery.number }}">Delete</button>
+        </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="10">No deliveries available.</td>
+        <td colspan="7" class="no-data">No deliveries available.</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <p>Are you sure you want to delete delivery <strong id="deliveryNumber"></strong>?</p>
+        <button id="confirmDelete" class="btn btn-danger">Yes, Delete</button>
+        <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+    </div>
+</div>
 
   <!-- Pagination Controls -->
   <div class="pagination">
     {% if is_paginated %}
       <span class="step-links">
         {% if page_obj.has_previous %}
-          <a href="?page=1">&laquo; first</a>
-          <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          <a href="?page=1">&laquo; First</a>
+          <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
         {% endif %}
 
         <span class="current">
@@ -56,11 +74,14 @@
         </span>
 
         {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}">next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          <a href="?page={{ page_obj.next_page_number }}">Next</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
         {% endif %}
       </span>
     {% endif %}
   </div>
-
 {% endblock %}
+{% block scripts %}
+<script src="{% static 'js/warehouse/delivery-delete.js' %}"></script>
+{% endblock %}
+

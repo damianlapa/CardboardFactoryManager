@@ -1,6 +1,12 @@
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import permission_required
+from django.utils.decorators import method_decorator
+from django.db.models.deletion import ProtectedError
+
 from warehouse.gs_connection import *
 from warehouse.models import *
 from warehousemanager.models import Buyer
@@ -11,6 +17,27 @@ import pandas as pd
 import pdfplumber
 
 from django.views.generic import ListView
+
+from django.db import transaction
+
+
+def delete_delivery_ajax(request, delivery_id):
+    if request.method == "POST":
+        delivery = get_object_or_404(Delivery, id=delivery_id)
+
+        try:
+            # Obsługa relacji (z `related_name` lub bez)
+            with transaction.atomic():
+                delivery.deliverypalette_set.all().delete()
+                delivery.deliveryitem_set.all().delete()
+                delivery.delete()
+        except ProtectedError:
+            return JsonResponse({"success": False,
+                                 "message": f"Delivery {delivery.number} can not be deleted. One or more delivery item is already added to stock."})
+
+        return JsonResponse({"success": True, "message": f"Delivery {delivery.number} deleted successfully."})
+    return JsonResponse({"success": False, "message": "Invalid request method."})
+
 
 class TestView(View):
     def get(self, request):
@@ -106,8 +133,13 @@ class LoadWZ(View):
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
+        if "wz_file" not in request.FILES:
+            return render(request, "warehouse/load_wz_result.html", {
+                "errors": ["No file was uploaded. Please select a file and try again."]
+            })
         result = ''
         pdf_file = request.FILES["wz_file"]
+        errors = []
 
         with pdfplumber.open(pdf_file) as pdf:
             all_text = ""
@@ -115,8 +147,6 @@ class LoadWZ(View):
                 all_text += page.extract_text() + "\n"
 
         lines = all_text.splitlines()
-
-
 
         provider = ''
         wz_number = ''
@@ -155,11 +185,12 @@ class LoadWZ(View):
                 if "Nr zam. klienta:" in line:
                     number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
                     orders.append([number, cardboard, dimensions, quantity])
-                if "Waga netto (ilość x waga jednostkowa(kg))" in line:
-                    line_data = lines[num - 1].split(' ')
-                    cardboard = line_data[1].split('-')[0].strip().replace('\xad', '')
-                    dimensions = line_data[2]
-                    quantity = (line_data[3] + line_data[4]).split(',')[0]
+                if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
+                    line = line.split(' ')
+                    if line[0][0].isdigit() and line[1][-1] == '\xad' and 'x' in line[2]:
+                        cardboard = line[1][:-1]
+                        dimensions = line[2]
+                        quantity = line[3].split(',')[0] if len(line) == 5 else f'{line[3]}{line[4]}'.split(',')[0]
 
                 if "Ilość na palecie: " in line:
                     if order_num == len(orders):
@@ -222,25 +253,35 @@ class LoadWZ(View):
             palette = Palette.objects.create(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
             palette.save()
 
+        try:
+            delivery, created = Delivery.objects.get_or_create(
+                number=wz_number,
+                defaults={
+                    'provider': Provider.objects.get(shortcut=provider),
+                    'date': datetime.date(int(date[2]), int(date[1]), int(date[0])),
+                    'car_number': car_number,
+                    'telephone': phone.replace(' ', ''),
+                }
+            )
+            if not created:
+                errors.append(f'Delivery with number {wz_number} already exists.<br>')
+                return render(request, "warehouse/load_wz_result.html", {
+                    "errors": errors
+                })
 
-        delivery = Delivery.objects.create(
-            number=wz_number,
-            provider=Provider.objects.get(shortcut=provider),
-            date=datetime.date(int(date[2]), int(date[1]), int(date[0])),
-            car_number=car_number,
-            telephone=phone.replace(' ', ''),
-        )
-        delivery.save()
+            delivery_palette = DeliveryPalette.objects.create(
+                delivery=delivery,
+                palette=palette,
+                quantity=int(palettes.split(';')[2])
+            )
+            delivery_palette.save()
 
-        delivery_palette = DeliveryPalette.objects.create(
-            delivery=delivery,
-            palette=palette,
-            quantity=int(palettes.split(';')[2])
-        )
-        delivery_palette.save()
+        except Provider.DoesNotExist:
+            errors.append(f'Provider {provider} does not exist.')
+        except Exception as e:
+            errors.append(f'Error creating delivery: {str(e)}')
 
         for order in orders:
-            result += f'{order}<br>'
             try:
                 p_quantity_counted = 0
                 for p in order[4].split(';'):
@@ -248,9 +289,9 @@ class LoadWZ(View):
                         p_quantity_counted += int(p)
                 if p_quantity_counted != int(order[3]):
                     order[3] = p_quantity_counted
-                    result += f'Korekta ilości<br>'
+                    result.append(f'Order {order[0]}: Quantity corrected to {p_quantity_counted}')
             except Exception as e:
-                result += f'{e}<br>'
+                errors.append(f'Error with order {order[0]}: {str(e)}')
             try:
                 delivery_item = DeliveryItem.objects.create(
                     delivery=delivery,
@@ -259,10 +300,13 @@ class LoadWZ(View):
                     palettes_quantity=order[4]
                 )
                 delivery_item.save()
+                result.append(f'Order {order[0]} successfully linked to delivery.')
+            except Order.DoesNotExist:
+                errors.append(f'Order {order[0]} does not exist for provider {delivery.provider}.')
             except Exception as e:
-                result += f'{e}<br>'
+                errors.append(f'Error with delivery item for order {order[0]}: {str(e)}')
 
-        return HttpResponse(result)
+        return render(request, "warehouse/load_wz_result.html", {"results": result, "errors": errors})
 
 
 class OrderListView(View):
@@ -304,3 +348,9 @@ class AddDeliveryToWarehouse(View):
         delivery.add_to_warehouse()
 
         return redirect("delivery-detail-view", delivery_id=delivery_id)
+
+
+class WarehouseView(View):
+    def get(self, request, warehouse_id):
+        warehouse = Warehouse.objects.get(id=warehouse_id)
+        return render(request, 'warehouse/warehouse_details.html', locals())
