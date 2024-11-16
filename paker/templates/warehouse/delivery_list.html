@@ -7,7 +7,7 @@
 {% block content %}
   <h1>Deliveries</h1>
 <div class="action-buttons">
-    <a href="{% url 'load-transport-document' %}" class="btn">Load Document</a>
+    <a href="{% url 'warehouse:load-transport-document' %}" class="btn">Load Document</a>
   </div>
   <table class="deliveries-table">
     <thead>
@@ -17,7 +17,7 @@
         <th>Date</th>
         <th>Car number</th>
         <th>Telephone</th>
-        <th>Description</th>
+        <th>Status</th>
         <th>Palettes</th>
         <th>Delete</th>
       </tr>
@@ -25,12 +25,18 @@
     <tbody>
       {% for delivery in deliveries %}
       <tr>
-        <td><a href="{% url 'delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
+        <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
         <td>{{ delivery.provider }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td>{{ delivery.car_number }}</td>
         <td>{{ delivery.telephone }}</td>
-        <td>{{ delivery.description }}</td>
+        <td>
+          {% if delivery.processed %}
+            <span style="color: green; font-weight: bold;">PROCESSED</span>
+          {% else %}
+            <span style="color: red; font-weight: bold;">NOT PROCESSED</span>
+          {% endif %}
+        </td>
         <td>
           <ul>
             {% for delivery_palette in delivery.deliverypalette_set.all %}

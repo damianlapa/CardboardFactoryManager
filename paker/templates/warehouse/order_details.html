@@ -2,9 +2,18 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
 {% endblock %}
 {% block content %}
-  <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
+<script>
+  const settleOrderUrl = "{% url 'warehouse:settle_order' order.id %}";
+  const availableMaterials = [
+    {% for material in stock_materials %}
+    { id: "{{ material.id }}", name: "{{ material.name }}", quantity: "{{ material.quantity }}" },
+    {% endfor %}
+  ];
+</script>
+  <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1> <button id="settleOrderBtn">Settle Order</button>
   <h2>Deliveries</h2>
   <table>
     <thead>
@@ -21,9 +30,9 @@
       {% for item in items %}
       <tr>
         <td>{{ item.delivery.provider }}</td>
-        <td><a href="{% url 'delivery-detail-view' delivery_id=item.delivery.id %}">{{ item.delivery.number }}</a></td>
+        <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=item.delivery.id %}">{{ item.delivery.number }}</a></td>
         <td>{{ item.delivery.date|date:"Y-m-d" }}</td>
-        <td><a href="{% url 'order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
+        <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
       </tr>
@@ -91,4 +100,38 @@
     {% endif %}
   </div>
 
+<div id="settleOrderModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Settle Order: {{ order }}</h2>
+    <form id="settleOrderForm" method="post">
+      {% csrf_token %}
+
+      <!-- Domyślny materiał -->
+      <div id="default-material">
+        <h3>Material from Delivery</h3>
+        <div>
+          <label for="material_name">Material:</label>
+          <input type="text" name="material_name" value="Default Material" readonly>
+          <br>
+          <label for="material_quantity">Quantity:</label>
+          <input type="number" name="material_quantity" value="10" required>
+        </div>
+      </div>
+
+      <!-- Dodatkowe materiały -->
+      <h3>Additional Materials</h3>
+      <div id="additional-materials"></div>
+      <button type="button" id="add-material-btn">Add Material</button>
+
+      <br><br>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
 {% endblock %}

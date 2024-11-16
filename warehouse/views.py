@@ -320,6 +320,9 @@ class OrderDetailView(View):
     def get(self, request, order_id):
         order = Order.objects.get(id=order_id)
         items = DeliveryItem.objects.filter(order=order)
+        materials = items
+        stocks = StockSupply.objects.all()
+
         try:
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')

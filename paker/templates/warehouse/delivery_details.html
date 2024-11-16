@@ -9,7 +9,7 @@
     {% if delivery.processed %}
       <span class="processed-label">PROCESSED</span>
     {% else %}
-      <form action="{% url 'process-delivery' delivery_id=delivery.id %}" method="post" style="display: inline;">
+      <form action="{% url 'warehouse:process-delivery' delivery_id=delivery.id %}" method="post" style="display: inline;">
         {% csrf_token %}
         <button type="submit" class="process-button">Mark as Processed</button>
       </form>
@@ -36,7 +36,7 @@
         <td>{{ delivery.provider }}</td>
         <td>{{ delivery }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
-        <td><a href="{% url 'order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
+        <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
         <td>{{ item.order.customer }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>

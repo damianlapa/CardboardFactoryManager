@@ -14,7 +14,7 @@
     <tbody>
       {% for warehouse in warehouses %}
       <tr>
-        <td><a href="{% url 'warehouse-detail-view' warehouse_id=warehouse.id %}">{{ warehouse.name }}</a></td>
+        <td><a href="{% url 'warehouse:warehouse-detail-view' warehouse_id=warehouse.id %}">{{ warehouse.name }}</a></td>
       </tr>
       {% empty %}
       <tr>

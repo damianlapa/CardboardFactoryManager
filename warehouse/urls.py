@@ -1,5 +1,9 @@
 from django.urls import path
 from warehouse.views import *
+from warehouse.ajax_views import *
+
+
+app_name = 'warehouse'
 
 
 urlpatterns = [
@@ -19,4 +23,5 @@ urlpatterns \
     += [
     # Inne ścieżki...
     path('deliveries/delivery/<int:delivery_id>/delete/', delete_delivery_ajax, name='delete_delivery_ajax'),
+    path('orders/<int:order_id>/settle/', settle_order, name='settle_order'),
 ]

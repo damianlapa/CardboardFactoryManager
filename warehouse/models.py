@@ -206,3 +206,24 @@ class WarehouseStock(models.Model):
             raise ValueError("Cannot decrease quantity below zero.")
         self.quantity -= quantity
         self.save()
+
+
+# <-- rozbudowa modeli
+class OrderSettlement(models.Model):
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='settlements')
+    material = models.ForeignKey('Stock', on_delete=models.PROTECT, related_name='used_in_settlements')
+    material_quantity = models.PositiveIntegerField(default=0)
+    settlement_date = models.DateField(default=datetime.date.today)
+
+    def __str__(self):
+        return f"Settlement for Order {self.order.order_id} on {self.settlement_date}"
+
+
+class OrderSettlementProduct(models.Model):
+    settlement = models.ForeignKey(OrderSettlement, on_delete=models.CASCADE, related_name='settlement_products')
+    stock_supply = models.ForeignKey('StockSupply', on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+    is_semi_product = models.BooleanField(default=False)  # True dla półproduktów
+
+    def __str__(self):
+        return f"{self.stock_supply.name} ({self.quantity}) - {'Semi-Product' if self.is_semi_product else 'Product'}"

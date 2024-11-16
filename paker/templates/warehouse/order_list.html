@@ -24,7 +24,7 @@
       {% for order in orders %}
       <tr>
         <td>{{ order.provider }}</td>
-        <td><a href="{% url 'order-detail-view' order_id=order.id %}">{{ order.order_id }}</a></td>
+        <td><a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">{{ order.order_id }}</a></td>
         <td>{{ order.name }}</td>
         <td>{{ order.customer }}</td>
         <td>{{ order.order_date|date:"Y-m-d" }}</td>
