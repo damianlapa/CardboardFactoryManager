@@ -84,5 +84,6 @@ urlpatterns += [
 
 #test
 urlpatterns += [
-    path('udt/', UnitTest.as_view())
+    path('udt/', UnitTest.as_view()),
+    path('production/csv/', generate_production_csv, name='generate_production_csv'),
 ]

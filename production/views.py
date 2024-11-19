@@ -1200,3 +1200,42 @@ class UnitTest(View):
             print(u.unit_duration2())
 
         return HttpResponse('ok')
+
+
+import csv
+from datetime import timedelta
+from django.http import HttpResponse
+from .models import ProductionUnit, WorkStation
+
+
+def generate_production_csv(request):
+    # Get workstation ID from GET parameter (optional)
+    workstation_name = request.GET.get('work_station')
+
+    # Filter by workstation if provided
+    production_units = ProductionUnit.objects.all()
+    if workstation_name:
+        production_units = production_units.filter(work_station__name=workstation_name)
+
+    # Create the HTTP response for CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="production_units.csv"'
+
+    writer = csv.writer(response, delimiter=';')
+    # Write header
+    writer.writerow(['Production Order', 'Work Station', 'Quantity', 'Date', 'Duration (seconds)'])
+
+    for unit in production_units:
+        # Calculate duration using `unit_duration2` method
+        duration = unit.unit_duration2()
+        # Prepare CSV row
+        writer.writerow([
+            unit.production_order.id,
+            unit.work_station.name,
+            unit.quantity_end if unit.quantity_end else unit.quantity_start,
+            unit.start.date() if unit.start else None,
+            duration or 0
+        ])
+
+    return response
+
