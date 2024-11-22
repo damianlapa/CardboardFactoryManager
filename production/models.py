@@ -433,9 +433,9 @@ class ProductionUnit(models.Model):
     def unit_duration2(self):
         start = self.start
         end = self.end
-        holidays = Holiday.objects.filter(holiday_date__lte=end, holiday_date__gte=start)
 
         if start and end:
+            holidays = Holiday.objects.filter(holiday_date__lte=end, holiday_date__gte=start)
             # error handling when start is later than end
             if start > end:
                 return None
