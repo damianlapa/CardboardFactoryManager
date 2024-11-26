@@ -320,7 +320,16 @@ class OrderDetailView(View):
     def get(self, request, order_id):
         order = Order.objects.get(id=order_id)
         items = DeliveryItem.objects.filter(order=order)
-        materials = items
+        stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
+        stock_materials = []
+        for stock_supply in stock_supplies:
+            try:
+                stock = Stock.objects.get(name=stock_supply.name)
+                stock_materials.append(stock)
+
+            except Exception as e:
+                pass
+        print(stock_supplies, stock_materials)
         stocks = StockSupply.objects.all()
 
         try:

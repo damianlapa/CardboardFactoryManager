@@ -1,69 +1,64 @@
-var modal = document.getElementById("settleOrderModal");
-var btn = document.getElementById("settleOrderBtn");
-var span = document.getElementsByClassName("close")[0];
-var addMaterialBtn = document.getElementById("add-material-btn"); // Przycisk dodawania materiału
-var additionalMaterialsContainer = document.getElementById("additional-materials"); // Kontener dla dodatkowych materiałów
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("settleOrderModal");
+  const settleOrderBtn = document.getElementById("settleOrderBtn");
+  const closeBtn = document.querySelector(".close");
 
-// Open modal on button click
-btn.onclick = function () {
-  modal.style.display = "block";
-};
+  const addMaterialBtn = document.getElementById("add-material-btn");
+  const additionalMaterialsContainer = document.getElementById("additional-materials");
 
-// Close modal on close button click
-span.onclick = function () {
-  modal.style.display = "none";
-};
+  const addProductBtn = document.getElementById("add-product-btn");
+  const resultsTable = document.querySelector("#results-table tbody");
 
-// Close modal on outside click
-window.onclick = function (event) {
-  if (event.target == modal) {
+  // Open modal
+  settleOrderBtn.onclick = function () {
+    modal.style.display = "block";
+  };
+
+  // Close modal
+  closeBtn.onclick = function () {
     modal.style.display = "none";
-  }
-};
+  };
 
-// Handle form submission via AJAX
-document.getElementById("settleOrderForm").onsubmit = function (event) {
-  event.preventDefault();
+  // Close modal on outside click
+  window.onclick = function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  };
 
-  const formData = new FormData(this);
-  console.log("Form data:", Array.from(formData.entries()));
+  // Add additional material
+  addMaterialBtn.onclick = function () {
+    const materialDiv = document.createElement("div");
+    materialDiv.innerHTML = `
+      <select name="additional_material_id">
+        ${availableMaterials.map(material => `
+          <option value="${material.id}">${material.name} (${material.quantity} available)</option>
+        `).join('')}
+      </select>
+      <input type="number" name="additional_material_quantity" placeholder="Quantity" min="0">
+    `;
+    additionalMaterialsContainer.appendChild(materialDiv);
+  };
 
-  fetch(settleOrderUrl, {
-    method: "POST",
-    headers: {
-      "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
-    },
-    body: formData,
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        alert("Order settled successfully!");
-        modal.style.display = "none";
-        location.reload(); // Reload the page to show updates
-      } else {
-        alert("Error: " + data.error);
-      }
-    })
-    .catch((error) => console.error("Error:", error));
-};
+  // Add product row
+  addProductBtn.onclick = function () {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><input type="text" name="product_name[]" placeholder="Enter product name" required></td>
+      <td>
+        <select name="product_stock_type[]">
+          <option value="1">Type 1</option>
+          <option value="2">Type 2</option>
+        </select>
+      </td>
+      <td><input type="number" name="product_quantity[]" placeholder="Enter quantity" min="0" required></td>
+      <td><button type="button" class="remove-btn">Remove</button></td>
+    `;
+    resultsTable.appendChild(row);
 
-// Add new material dynamically
-addMaterialBtn.onclick = function () {
-  // Create a new material input group
-  const materialDiv = document.createElement("div");
-  materialDiv.innerHTML = `
-    <label for="additional_material_id">Material:</label>
-    <select name="additional_material_id" class="material-select">
-      <option value="">Select material</option>
-      ${availableMaterials.map(material => `<option value="${material.id}">${material.name} (${material.quantity} available)</option>`).join('')}
-    </select>
-    <br>
-    <label for="additional_material_quantity">Quantity:</label>
-    <input type="number" name="additional_material_quantity" min="0" placeholder="Quantity">
-    <br><br>
-  `;
-
-  // Append the new input group to the additional materials container
-  additionalMaterialsContainer.appendChild(materialDiv);
-};
+    // Remove row
+    row.querySelector(".remove-btn").onclick = function () {
+      resultsTable.removeChild(row);
+    };
+  };
+});
