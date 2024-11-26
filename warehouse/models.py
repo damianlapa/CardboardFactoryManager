@@ -153,7 +153,6 @@ class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
-    weight = models.PositiveIntegerField(null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
