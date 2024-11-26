@@ -159,23 +159,23 @@ class StockSupply(models.Model):
     name = models.CharField(max_length=64)
 
 
-# class Stock(models.Model):
-#     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
-#     quantity = models.PositiveIntegerField(default=0)
-#     name = models.CharField(max_length=64)
-#
-#     def __str__(self):
-#         return f'{self.stock_type.stock_type}: {self.quantity} {self.stock_type.unit}'
-#
-#     def update_stock(self, supply_quantity):
-#         self.quantity += supply_quantity
-#         self.save()
-#
-#     def __decrease_stock(self, supply: StockSupply):
-#         if supply not in self.supplies.all():
-#             self.supplies.remove(supply)
-#             self.quantity -= supply.quantity
-#             self.save()
+class Stock(models.Model):
+    stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+    name = models.CharField(max_length=64)
+
+    def __str__(self):
+        return f'{self.stock_type.stock_type}: {self.quantity} {self.stock_type.unit}'
+
+    def update_stock(self, supply_quantity):
+        self.quantity += supply_quantity
+        self.save()
+
+    def __decrease_stock(self, supply: StockSupply):
+        if supply not in self.supplies.all():
+            self.supplies.remove(supply)
+            self.quantity -= supply.quantity
+            self.save()
 
 
 class Warehouse(models.Model):
@@ -191,7 +191,7 @@ class Warehouse(models.Model):
 
 class WarehouseStock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='warehouse_stocks')
-    # stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='warehouse_stocks')
+    stock = models.ForeignKey("Stock", on_delete=models.CASCADE, related_name='warehouse_stocks')
     quantity = models.PositiveIntegerField(default=0)
 
     def __str__(self):
@@ -209,21 +209,21 @@ class WarehouseStock(models.Model):
 
 
 # <-- rozbudowa modeli
-# class OrderSettlement(models.Model):
-#     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='settlements')
-#     material = models.ForeignKey('Stock', on_delete=models.PROTECT, related_name='used_in_settlements')
-#     material_quantity = models.PositiveIntegerField(default=0)
-#     settlement_date = models.DateField(default=datetime.date.today)
-#
-#     def __str__(self):
-#         return f"Settlement for Order {self.order.order_id} on {self.settlement_date}"
-#
-#
-# class OrderSettlementProduct(models.Model):
-#     settlement = models.ForeignKey(OrderSettlement, on_delete=models.CASCADE, related_name='settlement_products')
-#     stock_supply = models.ForeignKey('StockSupply', on_delete=models.PROTECT)
-#     quantity = models.PositiveIntegerField(default=0)
-#     is_semi_product = models.BooleanField(default=False)  # True dla półproduktów
-#
-#     def __str__(self):
-#         return f"{self.stock_supply.name} ({self.quantity}) - {'Semi-Product' if self.is_semi_product else 'Product'}"
+class OrderSettlement(models.Model):
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='settlements')
+    material = models.ForeignKey('Stock', on_delete=models.PROTECT, related_name='used_in_settlements')
+    material_quantity = models.PositiveIntegerField(default=0)
+    settlement_date = models.DateField(default=datetime.date.today)
+
+    def __str__(self):
+        return f"Settlement for Order {self.order.order_id} on {self.settlement_date}"
+
+
+class OrderSettlementProduct(models.Model):
+    settlement = models.ForeignKey(OrderSettlement, on_delete=models.CASCADE, related_name='settlement_products')
+    stock_supply = models.ForeignKey('StockSupply', on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+    is_semi_product = models.BooleanField(default=False)  # True dla półproduktów
+
+    def __str__(self):
+        return f"{self.stock_supply.name} ({self.quantity}) - {'Semi-Product' if self.is_semi_product else 'Product'}"
