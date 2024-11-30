@@ -318,18 +318,22 @@ class OrderListView(View):
 
 class OrderDetailView(View):
     def get(self, request, order_id):
+        stock_types = StockType.objects.all()
+        print(stock_types)
         order = Order.objects.get(id=order_id)
+        products = [order.product]
         items = DeliveryItem.objects.filter(order=order)
         stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
         stock_materials = []
+        all_materials_in_warehouse = WarehouseStock.objects.filter(warehouse=Warehouse.objects.get(name="MAGAZYN GŁÓWNY"))
         for stock_supply in stock_supplies:
             try:
                 stock = Stock.objects.get(name=stock_supply.name)
-                stock_materials.append(stock)
+                warehouse_stock = WarehouseStock.objects.get(stock=stock)
+                stock_materials.append(warehouse_stock)
 
             except Exception as e:
                 pass
-        print(stock_supplies, stock_materials)
         stocks = StockSupply.objects.all()
 
         try:
@@ -359,7 +363,7 @@ class AddDeliveryToWarehouse(View):
         items = DeliveryItem.objects.filter(delivery=delivery)
         delivery.add_to_warehouse()
 
-        return redirect("delivery-detail-view", delivery_id=delivery_id)
+        return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
 class WarehouseView(View):

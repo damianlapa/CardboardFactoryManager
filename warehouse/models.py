@@ -32,9 +32,12 @@ class Provider(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=64)
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
+    dimensions = models.CharField(max_length=32, null=True, blank=True)
+    flute = models.CharField(max_length=8, null=True, blank=True)
+    gsm = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.name} {self.dimensions}'
 
     class Meta:
         ordering = ['name']
@@ -117,12 +120,31 @@ class DeliveryItem(models.Model):
         if not warehouse:
             warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
+        # Create Stock Supply
+        stock_supply, created = StockSupply.objects.get_or_create(
+            stock_type=StockType.objects.get(stock_type='Material', unit='PIECE'),
+            delivery_item=self,
+            date=self.delivery.date,
+            dimensions=self.order.dimensions,
+            quantity=self.quantity,
+            name=f'{self.order.name}[{self.order.dimensions}]'
+        )
+
         # Aktualizacja zapasów w magazynie
         stock, created = Stock.objects.get_or_create(
             name=f'{self.order.name}[{self.order.dimensions}]',
-            stock_type=StockType.objects.get(_type='Material', unit='PIECE')
+            stock_type=StockType.objects.get(stock_type='Material', unit='PIECE')
         )
         warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
+
+        history, created = WarehouseStockHistory.objects.get_or_create(
+            warehouse_stock=warehouse_stock,
+            stock_supply=stock_supply,
+            quantity_before=warehouse_stock.quantity,
+            quantity_after=warehouse_stock.quantity+self.quantity
+
+        )
+
         warehouse_stock.increase_quantity(self.quantity if not quantity else quantity)
 
         self.processed = True
@@ -164,7 +186,7 @@ class Stock(models.Model):
     name = models.CharField(max_length=64)
 
     def __str__(self):
-        return f'{self.stock_type.stock_type}: {self.quantity} {self.stock_type.unit}'
+        return f'{self.stock_type.stock_type}: {self.name}'
 
     def update_stock(self, supply_quantity):
         self.quantity += supply_quantity
@@ -210,7 +232,7 @@ class WarehouseStock(models.Model):
 # <-- rozbudowa modeli
 class OrderSettlement(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='settlements')
-    material = models.ForeignKey('Stock', on_delete=models.PROTECT, related_name='used_in_settlements')
+    material = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, related_name='used_in_settlements')
     material_quantity = models.PositiveIntegerField(default=0)
     settlement_date = models.DateField(default=datetime.date.today)
 
@@ -226,3 +248,26 @@ class OrderSettlementProduct(models.Model):
 
     def __str__(self):
         return f"{self.stock_supply.name} ({self.quantity}) - {'Semi-Product' if self.is_semi_product else 'Product'}"
+
+
+class WarehouseStockHistory(models.Model):
+    warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.CASCADE, related_name="warehouse_stock")
+    stock_supply = models.ForeignKey(StockSupply, on_delete=models.PROTECT, null=True, blank=True)
+    order_settlement = models.ForeignKey(OrderSettlement, on_delete=models.PROTECT, null=True, blank=True)
+    quantity_before = models.PositiveIntegerField(default=0)
+    quantity_after = models.PositiveIntegerField(default=0)
+    date = models.DateField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.date:
+            if self.stock_supply:
+                self.date = self.stock_supply.date
+            elif self.order_settlement:
+                self.date = self.order_settlement.settlement_date
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        if self.stock_supply:
+            return f'{self.date} | {self.warehouse_stock.stock.name} INCREASE {self.quantity_before} -> {self.quantity_after}'
+        elif self.order_settlement:
+            return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'

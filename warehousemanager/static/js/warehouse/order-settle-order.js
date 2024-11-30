@@ -47,9 +47,10 @@ document.addEventListener("DOMContentLoaded", function () {
       <td><input type="text" name="product_name[]" placeholder="Enter product name" required></td>
       <td>
         <select name="product_stock_type[]">
-          <option value="1">Type 1</option>
-          <option value="2">Type 2</option>
-        </select>
+        ${availableStockTypes.map(stock => `
+          <option value="${stock.id}">${stock.name}</option>
+        `).join('')}
+      </select>
       </td>
       <td><input type="number" name="product_quantity[]" placeholder="Enter quantity" min="0" required></td>
       <td><button type="button" class="remove-btn">Remove</button></td>

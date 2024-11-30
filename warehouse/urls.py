@@ -23,5 +23,5 @@ urlpatterns \
     += [
     # Inne ścieżki...
     path('deliveries/delivery/<int:delivery_id>/delete/', delete_delivery_ajax, name='delete_delivery_ajax'),
-    # path('orders/<int:order_id>/settle/', settle_order, name='settle_order'),
+    path('orders/<int:order_id>/settle/', settle_order, name='settle_order'),
 ]
