@@ -10,6 +10,18 @@ def settle_order(request, order_id):
         material_id = request.POST.get("material_id")
         material_quantity = int(request.POST.get("material_quantity", 0))
 
+        material_ids = request.POST.getlist('material_id')
+        material_quantities = request.POST.getlist('material_quantity')
+
+        for material_id2, quantity2 in zip(material_ids, material_quantities):
+            print(material_id2, quantity2, '#MATER')
+
+        product_names = request.POST.getlist('product_name')
+        product_quantities = request.POST.getlist('product_quantity')
+
+        for name3, quantity3 in zip(product_names, product_quantities):
+            print(name3, quantity3, '#PROD')
+
         try:
             with transaction.atomic():
                 material = WarehouseStock.objects.get(id=int(material_id))

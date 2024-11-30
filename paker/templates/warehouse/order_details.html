@@ -155,8 +155,9 @@
                 <td>KARTON FEFCO 201</td>
                 <td>
                   <input type="number">
+                  <input type="hidden" name="product_id" value="{{ product.id }}">
                 </td>
-                <td></td>
+                <td><button type="button" class="remove-btn">Remove</button></td>
               </tr>
               {% endfor %}
             </tbody>

@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
       </select>
       </td>
       <td><input type="number" name="product_quantity[]" placeholder="Enter quantity" min="0" required></td>
-      <td><button type="button" class="remove-btn">Remove</button></td>
+      <td></td>
     `;
     resultsTable.appendChild(row);
 
