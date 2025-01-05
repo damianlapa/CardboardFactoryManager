@@ -322,6 +322,19 @@ class OrderDetailView(View):
         print(stock_types)
         order = Order.objects.get(id=order_id)
         products = [order.product]
+        warehouse_products = None
+        for p in products:
+            stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
+            delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
+            dimensions = models.CharField(max_length=32, null=True, blank=True)
+            date = models.DateField(null=True, blank=True)
+            quantity = models.PositiveIntegerField(default=0)
+            name = models.CharField(max_length=64)
+            try:
+                warehouse_product_stock = Stock.objects.get(name=name)
+                warehouse_products.append(warehouse_product_stock)
+            except Stock.DoesNotExist:
+                pass
         items = DeliveryItem.objects.filter(order=order)
         stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
         stock_materials = []

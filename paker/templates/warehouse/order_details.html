@@ -92,7 +92,7 @@
 <div id="settleOrderModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
-    <h2>Settle Order: {{ order }}</h2>
+    <h2>Settle Order: {{ order }} // {{ order.customer }} // {{ order.product }}</h2>
     <form id="settleOrderForm" method="post" action="{% url 'warehouse:settle_order' order.id %}">
       {% csrf_token %}
       <div class="modal-columns">
@@ -149,7 +149,7 @@
               </tr>
             </thead>
             <tbody>
-              {% for product in products %}
+              {% for product in warehouse_products %}
               <tr>
                 <td>{{ product.name }}</td>
                 <td>KARTON FEFCO 201</td>

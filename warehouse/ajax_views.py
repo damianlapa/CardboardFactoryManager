@@ -12,6 +12,7 @@ def settle_order(request, order_id):
 
         material_ids = request.POST.getlist('material_id')
         material_quantities = request.POST.getlist('material_quantity')
+        print(material_ids, material_quantities)
 
         for material_id2, quantity2 in zip(material_ids, material_quantities):
             print(material_id2, quantity2, '#MATER')

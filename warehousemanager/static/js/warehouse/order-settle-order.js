@@ -30,12 +30,12 @@ document.addEventListener("DOMContentLoaded", function () {
   addMaterialBtn.onclick = function () {
     const materialDiv = document.createElement("div");
     materialDiv.innerHTML = `
-      <select name="additional_material_id">
+      <select name="material_id">
         ${availableMaterials.map(material => `
           <option value="${material.id}">${material.name} (${material.quantity} available)</option>
         `).join('')}
       </select>
-      <input type="number" name="additional_material_quantity" placeholder="Quantity" min="0">
+      <input type="number" name="material_quantity" placeholder="Quantity" min="0">
     `;
     additionalMaterialsContainer.appendChild(materialDiv);
   };
@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
       </select>
       </td>
       <td><input type="number" name="product_quantity[]" placeholder="Enter quantity" min="0" required></td>
-      <td></td>
+      <td><button type="button" class="remove-btn">Remove</button></td>
     `;
     resultsTable.appendChild(row);
 
