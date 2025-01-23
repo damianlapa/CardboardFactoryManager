@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
@@ -41,10 +43,12 @@ def delete_delivery_ajax(request, delivery_id):
 
 class TestView(View):
     def get(self, request):
-        data_all = get_all()
+        year = request.GET.get('year')
+        data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
         result = ''
         row = request.GET.get('row')
         division = request.GET.get('division')
+
         if row:
             row = int(row)
         else:
