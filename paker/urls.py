@@ -16,6 +16,12 @@ urlpatterns = [
     path('open-order/<int:order_item_id>/', OpenFile.as_view(), name='open-order'),
     path('format-converter/', FormatConverter.as_view(), name='format-converter'),
     path('add-note/', NoteAdd.as_view(), name='add-note'),
+
+
+
+
+
+
     path('notes/', AllNotes.as_view(), name='notes'),
     path('note-details/<int:note_id>/', NoteDetailsView.as_view(), name='note-details'),
     path('note-delete/<int:note_id>/', NoteDeleteView.as_view(), name='note-delete'),
