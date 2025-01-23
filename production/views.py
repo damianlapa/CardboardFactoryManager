@@ -1119,12 +1119,13 @@ class PrepareOrders(View):
 
         number = request.GET.get('number')
         number2 = request.GET.get('number2')
+        year_str = str(datetime.date.today().year) if not request.GET.get('year') else request.GET.get('year')
 
         results = []
 
         if number and not number2:
             number = int(number)
-            data = get_data(number)
+            data = get_data(number, year=year_str)
 
             order = ProductionOrder.objects.get_or_create(
                 id_number=f'{data[0]} {data[1]}/{data[2]}',
@@ -1153,7 +1154,7 @@ class PrepareOrders(View):
             for num in range(int(numbers[0]), int(numbers[1])):
                 result = {}
                 try:
-                    data = get_data(num)
+                    data = get_data(num ,year=year_str)
 
                     customer = Buyer.objects.get(name=data[18].upper())
 
