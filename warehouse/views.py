@@ -410,3 +410,17 @@ class WarehouseListView(View):
     def get(self, request):
         warehouses = Warehouse.objects.all()
         return render(request, 'warehouse/warehouse_list.html', locals())
+
+
+class DeliveriesStatistics(View):
+    def get(self, request):
+        dates = []
+        values = []
+        deliveries = Delivery.objects.all().order_by('date')
+        dates.append(deliveries[0].date - datetime.timedelta(days=1))
+        values.append(0)
+        for d in deliveries:
+            dates.append(d.date)
+            values.append(sum(values) + d.count_area())
+
+        return render(request, 'warehouse/deliveries-statistics.html', locals())

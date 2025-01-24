@@ -105,6 +105,20 @@ class Delivery(models.Model):
                 return False
         return True
 
+    def count_area(self):
+        items = DeliveryItem.objects.filter(delivery=self)
+        total = 0
+
+        for item in items:
+            dimensions = item.order.dimensions
+            dimensions = dimensions.lower().split('x')
+            dimensions = list(map(int, dimensions))
+            area = round(dimensions[0]*dimensions[1]/1000000, 5) * item.quantity
+            total += area
+
+        return total
+
+
 
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)

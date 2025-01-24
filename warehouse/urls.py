@@ -17,7 +17,8 @@ urlpatterns = [
     path('process_delivery/<int:delivery_id>/', AddDeliveryToWarehouse.as_view(), name="process-delivery"),
     path('warehouse/warehouses/', WarehouseListView.as_view(), name='warehouse-list-view'),
     path('warehouse/<int:warehouse_id>/', WarehouseView.as_view(), name='warehouse-detail-view'),
-    path('add-delivery-item/', AddDeliveryItem.as_view(), name='add-delivery-item')
+    path('add-delivery-item/', AddDeliveryItem.as_view(), name='add-delivery-item'),
+    path('deliveries/statistics/', DeliveriesStatistics.as_view(), name='deliveries-statistics')
 ]
 
 urlpatterns \
