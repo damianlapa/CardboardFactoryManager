@@ -258,13 +258,14 @@ class LoadWZ(View):
             palette = Palette.objects.create(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
             palette.save()
 
+
         try:
             delivery, created = Delivery.objects.get_or_create(
                 number=wz_number,
                 defaults={
                     'provider': Provider.objects.get(shortcut=provider),
                     'date': datetime.date(int(date[2]), int(date[1]), int(date[0])),
-                    'car_number': car_number,
+                    'car_number': car_number[:16],
                     'telephone': phone.replace(' ', ''),
                 }
             )
