@@ -421,6 +421,8 @@ class DeliveriesStatistics(View):
         values.append(0)
         for d in deliveries:
             dates.append(d.date)
-            values.append(sum(values) + d.count_area())
+            values.append(values[-1] + int(d.count_area()))
+
+        print(dates, values)
 
         return render(request, 'warehouse/deliveries-statistics.html', locals())
