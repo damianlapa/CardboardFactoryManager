@@ -421,7 +421,9 @@ class DeliveriesStatistics(View):
         else:
             start = datetime.date(2025, 1, 1)
         dates = [start]
+        weeks = ['#0']
         values = [0]
+        values_by_week = [0]
 
         end = start + datetime.timedelta(days=7-start.isoweekday())
 
@@ -434,6 +436,8 @@ class DeliveriesStatistics(View):
                 total += int(d.count_area())
             dates.append(end)
             values.append(values[-1] + total)
+            weeks.append(f'#{len(weeks)}')
+            values_by_week.append(total)
 
             start = end + datetime.timedelta(days=1)
             end = end + datetime.timedelta(days=7)

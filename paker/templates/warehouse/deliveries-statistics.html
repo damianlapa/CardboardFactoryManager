@@ -4,10 +4,11 @@
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 {% endblock %}
 {% block content %}
-<canvas id="transactionChart" width="400" height="200"></canvas>
+<canvas id="weeksChart" width="400" height="200"></canvas>
+<canvas id="weeksChartSingle" width="400" height="200"></canvas>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('transactionChart').getContext('2d');
+    const ctx = document.getElementById('weeksChart').getContext('2d');
     const chartData = {
         labels: [
             {% for d in dates %}
@@ -15,7 +16,7 @@
             {% endfor %}
         ],
         datasets: [{
-            label: 'Transaction Amounts',
+            label: 'Increasing Amounts',
             data: [
                 {% for a in values %}
                     {{ a }},
@@ -38,6 +39,39 @@
         }
     });
 </script>
+<script>
+    const ctx2 = document.getElementById('weeksChartSingle').getContext('2d');
+    const chartData2 = {
+        labels: [
+            {% for w in weeks %}
+                "{{ w }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Week Amounts',
+            data: [
+                {% for a in values_by_week %}
+                    {{ a }},
+                {% endfor %}
+            ],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    };
+    const transactionChart2 = new Chart(ctx2, {
+        type: 'bar', // Możesz użyć 'bar', 'pie', itp.
+        data: chartData2,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
 {% endblock %}
 
 {% block scripts %}
