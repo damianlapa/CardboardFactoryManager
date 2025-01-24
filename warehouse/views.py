@@ -414,15 +414,28 @@ class WarehouseListView(View):
 
 class DeliveriesStatistics(View):
     def get(self, request):
-        dates = []
-        values = []
-        deliveries = Delivery.objects.all().order_by('date')
-        dates.append(deliveries[0].date - datetime.timedelta(days=1))
-        values.append(0)
-        for d in deliveries:
-            dates.append(d.date)
-            values.append(values[-1] + int(d.count_area()))
+        start = request.GET.get('start')
+        if start:
+            d, m, y = list(map(int, start.split('-')))
+            start = datetime.date(y, m, d)
+        else:
+            start = datetime.date(2025, 1, 1)
+        dates = [start]
+        values = [0]
 
-        print(dates, values)
+        end = start + datetime.timedelta(days=7-start.isoweekday())
+
+        while start < datetime.date.today():
+
+            deliveries = Delivery.objects.all().filter(date__gte=start, date__lte=end)
+            print(start, end, deliveries)
+            total = 0
+            for d in deliveries:
+                total += int(d.count_area())
+            dates.append(end)
+            values.append(values[-1] + total)
+
+            start = end + datetime.timedelta(days=1)
+            end = end + datetime.timedelta(days=7)
 
         return render(request, 'warehouse/deliveries-statistics.html', locals())
