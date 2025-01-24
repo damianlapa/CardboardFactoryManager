@@ -11,6 +11,7 @@ from django.db.models.deletion import ProtectedError
 
 from warehouse.gs_connection import *
 from warehouse.models import *
+from warehouse.forms import DeliveryItemForm
 from warehousemanager.models import Buyer
 
 from production.models import ProductionOrder, ProductionUnit
@@ -371,7 +372,16 @@ class DeliveryDetailView(View):
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
+        form = DeliveryItemForm(initial={'delivery': delivery})
         return render(request, 'warehouse/delivery_details.html', locals())
+
+
+class AddDeliveryItem(View):
+    def post(self, request):
+        form = DeliveryItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('ok')
 
 
 class AddDeliveryToWarehouse(View):
