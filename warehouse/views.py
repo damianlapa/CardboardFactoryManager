@@ -220,7 +220,11 @@ class LoadWZ(View):
                     date = line.split('wystawienia: ')[1].strip().replace('-', '.').split('.')
                     date = date[2], date[1], date[0]
                 if "Nr rejestracyjny: " in line:
-                    phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
+                    try:
+                        phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
+                    except ValueError:
+                        car_number = 'None'
+                        phone = 'None'
                 if "Numer WZ" in line and not wz_number:
                     wz_number = lines[num + 1].strip()
                 if "PALETA" in line:
