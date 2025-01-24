@@ -1,5 +1,5 @@
 import datetime
-
+import calendar
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
@@ -442,6 +442,9 @@ class DeliveriesStatistics(View):
             start = end + datetime.timedelta(days=1)
             end = end + datetime.timedelta(days=7)
 
-        ile = 2400000 - sum(values_by_week)
+        total_amount = sum(values_by_week)
+        ile = 2400000 - total_amount
+        year_days = 365 + calendar.isleap(datetime.datetime.now().year)
+        days_left = year_days - datetime.datetime.now().timetuple().tm_yday
 
         return render(request, 'warehouse/deliveries-statistics.html', locals())
