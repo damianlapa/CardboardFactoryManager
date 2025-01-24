@@ -442,4 +442,6 @@ class DeliveriesStatistics(View):
             start = end + datetime.timedelta(days=1)
             end = end + datetime.timedelta(days=7)
 
+        ile = 2400000 - sum(values_by_week)
+
         return render(request, 'warehouse/deliveries-statistics.html', locals())
