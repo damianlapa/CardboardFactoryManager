@@ -18,7 +18,8 @@ urlpatterns = [
     path('warehouse/warehouses/', WarehouseListView.as_view(), name='warehouse-list-view'),
     path('warehouse/<int:warehouse_id>/', WarehouseView.as_view(), name='warehouse-detail-view'),
     path('add-delivery-item/', AddDeliveryItem.as_view(), name='add-delivery-item'),
-    path('deliveries/statistics/', DeliveriesStatistics.as_view(), name='deliveries-statistics')
+    path('deliveries/statistics/', DeliveriesStatistics.as_view(), name='deliveries-statistics'),
+    path('stock-details/<int:stock_id>/', StockView.as_view(), name='stock-details')
 ]
 
 urlpatterns \

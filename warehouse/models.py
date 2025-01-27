@@ -119,7 +119,6 @@ class Delivery(models.Model):
         return total
 
 
-
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order = models.ForeignKey(Order, on_delete=models.PROTECT)

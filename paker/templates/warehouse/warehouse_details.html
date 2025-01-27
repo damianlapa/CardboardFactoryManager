@@ -18,7 +18,7 @@
     {% for stock in stocks %}
       <tr>
         <td>{{ stock.stock.stock_type.get_stock_type }}</td>
-        <td>{{ stock.stock.name }}</td>
+        <td><a href="{% url 'warehouse:stock-details' stock.stock.id %}">{{ stock.stock.name }}</a></td>
         <td>{{ stock.quantity }}</td>
       </tr>
     {% empty %}

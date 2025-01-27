@@ -427,7 +427,7 @@ class DeliveriesStatistics(View):
 
         end = start + datetime.timedelta(days=7-start.isoweekday())
 
-        while start < datetime.date.today():
+        while start <= datetime.date.today():
 
             deliveries = Delivery.objects.all().filter(date__gte=start, date__lte=end)
             print(start, end, deliveries)
@@ -448,3 +448,11 @@ class DeliveriesStatistics(View):
         days_left = year_days - datetime.datetime.now().timetuple().tm_yday
 
         return render(request, 'warehouse/deliveries-statistics.html', locals())
+
+
+class StockView(View):
+    def get(self, request, stock_id):
+        stock = Stock.objects.get(id=stock_id)
+        # deliveries_items = DeliveryItem.objects.
+
+        return render(request, 'warehouse/stock-details.html', locals())
