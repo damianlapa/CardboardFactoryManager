@@ -239,7 +239,7 @@ class WorkerEfficiencyPrintPDF2(View):
         month_work_base = month_work_base * 60 * 60
 
         month_work_base_units = [month_work_base // 3600, (month_work_base - (month_work_base // 3600) * 3600) // 60, month_work_base % 60]
-        month_work_base_units = [x // 1 for x in month_work_base]
+        month_work_base_units = [x // 1 for x in month_work_base_units]
         month_work_base_str = ':'.join([f'{x}' if x > 9 else f'0{x}' for x in month_work_base_units])
 
         result = round(month_work_time/month_work_base, 2) * 100
