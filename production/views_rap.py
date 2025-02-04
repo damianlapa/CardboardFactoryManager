@@ -44,6 +44,7 @@ class WorkerEfficiencyPrintPDF2(View):
         extra_hours = 0
         holidays = 0
         late = 0
+        fridays = 0
 
         events_data = []
 
@@ -91,6 +92,11 @@ class WorkerEfficiencyPrintPDF2(View):
                                 events_data.append((absence[0].absence_date, absence[0].absence_type, late_in_minutes))
                                 if absence[0].absence_type == 'SP':
                                     late += 1
+                                    if start_day.isoweekday() == 5:
+                                        fridays += 1
+                            else:
+                                if start_day.isoweekday() == 5:
+                                    fridays += 1
                             absence = absence.exclude(absence_type='SP')
                             extra_h = ExtraHour.objects.filter(worker=worker, extras_date=start_day)
                             if extra_h:
@@ -236,7 +242,7 @@ class WorkerEfficiencyPrintPDF2(View):
         month_work_time_str = ':'.join([f'{x}' if x > 9 else f'0{x}' for x in month_work_time_units])
 
         month_work_base = work_hours - ((work_hours // 8) / 3)
-        month_work_base = month_work_base * 60 * 60
+        month_work_base = month_work_base * 60 * 60 - fridays * 3600
 
         month_work_base_units = [month_work_base // 3600, (month_work_base - (month_work_base // 3600) * 3600) // 60, month_work_base % 60]
         month_work_base_units = [int(x // 1) for x in month_work_base_units]
