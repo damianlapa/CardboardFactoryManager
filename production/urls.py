@@ -1,5 +1,6 @@
 from django.urls import path
 from production.views import *
+from production.views_rap import *
 
 urlpatterns = [
     path('', ProductionMenu.as_view(), name='production-menu'),
@@ -31,7 +32,8 @@ urlpatterns += [
 urlpatterns += [
     path('workers-by-month/<int:year>/<int:month>/', WorkersByMonth.as_view(), name='worker-month'),
     path('worker-efficiency/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiency.as_view(), name='worker-efficiency'),
-    path('worker-efficiency-pdf/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiencyPrintPDF.as_view(), name='worker-efficiency-pdf')
+    path('worker-efficiency-pdf/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiencyPrintPDF.as_view(), name='worker-efficiency-pdf'),
+    path('worker-efficiency-pdf2/<int:year>/<int:month>/<int:worker_id>/', WorkerEfficiencyPrintPDF2.as_view(), name='worker-efficiency-pdf2')
 ]
 
 # work stations

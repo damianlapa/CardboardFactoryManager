@@ -310,6 +310,34 @@
     {% endfor %}
 </table>
 <hr>
+{% if month_work_time %}
+<h1 style="color: black; font-size: 28px; text-align: center;">Czas pracy:</h1>
+<table style="border: solid 1px black;">
+    <tr>
+        <th>
+            Czas pracy w danym okresie
+        </th>
+        <th>
+            Zaewidencjonowany czas
+        </th>
+        <th>
+            %
+        </th>
+    </tr>
+    <tr>
+        <th>
+            {{ month_work_base_str }}
+        </th>
+        <td>
+            {{ month_work_time_str }}
+        </td>
+        <td>
+            {{ result }}
+        </td>
+    </tr>
+</table>
+<hr>
+{% endif %}
 {% if bonus %}
 <h1 style="color: black; font-size: 28px; text-align: center;">Premia</h1>
 <table style="border: solid 1px black;">
