@@ -27,6 +27,7 @@
         <th>Delivery date</th>
         <th>Order</th>
         <th>Customer</th>
+        <th>Dimensions</th>
         <th>Quantity</th>
         <th>Palettes quantity</th>
       </tr>
@@ -40,6 +41,7 @@
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
         <td>{{ item.order.customer }}</td>
+        <td>{{ item.order.dimensions }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
       </tr>
