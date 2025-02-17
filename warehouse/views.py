@@ -44,6 +44,29 @@ def delete_delivery_ajax(request, delivery_id):
 
 class TestView(View):
     def get(self, request):
+        def get_flute(text):
+            waves = 0
+            for letter in text:
+                if letter == '3':
+                    waves = 3
+                    break
+                elif letter == '5':
+                    waves = 5
+                    break
+            if waves == 3:
+                if 'E' in text.upper():
+                    return 'E'
+                if 'B' in text.upper():
+                    return 'B'
+                if 'C' in text.upper():
+                    return 'C'
+            elif waves == 5:
+                if 'EB' in text.upper():
+                    return 'EB'
+                if 'BC' in text.upper():
+                    return 'BC'
+            return None
+
         year = request.GET.get('year')
         data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
         result = ''
@@ -77,11 +100,20 @@ class TestView(View):
                     provider = Provider(name=data[0], shortcut=data[0])
                     provider.save()
 
-                try:
-                    product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                except Product.DoesNotExist:
-                    product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                    product.save()
+                # try:
+                #     product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
+                # except Product.DoesNotExist:
+                #     product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
+                #     product.save()
+
+                with transaction.atomic():
+                    flute = get_flute(data[19].upper())
+                    product = Product.objects.get_or_create(
+                        dimensions=data[23].lower(),
+                        flute=flute,
+                        name=f'{data[18].upper().strip()} | {flute} | {data[23].lower()}'
+                    )
+
                 try:
                     order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                               provider=Provider.objects.get(shortcut=data[0].upper().strip()))
