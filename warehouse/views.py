@@ -111,7 +111,7 @@ class TestView(View):
                     product, created = Product.objects.get_or_create(
                         dimensions=data[23].lower(),
                         flute=flute,
-                        name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].lower().strip()}'
+                        name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].upper().strip()}'
                     )
 
                 try:
