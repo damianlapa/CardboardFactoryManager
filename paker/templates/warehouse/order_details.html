@@ -98,8 +98,10 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>Settle Order: {{ order }} // {{ order.customer }} // {{ order.product }}</h2>
+
     <form id="settleOrderForm" method="post" action="{% url 'warehouse:settle_order' order.id %}">
       {% csrf_token %}
+      <input type="date" name="settlement_date">
       <div class="modal-columns">
         <!-- Kolumna dla materiałów -->
         <div class="column">
@@ -125,7 +127,7 @@
                     name="material_quantity"
                     max="{{ material.quantity }}"
                     min="0"
-                    placeholder="Enter quantity"
+                    value="{{ material.quantity }}"
                     required
                   >
                   <input type="hidden" name="material_id" value="{{ material.id }}">

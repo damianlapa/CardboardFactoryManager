@@ -9,6 +9,7 @@ from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct,
 
 def settle_order(request, order_id):
     if request.method == "POST":
+        settlement_date = request.POST.get('settlement_date') if request.POST.get('settlement_date') else datetime.datetime.today()
         order = get_object_or_404(Order, id=order_id)
         material_id = request.POST.get("material_id")
         material_quantity = int(request.POST.get("material_quantity", 0))
@@ -39,6 +40,7 @@ def settle_order(request, order_id):
                     order=order,
                     material=material,
                     material_quantity=material_quantity,
+                    settlement_date=settlement_date
                 )
 
                 history, created = WarehouseStockHistory.objects.get_or_create(
@@ -71,9 +73,9 @@ def settle_order(request, order_id):
 
                     supply, created = StockSupply.objects.get_or_create(
                         stock_type=product_type,
-                        date=datetime.datetime.today(),
+                        date=settlement_date,
                         quantity=int(product_quantity),
-                        name=product.name
+                        name=product.name,
                     )
 
                     stock, created = Stock.objects.get_or_create(
@@ -88,10 +90,11 @@ def settle_order(request, order_id):
 
                     warehouse_stock_history = WarehouseStockHistory.objects.create(
                         warehouse_stock=warehouse_stock,
+                        order_settlement=settlement,
                         stock_supply=supply,
                         quantity_before=warehouse_stock.quantity,
                         quantity_after=warehouse_stock.quantity + int(product_quantity),
-                        date=datetime.datetime.today()
+                        date=settlement_date
                     )
 
                     warehouse_stock.quantity = warehouse_stock.quantity + int(product_quantity)
