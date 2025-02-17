@@ -94,6 +94,9 @@ def settle_order(request, order_id):
                         date=datetime.datetime.today()
                     )
 
+                    warehouse_stock.quantity = warehouse_stock.quantity + int(product_quantity)
+                    warehouse_stock.save()
+
             return JsonResponse({"success": True})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
