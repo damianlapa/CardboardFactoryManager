@@ -108,7 +108,7 @@ class TestView(View):
 
                 with transaction.atomic():
                     flute = get_flute(data[19].upper())
-                    product = Product.objects.get_or_create(
+                    product, created = Product.objects.get_or_create(
                         dimensions=data[23].lower(),
                         flute=flute,
                         name=f'{data[18].upper().strip()} | {flute} | {data[23].lower()}'
