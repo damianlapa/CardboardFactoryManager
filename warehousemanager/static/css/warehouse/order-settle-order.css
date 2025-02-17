@@ -91,7 +91,7 @@ table {
 }
 
 th, td {
-  padding: 10px 15px;
+  padding: 2px 4px;
   border: 1px solid #ddd;
   text-align: center;
 }
@@ -134,7 +134,7 @@ button:hover {
 
 /* Stylowanie formularza */
 input[type="number"], input[type="text"], select {
-  padding: 8px;
+  padding: 2px;
   margin-top: 5px;
   margin-bottom: 10px;
   font-size: 1em;

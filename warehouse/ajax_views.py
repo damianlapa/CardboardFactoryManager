@@ -1,7 +1,10 @@
+import datetime
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct, WarehouseStock, WarehouseStockHistory
+from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct, WarehouseStock, WarehouseStockHistory, \
+    Product, StockType, Stock, Warehouse
 
 
 def settle_order(request, order_id):
@@ -17,11 +20,15 @@ def settle_order(request, order_id):
         for material_id2, quantity2 in zip(material_ids, material_quantities):
             print(material_id2, quantity2, '#MATER')
 
-        product_names = request.POST.getlist('product_name')
+        product_ids = request.POST.getlist('product_id')
+        product_types = request.POST.getlist('product_type')
         product_quantities = request.POST.getlist('product_quantity')
+        product_warehouses = request.POST.getlist('product_warehouse')
 
-        for name3, quantity3 in zip(product_names, product_quantities):
-            print(name3, quantity3, '#PROD')
+        # print(product_names, product_quantities)
+        #
+        # for name3, quantity3 in zip(product_names, product_quantities):
+        #     print(name3, quantity3, '#PROD')
 
         try:
             with transaction.atomic():
@@ -44,8 +51,7 @@ def settle_order(request, order_id):
                 material.quantity -= int(material_quantity)
                 material.save()
 
-
-                # # Create products
+                # Create products
                 # for stock_supply_id, quantity in zip(stock_supply_ids, stock_quantities):
                 #     if int(quantity) > 0:
                 #         stock_supply = get_object_or_404(StockSupply, id=stock_supply_id)
@@ -55,6 +61,39 @@ def settle_order(request, order_id):
                 #             quantity=int(quantity),
                 #             is_semi_product=False
                 #         )
+                for product_id, product_type, product_quantity, warehouse in zip(product_ids, product_types,
+                                                                                 product_quantities,
+                                                                                 product_warehouses):
+                    product = Product.objects.get(id=int(product_id))
+                    dimensions = product.dimensions
+                    product_type = StockType.objects.get(id=int(product_type))
+                    warehouse = Warehouse.objects.get(id=int(warehouse))
+
+                    supply, created = StockSupply.objects.get_or_create(
+                        stock_type=product_type,
+                        date=datetime.datetime.today(),
+                        quantity=int(product_quantity),
+                        name=product.name
+                    )
+
+                    stock, created = Stock.objects.get_or_create(
+                        stock_type=product_type,
+                        name=f'{product_type} | {dimensions}'
+                    )
+
+                    warehouse_stock, created = WarehouseStock.objects.get_or_create(
+                        stock=stock,
+                        warehouse=warehouse
+                    )
+
+                    warehouse_stock_history = WarehouseStockHistory.objects.create(
+                        warehouse_stock=warehouse_stock,
+                        stock_supply=supply,
+                        quantity_before=warehouse_stock.quantity,
+                        quantity_after=warehouse_stock.quantity + int(product_quantity),
+                        date=datetime.datetime.today()
+                    )
+
             return JsonResponse({"success": True})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})

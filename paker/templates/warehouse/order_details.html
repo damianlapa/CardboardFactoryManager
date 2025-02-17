@@ -15,6 +15,11 @@
     {% endif %}
     {% endfor %}
   ];
+  const availableProducts = [
+    {% for product in all_products %}
+      { id: "{{ product.id }}", name: "{{ product.name }}"},
+    {% endfor %}
+  ];
   const availableStockTypes = [
     {% for st in stock_types %}
       {id: "{{ st.id }}", name: "{{ st.stock_type }}"},
@@ -145,17 +150,41 @@
                 <th>Product Name</th>
                 <th>Stock Type</th>
                 <th>Quantity</th>
+                <th>Warehouse</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {% for product in warehouse_products %}
+              {% for product in products %}
               <tr>
                 <td>{{ product.name }}</td>
-                <td>KARTON FEFCO 201</td>
                 <td>
-                  <input type="number">
+                  <select name="product_type">
+                    {% for stock_type in stock_types %}
+                      {% if stock_type.stock_type == 'Box' %}
+
+                      <option value="{{ stock_type.id }}" selected>{{ stock_type }}</option>
+                      {% else %}
+                      <option value="{{ stock_type.id }}">{{ stock_type }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <input type="number" name="product_quantity">
                   <input type="hidden" name="product_id" value="{{ product.id }}">
+                </td>
+                <td>
+                  <select name="product_warehouse">
+                    {% for warehouse in warehouses %}
+                      {% if warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH' %}
+
+                      <option value="{{ warehouse.id }}" selected>{{ warehouse }}</option>
+                      {% else %}
+                      <option value="{{ warehouse.id }}">{{ warehouse }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
                 </td>
                 <td><button type="button" class="remove-btn">Remove</button></td>
               </tr>

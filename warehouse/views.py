@@ -329,8 +329,8 @@ class OrderListView(View):
 class OrderDetailView(View):
     def get(self, request, order_id):
         stock_types = StockType.objects.all()
-        print(stock_types)
         order = Order.objects.get(id=order_id)
+        warehouses = Warehouse.objects.all()
         products = [order.product]
         warehouse_products = None
         for p in products:
@@ -401,8 +401,7 @@ class AddDeliveryToWarehouse(View):
 class WarehouseView(View):
     def get(self, request, warehouse_id):
         warehouse = Warehouse.objects.get(id=warehouse_id)
-        stocks = WarehouseStock.objects.filter(warehouse=warehouse)
-        print(stocks)
+        stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
