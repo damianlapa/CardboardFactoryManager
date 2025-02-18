@@ -363,6 +363,9 @@ class OrderDetailView(View):
         stock_types = StockType.objects.all()
         order = Order.objects.get(id=order_id)
         warehouses = Warehouse.objects.all()
+        settlements = OrderSettlement.objects.filter(order=order)
+        warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
+
         products = [order.product]
         warehouse_products = None
         for p in products:

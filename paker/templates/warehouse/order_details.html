@@ -7,6 +7,7 @@
 {% endblock %}
 {% block content %}
 <script>
+  const order_id = {{ order.id }}
   const settleOrderUrl = "{% url 'warehouse:settle_order' order.id %}";
   const availableMaterials = [
     {% for material in all_materials_in_warehouse %}
@@ -29,7 +30,10 @@
 </script>
 <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
 <button id="settleOrderBtn">Settle Order</button>
-
+<input type="checkbox" id="order_delivered" name="order_delivered" {% if order.delivered %}checked{% endif %}>
+<label for="order_delivered" class="label" id="delivery_cbx">Delivered</label>
+<input type="checkbox" id="order_finished" {% if order.finished %}checked{% endif %}>
+<label for="order_finished" class="label" id="finished_cbx">Finished</label>
 <h2>Deliveries</h2>
 <table>
   <thead>
@@ -89,6 +93,34 @@
     {% empty %}
     <tr>
       <td colspan="10">No production units available.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>History</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Warehouse Stock</th>
+      <th>Stock Supply</th>
+      <th>Quantity before</th>
+      <th>Quantity after</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w_history in warehouse_stocks_history %}
+    <tr>
+      <td>{{ w_history.warehouse_stock }}</td>
+      <td>{{ w_history.stock_supply }}</td>
+      <td>{{ w_history.quantity_before }}</td>
+      <td>{{ w_history.quantity_after }}</td>
+      <td>{{ w_history.date|date:"Y-m-d" }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No history.</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -208,4 +240,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
+<script src="{% static 'js/warehouse/order-details.js' %}"></script>
 {% endblock %}

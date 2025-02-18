@@ -43,3 +43,9 @@ tr:hover {
   background-color: #0056b3;
 }
 
+.label {
+    color: #0056b3;
+    padding: 4px;
+    font-size: 24px;
+    font-weight: bold;
+}

@@ -105,3 +105,17 @@ def settle_order(request, order_id):
             return JsonResponse({"success": False, "error": str(e)})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+def order_status(request):
+    if request.method == 'GET':
+        order_id = request.GET.get('order_id')
+        action = request.GET.get('action')
+        order = Order.objects.get(id=int(order_id))
+        if action == 'delivered':
+            order.delivered = False if order.delivered else True
+        else:
+            order.finished = False if order.delivered else True
+        order.save()
+        print(order.delivered, order.finished)
+        return JsonResponse({'success': True})
