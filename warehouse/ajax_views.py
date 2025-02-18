@@ -115,7 +115,6 @@ def order_status(request):
         if action == 'delivered':
             order.delivered = False if order.delivered else True
         elif action == 'finished':
-            order.finished = False if order.delivered else True
+            order.finished = False if order.finished else True
         order.save()
-        print(order.delivered, order.finished)
-        return JsonResponse({'success': True})
+        return JsonResponse({'success': True, 'delivery': order.delivered, 'finished': order.finished})

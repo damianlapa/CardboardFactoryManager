@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'GET',
             dataType: 'json'
             }).done(function (data) {
-
+                    console.log(data)
                 })
     })
 
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'GET',
             dataType: 'json'
             }).done(function (data) {
-
+                    console.log(data)
                 })
     })
 
