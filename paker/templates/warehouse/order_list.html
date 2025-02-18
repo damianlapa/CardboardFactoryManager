@@ -33,10 +33,10 @@
         <td>{{ order.delivered_quantity }}</td>
         <td>{{ order.price }}</td>
         <td>
-          {% if order.delivered %}
-            Delivered
-          {% elif order.finished %}
+          {% if order.finished %}
             Finished
+          {% elif order.delivered %}
+            Delivered
           {% else %}
             In Progress
           {% endif %}
