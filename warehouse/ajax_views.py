@@ -114,7 +114,7 @@ def order_status(request):
         order = Order.objects.get(id=int(order_id))
         if action == 'delivered':
             order.delivered = False if order.delivered else True
-        else:
+        elif action == 'finished':
             order.finished = False if order.delivered else True
         order.save()
         print(order.delivered, order.finished)
