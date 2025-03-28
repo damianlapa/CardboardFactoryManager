@@ -1,0 +1,12 @@
+{% extends '__base2__.html' %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<h3>Kod QR dla tego wiadra:</h3>
+    <img src="data:image/png;base64,{{ qr_code }}" alt="Kod QR">
+
+{% endblock %}
+
+{% block footer %} {% endblock %}

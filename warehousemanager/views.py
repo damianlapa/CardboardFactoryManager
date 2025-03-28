@@ -1986,8 +1986,44 @@ class ColorDetail(View, PermissionRequiredMixin):
         c = Color.objects.get(id=color_id)
 
         polymers = Photopolymer.objects.filter(colors=c)
+        buckets = ColorBucket.objects.filter(color=c)
 
         return render(request, 'warehousemanager-color-detail.html', locals())
+
+
+class BucketDetail(View, PermissionRequiredMixin):
+    permission_required = 'warehousemanager.view_color'
+
+    def get(self, request, bucket_id):
+        import qrcode
+        from io import BytesIO
+        import base64
+        bucket = ColorBucket.objects.filter(id=bucket_id)
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr_url = request.build_absolute_uri(f'/bucket/{bucket_id}/')  # Dynamiczny link do wiadra
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+
+        # Generowanie obrazu QR
+        img = qr.make_image(fill="black", back_color="white")
+
+        # Konwersja do base64, aby można było osadzić w HTML
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        context = {
+            'bucket': bucket,
+            'qr_code': qr_code_base64  # Dodanie kodu QR do kontekstu
+        }
+
+        return render(request, 'warehousemanager-bucket-details.html', context)
 
 
 class ProductionProcessListView(ListView, PermissionRequiredMixin):

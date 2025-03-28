@@ -17,6 +17,17 @@
 </div>
 
 <div>
+    <h2>Color buckets:</h2>
+    {% for b in buckets %}
+    <a href="{% url 'bucket-details' bucket_id=b.id %}">
+    <p class="p-list">
+     {{ b }}
+        </p>
+        </a>
+    {% endfor %}
+</div>
+
+<div>
     <h2>Polymers with this color:</h2>
     {% for p in polymers %}
     <a href="{% url 'polymer-details' polymer_id=p.id %}">
