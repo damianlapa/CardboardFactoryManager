@@ -134,6 +134,13 @@ OCCUPANCY_TYPE = (
     ('LOGISTIC', 'LOGISTIC')
 )
 
+COLORS_PROVIDERS = (
+    ('INERGIS', 'INERGIS'),
+    ('NEOINK', 'NEOINK'),
+    ('AQUA POLIMERY', 'AQUA POLIMERY'),
+    ('CHESPA', 'CHESPA')
+)
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
@@ -781,31 +788,19 @@ class Color(models.Model):
 
     def color_status(self):
         result = self.availability
-        delivery = ColorDelivery.objects.filter(color=self)
-        usage = ColorUsage.objects.filter(color=self)
-        for d in delivery:
-            result += d.weight
-        for u in usage:
-            result -= u.value
         return result
 
 
-class ColorSpecialEvent(models.Model):
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
-    event = models.CharField(max_length=32)
-    date = models.DateField()
-    difference = models.DecimalField(max_digits=4, decimal_places=1)
-    description = models.CharField(max_length=255, null=True, blank=True)
-
-
-class ColorDelivery(models.Model):
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
-    company = models.CharField(max_length=20, blank=True, null=True)
-    weight = models.PositiveIntegerField()
-    date = models.DateField(blank=True, null=True)
+class ColorBucket(models.Model):
+    color = models.ForeignKey(Color, on_delete=models.PROTECT)
+    provider = models.CharField(max_length=32, choices=COLORS_PROVIDERS)
+    weight = models.DecimalField(max_digits=3, decimal_places=1)
+    production_date = models.DateField(null=True, blank=True)
+    expiration_date = models.DateField(null=True, blank=True)
+    usage = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f'{self.company} - {self.color} - {self.weight}'
+        return f'{self.color} #{self.id} {self.provider}'
 
 
 class Photopolymer(models.Model):

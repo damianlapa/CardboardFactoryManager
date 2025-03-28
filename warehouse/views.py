@@ -353,7 +353,14 @@ class LoadWZ(View):
 
 class OrderListView(View):
     def get(self, request):
-        orders = Order.objects.all()
+        sort_by = request.GET.get('sort', 'order_date')  # Domyślne sortowanie po dacie zamówienia
+        order_direction = request.GET.get('dir', 'asc')
+
+        if order_direction == 'desc':
+            sort_by = f'-{sort_by}'
+
+        orders = Order.objects.all().order_by(sort_by)
+        # orders = Order.objects.all()
         # paginate_by = 10  # optional: pagination to limit orders per page
         return render(request, 'warehouse/order_list.html', locals())
 
