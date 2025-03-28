@@ -1967,6 +1967,18 @@ class ColorListView(ListView, PermissionRequiredMixin):
     model = Color
 
 
+class ColorRefresh(View):
+    def get(self, request):
+        for color in Color.objects.all():
+            weight = 0
+            for bucket in ColorBucket.objects.filter(color=color):
+                weight += bucket.weight
+            color.availability = weight
+            color.save()
+
+        return redirect('colors')
+
+
 class ColorDetail(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_color'
 
