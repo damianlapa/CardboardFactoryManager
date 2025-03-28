@@ -72,7 +72,8 @@ urlpatterns += [
     path('colors/', ColorListView.as_view(), name='colors'),
     path('color/<int:color_id>/', ColorDetail.as_view(), name='color'),
     path('colors/refresh/', ColorRefresh.as_view(), name='color-refresh'),
-    path('colors/bucket/<int:bucket_id>/', BucketDetail.as_view(), name='bucket-details')
+    path('colors/bucket/<int:bucket_id>/', BucketDetail.as_view(), name='bucket-details'),
+    path('colors/bucket/<int:bucket_id>/qrcode/', BucketQRCode.as_view(), name='bucketQRcode')
 ]
 
 # contracts

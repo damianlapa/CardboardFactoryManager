@@ -790,6 +790,16 @@ class Color(models.Model):
         result = self.availability
         return result
 
+    def hex(self):
+        red = self.red
+        green = self.green
+        blue = self.blue
+        h_red = str(hex(red))[2:] if len(str(hex(red))[2:]) == 2 else f'0{str(hex(red))[2:]}'
+        h_green = str(hex(green))[2:] if len(str(hex(green))[2:]) == 2 else f'0{str(hex(green))[2:]}'
+        h_blue = str(hex(blue))[2:] if len(str(hex(blue))[2:]) == 2 else f'0{str(hex(blue))[2:]}'
+        color_hex = f'#{h_red}{h_green}{h_blue}'
+        return color_hex
+
 
 class ColorBucket(models.Model):
     color = models.ForeignKey(Color, on_delete=models.PROTECT)

@@ -51,6 +51,9 @@
         <div class="flex justify-center mt-4">
             <img src="data:image/png;base64,{{ qr_code }}" alt="Kod QR" class="w-40 h-40 rounded-lg shadow-md">
         </div>
+        <div class="flex justify-center mt-4">
+            <a href="{% url 'bucketQRcode' bucket.id %}">Pobierz</a>
+        </div>
     </div>
 </body>
 </html>
