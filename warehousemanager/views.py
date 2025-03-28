@@ -2108,7 +2108,7 @@ class BucketQRCode(View):
         # Rysowanie tekstu pod pierwszym QR
         draw = ImageDraw.Draw(img)
         try:
-            font = ImageFont.truetype("arial.ttf", 60)  # Czcionka systemowa, rozmiar 40
+            font = ImageFont.truetype("DejaVuSans.ttf", 60)  # Czcionka systemowa, rozmiar 40
         except IOError:
             font = ImageFont.load_default()
 
