@@ -1998,14 +1998,16 @@ class BucketDetail(View):
         import base64
         bucket = ColorBucket.objects.filter(id=bucket_id)
 
+        bucket_url = request.build_absolute_uri(reverse('bucket-details', args=[bucket_id]))
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=10,
             border=4,
         )
-        qr_url = request.build_absolute_uri(f'colors/bucket/{bucket_id}/')  # Dynamiczny link do wiadra
-        qr.add_data(qr_url)
+
+        qr.add_data(bucket_url)
         qr.make(fit=True)
 
         # Generowanie obrazu QR
