@@ -1991,9 +1991,7 @@ class ColorDetail(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-color-detail.html', locals())
 
 
-class BucketDetail(View, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.view_color'
-
+class BucketDetail(View):
     def get(self, request, bucket_id):
         import qrcode
         from io import BytesIO
@@ -2006,7 +2004,7 @@ class BucketDetail(View, PermissionRequiredMixin):
             box_size=10,
             border=4,
         )
-        qr_url = request.build_absolute_uri(f'/bucket/{bucket_id}/')  # Dynamiczny link do wiadra
+        qr_url = request.build_absolute_uri(f'colors/bucket/{bucket_id}/')  # Dynamiczny link do wiadra
         qr.add_data(qr_url)
         qr.make(fit=True)
 
