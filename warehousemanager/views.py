@@ -1996,7 +1996,7 @@ class BucketDetail(View):
         import qrcode
         from io import BytesIO
         import base64
-        bucket = ColorBucket.objects.filter(id=bucket_id)
+        bucket = ColorBucket.objects.get(id=bucket_id)
 
         bucket_url = request.build_absolute_uri(reverse('bucket-details', args=[bucket_id]))
 
@@ -2018,12 +2018,50 @@ class BucketDetail(View):
         img.save(buffer, format="PNG")
         qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
 
+        color = bucket.color
+        red = color.red
+        green = color.green
+        blue = color.blue
+        h_red = str(hex(red))[2:] if len(str(hex(red))[2:]) == 2 else f'0{str(hex(red))[2:]}'
+        h_green = str(hex(green))[2:] if len(str(hex(green))[2:]) == 2 else f'0{str(hex(green))[2:]}'
+        h_blue = str(hex(blue))[2:] if len(str(hex(blue))[2:]) == 2 else f'0{str(hex(blue))[2:]}'
+        color_hex = f'#{h_red}{h_green}{h_blue}'
+
+        today = datetime.date.today()
+
+        data_str = bucket.usage
+
+        history = data_str.split('/')
+        data = []
+
+        for h in history:
+            data.append(h.split(';'))
+
         context = {
             'bucket': bucket,
-            'qr_code': qr_code_base64  # Dodanie kodu QR do kontekstu
+            'qr_code': qr_code_base64,
+            'color_hex': color_hex,
+            'today': f'{today}',
+            'start_value': bucket.weight,
+            'data': data,
+            'color': color
         }
 
         return render(request, 'warehousemanager-bucket-details.html', context)
+
+    def post(self, request, bucket_id):
+        bucket = ColorBucket.objects.get(id=bucket_id)
+        date = request.POST.get("value0")
+        value1 = request.POST.get("value1")
+        value2 = request.POST.get("value2")
+
+        # Aktualizacja historii użytkowania
+        new_entry = f"{date};{value1};{value2}"
+        bucket.usage = f"{bucket.usage}/{new_entry}" if bucket.usage else new_entry
+        bucket.weight = value2
+        bucket.save()
+
+        return redirect('bucket-details', bucket_id=bucket.id)
 
 
 class ProductionProcessListView(ListView, PermissionRequiredMixin):

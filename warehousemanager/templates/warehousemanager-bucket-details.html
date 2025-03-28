@@ -1,12 +1,56 @@
-{% extends '__base2__.html' %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kod QR i Formularz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4" style="background: {{ color_hex }}">
+    <div class="bg-white shadow-lg rounded-2xl p-6 w-full max-w-md">
 
-{% block navigation %}{% endblock %}
+        <form class="flex flex-col space-y-3 mt-4" method="post">
+            {% csrf_token %}
+            <input type="date" name='value0' class="p-2 border rounded-md w-full" value="{{ today }}">
+            <input type="number" name='value1' step="0.1" placeholder="Wartość 1" class="p-2 border rounded-md w-full" value="{{ start_value }}">
+            <input type="number" name='value2' step="0.1" placeholder="Wartość 2" class="p-2 border rounded-md w-full">
+            <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition">Prześlij</button>
+        </form>
 
-{% block content %}
+        <h3 class="text-xl font-semibold text-center mb-4">Informacje</h3>
+        <div class="text-gray-700 mb-4">
+            <p><strong>Kolor:</strong> {{ color }}</p>
+            <p><strong>Producent:</strong> {{ bucket.provider }}</p>
+            <p><strong>Data produkcji:</strong> {{ bucket.production_date }}</p>
+            <p><strong>Data ważności:</strong> {{ bucket.expiration_date }}</p>
+        </div>
 
-<h3>Kod QR dla tego wiadra:</h3>
-    <img src="data:image/png;base64,{{ qr_code }}" alt="Kod QR">
+        <h3 class="text-xl font-semibold text-center mb-4">Historia</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 text-center text-sm">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 p-2">Data</th>
+                        <th class="border border-gray-300 p-2">Wartość 1</th>
+                        <th class="border border-gray-300 p-2">Wartość 2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in data %}
+                    <tr class="odd:bg-gray-100">
+                        <td class="border border-gray-300 p-2">{{ d.0 }}</td>
+                        <td class="border border-gray-300 p-2">{{ d.1 }}</td>
+                        <td class="border border-gray-300 p-2">{{ d.2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-{% endblock %}
-
-{% block footer %} {% endblock %}
+        <h3 class="text-xl font-semibold text-center mt-6">Kod QR dla tego wiadra:</h3>
+        <div class="flex justify-center mt-4">
+            <img src="data:image/png;base64,{{ qr_code }}" alt="Kod QR" class="w-40 h-40 rounded-lg shadow-md">
+        </div>
+    </div>
+</body>
+</html>
