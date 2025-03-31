@@ -2,6 +2,21 @@
 
 {% block navigation %}{% endblock %}
 
+{% block style %}
+<style>
+    a.polymerlink {
+    color: white;
+    transition: color 0.3s ease-in-out;
+    font-size: 20px;
+    text-decoration: none;
+}
+
+a.polymerlink:hover {
+    color: orange;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <a href="{% url 'polymer-create' %}"><button class="punch-form-btn">Dodaj Polimer</button></a>
 <br/>
@@ -47,6 +62,7 @@
                 <td>NAZWA</td>
                 <td>DATA DOSTARCZENIA</td>
                 <td>STATUS</td>
+                <td>PROJEKT</td>
                 <td>EDYCJA</td>
                 <td>USUWANIE</td>
             </tr>
@@ -68,6 +84,13 @@
                             {% else %}
                                 <span style="color: red">WYSŁANA</span>
                             {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.link %}
+                        <a href="{{ p.link }}" class="polymerlink">{{ p.name }}</a>
+                        {% else %}
+                        -
                         {% endif %}
                     </td>
                     <td class="edit-polymer"><i class="demo-icon icon-pencil"></i></td>

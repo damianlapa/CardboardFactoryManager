@@ -825,6 +825,7 @@ class Photopolymer(models.Model):
     delivery_date = models.DateField(blank=True, null=True,
                                      default=datetime.datetime.strptime('2017-01-01', '%Y-%M-%d'))
     active = models.BooleanField(default=True)
+    link = models.URLField(null=True, blank=True)
 
     class Meta:
         ordering = ['identification_number']
