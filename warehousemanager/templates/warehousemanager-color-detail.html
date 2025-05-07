@@ -56,7 +56,7 @@
         // Extract and accumulate history data for total usage
         const historyData = {};
         {% for b in buckets %}
-            {% if b.weight > 0 and b.usage %}
+            {% if b.usage %}
                 "{{ b.usage }}".split("/").forEach(entry => {
                     const [date, before, after] = entry.split(";");
                     const usage = parseFloat(before) - parseFloat(after);
