@@ -3,42 +3,108 @@
 {% block navigation %}{% endblock %}
 
 {% block content %}
+    <div style="display: flex; flex-direction: row; padding: 20px; background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}}); min-height: 80vh; gap: 20px;">
+        <!-- Left Section - Buckets and History -->
+        <div style="flex: 1; background-color: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+            <h2 style="font-size: 2em; font-weight: bold; margin-bottom: 20px;">Active Color Buckets</h2>
+            <table style="width: 100%; margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 10px;">Bucket Name</th>
+                        <th style="text-align: left; padding: 10px;">Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in buckets %}
+                        {% if b.weight > 0 %}
+                        <tr>
+                            <td style="padding: 10px;"><a href="{% url 'bucket-details' bucket_id=b.id %}" style="color: #0066cc; text-decoration: none;">{{ b }}</a></td>
+                            <td style="padding: 10px;">{{ b.weight }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
 
-<h1 class="page-header">{{ color }}</h1>
+            <!-- Color Usage History Chart -->
+            <div style="width: calc(100% - 40px); height: 300px; background-color: #f3f3f3; border-radius: 10px; box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow: hidden;">
+                <canvas id="usageChart"></canvas>
+            </div>
+        </div>
 
-<div class="color-item" data-colorid="{{ c.id }}" style="margin-left: auto; margin-right: auto;">
-        <p style="background-color: rgb({{c.red}}, {{c.green}}, {{c.blue}}); font-size: 30px;">{{ c.number }}</p>
-        {% if c.color_status > 5 %}
-            <p style="color: orange; font-size: 30px;">{{ c.color_status }}</p>
-        {% else %}
-            <p style="color: red; font-size: 30px;">{{ c.color_status }}</p>
-        {% endif %}
-        <p style="color: white">{{ c.name }}({{ c.number }})</p>
-</div>
+        <!-- Right Section - Polymers -->
+        <div style="flex: 1; background-color: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+            <h2 style="font-size: 2em; font-weight: bold; margin-bottom: 20px;">Polymers</h2>
+            <table style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 10px;">Polymer Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in polymers %}
+                    <tr>
+                        <td style="padding: 10px;"><a href="{% url 'polymer-details' polymer_id=p.id %}" style="color: #009900; text-decoration: none;">{{ p }}</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<div>
-    <h2>Color buckets:</h2>
-    {% for b in buckets %}
-    <a href="{% url 'bucket-details' bucket_id=b.id %}">
-    <p class="p-list">
-     {{ b }}
-        </p>
-        </a>
-    {% endfor %}
-</div>
+    <script>
+        // Extract and accumulate history data for total usage
+        const historyData = {};
+        {% for b in buckets %}
+            {% if b.weight > 0 and b.usage %}
+                "{{ b.usage }}".split("/").forEach(entry => {
+                    const [date, before, after] = entry.split(";");
+                    const usage = parseFloat(before) - parseFloat(after);
+                    if (!historyData[date]) {
+                        historyData[date] = 0;
+                    }
+                    historyData[date] += usage;
+                });
+            {% endif %}
+        {% endfor %}
 
-<div>
-    <h2>Polymers with this color:</h2>
-    {% for p in polymers %}
-    <a href="{% url 'polymer-details' polymer_id=p.id %}">
-    <p class="p-list">
-     {{ p }}
-        </p>
-        </a>
-    {% endfor %}
-</div>
+        // Sort dates and accumulate usage over time
+        const sortedDates = Object.keys(historyData).sort();
+        const cumulativeUsage = [];
+        let totalUsage = 0;
+        sortedDates.forEach(date => {
+            totalUsage += historyData[date];
+            cumulativeUsage.push(totalUsage);
+        });
 
-
+        // Generate the chart
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [
+                    {
+                        label: 'Cumulative Color Usage',
+                        data: cumulativeUsage,
+                        borderColor: '#ff6600',
+                        backgroundColor: 'rgba(255, 102, 0, 0.2)',
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Date' } },
+                    y: { title: { display: true, text: 'Total Usage (kg)' } }
+                }
+            }
+        });
+    </script>
 {% endblock %}
 
-{% block footer %} {% endblock %}
+{% block footer %}{% endblock %}
