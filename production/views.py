@@ -171,7 +171,7 @@ class WorkStationDetails(View):
         planned_units = units.filter(status='PLANNED').order_by('order')
         in_progress_units = units.filter(status='IN PROGRESS').order_by('order')
         other_units = units.filter(status='NOT STARTED').order_by('order')
-        history_units = units.filter(status='FINISHED').order_by('-end')
+        history_units = units.filter(end__lte=datetime.date.today()-datetime.timedelta(days=7)).order_by('-end')
 
         return render(request, 'production/workstation-details.html', locals())
 
