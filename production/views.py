@@ -87,6 +87,33 @@ class AllProductionOrders(View):
         return render(request, 'production/production-all.html', locals())
 
 
+class AddMoreProductionOrders(View):
+    def get(self, request):
+        query = request.GET.get('query', '')
+        status_filter = request.GET.get('status', '')
+
+        orders = ProductionOrder.objects.all()
+
+        if query:
+            orders = orders.filter(customer__icontains=query)
+
+        if status_filter:
+            orders = orders.filter(status=status_filter)
+
+        data = [{
+            "id": order.id,
+            "id_number": order.id_number,
+            "customer": order.customer,
+            "dimensions": order.dimensions,
+            "cardboard": order.cardboard,
+            "cardboard_dimensions": order.cardboard_dimensions,
+            "status": order.status,
+            "planned_end": order.planned_end
+        } for order in orders]
+
+        return JsonResponse({"orders": data})
+
+
 class ProductionDetails(View):
     def get(self, request, production_order_id):
         production_order_statuses = PRODUCTION_ORDER_STATUSES

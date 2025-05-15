@@ -18,6 +18,12 @@ urlpatterns = [
     path('wrong-date-units/', WrongDateUnits.as_view(), name='wrong-date-units')
 ]
 
+# production orders
+urlpatterns += [
+    path('add-more-orders/', AddMoreProductionOrders.as_view(), name='add-more-orders')
+]
+
+
 # production units
 urlpatterns += [
     path('unit/start/<int:unit_id>/', StartProductionUnit.as_view(), name='unit-start'),

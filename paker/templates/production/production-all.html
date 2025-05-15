@@ -21,7 +21,7 @@
 </div>
 
 <div style="color: red">
-    SEARCH: <input type="text" id="production-orders-filter">
+    SEARCH: <input type="text" id="search">
 </div>
 
 <div id="production-orders-buttons">
@@ -81,5 +81,7 @@
 {% endblock %}
 {% block scripts %}
 {% load static %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/production-orders.js' %}"></script>
+<script src="{% static 'js/add-more-orders.js' %}"></script>
 {% endblock %}
