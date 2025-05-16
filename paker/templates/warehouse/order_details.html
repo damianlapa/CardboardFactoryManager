@@ -2,136 +2,243 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
 <link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
 {% endblock %}
 {% block content %}
 <script>
+  const order_id = {{ order.id }}
   const settleOrderUrl = "{% url 'warehouse:settle_order' order.id %}";
   const availableMaterials = [
-    {% for material in stock_materials %}
-    { id: "{{ material.id }}", name: "{{ material.name }}", quantity: "{{ material.quantity }}" },
+    {% for material in all_materials_in_warehouse %}
+    {% if material not in stock_materials %}
+      { id: "{{ material.id }}", name: "{{ material.stock.name }}", quantity: "{{ material.quantity }}" },
+    {% endif %}
     {% endfor %}
   ];
+  const availableProducts = [
+    {% for product in all_products %}
+      { id: "{{ product.id }}", name: "{{ product.name }}"},
+    {% endfor %}
+  ];
+  const availableStockTypes = [
+    {% for st in stock_types %}
+      {id: "{{ st.id }}", name: "{{ st.stock_type }}"},
+    {% endfor %}
+  ];
+  console.log(availableStockTypes);
 </script>
-  <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1> <button id="settleOrderBtn">Settle Order</button>
-  <h2>Deliveries</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Provider</th>
-        <th>Delivery</th>
-        <th>Delivery date</th>
-        <th>Order</th>
-        <th>Quantity</th>
-        <th>Palettes quantity</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in items %}
-      <tr>
-        <td>{{ item.delivery.provider }}</td>
-        <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=item.delivery.id %}">{{ item.delivery.number }}</a></td>
-        <td>{{ item.delivery.date|date:"Y-m-d" }}</td>
-        <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
-        <td>{{ item.quantity }}</td>
-        <td>{{ item.palettes_quantity }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="10">No deliveries available.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
+<button id="settleOrderBtn">Settle Order</button>
+<input type="checkbox" id="order_delivered" name="order_delivered" {% if order.delivered %}checked{% endif %}>
+<label for="order_delivered" class="label" id="delivery_cbx">Delivered</label>
+<input type="checkbox" id="order_finished" {% if order.finished %}checked{% endif %}>
+<label for="order_finished" class="label" id="finished_cbx">Finished</label>
+<h2>Deliveries</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Provider</th>
+      <th>Delivery</th>
+      <th>Delivery date</th>
+      <th>Order</th>
+      <th>Quantity</th>
+      <th>Palettes quantity</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.delivery.provider }}</td>
+      <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=item.delivery.id %}">{{ item.delivery.number }}</a></td>
+      <td>{{ item.delivery.date|date:"Y-m-d" }}</td>
+      <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
+      <td>{{ item.quantity }}</td>
+      <td>{{ item.palettes_quantity }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No deliveries available.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-  <!-- production -->
-  <h2>Production</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Sequence</th>
-        <th>Work station</th>
-        <th>Start</th>
-        <th>Finish</th>
-        <th>Duration</th>
-        <th>Quantity start</th>
-        <th>Quantity end</th>
-        <th>Workers</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for unit in production_units %}
-      <tr>
-        <td>{{ unit.sequence }}</td>
-        <td>{{ unit.work_station }}</td>
-        <td>{{ unit.start|date:"Y-m-d H:i:s" }}</td>
-        <td>{{ unit.end|date:"Y-m-d H:i:s" }}</td>
-        <td>{{ unit.duration_in_minutes }}</td>
-        <td>{{ unit.quantity_start }}</td>
-        <td>{{ unit.quantity_end }}</td>
-        <td>{{ unit.persons.all|join:", " }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="10">No production units available.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<h2>Production</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Sequence</th>
+      <th>Work station</th>
+      <th>Start</th>
+      <th>Finish</th>
+      <th>Duration</th>
+      <th>Quantity start</th>
+      <th>Quantity end</th>
+      <th>Workers</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for unit in production_units %}
+    <tr>
+      <td>{{ unit.sequence }}</td>
+      <td>{{ unit.work_station }}</td>
+      <td>{{ unit.start|date:"Y-m-d H:i:s" }}</td>
+      <td>{{ unit.end|date:"Y-m-d H:i:s" }}</td>
+      <td>{{ unit.duration_in_minutes }}</td>
+      <td>{{ unit.quantity_start }}</td>
+      <td>{{ unit.quantity_end }}</td>
+      <td>{{ unit.persons.all|join:", " }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No production units available.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-  <!-- Pagination Controls -->
-  <div class="pagination">
-    {% if is_paginated %}
-      <span class="step-links">
-        {% if page_obj.has_previous %}
-          <a href="?page=1">&laquo; first</a>
-          <a href="?page={{ page_obj.previous_page_number }}">previous</a>
-        {% endif %}
-
-        <span class="current">
-          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-        </span>
-
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}">next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-        {% endif %}
-      </span>
-    {% endif %}
-  </div>
+<h2>History</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Warehouse Stock</th>
+      <th>Stock Supply</th>
+      <th>Quantity before</th>
+      <th>Quantity after</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w_history in warehouse_stocks_history %}
+    <tr>
+      <td>{{ w_history.warehouse_stock }}</td>
+      <td>{{ w_history.stock_supply }}</td>
+      <td>{{ w_history.quantity_before }}</td>
+      <td>{{ w_history.quantity_after }}</td>
+      <td>{{ w_history.date|date:"Y-m-d" }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No history.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 <div id="settleOrderModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
-    <h2>Settle Order: {{ order }}</h2>
-    <form id="settleOrderForm" method="post">
-      {% csrf_token %}
+    <h2>Settle Order: {{ order }} // {{ order.customer }} // {{ order.product }}</h2>
 
-      <!-- Domyślny materiał -->
-      <div id="default-material">
-        <h3>Material from Delivery</h3>
-        <div>
-          <label for="material_name">Material:</label>
-          <input type="text" name="material_name" value="Default Material" readonly>
-          <br>
-          <label for="material_quantity">Quantity:</label>
-          <input type="number" name="material_quantity" value="10" required>
+    <form id="settleOrderForm" method="post" action="{% url 'warehouse:settle_order' order.id %}">
+      {% csrf_token %}
+      <input type="date" name="settlement_date">
+      <div class="modal-columns">
+        <!-- Kolumna dla materiałów -->
+        <div class="column">
+          <h3>Materials</h3>
+          <table id="materials-table">
+            <thead>
+              <tr>
+                <th>Material Name</th>
+                <th>Stock Type</th>
+                <th>Available Quantity</th>
+                <th>Quantity to Use</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for material in stock_materials %}
+              <tr>
+                <td>{{ material.stock.name }}</td>
+                <td>{{ material.stock.stock_type }}</td>
+                <td>{{ material.quantity }}</td>
+                <td>
+                  <input
+                    type="number"
+                    name="material_quantity"
+                    max="{{ material.quantity }}"
+                    min="0"
+                    value="{{ material.quantity }}"
+                    required
+                  >
+                  <input type="hidden" name="material_id" value="{{ material.id }}">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div id="additional-materials-container">
+            <h4>Additional Materials</h4>
+            <div id="additional-materials"></div>
+            <button type="button" id="add-material-btn">Add Material</button>
+          </div>
+        </div>
+
+        <!-- Kolumna dla produktów -->
+        <div class="column">
+          <h3>Products</h3>
+          <table id="results-table">
+            <thead>
+              <tr>
+                <th>Product Name</th>
+                <th>Stock Type</th>
+                <th>Quantity</th>
+                <th>Warehouse</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products %}
+              <tr>
+                <td>{{ product.name }}</td>
+                <td>
+                  <select name="product_type">
+                    {% for stock_type in stock_types %}
+                      {% if stock_type.stock_type == 'Box' %}
+
+                      <option value="{{ stock_type.id }}" selected>{{ stock_type }}</option>
+                      {% else %}
+                      <option value="{{ stock_type.id }}">{{ stock_type }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <input type="number" name="product_quantity">
+                  <input type="hidden" name="product_id" value="{{ product.id }}">
+                </td>
+                <td>
+                  <select name="product_warehouse">
+                    {% for warehouse in warehouses %}
+                      {% if warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH' %}
+
+                      <option value="{{ warehouse.id }}" selected>{{ warehouse }}</option>
+                      {% else %}
+                      <option value="{{ warehouse.id }}">{{ warehouse }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </td>
+                <td><button type="button" class="remove-btn">Remove</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button type="button" id="add-product-btn">Add Product</button>
         </div>
       </div>
-
-      <!-- Dodatkowe materiały -->
-      <h3>Additional Materials</h3>
-      <div id="additional-materials"></div>
-      <button type="button" id="add-material-btn">Add Material</button>
-
-      <br><br>
-      <button type="submit">Submit</button>
+      <br>
+      <button type="submit" id="submit-btn">Submit</button>
     </form>
   </div>
 </div>
 
 
+
+
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
+<script src="{% static 'js/warehouse/order-details.js' %}"></script>
 {% endblock %}

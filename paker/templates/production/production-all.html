@@ -12,6 +12,8 @@
         <input type="text" id="value1" name="value1"><br><br>
         <label for="value2">Wartość 2:</label>
         <input type="text" id="value2" name="value2"><br><br>
+        <label for="value3">ROK:</label>
+        <input type="text" id="value3" name="value3"><br><br>
         <button type="button" id="submitButton">Zatwierdź</button>
     </form>
     <div id="result" style="background: white"></div>
@@ -19,7 +21,7 @@
 </div>
 
 <div style="color: red">
-    SEARCH: <input type="text" id="production-orders-filter">
+    SEARCH: <input type="text" id="search">
 </div>
 
 <div id="production-orders-buttons">
@@ -48,7 +50,7 @@
 
 <div><h2 style="color: white; display: inline">Number of orders: </h2><h1 id="orders-num" style="color: darkgrey; display: inline">{{ number }}</h1></div>
 
-<div class="color-list">
+<div class="color-list" id="orders">
     {% for po in production_orders %}
     <a href="{% url 'production-details' production_order_id=po.id %}" class="no-decor black" >
         <div style="{% if po.status == 'FINISHED' %}display: none;{% elif po.status == 'ARCHIVED' %}display: none;  {% endif %}"
@@ -79,5 +81,69 @@
 {% endblock %}
 {% block scripts %}
 {% load static %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/production-orders.js' %}"></script>
+<script>
+    function createOrderElement(order) {
+    console.log(order)
+    // Określenie koloru w zależności od statusu
+    let bgClass = '';
+    if (order.status === 'PLANNED') bgClass = 'bg-orange';
+    else if (order.status === 'FINISHED') bgClass = 'bg-green';
+    else if (order.status === 'COMPLETED') bgClass = 'bg-yellow';
+    else if (order.status === 'ORDERED') bgClass = 'bg-pink';
+
+    // Tworzenie elementu
+    const orderDiv = `
+    <a href="/production-details/${order.id}" class="no-decor black">
+        <div
+            data-orderstatus="${order.status}"
+            data-idnumber="${order.id_number}"
+            data-cardboard="${order.cardboard}"
+            data-cardboarddimensions="${order.cardboard_dimensions}"
+            data-customer="${order.customer}"
+            data-dimensions="${order.dimensions}"
+            data-quantity="${order.quantity}"
+            data-notes="${order.notes}"
+            class="production-order prod-item ${bgClass}">
+
+            <p>${order.id_number}</p>
+            <p>${order.customer}</p>
+            <p>${order.dimensions}</p>
+            <p>${order.cardboard}</p>
+            <p>${order.cardboard_dimensions}</p>
+            <h4 class="red">${order.status}</h4>
+
+            ${order.status === 'PLANNED' ? `<p>${order.planned_end}</p>` : ''}
+        </div>
+    </a>
+    `;
+    return orderDiv;
+}
+
+function loadOrders(query = '') {
+    $.ajax({
+        url: "{% url 'add-more-orders' %}",
+        data: { 'query': query },
+        dataType: 'json',
+        success: function(data) {
+        console.log(data)
+            $('#orders').empty();
+            data.orders.forEach(function(order){
+                $('#orders').append(createOrderElement(order));
+            });
+        }
+    });
+}
+
+$(document).ready(function(){
+    // Początkowe ładowanie
+    loadOrders();
+
+    // Wyszukiwanie
+    $('#search').on('input', function(){
+        loadOrders($(this).val());
+    });
+});
+</script>
 {% endblock %}

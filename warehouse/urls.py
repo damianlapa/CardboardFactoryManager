@@ -1,11 +1,11 @@
 from django.urls import path
 from warehouse.views import *
 from warehouse.ajax_views import *
-
-
+#
+#
 app_name = 'warehouse'
-
-
+#
+#
 urlpatterns = [
     path('test/', TestView.as_view()),
     path('import_excel/', LoadExcelView.as_view(), name='import_excel'),
@@ -17,6 +17,9 @@ urlpatterns = [
     path('process_delivery/<int:delivery_id>/', AddDeliveryToWarehouse.as_view(), name="process-delivery"),
     path('warehouse/warehouses/', WarehouseListView.as_view(), name='warehouse-list-view'),
     path('warehouse/<int:warehouse_id>/', WarehouseView.as_view(), name='warehouse-detail-view'),
+    path('add-delivery-item/', AddDeliveryItem.as_view(), name='add-delivery-item'),
+    path('deliveries/statistics/', DeliveriesStatistics.as_view(), name='deliveries-statistics'),
+    path('stock-details/<int:stock_id>/', StockView.as_view(), name='stock-details')
 ]
 
 urlpatterns \
@@ -24,4 +27,8 @@ urlpatterns \
     # Inne ścieżki...
     path('deliveries/delivery/<int:delivery_id>/delete/', delete_delivery_ajax, name='delete_delivery_ajax'),
     path('orders/<int:order_id>/settle/', settle_order, name='settle_order'),
+]
+
+urlpatterns += [
+    path('orders/status/', order_status, name='order_status'),
 ]

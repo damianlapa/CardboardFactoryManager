@@ -2,6 +2,7 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
 {% endblock %}
 {% block content %}
   <h1>
@@ -14,6 +15,7 @@
         <button type="submit" class="process-button">Mark as Processed</button>
       </form>
     {% endif %}
+
   </h1>
 
   <table>
@@ -25,6 +27,7 @@
         <th>Delivery date</th>
         <th>Order</th>
         <th>Customer</th>
+        <th>Dimensions</th>
         <th>Quantity</th>
         <th>Palettes quantity</th>
       </tr>
@@ -38,6 +41,7 @@
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
         <td>{{ item.order.customer }}</td>
+        <td>{{ item.order.dimensions }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
       </tr>
@@ -48,6 +52,8 @@
       {% endfor %}
     </tbody>
   </table>
+
+<button id="addDeliveryItemBtn">Add Item</button>
 
   <!-- Pagination Controls -->
   <div class="pagination">
@@ -69,4 +75,24 @@
       </span>
     {% endif %}
   </div>
+
+<div id="addDeliveryItemModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Add item to: {{ delivery }}</h2>
+    <form id="addDeliveryItemForm" method="post" action="{% url 'warehouse:add-delivery-item' %}">
+      {% csrf_token %}
+      <div class="modal-column">
+        {{ form.as_p }}
+      </div>
+      <br>
+      <button type="submit" id="submit-btn">Submit</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/warehouse/delivery-add-item.js' %}"></script>
 {% endblock %}

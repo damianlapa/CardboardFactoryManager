@@ -1,3 +1,5 @@
+import datetime
+import calendar
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
@@ -9,6 +11,7 @@ from django.db.models.deletion import ProtectedError
 
 from warehouse.gs_connection import *
 from warehouse.models import *
+from warehouse.forms import DeliveryItemForm
 from warehousemanager.models import Buyer
 
 from production.models import ProductionOrder, ProductionUnit
@@ -41,10 +44,35 @@ def delete_delivery_ajax(request, delivery_id):
 
 class TestView(View):
     def get(self, request):
-        data_all = get_all()
+        def get_flute(text):
+            waves = 0
+            for letter in text:
+                if letter == '3':
+                    waves = 3
+                    break
+                elif letter == '5':
+                    waves = 5
+                    break
+            if waves == 3:
+                if 'E' in text.upper():
+                    return 'E'
+                if 'B' in text.upper():
+                    return 'B'
+                if 'C' in text.upper():
+                    return 'C'
+            elif waves == 5:
+                if 'EB' in text.upper():
+                    return 'EB'
+                if 'BC' in text.upper():
+                    return 'BC'
+            return None
+
+        year = request.GET.get('year')
+        data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
         result = ''
         row = request.GET.get('row')
         division = request.GET.get('division')
+
         if row:
             row = int(row)
         else:
@@ -72,11 +100,20 @@ class TestView(View):
                     provider = Provider(name=data[0], shortcut=data[0])
                     provider.save()
 
-                try:
-                    product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                except Product.DoesNotExist:
-                    product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                    product.save()
+                # try:
+                #     product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
+                # except Product.DoesNotExist:
+                #     product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
+                #     product.save()
+
+                with transaction.atomic():
+                    flute = get_flute(data[19].upper())
+                    product, created = Product.objects.get_or_create(
+                        dimensions=data[23].lower(),
+                        flute=flute,
+                        name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].upper().strip()}'
+                    )
+
                 try:
                     order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                               provider=Provider.objects.get(shortcut=data[0].upper().strip()))
@@ -215,7 +252,11 @@ class LoadWZ(View):
                     date = line.split('wystawienia: ')[1].strip().replace('-', '.').split('.')
                     date = date[2], date[1], date[0]
                 if "Nr rejestracyjny: " in line:
-                    phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
+                    try:
+                        phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
+                    except ValueError:
+                        car_number = 'None'
+                        phone = 'None'
                 if "Numer WZ" in line and not wz_number:
                     wz_number = lines[num + 1].strip()
                 if "PALETA" in line:
@@ -253,13 +294,14 @@ class LoadWZ(View):
             palette = Palette.objects.create(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
             palette.save()
 
+
         try:
             delivery, created = Delivery.objects.get_or_create(
                 number=wz_number,
                 defaults={
                     'provider': Provider.objects.get(shortcut=provider),
                     'date': datetime.date(int(date[2]), int(date[1]), int(date[0])),
-                    'car_number': car_number,
+                    'car_number': car_number[:16],
                     'telephone': phone.replace(' ', ''),
                 }
             )
@@ -311,16 +353,52 @@ class LoadWZ(View):
 
 class OrderListView(View):
     def get(self, request):
-        orders = Order.objects.all()
+        sort_by = request.GET.get('sort', 'order_date')  # Domyślne sortowanie po dacie zamówienia
+        order_direction = request.GET.get('dir', 'asc')
+
+        if order_direction == 'desc':
+            sort_by = f'-{sort_by}'
+
+        orders = Order.objects.all().order_by(sort_by)
+        # orders = Order.objects.all()
         # paginate_by = 10  # optional: pagination to limit orders per page
         return render(request, 'warehouse/order_list.html', locals())
 
 
 class OrderDetailView(View):
     def get(self, request, order_id):
+        stock_types = StockType.objects.all()
         order = Order.objects.get(id=order_id)
+        warehouses = Warehouse.objects.all()
+        settlements = OrderSettlement.objects.filter(order=order)
+        warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
+
+        products = [order.product]
+        warehouse_products = None
+        for p in products:
+            stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
+            delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
+            dimensions = models.CharField(max_length=32, null=True, blank=True)
+            date = models.DateField(null=True, blank=True)
+            quantity = models.PositiveIntegerField(default=0)
+            name = models.CharField(max_length=64)
+            try:
+                warehouse_product_stock = Stock.objects.get(name=name)
+                warehouse_products.append(warehouse_product_stock)
+            except Stock.DoesNotExist:
+                pass
         items = DeliveryItem.objects.filter(order=order)
-        materials = items
+        stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
+        stock_materials = []
+        all_materials_in_warehouse = WarehouseStock.objects.filter(warehouse=Warehouse.objects.get(name="MAGAZYN GŁÓWNY"))
+        for stock_supply in stock_supplies:
+            try:
+                stock = Stock.objects.get(name=stock_supply.name)
+                warehouse_stock = WarehouseStock.objects.get(stock=stock)
+                stock_materials.append(warehouse_stock)
+
+            except Exception as e:
+                pass
         stocks = StockSupply.objects.all()
 
         try:
@@ -341,7 +419,16 @@ class DeliveryDetailView(View):
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
+        form = DeliveryItemForm(initial={'delivery': delivery})
         return render(request, 'warehouse/delivery_details.html', locals())
+
+
+class AddDeliveryItem(View):
+    def post(self, request):
+        form = DeliveryItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('ok')
 
 
 class AddDeliveryToWarehouse(View):
@@ -350,14 +437,13 @@ class AddDeliveryToWarehouse(View):
         items = DeliveryItem.objects.filter(delivery=delivery)
         delivery.add_to_warehouse()
 
-        return redirect("delivery-detail-view", delivery_id=delivery_id)
+        return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
 class WarehouseView(View):
     def get(self, request, warehouse_id):
         warehouse = Warehouse.objects.get(id=warehouse_id)
-        stocks = WarehouseStock.objects.filter(warehouse=warehouse)
-        print(stocks)
+        stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
@@ -365,3 +451,49 @@ class WarehouseListView(View):
     def get(self, request):
         warehouses = Warehouse.objects.all()
         return render(request, 'warehouse/warehouse_list.html', locals())
+
+
+class DeliveriesStatistics(View):
+    def get(self, request):
+        start = request.GET.get('start')
+        if start:
+            d, m, y = list(map(int, start.split('-')))
+            start = datetime.date(y, m, d)
+        else:
+            start = datetime.date(2025, 1, 1)
+        dates = [start]
+        weeks = ['#0']
+        values = [0]
+        values_by_week = [0]
+
+        end = start + datetime.timedelta(days=7-start.isoweekday())
+
+        while start <= datetime.date.today():
+
+            deliveries = Delivery.objects.all().filter(date__gte=start, date__lte=end)
+            print(start, end, deliveries)
+            total = 0
+            for d in deliveries:
+                total += int(d.count_area())
+            dates.append(end)
+            values.append(values[-1] + total)
+            weeks.append(f'#{len(weeks)}')
+            values_by_week.append(total)
+
+            start = end + datetime.timedelta(days=1)
+            end = end + datetime.timedelta(days=7)
+
+        total_amount = sum(values_by_week)
+        ile = 2400000 - total_amount
+        year_days = 365 + calendar.isleap(datetime.datetime.now().year)
+        days_left = year_days - datetime.datetime.now().timetuple().tm_yday
+
+        return render(request, 'warehouse/deliveries-statistics.html', locals())
+
+
+class StockView(View):
+    def get(self, request, stock_id):
+        stock = Stock.objects.get(id=stock_id)
+        # deliveries_items = DeliveryItem.objects.
+
+        return render(request, 'warehouse/stock-details.html', locals())

@@ -82,9 +82,40 @@ class AllProductionOrders(View):
     def get(self, request):
         visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
-        production_orders = ProductionOrder.objects.all()
-        number = production_orders.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED')).count()
+        production_orders = ProductionOrder.objects.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED'))
+        number = production_orders.count()
         return render(request, 'production/production-all.html', locals())
+
+
+class AddMoreProductionOrders(View):
+    def get(self, request):
+        pass
+        query = request.GET.get('query', '')
+        # status_filter = request.GET.get('status', '')
+        #
+        orders = ProductionOrder.objects.all()
+        #
+        if query:
+            # pass
+            customers = Buyer.objects.filter(name__icontains=query)
+            orders = orders.filter(customer__in=customers)
+            print(orders)
+        #
+        # if status_filter:
+        #     orders = orders.filter(status=status_filter)
+        #
+        data = [{
+            "id": order.id,
+            "id_number": order.id_number,
+            "customer": order.customer.name,
+            "dimensions": order.dimensions,
+            "cardboard": order.cardboard,
+            "cardboard_dimensions": order.cardboard_dimensions,
+            "status": order.status,
+            "planned_end": order.planned_end()
+        } for order in orders]
+
+        return JsonResponse({"orders": data})
 
 
 class ProductionDetails(View):
@@ -171,7 +202,7 @@ class WorkStationDetails(View):
         planned_units = units.filter(status='PLANNED').order_by('order')
         in_progress_units = units.filter(status='IN PROGRESS').order_by('order')
         other_units = units.filter(status='NOT STARTED').order_by('order')
-        history_units = units.filter(status='FINISHED').order_by('-end')
+        history_units = units.filter(end__gte=datetime.date.today()-datetime.timedelta(days=7)).order_by('-end')
 
         return render(request, 'production/workstation-details.html', locals())
 
@@ -1119,12 +1150,13 @@ class PrepareOrders(View):
 
         number = request.GET.get('number')
         number2 = request.GET.get('number2')
+        year_str = str(datetime.date.today().year) if not request.GET.get('year') else request.GET.get('year')
 
         results = []
 
         if number and not number2:
             number = int(number)
-            data = get_data(number)
+            data = get_data(number, year=year_str)
 
             order = ProductionOrder.objects.get_or_create(
                 id_number=f'{data[0]} {data[1]}/{data[2]}',
@@ -1153,7 +1185,7 @@ class PrepareOrders(View):
             for num in range(int(numbers[0]), int(numbers[1])):
                 result = {}
                 try:
-                    data = get_data(num)
+                    data = get_data(num ,year=year_str)
 
                     customer = Buyer.objects.get(name=data[18].upper())
 

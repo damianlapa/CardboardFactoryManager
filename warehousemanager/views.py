@@ -27,6 +27,12 @@ from django.conf import settings
 import json
 import datetime
 
+import qrcode
+from io import BytesIO
+import base64
+
+from PIL import Image, ImageDraw, ImageFont
+
 from warehousemanager.functions import *
 
 import subprocess
@@ -1967,33 +1973,170 @@ class ColorListView(ListView, PermissionRequiredMixin):
     model = Color
 
 
+class ColorRefresh(View):
+    def get(self, request):
+        for color in Color.objects.all():
+            weight = 0
+            for bucket in ColorBucket.objects.filter(color=color):
+                weight += bucket.weight
+            color.availability = weight
+            color.save()
+
+        return redirect('colors')
+
+
 class ColorDetail(View, PermissionRequiredMixin):
     permission_required = 'warehousemanager.view_color'
 
     def get(self, request, color_id):
         c = Color.objects.get(id=color_id)
 
-        history = []
-
         polymers = Photopolymer.objects.filter(colors=c)
-
-        deliveries = ColorDelivery.objects.filter(color=c)
-        usage = ColorUsage.objects.filter(color=c)
-        events = ColorSpecialEvent.objects.filter(color=c)
-
-        for d in deliveries:
-            history.append((datetime.datetime.strftime(d.date, '%Y-%m-%d'), d, d.weight))
-
-        for u in usage:
-            history.append(
-                (datetime.datetime.strftime(u.production.date_end, '%Y-%m-%d'), u.production, float(u.value * (-1))))
-
-        for e in events:
-            history.append((datetime.datetime.strftime(e.date, '%Y-%m-%d'), e.event, e.difference))
-
-        history = sorted(history, key=lambda x: x[0])
+        buckets = ColorBucket.objects.filter(color=c)
 
         return render(request, 'warehousemanager-color-detail.html', locals())
+
+
+class BucketDetail(View):
+    def get(self, request, bucket_id):
+        bucket = ColorBucket.objects.get(id=bucket_id)
+
+        bucket_url = request.build_absolute_uri(reverse('bucket-details', args=[bucket_id]))
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+
+        qr.add_data(bucket_url)
+        qr.make(fit=True)
+
+        # Generowanie obrazu QR
+        img = qr.make_image(fill="black", back_color="white")
+
+        # Konwersja do base64, aby można było osadzić w HTML
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        color = bucket.color
+        color_hex = color.hex()
+
+        today = datetime.date.today()
+
+        data_str = bucket.usage
+
+        history = data_str.split('/')
+        data = []
+
+        for h in history:
+            data.append(h.split(';'))
+
+        context = {
+            'bucket': bucket,
+            'qr_code': qr_code_base64,
+            'color_hex': color_hex,
+            'today': f'{today}',
+            'start_value': bucket.weight,
+            'data': data,
+            'color': color
+        }
+
+        return render(request, 'warehousemanager-bucket-details.html', context)
+
+    def post(self, request, bucket_id):
+        bucket = ColorBucket.objects.get(id=bucket_id)
+        date = request.POST.get("value0")
+        value1 = request.POST.get("value1")
+        value2 = request.POST.get("value2")
+
+        # Aktualizacja historii użytkowania
+        new_entry = f"{date};{value1};{value2}"
+        bucket.usage = f"{bucket.usage}/{new_entry}" if bucket.usage else new_entry
+        bucket.weight = value2
+        bucket.save()
+
+        return redirect('bucket-details', bucket_id=bucket.id)
+
+
+class BucketQRCode(View):
+    def get(self, request, bucket_id):
+        bucket = get_object_or_404(ColorBucket, id=bucket_id)
+
+        # Generowanie poprawnego URL do szczegółów wiadra
+        bucket_url = request.build_absolute_uri(reverse('bucket-details', args=[bucket_id]))
+
+        # Tworzymy kod QR z większym rozmiarem
+        qr = qrcode.QRCode(
+            version=1,  # Wersja większa (większa wersja - większy kod)
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=30,  # Zwiększenie rozmiaru pudełek
+            border=4,
+        )
+        qr.add_data(bucket_url)
+        qr.make(fit=True)
+
+        qr_img = qr.make_image(fill="black", back_color="white")
+
+        # Wymiary strony A4 w pikselach przy 300 DPI
+        a4_width = 2480  # 210mm * 300 DPI
+        a4_height = 3508  # 297mm * 300 DPI
+        half_a4_height = a4_height // 2
+
+        # Tworzymy nowy obrazek, na którym będą dwa zestawy kodu QR
+        img = Image.new("RGB", (a4_width, half_a4_height * 2), "white")
+
+        # Obliczanie pozycji wyśrodkowania QR
+        qr_x = (a4_width - qr_img.width) // 2  # Pozycja X do wyśrodkowania
+        qr_y = (half_a4_height - qr_img.height) // 2  # Pozycja Y do wyśrodkowania
+
+        # Pierwszy obrazek QR - wyśrodkowany
+        img.paste(qr_img, (qr_x, qr_y))
+
+        # Dodanie kwadracika w kolorze wiadra obok kodu QR
+        color_square_size = 500  # Rozmiar kwadracika
+        color_square_position = (qr_x - color_square_size - 10, qr_y + 20)  # Pozycja kwadracika obok QR
+        color_square_position2 = (qr_x - color_square_size - 10, qr_y + half_a4_height)
+
+        color = bucket.color.hex()  # Zakładając, że color to np. #FF5733 lub 'red'
+        color_square = Image.new("RGB", (color_square_size, color_square_size), color)
+        img.paste(color_square, color_square_position)
+        img.paste(color_square, color_square_position2)
+
+        # Rysowanie tekstu pod pierwszym QR
+        draw = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", 60)  # Czcionka systemowa, rozmiar 40
+        except IOError:
+            font = ImageFont.load_default()
+
+        # Więcej informacji o wiadrze
+        text = f"ID: {bucket.id}\nKolor: {bucket.color}\n"
+        text += (f"Dostawca: {bucket.provider}\nData produkcji: {bucket.production_date}\n"
+                 f"Data ważności: {bucket.expiration_date}")
+
+        # Rysowanie tekstu pod pierwszym kodem QR
+        text_position = (10, qr_img.size[1] + 10)
+        draw.text(text_position, text, fill="black", font=font)
+
+        # Drugi obrazek QR poniżej pierwszego
+        img.paste(qr_img, (qr_x, half_a4_height + qr_y))  # Drugi obrazek poniżej pierwszego
+
+        # Rysowanie tekstu pod drugim QR
+        text_position = (10, qr_img.size[1] + half_a4_height + 10)
+        draw.text(text_position, text, fill="black", font=font)
+
+        # Konwersja do pliku
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        # Zwracamy plik do pobrania
+        response = HttpResponse(buffer.getvalue(), content_type="image/png")
+        response["Content-Disposition"] = f'attachment; filename="bucket_{bucket_id}_qr_double.png"'
+        return response
 
 
 class ProductionProcessListView(ListView, PermissionRequiredMixin):

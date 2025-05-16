@@ -1,0 +1,109 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+{% block content %}
+<h1>DO 2.400.000 METRÓW POZOSTAŁO: <span style="color:red" id="counter">{{ ile }}</span></h1>
+<h1>W 2025 DOSTARCZONO: <span style="color:green" id="counter2">{{ total_amount }}</span></h1>
+<h1>DO KOŃCA ROKU POZOSTAŁO: <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
+<canvas id="weeksChart" width="400" height="200"></canvas>
+<canvas id="weeksChartSingle" width="400" height="200"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('weeksChart').getContext('2d');
+    const chartData = {
+        labels: [
+            {% for d in dates %}
+                "{{ d }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Increasing Amounts',
+            data: [
+                {% for a in values %}
+                    {{ a }},
+                {% endfor %}
+            ],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    };
+    const transactionChart = new Chart(ctx, {
+        type: 'line', // Możesz użyć 'bar', 'pie', itp.
+        data: chartData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+<script>
+    const ctx2 = document.getElementById('weeksChartSingle').getContext('2d');
+    const chartData2 = {
+        labels: [
+            {% for w in weeks %}
+                "{{ w }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Week Amounts',
+            data: [
+                {% for a in values_by_week %}
+                    {{ a }},
+                {% endfor %}
+            ],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    };
+    const transactionChart2 = new Chart(ctx2, {
+        type: 'bar', // Możesz użyć 'bar', 'pie', itp.
+        data: chartData2,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+<script>
+        function animateCounter(startValue, endValue, duration, counter) {
+
+            const startTime = performance.now();
+
+            function updateCounter(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1); // Zapewnia, że progress nie przekroczy 1
+                const currentValue = Math.floor(startValue - (startValue - endValue) * progress);
+
+                counter.textContent = currentValue.toLocaleString(); // Formatowanie liczby z separatorami
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                }
+            }
+
+            requestAnimationFrame(updateCounter);
+        }
+
+        // Uruchomienie animacji: od 2 400 000 do 1 200 000 w 5 sekund
+        const counter = document.getElementById('counter');
+        const counter2 = document.getElementById('counter2');
+        const counter3 = document.getElementById('counter3');
+        animateCounter(2400000, {{ ile }}, 2000, counter);
+        animateCounter(0, {{ total_amount }}, 2000, counter2);
+        animateCounter({{ year_days }}, {{ days_left }}, 2000, counter3);
+    </script>
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

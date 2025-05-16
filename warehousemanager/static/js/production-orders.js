@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const allOrders = document.getElementsByClassName('production-order')
     const ordersBtns = document.getElementsByClassName('production-order-btn')
 
-    const ordersFilterInput = document.getElementById('production-orders-filter')
+    const ordersFilterInput = document.getElementById('search2')
 
     const ordersQuantity = document.getElementById('orders-num')
 
@@ -79,11 +79,13 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('submitButton').addEventListener('click', function() {
     const value1 = document.getElementById('value1').value;
     const value2 = document.getElementById('value2').value;
+    const value3 = document.getElementById('value3').value;
 
     $.ajax({
             url: 'https://paker-wroclaw.herokuapp.com/production/prepare-orders/',
             data: {'number': value1,
-                   'number2': value2},
+                   'number2': value2,
+                   'year': value3},
             type: 'GET',
             dataType: 'json'
         }).done(function (response) {
