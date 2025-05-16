@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const allOrders = document.getElementsByClassName('production-order')
     const ordersBtns = document.getElementsByClassName('production-order-btn')
 
-    const ordersFilterInput = document.getElementById('production-orders-filter')
+    const ordersFilterInput = document.getElementById('search2')
 
     const ordersQuantity = document.getElementById('orders-num')
 

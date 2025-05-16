@@ -89,26 +89,30 @@ class AllProductionOrders(View):
 
 class AddMoreProductionOrders(View):
     def get(self, request):
+        pass
         query = request.GET.get('query', '')
-        status_filter = request.GET.get('status', '')
-
+        # status_filter = request.GET.get('status', '')
+        #
         orders = ProductionOrder.objects.all()
-
+        #
         if query:
-            orders = orders.filter(customer__icontains=query)
-
-        if status_filter:
-            orders = orders.filter(status=status_filter)
-
+            # pass
+            customers = Buyer.objects.filter(name__icontains=query)
+            orders = orders.filter(customer__in=customers)
+            print(orders)
+        #
+        # if status_filter:
+        #     orders = orders.filter(status=status_filter)
+        #
         data = [{
             "id": order.id,
             "id_number": order.id_number,
-            "customer": order.customer,
+            "customer": order.customer.name,
             "dimensions": order.dimensions,
             "cardboard": order.cardboard,
             "cardboard_dimensions": order.cardboard_dimensions,
             "status": order.status,
-            "planned_end": order.planned_end
+            "planned_end": order.planned_end()
         } for order in orders]
 
         return JsonResponse({"orders": data})
