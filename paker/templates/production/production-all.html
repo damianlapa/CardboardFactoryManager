@@ -84,8 +84,9 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/production-orders.js' %}"></script>
 <script>
+    const ordersQuantity = document.getElementById('orders-num')
     function createOrderElement(order) {
-    console.log(order)
+
     // Określenie koloru w zależności od statusu
     let bgClass = '';
     if (order.status === 'PLANNED') bgClass = 'bg-orange';
@@ -122,17 +123,19 @@
 }
 
 function loadOrders(query = '') {
+    let number = 0
     if (query.length >= 3) {
     $.ajax({
         url: "{% url 'add-more-orders' %}",
         data: { 'query': query },
         dataType: 'json',
         success: function(data) {
-        console.log(data)
             $('#orders').empty();
             data.orders.forEach(function(order){
                 $('#orders').append(createOrderElement(order));
+                number = number + 1
             });
+        ordersQuantity.innerText = number
         }
     });
     }

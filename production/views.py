@@ -96,10 +96,13 @@ class AddMoreProductionOrders(View):
         orders = ProductionOrder.objects.all()
         #
         if query:
-            # pass
             customers = Buyer.objects.filter(name__icontains=query)
-            orders = orders.filter(customer__in=customers)
-            print(orders)
+            orders_customer = orders.filter(customer__in=customers)
+            orders_dimensions = orders.filter(dimensions__icontains=query)
+            orders_cardboard_dimensions = orders.filter(cardboard_dimensions__icontains=query)
+            orders_number = orders.filter(id_number__icontains=query)
+
+            orders = list(orders_customer) + list(orders_dimensions) + list(orders_cardboard_dimensions) + list(orders_number)
         #
         # if status_filter:
         #     orders = orders.filter(status=status_filter)
