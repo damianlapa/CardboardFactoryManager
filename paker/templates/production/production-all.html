@@ -122,6 +122,7 @@
 }
 
 function loadOrders(query = '') {
+    if (query.length >= 3) {
     $.ajax({
         url: "{% url 'add-more-orders' %}",
         data: { 'query': query },
@@ -134,6 +135,7 @@ function loadOrders(query = '') {
             });
         }
     });
+    }
 }
 
 $(document).ready(function(){
