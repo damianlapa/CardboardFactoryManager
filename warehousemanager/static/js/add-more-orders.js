@@ -51,9 +51,11 @@ function loadOrders(query = '') {
 $(document).ready(function(){
     // Początkowe ładowanie
     loadOrders();
+    console.log('ready')
 
     // Wyszukiwanie
     $('#search').on('input', function(){
+        console.log($(this).val())
         loadOrders($(this).val());
     });
 });

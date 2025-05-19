@@ -97,7 +97,7 @@
 
     // Tworzenie elementu
     const orderDiv = `
-    <a href="/production-details/${order.id}" class="no-decor black">
+    <a href="/production/order/details/${order.id}/" class="no-decor black">
         <div
             data-orderstatus="${order.status}"
             data-idnumber="${order.id_number}"
@@ -124,25 +124,42 @@
 }
 
 function loadOrders(query = '') {
+    // Anulowanie poprzedniego zapytania, jeśli jeszcze trwa
     if (currentRequest) {
         currentRequest.abort();
     }
 
+    // Tworzenie nowego kontrolera dla bieżącego zapytania
     currentRequest = new AbortController();
     const { signal } = currentRequest;
 
-    let number = 0
-
-    ordersQuantity.innerText = number
+    fetch(`{% url 'add-more-orders' %}?query=${query}`, { signal })
+        .then(response => response.json())
+        .then(data => {
+            $('#orders').empty(); // Czyszczenie listy przed dodaniem nowych elementów
+            data.orders.forEach(function(order) {
+                $('#orders').append(createOrderElement(order));
+            });
+        })
+        .catch(error => {
+            if (error.name !== 'AbortError') {
+                console.error('Błąd ładowania danych:', error);
+            }
+        });
 }
 
+let debounceTimeout = null;
 $(document).ready(function(){
-    // Początkowe ładowanie
     loadOrders();
 
-    // Wyszukiwanie
     $('#search').on('input', function(){
-        loadOrders($(this).val());
+        clearTimeout(debounceTimeout);
+        const query = $(this).val();
+
+        // Debounce - odczekaj 300ms przed wysłaniem zapytania
+        debounceTimeout = setTimeout(() => {
+            loadOrders(query);
+        }, 300);
     });
 });
 </script>
