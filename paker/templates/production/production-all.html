@@ -124,6 +124,7 @@
 }
 
 function loadOrders(query = '') {
+    if (query.length >= 2) {
     // Anulowanie poprzedniego zapytania, jeśli jeszcze trwa
     if (currentRequest) {
         currentRequest.abort();
@@ -149,6 +150,7 @@ function loadOrders(query = '') {
                 console.error('Błąd ładowania danych:', error);
             }
         });
+        }
 }
 
 let debounceTimeout = null;
