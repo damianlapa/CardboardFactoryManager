@@ -132,6 +132,7 @@ function loadOrders(query = '') {
     // Tworzenie nowego kontrolera dla bieżącego zapytania
     currentRequest = new AbortController();
     const { signal } = currentRequest;
+    number = 0
 
     fetch(`{% url 'add-more-orders' %}?query=${query}`, { signal })
         .then(response => response.json())
@@ -139,6 +140,8 @@ function loadOrders(query = '') {
             $('#orders').empty(); // Czyszczenie listy przed dodaniem nowych elementów
             data.orders.forEach(function(order) {
                 $('#orders').append(createOrderElement(order));
+                number = number + 1
+                ordersQuantity.innerText = number
             });
         })
         .catch(error => {
