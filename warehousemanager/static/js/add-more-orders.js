@@ -8,7 +8,7 @@ function createOrderElement(order) {
 
     // Tworzenie elementu
     const orderDiv = `
-    <a href="/production-details/${order.id}" class="no-decor black">
+    <a href="/production/order/details/${order.id}/" class="no-decor black">
         <div
             data-orderstatus="${order.status}"
             data-idnumber="${order.id_number}"

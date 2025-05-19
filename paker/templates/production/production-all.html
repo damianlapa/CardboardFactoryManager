@@ -85,6 +85,7 @@
 <script src="{% static 'js/production-orders.js' %}"></script>
 <script>
     const ordersQuantity = document.getElementById('orders-num')
+    let currentRequest = null;
     function createOrderElement(order) {
 
     // Określenie koloru w zależności od statusu
@@ -123,22 +124,16 @@
 }
 
 function loadOrders(query = '') {
-    let number = 0
-    if (query.length >= 3) {
-    $.ajax({
-        url: "{% url 'add-more-orders' %}",
-        data: { 'query': query },
-        dataType: 'json',
-        success: function(data) {
-            $('#orders').empty();
-            data.orders.forEach(function(order){
-                $('#orders').append(createOrderElement(order));
-                number = number + 1
-            });
-        ordersQuantity.innerText = number
-        }
-    });
+    if (currentRequest) {
+        currentRequest.abort();
     }
+
+    currentRequest = new AbortController();
+    const { signal } = currentRequest;
+
+    let number = 0
+
+    ordersQuantity.innerText = number
 }
 
 $(document).ready(function(){
