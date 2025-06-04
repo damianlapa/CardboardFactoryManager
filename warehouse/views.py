@@ -276,7 +276,8 @@ class LoadWZ(View):
                     cardboard_line = line.split(' ')
                     cardboard = cardboard_line[1][:-9] if cardboard_line[1][2].isdigit() else cardboard_line[1][:-8]
                     dimensions = cardboard_line[1][-9:] if cardboard_line[1][2].isdigit() else cardboard_line[1][-8:]
-                    p_quantity += f'{cardboard_line[3]};'
+                    p_quantity += f'{cardboard_line[3]};' if len(cardboard_line) == 7 else f'{cardboard_line[3]}{cardboard_line[4]};'
+                    p_quantity.replace(',', '')
                 if cardboard in line and "RAZEM" in line:
                     quantity_line = line.split(" ")
                     quantity = quantity_line[3].replace(',', '')
