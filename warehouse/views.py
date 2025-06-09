@@ -353,7 +353,7 @@ class LoadWZ(View):
             try:
                 order = Order.objects.get(provider=delivery.provider, order_id=order[0])
             except Order.DoesNotExist:
-                load_orders(year=None, row=None, division=(5, 3000))
+                load_orders(year=None, row=None, division='5, 3000')
             try:
                 if '/' in order[0] and len(order[0].split('/')[1]) > 2:
                     order_split = order[0].split('/')
