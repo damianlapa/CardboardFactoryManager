@@ -351,7 +351,7 @@ class LoadWZ(View):
             except Exception as e:
                 errors.append(f'Error with order {order[0]}: {str(e)}')
             try:
-                order = Order.objects.get(provider=delivery.provider, order_id=order[0])
+                Order.objects.get(provider=delivery.provider, order_id=order[0])
             except Order.DoesNotExist:
                 load_orders(year=None, row=None, division='5, 3000')
             try:
