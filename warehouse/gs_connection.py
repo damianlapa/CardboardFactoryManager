@@ -91,7 +91,7 @@ def get_rows_numbers(numbers, year, provider, values):
     year = str(year-2000)
 
     for n in numbers:
-        numbers2.append((provider.lower().strip(), str(n), year))
+        numbers2.append((provider.shortcut.lower(), str(n), year))
 
     for i in range(1, len(column_a)):
         row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
