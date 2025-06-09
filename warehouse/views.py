@@ -527,14 +527,15 @@ class LoadDeliveryToGSFile(View):
 
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
+        numbers = []
+        values = []
         for item in items:
             order_id = item.order.order_id
             number, year = map(int, order_id.split('/'))
-            provider = delivery.provider
+            numbers.append(number)
+            values.append(item.quantity)
 
-            print(provider, number, year)
-
-            update_quantity(provider=provider, number=number, year=year + 2000, value=item.quantity)
+        get_rows_numbers(numbers, 25, delivery.provider, values)
 
         delivery.updated = True
         delivery.save()

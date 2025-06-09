@@ -70,3 +70,30 @@ def update_quantity(provider, number, year, value):
                     pass
             sheet.update_cell(row, 16, value)
             return
+
+
+def get_rows_numbers(numbers, year, provider, values):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    credentials_json = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+    if credentials_json is None:
+        raise EnvironmentError("GOOGLE_CREDENTIALS environment variable not set")
+    credentials_info = json.loads(credentials_json)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
+
+    client = gspread.authorize(creds)
+    sheet = client.open("PAKER TEKTURA ZAMÓWIENIA").worksheet(f"ZAMÓWIENIA {year}")
+
+    column_a = sheet.col_values(1)
+    column_b = sheet.col_values(2)
+    column_c = sheet.col_values(3)
+
+    numbers2 = []
+    year = str(year-2000)
+
+    for n in numbers:
+        numbers2.append((provider, str(n), year))
+
+    for i in range(1, len(column_a)):
+        row_data = (column_a[i].lower(), column_b[i], column_c[i])
+        if row_data in numbers2:
+            sheet.update_cell(i, 16, values[numbers2.index(row_data)])
