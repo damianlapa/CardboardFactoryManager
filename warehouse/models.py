@@ -61,6 +61,7 @@ class Order(models.Model):
     product = models.ForeignKey(Product, null=True, blank=True, on_delete=models.PROTECT)
     delivered = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
+    updated = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'

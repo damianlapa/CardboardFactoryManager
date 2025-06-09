@@ -221,6 +221,8 @@ class LoadWZ(View):
                     palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
                 if "Nr zam. klienta:" in line:
                     number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                    if len(number.split('/')[1]) > 2:
+                        number = f'{number.split('/')[0]}/{number.split('/')[1][2:4]}'
                     orders.append([number, cardboard, dimensions, quantity])
                 if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
                     line = line.split(' ')
