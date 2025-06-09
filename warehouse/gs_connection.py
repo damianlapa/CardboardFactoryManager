@@ -97,4 +97,7 @@ def get_rows_numbers(numbers, year, provider, values):
         row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
         print(row_data)
         if row_data in numbers2:
-            sheet.update_cell(i, 16, values[numbers2.index(row_data)])
+            current_value = sheet.cell(i+1, 16).value
+            if current_value:
+                current_value = int(current_value)
+            sheet.update_cell(i+1, 16, values[numbers2.index(row_data)] + current_value)
