@@ -15,6 +15,11 @@
         <button type="submit" class="process-button">Mark as Processed</button>
       </form>
     {% endif %}
+    {% if delivery.updated %}
+      <span class="processed-label">UPDATED</span>
+    {% else %}
+      <a href="{% url 'warehouse:load-delivery-togsf-view' delivery_id=delivery.id %}"><button class="process-button">Update</button></a>
+    {% endif %}
 
   </h1>
 

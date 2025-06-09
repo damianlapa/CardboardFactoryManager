@@ -524,5 +524,17 @@ class StockView(View):
 
 class LoadDeliveryToGSFile(View):
     def get(self, request, delivery_id):
+
         delivery = Delivery.objects.get(id=delivery_id)
-        pass
+        items = DeliveryItem.objects.filter(delivery=delivery)
+        for item in items:
+            order_id = item.order.order_id
+            number, year = map(int, order_id.split('/'))
+            provider = delivery.provider
+
+            load_orders(provider, number, year + 2000)
+
+        delivery.updated = True
+        delivery.save()
+
+        return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)

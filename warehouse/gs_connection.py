@@ -36,3 +36,34 @@ def get_all(year='2024'):
     all_values = sheet.get_all_values()
 
     return all_values
+
+
+def update_quantity(provider, number, year, value):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "dane_do_logowania/zlecenia-paker-cf0f717acf3f.json",
+        scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("PAKER TEKTURA ZAMÓWIENIA").worksheet(f"ZAMÓWIENIA {year}")
+
+    column_a = sheet.col_values(1)
+    column_b = sheet.col_values(2)
+    column_c = sheet.col_values(3)
+
+    for i in range(1, len(column_a)):
+        if column_a[i].lower() == str(provider).lower() and column_b[i] == str(number) and column_c[i] == str(year - 2000):
+            row = i + 1
+            current_value = sheet.cell(row, 16).value
+
+            if current_value is None:
+                current_value = ""
+            else:
+                if current_value:
+                    try:
+                        value = int(current_value) + value
+                    except Exception as e:
+                        pass
+                else:
+                    pass
+            sheet.update_cell(row, 16, value)
+            return
