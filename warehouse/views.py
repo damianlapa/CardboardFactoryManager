@@ -24,6 +24,104 @@ from django.views.generic import ListView
 from django.db import transaction
 
 
+def load_orders(year, row=None, division=None):
+    def get_flute(text):
+        waves = 0
+        for letter in text:
+            if letter == '3':
+                waves = 3
+                break
+            elif letter == '5':
+                waves = 5
+                break
+        if waves == 3:
+            if 'E' in text.upper():
+                return 'E'
+            if 'B' in text.upper():
+                return 'B'
+            if 'C' in text.upper():
+                return 'C'
+        elif waves == 5:
+            if 'EB' in text.upper():
+                return 'EB'
+            if 'BC' in text.upper():
+                return 'BC'
+        return None
+
+    year = year if year else datetime.datetime.today().year
+    data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
+    result = ''
+    row = row if row else 100
+    division = division if division else '10, 15'
+
+    if division:
+        start, end = division.split(',')
+        rows = [r for r in range(int(start), int(end) + 1)]
+    else:
+        rows = [row]
+
+    for row in rows:
+        try:
+            data = data_all[row]
+
+            try:
+                customer = Buyer.objects.get(name=data[18].upper().strip())
+            except Buyer.DoesNotExist:
+                customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
+                customer.save()
+
+            try:
+                provider = Provider.objects.get(shortcut=data[0].upper().strip())
+            except Provider.DoesNotExist:
+                provider = Provider(name=data[0], shortcut=data[0])
+                provider.save()
+
+            # try:
+            #     product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
+            # except Product.DoesNotExist:
+            #     product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
+            #     product.save()
+
+            with transaction.atomic():
+                flute = get_flute(data[19].upper())
+                product, created = Product.objects.get_or_create(
+                    dimensions=data[23].lower(),
+                    flute=flute,
+                    name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].upper().strip()}'
+                )
+
+            try:
+                order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                                          provider=Provider.objects.get(shortcut=data[0].upper().strip()))
+                result += f'{order} already exists<br>'
+            except Order.DoesNotExist:
+                order = Order(
+                    customer=customer,
+                    provider=provider,
+                    order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                    customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
+                    order_date=data[6].upper().strip() if data[6].upper().strip() else None,
+                    order_year=data[5][:4] if data[5] else data[6][:4],
+                    delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
+                    production_date=None,
+                    dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
+                    name=data[19].upper().strip(),
+                    weight=0,
+                    order_quantity=data[14].upper().strip(),
+                    delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
+                    price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
+                        22] else 0,
+                    product=product
+                )
+                order.save()
+                result += f'{order} saved<br>'
+
+        except Exception as e:
+            result += f'{e}<br>'
+    return result
+
+
+
 def delete_delivery_ajax(request, delivery_id):
     if request.method == "POST":
         delivery = get_object_or_404(Delivery, id=delivery_id)
@@ -44,28 +142,6 @@ def delete_delivery_ajax(request, delivery_id):
 
 class TestView(View):
     def get(self, request):
-        def get_flute(text):
-            waves = 0
-            for letter in text:
-                if letter == '3':
-                    waves = 3
-                    break
-                elif letter == '5':
-                    waves = 5
-                    break
-            if waves == 3:
-                if 'E' in text.upper():
-                    return 'E'
-                if 'B' in text.upper():
-                    return 'B'
-                if 'C' in text.upper():
-                    return 'C'
-            elif waves == 5:
-                if 'EB' in text.upper():
-                    return 'EB'
-                if 'BC' in text.upper():
-                    return 'BC'
-            return None
 
         year = request.GET.get('year')
         data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
@@ -73,75 +149,8 @@ class TestView(View):
         row = request.GET.get('row')
         division = request.GET.get('division')
 
-        if row:
-            row = int(row)
-        else:
-            row = 1105
+        result = load_orders(year, row, division)
 
-        if division:
-            start, end = division.split(',')
-            rows = [r for r in range(int(start), int(end) + 1)]
-        else:
-            rows = [row]
-
-        for row in rows:
-            try:
-                data = data_all[row]
-
-                try:
-                    customer = Buyer.objects.get(name=data[18].upper().strip())
-                except Buyer.DoesNotExist:
-                    customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
-                    customer.save()
-
-                try:
-                    provider = Provider.objects.get(shortcut=data[0].upper().strip())
-                except Provider.DoesNotExist:
-                    provider = Provider(name=data[0], shortcut=data[0])
-                    provider.save()
-
-                # try:
-                #     product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                # except Product.DoesNotExist:
-                #     product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                #     product.save()
-
-                with transaction.atomic():
-                    flute = get_flute(data[19].upper())
-                    product, created = Product.objects.get_or_create(
-                        dimensions=data[23].lower(),
-                        flute=flute,
-                        name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].upper().strip()}'
-                    )
-
-                try:
-                    order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
-                                              provider=Provider.objects.get(shortcut=data[0].upper().strip()))
-                    result += f'{order} already exists<br>'
-                except Order.DoesNotExist:
-                    order = Order(
-                        customer=customer,
-                        provider=provider,
-                        order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
-                        customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
-                        order_date=data[6].upper().strip() if data[6].upper().strip() else None,
-                        order_year=data[5][:4] if data[5] else data[6][:4],
-                        delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
-                        production_date=None,
-                        dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
-                        name=data[19].upper().strip(),
-                        weight=0,
-                        order_quantity=data[14].upper().strip(),
-                        delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
-                        price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                            22] else 0,
-                        product=product
-                    )
-                    order.save()
-                    result += f'{order} saved<br>'
-
-            except Exception as e:
-                result += f'{e}<br>'
         return HttpResponse(result)
 
 
@@ -167,6 +176,7 @@ class LoadExcelView(View):
 
 class LoadWZ(View):
     def get(self, request):
+        load_orders(2025, None, '1, 3000')
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
