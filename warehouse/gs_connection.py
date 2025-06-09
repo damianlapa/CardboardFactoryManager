@@ -40,9 +40,12 @@ def get_all(year='2024'):
 
 def update_quantity(provider, number, year, value):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "dane_do_logowania/zlecenia-paker-cf0f717acf3f.json",
-        scope)
+    credentials_json = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+    if credentials_json is None:
+        raise EnvironmentError("GOOGLE_CREDENTIALS environment variable not set")
+    credentials_info = json.loads(credentials_json)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
+
     client = gspread.authorize(creds)
     sheet = client.open("PAKER TEKTURA ZAMÓWIENIA").worksheet(f"ZAMÓWIENIA {year}")
 
