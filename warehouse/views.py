@@ -176,7 +176,7 @@ class LoadExcelView(View):
 
 class LoadWZ(View):
     def get(self, request):
-        load_orders(2025, None, '1, 3000')
+
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
@@ -350,6 +350,10 @@ class LoadWZ(View):
                     result.append(f'Order {order[0]}: Quantity corrected to {p_quantity_counted}')
             except Exception as e:
                 errors.append(f'Error with order {order[0]}: {str(e)}')
+            try:
+                order = Order.objects.get(provider=delivery.provider, order_id=order[0])
+            except Order.DoesNotExist:
+                load_orders(year=None, row=None, division=(5, 3000))
             try:
                 if '/' in order[0] and len(order[0].split('/')[1]) > 2:
                     order_split = order[0].split('/')
