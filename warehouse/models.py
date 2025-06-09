@@ -80,6 +80,7 @@ class Delivery(models.Model):
     description = models.CharField(max_length=256, null=True, blank=True)
     palettes = models.ManyToManyField(Palette, through='DeliveryPalette', blank=True)
     processed = models.BooleanField(default=False)
+    updated = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.provider}({self.car_number}) {self.date}'
