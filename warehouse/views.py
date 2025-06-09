@@ -341,6 +341,9 @@ class LoadWZ(View):
             except Exception as e:
                 errors.append(f'Error with order {order[0]}: {str(e)}')
             try:
+                if '/' in order[0] and len(order[0].split('/')[1]) > 2:
+                    order_split = order[0].split('/')
+                    order[0] = str(order_split[0]) + '/' + str(order_split[1][2:4])
                 delivery_item = DeliveryItem.objects.create(
                     delivery=delivery,
                     order=Order.objects.get(provider=delivery.provider, order_id=order[0]),
