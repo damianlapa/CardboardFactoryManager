@@ -532,7 +532,9 @@ class LoadDeliveryToGSFile(View):
             number, year = map(int, order_id.split('/'))
             provider = delivery.provider
 
-            load_orders(provider, number, year + 2000)
+            print(provider, number, year)
+
+            update_quantity(provider=provider, number=number, year=year + 2000, value=item.quantity)
 
         delivery.updated = True
         delivery.save()
