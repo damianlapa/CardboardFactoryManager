@@ -535,7 +535,7 @@ class LoadDeliveryToGSFile(View):
             numbers.append(number)
             values.append(item.quantity)
 
-        get_rows_numbers(numbers, 25, delivery.provider, values)
+        get_rows_numbers(numbers, 2025, delivery.provider, values)
 
         delivery.updated = True
         delivery.save()
