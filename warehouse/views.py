@@ -429,7 +429,7 @@ class OrderDetailView(View):
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
             last_unit = list(production_units)[-1]
             lq = last_unit.quantity_end
-            ld = last_unit.end
+            ld = last_unit.end.date()
         except ProductionOrder.DoesNotExist:
             production_units = []
         return render(request, 'warehouse/order_details.html', locals())
