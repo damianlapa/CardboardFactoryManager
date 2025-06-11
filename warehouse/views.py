@@ -430,8 +430,10 @@ class OrderDetailView(View):
             last_unit = list(production_units)[-1]
             lq = last_unit.quantity_end
             ld = last_unit.end.date()
+            print(ld)
         except ProductionOrder.DoesNotExist:
             production_units = []
+            print('tut')
         return render(request, 'warehouse/order_details.html', locals())
 
 

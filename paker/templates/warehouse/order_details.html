@@ -133,7 +133,7 @@
 
     <form id="settleOrderForm" method="post" action="{% url 'warehouse:settle_order' order.id %}">
       {% csrf_token %}
-      <input type="date" name="settlement_date" value="{{ ld }}">
+      <input type="date" name="settlement_date" value="{{ ld|date:'Y-m-d' }}">
       <div class="modal-columns">
         <!-- Kolumna dla materiałów -->
         <div class="column">
