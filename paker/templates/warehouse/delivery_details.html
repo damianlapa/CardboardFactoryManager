@@ -28,11 +28,9 @@
   <table>
     <thead>
       <tr>
-        <th>Number</th>
-        <th>Provider</th>
-        <th>Delivery</th>
         <th>Delivery date</th>
         <th>Order</th>
+        <th>Product</th>
         <th>Customer</th>
         <th>Dimensions</th>
         <th>Quantity</th>
@@ -42,11 +40,9 @@
     <tbody>
       {% for item in items %}
       <tr>
-        <td>{{ delivery.number }}</td>
-        <td>{{ delivery.provider }}</td>
-        <td>{{ delivery }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
+        <td>{{ item.order.product }}</td>
         <td>{{ item.order.customer }}</td>
         <td>{{ item.order.dimensions }}</td>
         <td>{{ item.quantity }}</td>
