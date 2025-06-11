@@ -102,4 +102,4 @@ def get_rows_numbers(numbers, year, provider, values):
                 current_value = int(current_value)
             else:
                 current_value = 0
-            sheet.update_cell(i+1, 16, values[numbers2.index(row_data)] + current_value)
+            sheet.update_cell(i+1, 16, f'={current_value}+{values[numbers2.index(row_data)]}')
