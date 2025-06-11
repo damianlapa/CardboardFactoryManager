@@ -427,7 +427,7 @@ class OrderDetailView(View):
         try:
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
-            last_unit = list(production_units)[-1].quantity_end
+            last_unit = list(production_units)[-1]
             lq = last_unit.quantity_end
             ld = last_unit.end
         except ProductionOrder.DoesNotExist:
