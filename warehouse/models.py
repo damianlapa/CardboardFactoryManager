@@ -120,6 +120,10 @@ class Delivery(models.Model):
 
         return total
 
+    def all_settle(self):
+        items = DeliveryItem.objects.filter(delivery=self)
+        return all([i.check_settlement() for i in items])
+
 
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
@@ -164,6 +168,10 @@ class DeliveryItem(models.Model):
 
         self.processed = True
         self.save()
+
+    def check_settlement(self):
+        settlement = OrderSettlement.objects.filter(order=self.order)
+        return settlement
 
 
 class DeliveryPalette(models.Model):

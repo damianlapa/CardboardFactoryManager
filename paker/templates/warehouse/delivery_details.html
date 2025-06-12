@@ -39,7 +39,7 @@
     </thead>
     <tbody>
       {% for item in items %}
-      <tr>
+      <tr {% if item.check_settlement %}style="font-weight: bold; font-style: italic; color: #6f7e96" {% endif %}>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
         <td>{{ item.order.product }}</td>

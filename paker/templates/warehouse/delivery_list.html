@@ -24,7 +24,7 @@
     </thead>
     <tbody>
       {% for delivery in deliveries %}
-      <tr>
+      <tr {% if delivery.all_settle %}style="font-weight: bold; font-style: italic; color: #6f7e96" {% endif %} >
         <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
         <td>{{ delivery.provider }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
