@@ -295,3 +295,15 @@ class WarehouseStockHistory(models.Model):
             return f'{self.date} | {self.warehouse_stock.stock.name} INCREASE {self.quantity_before} -> {self.quantity_after}'
         elif self.order_settlement:
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
+
+
+class ProductSell(models.Model):
+    warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.IntegerField(default=1)
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, null=True, blank=True)
+    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    date = models.DateField()
+
+    def __str__(self):
+        return f'{self.date} :: {self.warehouse_stock} - {self.customer} - {self.quantity}'
+
