@@ -33,3 +33,8 @@ urlpatterns \
 urlpatterns += [
     path('orders/status/', order_status, name='order_status'),
 ]
+
+urlpatterns += [
+    path('sells/list/', SellProductList.as_view(), name='sells-list-view'),
+    path('sells/create/', ProductSellCreateView.as_view(), name="productsell-create")
+]

@@ -295,6 +295,8 @@ class WarehouseStockHistory(models.Model):
             return f'{self.date} | {self.warehouse_stock.stock.name} INCREASE {self.quantity_before} -> {self.quantity_after}'
         elif self.order_settlement:
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
+        else:
+            return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
 
 
 class ProductSell(models.Model):
@@ -306,4 +308,8 @@ class ProductSell(models.Model):
 
     def __str__(self):
         return f'{self.date} :: {self.warehouse_stock} - {self.customer} - {self.quantity}'
+
+    @property
+    def total_value(self):
+        return self.quantity * self.price
 

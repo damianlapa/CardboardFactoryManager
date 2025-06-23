@@ -3,6 +3,9 @@ import calendar
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import permission_required
@@ -546,3 +549,45 @@ class LoadDeliveryToGSFile(View):
         delivery.save()
 
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
+
+
+class SellProductList(View):
+    def get(self, request):
+        sells = ProductSell.objects.select_related('warehouse_stock', 'customer').order_by('-date')
+        warehouse_stocks = WarehouseStock.objects.filter(quantity__gte=0, warehouse=Warehouse.objects.get(name="MAGAZYN WYROBÓW GOTOWYCH"))
+        context = {
+            "warehouse_stocks": warehouse_stocks,
+            "customers": Buyer.objects.all(),
+            "sells": sells
+        }
+        return render(request, "warehouse/sell-product-list.html", context=context)
+
+
+class ProductSellCreateView(CreateView):
+    model = ProductSell
+    fields = ['warehouse_stock', 'quantity', 'customer', 'price', 'date']
+    success_url = reverse_lazy('warehouse:sells-list-view')
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            date = form.cleaned_data['date']
+            self.object = form.save()
+
+            stock = self.object.warehouse_stock
+
+            warehouse_stock_history = WarehouseStockHistory.objects.create(
+                warehouse_stock=stock,
+                quantity_before=stock.quantity,
+                quantity_after=stock.quantity - self.object.quantity,
+                date=date
+            )
+
+            stock.quantity -= self.object.quantity
+            if stock.quantity < 0:
+                form.add_error('quantity', 'Nie ma wystarczającej ilości w magazynie!')
+                raise transaction.TransactionManagementError("Za mało towaru")
+            stock.save()
+
+        return super().form_valid(form)
+
+
