@@ -252,6 +252,9 @@ class WarehouseStock(models.Model):
         self.quantity -= quantity
         self.save()
 
+    class Meta:
+        ordering = ['stock__name']
+
 
 # <-- rozbudowa modeli
 class OrderSettlement(models.Model):
