@@ -37,7 +37,7 @@ class Product(models.Model):
     gsm = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f'{self.name} {self.dimensions}'
+        return f'{self.name}'
 
     class Meta:
         ordering = ['name']
