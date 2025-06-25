@@ -79,20 +79,6 @@ def load_orders(year, row=None, division=None):
                 provider = Provider(name=data[0], shortcut=data[0])
                 provider.save()
 
-            # try:
-            #     product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-            # except Product.DoesNotExist:
-            #     product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-            #     product.save()
-
-            with transaction.atomic():
-                flute = get_flute(data[19].upper())
-                product, created = Product.objects.get_or_create(
-                    dimensions=data[23].lower(),
-                    flute=flute,
-                    name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].upper().strip()}'
-                )
-
             try:
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                           provider=Provider.objects.get(shortcut=data[0].upper().strip()))
@@ -113,8 +99,7 @@ def load_orders(year, row=None, division=None):
                     order_quantity=data[14].upper().strip(),
                     delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
                     price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                        22] else 0,
-                    product=product
+                        22] else 0
                 )
                 order.save()
                 result += f'{order} saved<br>'
@@ -124,13 +109,11 @@ def load_orders(year, row=None, division=None):
     return result
 
 
-
 def delete_delivery_ajax(request, delivery_id):
     if request.method == "POST":
         delivery = get_object_or_404(Delivery, id=delivery_id)
 
         try:
-            # Obsługa relacji (z `related_name` lub bez)
             with transaction.atomic():
                 delivery.deliverypalette_set.all().delete()
                 delivery.deliveryitem_set.all().delete()
@@ -143,38 +126,19 @@ def delete_delivery_ajax(request, delivery_id):
     return JsonResponse({"success": False, "message": "Invalid request method."})
 
 
+# to delete? 25-06-24
 class TestView(View):
     def get(self, request):
-
-        year = request.GET.get('year')
-        data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
-        result = ''
-        row = request.GET.get('row')
-        division = request.GET.get('division')
-
-        result = load_orders(year, row, division)
-
-        return HttpResponse(result)
-
-
-class LoadExcelView(View):
-    def get(self, request):
-        return render(request, "warehouse/load_excel.html")
-
-    def post(self, request):
-        result = ''
-        # Odczytaj plik Excel bezpośrednio z pamięci
-        excel_file = request.FILES["excel_file"]
-
-        # Wczytaj dane z Excela bez zapisywania pliku
-        df = pd.read_excel(excel_file, engine="openpyxl")
-
-        # Przechodzenie przez wiersze i zapisywanie w bazie
-        for _, row in df.iterrows():
-            result += f'{row["DATA DOSTAWY"]} {row["NR WZ."]}<br>'
-
-        return HttpResponse(result)
-        # if request.method == "POST" and request.FILES["excel_file"]:
+        pass
+        # year = request.GET.get('year')
+        # data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
+        # result = ''
+        # row = request.GET.get('row')
+        # division = request.GET.get('division')
+        #
+        # result = load_orders(year, row, division)
+        #
+        # return HttpResponse(result)
 
 
 class LoadWZ(View):
@@ -379,15 +343,13 @@ class LoadWZ(View):
 
 class OrderListView(View):
     def get(self, request):
-        sort_by = request.GET.get('sort', 'order_date')  # Domyślne sortowanie po dacie zamówienia
+        sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
 
         if order_direction == 'desc':
             sort_by = f'-{sort_by}'
 
         orders = Order.objects.all().order_by(sort_by)
-        # orders = Order.objects.all()
-        # paginate_by = 10  # optional: pagination to limit orders per page
         return render(request, 'warehouse/order_list.html', locals())
 
 
@@ -436,7 +398,6 @@ class OrderDetailView(View):
                 ld = last_unit.end.date()
         except ProductionOrder.DoesNotExist:
             production_units = []
-            print('tut')
         return render(request, 'warehouse/order_details.html', locals())
 
 

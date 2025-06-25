@@ -30,7 +30,7 @@ class Provider(models.Model):
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
@@ -129,7 +129,7 @@ class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
-    palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
+    palettes_quantity = models.CharField(max_length=256, blank=True, null=True)
     processed = models.BooleanField(default=False)
 
     def __str__(self):
