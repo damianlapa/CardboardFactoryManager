@@ -212,7 +212,8 @@ class WorkStation(models.Model):
 
         availability = round((operation_time // 60) / minutes , 3) if minutes else 1
         efficiency = round(planned_time / (operation_time // 60) , 3) if operation_time // 60 != 0 else 1
-        quality = round(pieces_ok / pieces_nok, 3) if pieces_nok else 1
+        quality = round(pieces_ok / (pieces_nok + pieces_ok), 3) if pieces_nok else 1
+
         return availability, efficiency, quality, round(availability * efficiency * quality, 3)
 
 
