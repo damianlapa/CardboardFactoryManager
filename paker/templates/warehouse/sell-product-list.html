@@ -1,0 +1,78 @@
+{% extends "__base3__.html" %}
+
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/productsell.css' %}">
+{% endblock %}
+
+{% block content %}
+<button id="addSellBtn">Add Sell</button>
+
+<div id="addSellModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h2>Dodaj sprzedaż produktu</h2>
+    <form method="post" action="{% url 'warehouse:productsell-create' %}">
+      {% csrf_token %}
+      <label>Magazyn:</label>
+      <select name="warehouse_stock">
+        {% for ws in warehouse_stocks %}
+          <option value="{{ ws.id }}">{{ ws.stock.name }} ({{ ws.quantity }})</option>
+        {% endfor %}
+      </select><br>
+
+      <label>Ilość:</label>
+      <input type="number" name="quantity" min="1"><br>
+
+      <label>Klient:</label>
+      <select name="customer">
+        {% for buyer in customers %}
+          <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+        {% endfor %}
+      </select><br>
+
+      <label>Cena:</label>
+      <input type="number" name="price" step="0.01"><br>
+
+      <label>Data:</label>
+      <input type="date" name="date"><br><br>
+
+      <button type="submit">Zapisz</button>
+    </form>
+  </div>
+</div>
+<h2>Lista sprzedaży produktów</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Produkt</th>
+      <th>Magazyn</th>
+      <th>Ilość</th>
+      <th>Cena</th>
+      <th>Wartość</th>
+      <th>Klient</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sell in sells %}
+    <tr>
+      <td>{{ sell.date }}</td>
+      <td>{{ sell.warehouse_stock.stock.name }}</td>
+      <td>{{ sell.warehouse_stock.warehouse.name }}</td>
+      <td>{{ sell.quantity }}</td>
+      <td>{{ sell.price|floatformat:2 }} zł</td>
+      <td>{{ sell.total_value|floatformat:2 }} zł</td>
+      <td>{{ sell.customer }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Brak transakcji sprzedaży.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/warehouse/productsell.js' %}"></script>
+{% endblock %}

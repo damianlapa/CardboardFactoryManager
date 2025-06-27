@@ -30,14 +30,14 @@ class Provider(models.Model):
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f'{self.name} {self.dimensions}'
+        return f'{self.name}'
 
     class Meta:
         ordering = ['name']
@@ -61,6 +61,7 @@ class Order(models.Model):
     product = models.ForeignKey(Product, null=True, blank=True, on_delete=models.PROTECT)
     delivered = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
+    updated = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
@@ -79,6 +80,7 @@ class Delivery(models.Model):
     description = models.CharField(max_length=256, null=True, blank=True)
     palettes = models.ManyToManyField(Palette, through='DeliveryPalette', blank=True)
     processed = models.BooleanField(default=False)
+    updated = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.provider}({self.car_number}) {self.date}'
@@ -118,12 +120,16 @@ class Delivery(models.Model):
 
         return total
 
+    def all_settle(self):
+        items = DeliveryItem.objects.filter(delivery=self)
+        return all([i.check_settlement() for i in items])
+
 
 class DeliveryItem(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
-    palettes_quantity = models.CharField(max_length=128, blank=True, null=True)
+    palettes_quantity = models.CharField(max_length=256, blank=True, null=True)
     processed = models.BooleanField(default=False)
 
     def __str__(self):
@@ -162,6 +168,10 @@ class DeliveryItem(models.Model):
 
         self.processed = True
         self.save()
+
+    def check_settlement(self):
+        settlement = OrderSettlement.objects.filter(order=self.order)
+        return settlement
 
 
 class DeliveryPalette(models.Model):
@@ -242,6 +252,9 @@ class WarehouseStock(models.Model):
         self.quantity -= quantity
         self.save()
 
+    class Meta:
+        ordering = ['stock__name']
+
 
 # <-- rozbudowa modeli
 class OrderSettlement(models.Model):
@@ -285,3 +298,21 @@ class WarehouseStockHistory(models.Model):
             return f'{self.date} | {self.warehouse_stock.stock.name} INCREASE {self.quantity_before} -> {self.quantity_after}'
         elif self.order_settlement:
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
+        else:
+            return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
+
+
+class ProductSell(models.Model):
+    warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.IntegerField(default=1)
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, null=True, blank=True)
+    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    date = models.DateField()
+
+    def __str__(self):
+        return f'{self.date} :: {self.warehouse_stock} - {self.customer} - {self.quantity}'
+
+    @property
+    def total_value(self):
+        return self.quantity * self.price
+

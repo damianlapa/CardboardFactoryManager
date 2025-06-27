@@ -2,8 +2,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const allOrders = document.getElementsByClassName('production-order')
     const ordersBtns = document.getElementsByClassName('production-order-btn')
 
-    const ordersFilterInput = document.getElementById('search2')
-
     const ordersQuantity = document.getElementById('orders-num')
 
     function ordersShowHide(orders, value) {
@@ -63,10 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
             ordersShowHide(allOrders, this.innerText)
         })
     }
-
-    ordersFilterInput.addEventListener('keyup', function(){
-        ordersFilter(allOrders, this.value.toLowerCase())
-    })
 
     document.getElementById('showButton').addEventListener('click', function() {
     const hiddenDiv = document.getElementById('hiddenDiv');

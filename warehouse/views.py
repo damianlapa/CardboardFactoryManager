@@ -3,6 +3,9 @@ import calendar
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import permission_required
@@ -24,12 +27,93 @@ from django.views.generic import ListView
 from django.db import transaction
 
 
+def load_orders(year, row=None, division=None):
+    def get_flute(text):
+        waves = 0
+        for letter in text:
+            if letter == '3':
+                waves = 3
+                break
+            elif letter == '5':
+                waves = 5
+                break
+        if waves == 3:
+            if 'E' in text.upper():
+                return 'E'
+            if 'B' in text.upper():
+                return 'B'
+            if 'C' in text.upper():
+                return 'C'
+        elif waves == 5:
+            if 'EB' in text.upper():
+                return 'EB'
+            if 'BC' in text.upper():
+                return 'BC'
+        return None
+
+    year = year if year else datetime.datetime.today().year
+    data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
+    result = ''
+    row = row if row else 100
+    division = division if division else '10, 15'
+
+    if division:
+        start, end = division.split(',')
+        rows = [r for r in range(int(start), int(end) + 1)]
+    else:
+        rows = [row]
+
+    for row in rows:
+        try:
+            data = data_all[row]
+
+            try:
+                customer = Buyer.objects.get(name=data[18].upper().strip())
+            except Buyer.DoesNotExist:
+                customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
+                customer.save()
+
+            try:
+                provider = Provider.objects.get(shortcut=data[0].upper().strip())
+            except Provider.DoesNotExist:
+                provider = Provider(name=data[0], shortcut=data[0])
+                provider.save()
+
+            try:
+                order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                                          provider=Provider.objects.get(shortcut=data[0].upper().strip()))
+                result += f'{order} already exists<br>'
+            except Order.DoesNotExist:
+                order = Order(
+                    customer=customer,
+                    provider=provider,
+                    order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                    customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
+                    order_date=data[6].upper().strip() if data[6].upper().strip() else None,
+                    order_year=data[5][:4] if data[5] else data[6][:4],
+                    delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
+                    production_date=None,
+                    dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
+                    name=data[19].upper().strip(),
+                    weight=0,
+                    order_quantity=data[14].upper().strip(),
+                    delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
+                    price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
+                        22] else 0
+                )
+                order.save()
+                result += f'{order} saved<br>'
+
+        except Exception as e:
+            result += f'{e}<br>'
+    return result
+
+
 def delete_delivery_ajax(request, delivery_id):
     if request.method == "POST":
         delivery = get_object_or_404(Delivery, id=delivery_id)
 
         try:
-            # Obsługa relacji (z `related_name` lub bez)
             with transaction.atomic():
                 delivery.deliverypalette_set.all().delete()
                 delivery.deliveryitem_set.all().delete()
@@ -42,131 +126,24 @@ def delete_delivery_ajax(request, delivery_id):
     return JsonResponse({"success": False, "message": "Invalid request method."})
 
 
+# to delete? 25-06-24
 class TestView(View):
     def get(self, request):
-        def get_flute(text):
-            waves = 0
-            for letter in text:
-                if letter == '3':
-                    waves = 3
-                    break
-                elif letter == '5':
-                    waves = 5
-                    break
-            if waves == 3:
-                if 'E' in text.upper():
-                    return 'E'
-                if 'B' in text.upper():
-                    return 'B'
-                if 'C' in text.upper():
-                    return 'C'
-            elif waves == 5:
-                if 'EB' in text.upper():
-                    return 'EB'
-                if 'BC' in text.upper():
-                    return 'BC'
-            return None
-
-        year = request.GET.get('year')
-        data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
-        result = ''
-        row = request.GET.get('row')
-        division = request.GET.get('division')
-
-        if row:
-            row = int(row)
-        else:
-            row = 1105
-
-        if division:
-            start, end = division.split(',')
-            rows = [r for r in range(int(start), int(end) + 1)]
-        else:
-            rows = [row]
-
-        for row in rows:
-            try:
-                data = data_all[row]
-
-                try:
-                    customer = Buyer.objects.get(name=data[18].upper().strip())
-                except Buyer.DoesNotExist:
-                    customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
-                    customer.save()
-
-                try:
-                    provider = Provider.objects.get(shortcut=data[0].upper().strip())
-                except Provider.DoesNotExist:
-                    provider = Provider(name=data[0], shortcut=data[0])
-                    provider.save()
-
-                # try:
-                #     product = Product.objects.get(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                # except Product.DoesNotExist:
-                #     product = Product(name=f'{data[18].upper().strip()} {data[23].upper().strip()}')
-                #     product.save()
-
-                with transaction.atomic():
-                    flute = get_flute(data[19].upper())
-                    product, created = Product.objects.get_or_create(
-                        dimensions=data[23].lower(),
-                        flute=flute,
-                        name=f'{data[18].upper().strip()} | {flute} | {data[23].lower().strip()} | {data[24].upper().strip()}'
-                    )
-
-                try:
-                    order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
-                                              provider=Provider.objects.get(shortcut=data[0].upper().strip()))
-                    result += f'{order} already exists<br>'
-                except Order.DoesNotExist:
-                    order = Order(
-                        customer=customer,
-                        provider=provider,
-                        order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
-                        customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
-                        order_date=data[6].upper().strip() if data[6].upper().strip() else None,
-                        order_year=data[5][:4] if data[5] else data[6][:4],
-                        delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
-                        production_date=None,
-                        dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
-                        name=data[19].upper().strip(),
-                        weight=0,
-                        order_quantity=data[14].upper().strip(),
-                        delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
-                        price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                            22] else 0,
-                        product=product
-                    )
-                    order.save()
-                    result += f'{order} saved<br>'
-
-            except Exception as e:
-                result += f'{e}<br>'
-        return HttpResponse(result)
-
-
-class LoadExcelView(View):
-    def get(self, request):
-        return render(request, "warehouse/load_excel.html")
-
-    def post(self, request):
-        result = ''
-        # Odczytaj plik Excel bezpośrednio z pamięci
-        excel_file = request.FILES["excel_file"]
-
-        # Wczytaj dane z Excela bez zapisywania pliku
-        df = pd.read_excel(excel_file, engine="openpyxl")
-
-        # Przechodzenie przez wiersze i zapisywanie w bazie
-        for _, row in df.iterrows():
-            result += f'{row["DATA DOSTAWY"]} {row["NR WZ."]}<br>'
-
-        return HttpResponse(result)
-        # if request.method == "POST" and request.FILES["excel_file"]:
+        pass
+        # year = request.GET.get('year')
+        # data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
+        # result = ''
+        # row = request.GET.get('row')
+        # division = request.GET.get('division')
+        #
+        # result = load_orders(year, row, division)
+        #
+        # return HttpResponse(result)
 
 
 class LoadWZ(View):
     def get(self, request):
+
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
@@ -221,6 +198,11 @@ class LoadWZ(View):
                     palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
                 if "Nr zam. klienta:" in line:
                     number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                    # try:
+                    #     if len(number.split('/')[1]) > 2:
+                    #         number = f'{number.split('/')[0]}/{number.split('/')[1][2:4]}'
+                    # except Exception as e:
+                    #     pass
                     orders.append([number, cardboard, dimensions, quantity])
                 if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
                     line = line.split(' ')
@@ -276,7 +258,8 @@ class LoadWZ(View):
                     cardboard_line = line.split(' ')
                     cardboard = cardboard_line[1][:-9] if cardboard_line[1][2].isdigit() else cardboard_line[1][:-8]
                     dimensions = cardboard_line[1][-9:] if cardboard_line[1][2].isdigit() else cardboard_line[1][-8:]
-                    p_quantity += f'{cardboard_line[3]};'
+                    p_quantity += f'{cardboard_line[3]};' if len(cardboard_line) == 7 else f'{cardboard_line[3]}{cardboard_line[4]};'
+                    p_quantity.replace(',', '')
                 if cardboard in line and "RAZEM" in line:
                     quantity_line = line.split(" ")
                     quantity = quantity_line[3].replace(',', '')
@@ -335,6 +318,13 @@ class LoadWZ(View):
             except Exception as e:
                 errors.append(f'Error with order {order[0]}: {str(e)}')
             try:
+                Order.objects.get(provider=delivery.provider, order_id=order[0])
+            except Order.DoesNotExist:
+                load_orders(year=None, row=None, division='5, 3000')
+            try:
+                if '/' in order[0] and len(order[0].split('/')[1]) > 2:
+                    order_split = order[0].split('/')
+                    order[0] = str(order_split[0]) + '/' + str(order_split[1][2:4])
                 delivery_item = DeliveryItem.objects.create(
                     delivery=delivery,
                     order=Order.objects.get(provider=delivery.provider, order_id=order[0]),
@@ -353,15 +343,13 @@ class LoadWZ(View):
 
 class OrderListView(View):
     def get(self, request):
-        sort_by = request.GET.get('sort', 'order_date')  # Domyślne sortowanie po dacie zamówienia
+        sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
 
         if order_direction == 'desc':
             sort_by = f'-{sort_by}'
 
         orders = Order.objects.all().order_by(sort_by)
-        # orders = Order.objects.all()
-        # paginate_by = 10  # optional: pagination to limit orders per page
         return render(request, 'warehouse/order_list.html', locals())
 
 
@@ -404,6 +392,10 @@ class OrderDetailView(View):
         try:
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
+            if production_units:
+                last_unit = list(production_units)[-1]
+                lq = last_unit.quantity_end
+                ld = last_unit.end.date()
         except ProductionOrder.DoesNotExist:
             production_units = []
         return render(request, 'warehouse/order_details.html', locals())
@@ -497,3 +489,66 @@ class StockView(View):
         # deliveries_items = DeliveryItem.objects.
 
         return render(request, 'warehouse/stock-details.html', locals())
+
+
+class LoadDeliveryToGSFile(View):
+    def get(self, request, delivery_id):
+
+        delivery = Delivery.objects.get(id=delivery_id)
+        items = DeliveryItem.objects.filter(delivery=delivery)
+        numbers = []
+        values = []
+        for item in items:
+            order_id = item.order.order_id
+            number, year = map(int, order_id.split('/'))
+            numbers.append(number)
+            values.append(item.quantity)
+
+        get_rows_numbers(numbers, 2025, delivery.provider, values)
+
+        delivery.updated = True
+        delivery.save()
+
+        return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
+
+
+class SellProductList(View):
+    def get(self, request):
+        sells = ProductSell.objects.select_related('warehouse_stock', 'customer').order_by('-date')
+        warehouse_stocks = WarehouseStock.objects.filter(quantity__gte=0, warehouse=Warehouse.objects.get(name="MAGAZYN WYROBÓW GOTOWYCH"))
+        context = {
+            "warehouse_stocks": warehouse_stocks,
+            "customers": Buyer.objects.all(),
+            "sells": sells
+        }
+        return render(request, "warehouse/sell-product-list.html", context=context)
+
+
+class ProductSellCreateView(CreateView):
+    model = ProductSell
+    fields = ['warehouse_stock', 'quantity', 'customer', 'price', 'date']
+    success_url = reverse_lazy('warehouse:sells-list-view')
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            date = form.cleaned_data['date']
+            self.object = form.save()
+
+            stock = self.object.warehouse_stock
+
+            warehouse_stock_history = WarehouseStockHistory.objects.create(
+                warehouse_stock=stock,
+                quantity_before=stock.quantity,
+                quantity_after=stock.quantity - self.object.quantity,
+                date=date
+            )
+
+            stock.quantity -= self.object.quantity
+            if stock.quantity < 0:
+                form.add_error('quantity', 'Nie ma wystarczającej ilości w magazynie!')
+                raise transaction.TransactionManagementError("Za mało towaru")
+            stock.save()
+
+        return super().form_valid(form)
+
+

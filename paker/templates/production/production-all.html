@@ -84,8 +84,10 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/production-orders.js' %}"></script>
 <script>
+    const ordersQuantity = document.getElementById('orders-num')
+    let currentRequest = null;
     function createOrderElement(order) {
-    console.log(order)
+
     // Określenie koloru w zależności od statusu
     let bgClass = '';
     if (order.status === 'PLANNED') bgClass = 'bg-orange';
@@ -95,7 +97,7 @@
 
     // Tworzenie elementu
     const orderDiv = `
-    <a href="/production-details/${order.id}" class="no-decor black">
+    <a href="/production/order/details/${order.id}/" class="no-decor black">
         <div
             data-orderstatus="${order.status}"
             data-idnumber="${order.id_number}"
@@ -122,27 +124,47 @@
 }
 
 function loadOrders(query = '') {
-    $.ajax({
-        url: "{% url 'add-more-orders' %}",
-        data: { 'query': query },
-        dataType: 'json',
-        success: function(data) {
-        console.log(data)
-            $('#orders').empty();
-            data.orders.forEach(function(order){
+    if (query.length >= 2) {
+    // Anulowanie poprzedniego zapytania, jeśli jeszcze trwa
+    if (currentRequest) {
+        currentRequest.abort();
+    }
+
+    // Tworzenie nowego kontrolera dla bieżącego zapytania
+    currentRequest = new AbortController();
+    const { signal } = currentRequest;
+    number = 0
+
+    fetch(`{% url 'add-more-orders' %}?query=${query}`, { signal })
+        .then(response => response.json())
+        .then(data => {
+            $('#orders').empty(); // Czyszczenie listy przed dodaniem nowych elementów
+            data.orders.forEach(function(order) {
                 $('#orders').append(createOrderElement(order));
+                number = number + 1
+                ordersQuantity.innerText = number
             });
+        })
+        .catch(error => {
+            if (error.name !== 'AbortError') {
+                console.error('Błąd ładowania danych:', error);
+            }
+        });
         }
-    });
 }
 
+let debounceTimeout = null;
 $(document).ready(function(){
-    // Początkowe ładowanie
     loadOrders();
 
-    // Wyszukiwanie
     $('#search').on('input', function(){
-        loadOrders($(this).val());
+        clearTimeout(debounceTimeout);
+        const query = $(this).val();
+
+        // Debounce - odczekaj 300ms przed wysłaniem zapytania
+        debounceTimeout = setTimeout(() => {
+            loadOrders(query);
+        }, 300);
     });
 });
 </script>

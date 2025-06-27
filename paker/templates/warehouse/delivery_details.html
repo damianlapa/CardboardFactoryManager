@@ -15,17 +15,22 @@
         <button type="submit" class="process-button">Mark as Processed</button>
       </form>
     {% endif %}
+    {% if delivery.updated %}
+      <span class="processed-label">UPDATED</span>
+    {% else %}
+      <a href="{% url 'warehouse:load-delivery-togsf-view' delivery_id=delivery.id %}" id="update-link">
+          <button type="button" class="process-button" id="update-button">Update</button>
+      </a>
+    {% endif %}
 
   </h1>
 
   <table>
     <thead>
       <tr>
-        <th>Number</th>
-        <th>Provider</th>
-        <th>Delivery</th>
         <th>Delivery date</th>
         <th>Order</th>
+        <th>Product</th>
         <th>Customer</th>
         <th>Dimensions</th>
         <th>Quantity</th>
@@ -34,12 +39,10 @@
     </thead>
     <tbody>
       {% for item in items %}
-      <tr>
-        <td>{{ delivery.number }}</td>
-        <td>{{ delivery.provider }}</td>
-        <td>{{ delivery }}</td>
+      <tr {% if item.check_settlement %}style="font-weight: bold; font-style: italic; color: #6f7e96" {% endif %}>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
+        <td>{{ item.order.product }}</td>
         <td>{{ item.order.customer }}</td>
         <td>{{ item.order.dimensions }}</td>
         <td>{{ item.quantity }}</td>
@@ -80,7 +83,7 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>Add item to: {{ delivery }}</h2>
-    <form id="addDeliveryItemForm" method="post" action="{% url 'warehouse:add-delivery-item' %}">
+    <form id="addDeliveryItemForm" method="get" action="{% url 'warehouse:add-delivery-item' %}">
       {% csrf_token %}
       <div class="modal-column">
         {{ form.as_p }}
@@ -95,4 +98,10 @@
 
 {% block scripts %}
 <script src="{% static 'js/warehouse/delivery-add-item.js' %}"></script>
+<script>
+  document.getElementById("update-button").addEventListener("click", function (event) {
+    this.disabled = true;
+    this.innerText = "Processing...";
+  });
+</script>
 {% endblock %}

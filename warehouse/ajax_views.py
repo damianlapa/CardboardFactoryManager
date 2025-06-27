@@ -16,20 +16,11 @@ def settle_order(request, order_id):
 
         material_ids = request.POST.getlist('material_id')
         material_quantities = request.POST.getlist('material_quantity')
-        print(material_ids, material_quantities)
-
-        for material_id2, quantity2 in zip(material_ids, material_quantities):
-            print(material_id2, quantity2, '#MATER')
 
         product_ids = request.POST.getlist('product_id')
         product_types = request.POST.getlist('product_type')
         product_quantities = request.POST.getlist('product_quantity')
         product_warehouses = request.POST.getlist('product_warehouse')
-
-        # print(product_names, product_quantities)
-        #
-        # for name3, quantity3 in zip(product_names, product_quantities):
-        #     print(name3, quantity3, '#PROD')
 
         try:
             with transaction.atomic():

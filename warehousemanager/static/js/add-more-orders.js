@@ -8,7 +8,7 @@ function createOrderElement(order) {
 
     // Tworzenie elementu
     const orderDiv = `
-    <a href="/production-details/${order.id}" class="no-decor black">
+    <a href="/production/order/details/${order.id}/" class="no-decor black">
         <div
             data-orderstatus="${order.status}"
             data-idnumber="${order.id_number}"
@@ -51,9 +51,11 @@ function loadOrders(query = '') {
 $(document).ready(function(){
     // Początkowe ładowanie
     loadOrders();
+    console.log('ready')
 
     // Wyszukiwanie
     $('#search').on('input', function(){
+        console.log($(this).val())
         loadOrders($(this).val());
     });
 });

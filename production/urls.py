@@ -1,6 +1,7 @@
 from django.urls import path
 from production.views import *
 from production.views_rap import *
+from production.effectivity_views import *
 
 urlpatterns = [
     path('', ProductionMenu.as_view(), name='production-menu'),
@@ -94,4 +95,9 @@ urlpatterns += [
 urlpatterns += [
     path('udt/', UnitTest.as_view()),
     path('production/csv/', generate_production_csv, name='generate_production_csv'),
+]
+
+# effectivity_views
+urlpatterns += [
+    path('oee/<int:year>/<int:month>/', OEEView.as_view(), name='oee-view')
 ]
