@@ -154,6 +154,9 @@ class Person(models.Model):
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
+    qualified_workstations = models.ManyToManyField('production.WorkStation', through='WorkStationQualification', blank=True,
+        related_name='qualified_persons'
+    )
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -468,6 +471,21 @@ class Person(models.Model):
             else:
                 data[5] += hours
         return data
+
+
+from django.utils import timezone
+
+class WorkStationQualification(models.Model):
+
+    person = models.ForeignKey('Person', on_delete=models.CASCADE)
+    workstation = models.ForeignKey('production.WorkStation', on_delete=models.CASCADE)
+    acquired_at = models.DateField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('person', 'workstation')
+
+    def __str__(self):
+        return f"{self.person} → {self.workstation} ({self.acquired_at})"
 
 
 class CardboardProvider(models.Model):

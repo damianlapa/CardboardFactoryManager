@@ -236,6 +236,8 @@ class ProductionUnit(models.Model):
     quantity_start = models.IntegerField(null=True, blank=True)
     quantity_end = models.IntegerField(null=True, blank=True)
     notes = models.CharField(max_length=1000, null=True, blank=True)
+    required_operators = models.PositiveIntegerField(default=1)
+    required_helpers = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f'{self.sequence}) {self.work_station} {self.production_order} {self.status}'
@@ -754,3 +756,29 @@ class ProductionUnit(models.Model):
 
         return [units_started_and_finished_during_day, units_started_earlier_and_not_finished,
                 units_started_before_and_ended_today, units_started_today_and_not_finished]
+
+
+class WeeklyPlan(models.Model):
+    week = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('week', 'year')
+
+    def __str__(self):
+        return f"Production Plan - Week {self.week}, {self.year}"
+
+
+class ProductionTask(models.Model):
+    plan = models.ForeignKey(WeeklyPlan, on_delete=models.CASCADE, related_name='tasks')
+    production_unit = models.ForeignKey(ProductionUnit, on_delete=models.CASCADE)
+    work_station = models.ForeignKey(WorkStation, on_delete=models.CASCADE)
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+
+    class Meta:
+        ordering = ['start']
+
+    def __str__(self):
+        return f"Zadanie: {self.production_unit} ({self.start.strftime('%Y-%m-%d %H:%M')})"
