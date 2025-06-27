@@ -179,6 +179,8 @@ class WorkStation(models.Model):
             start = datetime.date(sy, sm, sd)
             end = datetime.date(ey, em, ed)
 
+        teep_time = (end - start).days * 24 * 60
+
         units = ProductionUnit.objects.filter(work_station=self, start__gte=start, end__lte=end)
 
         minutes = 0
@@ -214,7 +216,9 @@ class WorkStation(models.Model):
         efficiency = round(planned_time / (operation_time // 60) , 3) if operation_time // 60 != 0 else 1
         quality = round(pieces_ok / (pieces_nok + pieces_ok), 3) if pieces_nok else 1
 
-        return availability, efficiency, quality, round(availability * efficiency * quality, 3)
+        teep = minutes / teep_time
+
+        return availability, efficiency, quality, round(availability * efficiency * quality, 3), teep
 
 
 class ProductionUnit(models.Model):
