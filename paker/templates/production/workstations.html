@@ -1,7 +1,9 @@
 {% extends '__base2__.html' %}
 {% block title %}Workstations{% endblock %}
 {% block content %}
+<a href="{% url 'oee-view' year=2025 month=5 %}">x</a>
 <div style="width: 82%; box-sizing: border-box; float: left">
+
 {% for s in stations %}
 
 <div class="conatianer-90 border-solid-2 bg-white height-100" style="margin: 10px;">

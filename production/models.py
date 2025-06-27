@@ -167,6 +167,54 @@ class WorkStation(models.Model):
             return 1
         return 0
 
+    def oee_factor(self, year, month, dates=None):
+        if not dates:
+            start = datetime.date(year, month, 1)
+            month = month + 1 if month != 12 else 1
+            end = datetime.date(year, month, 1) - datetime.timedelta(days=1)
+        else:
+            start, end = dates.split('x')
+            sy, sm, sd = list(map(int, start.split('-')))
+            ey, em, ed = list(map(int, end.split('-')))
+            start = datetime.date(sy, sm, sd)
+            end = datetime.date(ey, em, ed)
+
+        units = ProductionUnit.objects.filter(work_station=self, start__gte=start, end__lte=end)
+
+        minutes = 0
+        operation_time = 0
+        planned_time = 0
+        pieces_ok = 0
+        pieces_nok = 0
+
+        while start <= end:
+            holiday = Holiday.objects.filter(holiday_date=start)
+            if start.isoweekday() <= 5 and not holiday:
+                if start.isoweekday() == 5:
+                    minutes += 385
+                else:
+                    minutes += 445
+            start += datetime.timedelta(days=1)
+
+        for unit in units:
+            time = unit.unit_duration2()
+            unit_planned_time = unit.estimated_time
+            unit_q_end = unit.quantity_end
+            unit_q_start = unit.quantity_start
+            if unit_q_start and unit_q_end:
+                pieces_ok += unit_q_end
+                pieces_nok += unit_q_start - unit_q_end
+            elif unit_q_end:
+                pieces_ok += unit_q_end
+                pieces_nok += 0
+            planned_time += unit_planned_time if unit_planned_time else 0
+            operation_time += time if time else 0
+
+        availability = round((operation_time // 60) / minutes , 3) if minutes else 1
+        efficiency = round(planned_time / (operation_time // 60) , 3) if operation_time // 60 != 0 else 1
+        quality = round(pieces_ok / pieces_nok, 3) if pieces_nok else 1
+        return availability, efficiency, quality, round(availability * efficiency * quality, 3)
+
 
 class ProductionUnit(models.Model):
     production_order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE)
