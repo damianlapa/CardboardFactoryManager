@@ -105,7 +105,7 @@ urlpatterns += [
 ]
 
 # planning
-urlpatterns = [
+urlpatterns += [
     path('plan/<int:year>/<int:week>/', WeeklyPlanDetailView.as_view(), name='weekly_plan_detail'),
     path('plan/<int:year>/<int:week>/generate/', WeeklyPlanGenerateView.as_view(), name='weekly_plan_generate'),
     path('orders/uncompleted/', IncompleteOrdersView.as_view(), name='uncompleted_orders'),

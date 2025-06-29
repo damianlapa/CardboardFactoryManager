@@ -1,6 +1,7 @@
 {% extends '__base2__.html' %}
 {% block title %}Production Menu{% endblock %}
 {% block content %}
+{% load static %}
 <div>
 <a href="{% url 'all-production-orders' %}">
     <button class="productionButton">
