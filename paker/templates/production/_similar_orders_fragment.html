@@ -1,0 +1,15 @@
+<h3>Podobne zamówienia</h3>
+{% if similar_orders %}
+    <ul class="similar-order-list">
+    {% for o in similar_orders %}
+        <li>
+            <strong>{{ o.id_number }}</strong><br>
+            Wymiary: {{ o.dimensions }}<br>
+            Fala: {{ o.cardboard }}<br>
+            Status: {{ o.status }}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Brak podobnych zamówień.</p>
+{% endif %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+{% extends '__base3__.html' %}
+{% block content %}
+<h2>Plan produkcji – tydzień {{ plan.week }}, {{ plan.year }}</h2>
+
+<form method="post" action="{% url 'weekly_plan_generate' year=plan.year week=plan.week %}">
+    {% csrf_token %}
+    <button type="submit">Wygeneruj propozycję planu</button>
+</form>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Jednostka</th>
+            <th>Maszyna</th>
+            <th>Start</th>
+            <th>Koniec</th>
+            <th>Operatorzy</th>
+            <th>Pomocnicy</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for task in plan.tasks.all %}
+        <tr {% if task.is_temporary %}style="background-color: #ffffdd;"{% endif %}>
+            <td>{{ task.production_unit }}</td>
+            <td>{{ task.work_station }}</td>
+            <td>{{ task.start|date:"Y-m-d H:i" }}</td>
+            <td>{{ task.end|date:"Y-m-d H:i" }}</td>
+            <td>
+                {% for person in task.persons.all %}
+                    {% if person.role == 'operator' %}
+                        {{ person }}<br/>
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for person in task.persons.all %}
+                    {% if person.role != 'operator' %}
+                        {{ person }}<br/>
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% if task.is_temporary %}
+                    <strong>Tymczasowe</strong>
+                {% else %}
+                    Zatwierdzone
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="7">Brak zadań w tym tygodniu.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

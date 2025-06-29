@@ -75,6 +75,10 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
 
+    def order_units(self):
+        units = ProductionUnit.objects.filter(production_order=self)
+        return units
+
     def planned_end(self):
         if self.status == 'PLANNED':
             units = ProductionUnit.objects.filter(production_order=self).order_by('-sequence')
@@ -776,6 +780,8 @@ class ProductionTask(models.Model):
     work_station = models.ForeignKey(WorkStation, on_delete=models.CASCADE)
     start = models.DateTimeField()
     end = models.DateTimeField()
+    persons = models.ManyToManyField(Person, blank=True, related_name='tasks')
+    is_temporary = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['start']

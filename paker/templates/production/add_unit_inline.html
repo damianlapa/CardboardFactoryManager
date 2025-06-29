@@ -1,0 +1,12 @@
+{% extends "__base3__.html" %}
+{% block content %}
+<h2>Dodaj jednostkę produkcyjną</h2>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">💾 Zapisz</button>
+</form>
+
+<a href="{% url 'uncompleted_orders' %}">← Powrót do listy zamówień</a>
+{% endblock %}

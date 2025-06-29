@@ -1,0 +1,95 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/production/uncompleted_orders.css' %}">
+{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<div class="container-triple">
+    <div class="left-pane">
+        <input type="text" id="order-search" placeholder="Szukaj po numerze zamówienia..." class="order-search-input">
+
+        {% for order in orders %}
+            <div class="order-list-item order-{{ order.status|lower }} {% if order.priority %}priority{% endif %}" data-order-id="{{ order.id }}">
+    <h4>{{ order.id_number }}</h4>
+    <p>Status: {{ order.status }}</p>
+    <p>Ilość: {{ order.ordered_quantity }}</p>
+    <p>Klient: {{ order.customer.name }}</p>
+</div>
+        {% endfor %}
+    </div>
+
+    <div class="center-pane">
+        {% if selected_order %}
+        <div class="order-detail">
+    <h2>Zamówienie {{ selected_order.id_number }}</h2>
+    <p><strong>Klient:</strong> {{ selected_order.customer.name }}</p>
+    <p><strong>Status:</strong> {{ selected_order.status }}</p>
+    <p><strong>Ilość zamówiona:</strong> {{ selected_order.ordered_quantity }}</p>
+    <p><strong>Wymiary:</strong> {{ selected_order.dimensions }}</p>
+    <p><strong>Data dodania:</strong> {{ selected_order.add_date|date:"d.m.Y H:i" }}</p>
+</div>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr><th>Unit</th><th>Work Station</th></tr>
+        </thead>
+        <tbody>
+            {% for unit in units %}
+                <tr>
+                    <td>{{ unit }}</td>
+                    <td>{{ unit.work_station }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<form method="post" action="{% url 'add_unit' selected_order.id %}" class="add-unit-form">
+    {% csrf_token %}
+    <div class="form-inline-group">
+        <select name="work_station" required>
+            {% for ws in work_stations %}
+                <option value="{{ ws.id }}">{{ ws.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" name="estimated_time" placeholder="Czas (min)" required>
+        <input type="number" name="required_operators" placeholder="Operatorzy" required>
+        <input type="number" name="required_helpers" placeholder="Pomocnicy" required>
+        <button type="submit">Dodaj unit</button>
+    </div>
+</form>
+
+        {% else %}
+        <p>Wybierz zamówienie z lewej strony.</p>
+        {% endif %}
+    </div>
+
+    <div class="right-pane">
+        <h3>Podobne zamówienia</h3>
+{% if similar_orders %}
+    <ul class="similar-order-list">
+    {% for o in similar_orders %}
+        <li>
+            <strong>{{ o.id_number }}</strong><br>
+            Wymiary: {{ o.dimensions }}<br>
+            Fala: {{ o.cardboard }}<br>
+            Status: {{ o.status }}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Brak podobnych zamówień.</p>
+{% endif %}
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/production/uncompleted_orders.js' %}"></script>
+
+{% endblock %}

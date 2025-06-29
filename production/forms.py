@@ -33,3 +33,9 @@ class ProductionUnitForm(ModelForm):
             'end': DateTimeInput(attrs={'type': 'datetime'}),
             'persons': SelectMultiple(attrs={'size': f'{size}'})
         }
+
+
+class QuickProductionUnitForm(ModelForm):
+    class Meta:
+        model = ProductionUnit
+        fields = ['work_station', 'estimated_time', 'required_operators', 'required_helpers']

@@ -2,6 +2,8 @@ from django.urls import path
 from production.views import *
 from production.views_rap import *
 from production.effectivity_views import *
+from production.planning_views import *
+
 
 urlpatterns = [
     path('', ProductionMenu.as_view(), name='production-menu'),
@@ -100,4 +102,18 @@ urlpatterns += [
 # effectivity_views
 urlpatterns += [
     path('oee/<int:year>/<int:month>/', OEEView.as_view(), name='oee-view')
+]
+
+# planning
+urlpatterns = [
+    path('plan/<int:year>/<int:week>/', WeeklyPlanDetailView.as_view(), name='weekly_plan_detail'),
+    path('plan/<int:year>/<int:week>/generate/', WeeklyPlanGenerateView.as_view(), name='weekly_plan_generate'),
+    path('orders/uncompleted/', IncompleteOrdersView.as_view(), name='uncompleted_orders'),
+    path('orders/<int:order_id>/add-unit/', AddProductionUnitToOrderView.as_view(), name='add_production_unit'),
+    path('orders/ajax/<int:order_id>/', ajax_order_detail, name='ajax_order_detail'),
+    path('orders/ajax/<int:order_id>/add_unit/', ajax_add_unit, name='ajax_add_unit'),
+    path('orders/ajax/unit/<int:unit_id>/delete/', ajax_delete_unit, name='ajax_delete_unit'),
+    path('orders/ajax/unit/<int:unit_id>/update/', ajax_update_unit, name='ajax_update_unit'),
+    path('orders/ajax/<int:order_id>/reorder_units/', reorder_units, name='reorder_units'),
+
 ]

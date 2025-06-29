@@ -1,0 +1,322 @@
+/* Nagłówek */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.welcome-text {
+    font-size: 18px; /* Powiększono z 14px */
+    font-weight: bold; /* Dodano pogrubienie */
+    color: #333;
+}
+
+#welcome-text a {
+    font-size: 18px; /* Powiększono linki */
+    text-decoration: none;
+}
+
+/* Nawigacja */
+.navbar {
+    background-color: #007bff;
+    padding: 15px 20px; /* Zwiększono padding */
+}
+
+.nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px; /* Zwiększono odstępy między linkami */
+}
+
+.nav-list li a {
+    font-size: 20px; /* Powiększono z 16px */
+    font-weight: bold; /* Pogrubienie dla większej czytelności */
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.nav-list li a:hover {
+    color: #ffcc00;
+}
+
+/* Treść główna */
+.content-div {
+    padding: 20px;
+    font-size: 18px; /* Opcjonalnie dla większej czcionki treści */
+}
+
+
+a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.container-triple {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 80px);
+    min-height: 600px;
+    border: solid black 2px;
+}
+
+.left-pane {
+    width: 25%;
+    background-color: #f0f0f0;
+    border-right: 1px solid #ccc;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.center-pane {
+    width: 45%;
+    padding: 20px;
+    background-color: #fff;
+    border-right: 1px solid #eee;
+    overflow-y: auto;
+}
+
+.right-pane {
+    width: 30%;
+    padding: 20px;
+    background-color: #f9f9f9;
+    overflow-y: auto;
+}
+
+/* Styl listy zamówień */
+.order-list-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.order-list-item:hover {
+    background-color: #e6f1ff;
+    cursor: pointer;
+}
+
+/* Styl podobnych zamówień */
+.similar-order {
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+
+
+/* Stylizacja nagłówków */
+h2 {
+    margin-top: 20px;
+    font-size: 1.4em;
+}
+
+/* Stylizacja tabel */
+table {
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    table-layout: fixed; /* zapobiega rozjeżdżaniu kolumn */
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: left;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 10px;
+}
+
+.table-wrapper table {
+    font-size: 0.85em;
+    min-width: 500px;
+}
+
+.order-card {
+    margin-bottom: 20px; /* mniej przestrzeni między zamówieniami */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    font-size: 0.85em;
+}
+.order-header h2 {
+    margin: 0 0 5px;
+    font-size: 1.1em;
+}
+
+.order-header p {
+    margin: 1px 0;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.add-unit-form {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.add-unit-form input {
+    padding: 8px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.add-unit-form button {
+    align-self: flex-start;
+    padding: 8px 14px;
+    background-color: #2d89ef;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-unit-form button:hover {
+    background-color: #1b66c9;
+}
+
+.horizontal-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.horizontal-form select,
+.horizontal-form input {
+    padding: 6px 10px;
+    font-size: 0.9em;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    min-width: 120px;
+}
+
+.horizontal-form button {
+    padding: 6px 14px;
+    background-color: #2d89ef;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.horizontal-form button:hover {
+    background-color: #1b66c9;
+}
+
+/* Usuń domyślny układ kolumnowy */
+.add-unit-form {
+    margin-top: 15px;
+}
+
+.form-inline-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: center;
+    font-size: 0.8em;
+}
+
+/* Stylizacja pól formularza */
+.form-inline-group select,
+.form-inline-group input {
+    padding: 4px 6px;
+    font-size: 0.8em;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    min-width: 90px;
+    height: 28px;
+}
+
+.form-inline-group button {
+    padding: 4px 10px;
+    font-size: 0.8em;
+    background-color: #2d89ef;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    height: 30px;
+    white-space: nowrap;
+}
+
+.form-inline-group button:hover {
+    background-color: #1b66c9;
+}
+
+.editing-unit {
+    background-color: #f3faff;
+}
+
+.order-list-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fdfdfd;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+/* Status kolorami */
+.order-ordered       { background-color: #e3f2fd; } /* błękitny */
+.order-uncompleted   { background-color: #fff3cd; } /* jasnożółty */
+.order-completed     { background-color: #d4edda; } /* jasnozielony */
+.order-planned       { background-color: #d1ecf1; } /* jasnocyjanowy */
+.order-finished      { background-color: #f5f5f5; } /* szary */
+.order-archived      { background-color: #eeeeee; color: #888; } /* szary zgaszony */
+
+.order-list-item.priority {
+    border: 2px solid #ff9800;
+}
+
+.order-search-input {
+    width: 96%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.similar-order-list {
+    list-style: none;
+    padding: 0;
+    font-size: 0.9em;
+}
+
+.similar-order-list li {
+    background: #f1f1f1;
+    margin-bottom: 8px;
+    padding: 8px;
+    border-left: 4px solid #1976d2;
+    border-radius: 4px;
+}
