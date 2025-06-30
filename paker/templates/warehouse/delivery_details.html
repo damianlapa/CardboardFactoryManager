@@ -83,7 +83,7 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>Add item to: {{ delivery }}</h2>
-    <form id="addDeliveryItemForm" method="get" action="{% url 'warehouse:add-delivery-item' %}">
+    <form id="addDeliveryItemForm" method="post" action="{% url 'warehouse:add-delivery-item' %}">
       {% csrf_token %}
       <div class="modal-column">
         {{ form.as_p }}

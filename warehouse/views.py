@@ -418,9 +418,10 @@ class DeliveryDetailView(View):
 class AddDeliveryItem(View):
     def post(self, request):
         form = DeliveryItemForm(request.POST)
+        delivery_id = form.data['delivery']
         if form.is_valid():
             form.save()
-            return HttpResponse('ok')
+            return redirect('warehouse:delivery-detail-view', delivery_id=delivery_id)
 
 
 class AddDeliveryToWarehouse(View):
