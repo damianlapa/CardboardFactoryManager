@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F, Max
 from django.db.models import Q
 import re
+from .models import PRODUCTION_ORDER_STATUSES
 
 
 def parse_dimensions(dim_str):
@@ -158,6 +159,7 @@ def ajax_order_detail(request, order_id):
         "selected_order": order,
         "units": units,
         "work_stations": workstations,
+        "PRODUCTION_ORDER_STATUSES": PRODUCTION_ORDER_STATUSES
     }, request=request)
 
     right_html = render_to_string("production/_similar_orders_fragment.html", {
@@ -168,6 +170,18 @@ def ajax_order_detail(request, order_id):
         "center_html": center_html,
         "right_html": right_html
     })
+
+
+@require_POST
+def ajax_update_order_status(request, order_id):
+    status = request.POST.get('status')
+    order = get_object_or_404(ProductionOrder, id=order_id)
+
+    if status in dict(PRODUCTION_ORDER_STATUSES):
+        order.status = status
+        order.save()
+
+    return ajax_order_detail(request, order.id)
 
 
 class WeeklyPlanDetailView(DetailView):
@@ -194,8 +208,8 @@ class IncompleteOrdersView(ListView):
     context_object_name = 'orders'
 
     def get_queryset(self):
-        return ProductionOrder.objects.filter(status='UNCOMPLETED')
-        # return ProductionOrder.objects.all()
+        # return ProductionOrder.objects.filter(status='UNCOMPLETED')
+        return ProductionOrder.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

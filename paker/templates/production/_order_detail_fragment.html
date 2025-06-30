@@ -1,4 +1,17 @@
 <div class="order-detail">
+    <form method="post"
+      class="order-status-form"
+      data-order-id="{{ selected_order.id }}"
+      data-ajax-url="{% url 'ajax_update_order_status' selected_order.id %}">
+    {% csrf_token %}
+    <label for="status-select"><strong>Status:</strong></label>
+    <select name="status" id="status-select">
+        {% for key, label in PRODUCTION_ORDER_STATUSES %}
+            <option value="{{ key }}" {% if selected_order.status == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Zapisz</button>
+</form>
     <h2>Zamówienie {{ selected_order.id_number }}</h2>
     <p><strong>Klient:</strong> {{ selected_order.customer.name }}</p>
     <p><strong>Status:</strong> {{ selected_order.status }}</p>

@@ -115,5 +115,6 @@ urlpatterns += [
     path('orders/ajax/unit/<int:unit_id>/delete/', ajax_delete_unit, name='ajax_delete_unit'),
     path('orders/ajax/unit/<int:unit_id>/update/', ajax_update_unit, name='ajax_update_unit'),
     path('orders/ajax/<int:order_id>/reorder_units/', reorder_units, name='reorder_units'),
+    path('orders/ajax/<int:order_id>/update_status/', ajax_update_order_status, name='ajax_update_order_status'),
 
 ]

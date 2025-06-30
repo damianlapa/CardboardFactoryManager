@@ -230,3 +230,32 @@ function initSearchFilter() {
         searchInput.style.borderColor = (!found && term.length > 2) ? 'red' : '';
     });
 }
+
+document.body.addEventListener('submit', function (event) {
+    const form = event.target;
+    if (form.classList.contains('order-status-form')) {
+        event.preventDefault();
+
+        const url = form.dataset.ajaxUrl;
+        const formData = new FormData(form);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrf-token]').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.querySelector('.center-pane').innerHTML = data.center_html;
+            document.querySelector('.right-pane').innerHTML = data.right_html;
+            initSortableUnits();
+        })
+        .catch(err => {
+            alert("Nie udało się zaktualizować statusu.");
+            console.error(err);
+        });
+    }
+});

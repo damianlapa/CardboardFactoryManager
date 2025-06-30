@@ -12,6 +12,7 @@
         <input type="text" id="order-search" placeholder="Szukaj po numerze zamówienia..." class="order-search-input">
 
         {% for order in orders %}
+
             <div class="order-list-item order-{{ order.status|lower }} {% if order.priority %}priority{% endif %}" data-order-id="{{ order.id }}">
     <h4>{{ order.id_number }}</h4>
     <p>Status: {{ order.status }}</p>
