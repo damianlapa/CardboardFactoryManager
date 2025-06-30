@@ -25,7 +25,6 @@ def find_similar_orders(order):
     if len(base_dims) != 3:
         return []
 
-    base_cardboard = order.cardboard
     tolerance = 0.2
 
     min_d = [int(d * (1 - tolerance)) for d in base_dims]
@@ -48,8 +47,16 @@ def find_similar_orders(order):
         try:
             diffs = [abs(base - comp) / base for base, comp in zip(base_dims, dims)]
             score = sum(diffs)
-            if o.cardboard != base_cardboard:
-                score += 1
+            if order.quantity:
+                quantity_difference = abs(order.quantity - o.quantity)/order.quantity
+            else:
+                quantity_difference = 1
+
+            if quantity_difference >= 1:
+                quantity_difference = 1
+
+            score += quantity_difference
+
             similar.append((score, o))
         except ZeroDivisionError:
             continue
