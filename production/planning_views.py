@@ -212,8 +212,8 @@ class IncompleteOrdersView(ListView):
     context_object_name = 'orders'
 
     def get_queryset(self):
-        # return ProductionOrder.objects.filter(status='UNCOMPLETED')
-        return ProductionOrder.objects.all()
+        return ProductionOrder.objects.filter(status='UNCOMPLETED')
+        # return ProductionOrder.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
