@@ -5,8 +5,21 @@
         <li>
             <strong>{{ o.id_number }}</strong><br>
             Wymiary: {{ o.dimensions }}<br>
+            Ilość: {{ o.quantity }}<br>
             Fala: {{ o.cardboard }}<br>
             Status: {{ o.status }}
+            <table>
+                <tr>
+                    <th>station</th>
+                    <th>duration</th>
+                </tr>
+                {% for u in o.order_units %}
+                    <tr>
+                        <td>{{ u.work_station }}</td>
+                        <td>{{ u.unit_duration_minutes }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
         </li>
     {% endfor %}
     </ul>

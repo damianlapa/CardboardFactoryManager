@@ -22,14 +22,12 @@ def parse_dimensions(dim_str):
 
 def find_similar_orders(order):
     base_dims = parse_dimensions(order.dimensions)
-    print(base_dims)
     if len(base_dims) != 3:
         return []
 
     base_cardboard = order.cardboard
-    tolerance = 0.2  # 20%
+    tolerance = 0.2
 
-    # oblicz tolerancje dla kazdego wymiaru
     min_d = [int(d * (1 - tolerance)) for d in base_dims]
     max_d = [int(d * (1 + tolerance)) for d in base_dims]
 
@@ -37,7 +35,6 @@ def find_similar_orders(order):
         dimensions__regex=r'^\d+x\d+x\d+$',
     )
 
-    print(len(candidates))
     similar = []
 
     for o in candidates:
@@ -58,9 +55,7 @@ def find_similar_orders(order):
             continue
 
     similar.sort(key=lambda x: x[0])
-    print([o for _, o in similar[:10]])
-    return [o for _, o in similar[:10]]
-
+    return [o for _, o in similar[:30]]
 
 
 @csrf_exempt
