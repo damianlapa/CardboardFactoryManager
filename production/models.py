@@ -549,6 +549,9 @@ class ProductionUnit(models.Model):
         else:
             return 0
 
+    def duration_person(self):
+        return len(self.persons.all()), len(self.persons.all()) * self.unit_duration_minutes()
+
     def duration_in_minutes(self):
         if self.unit_duration2():
             return self.unit_duration2() // 60

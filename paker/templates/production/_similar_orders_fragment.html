@@ -12,11 +12,15 @@
                 <tr>
                     <th>station</th>
                     <th>duration</th>
+                    <th>workers</th>
+                    <th>total</th>
                 </tr>
                 {% for u in o.order_units %}
                     <tr>
                         <td>{{ u.work_station }}</td>
                         <td>{{ u.unit_duration_minutes }}</td>
+                        <td>{{ u.duration_person.0 }}</td>
+                        <td>{{ u.duration_person.1 }}</td>
                     </tr>
                 {% endfor %}
             </table>
