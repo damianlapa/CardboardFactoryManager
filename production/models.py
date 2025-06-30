@@ -82,8 +82,9 @@ class ProductionOrder(models.Model):
     def planned_end(self):
         if self.status == 'PLANNED':
             units = ProductionUnit.objects.filter(production_order=self).order_by('-sequence')
-            if units[0].planned_end():
-                return units[0].planned_end()
+            if units:
+                if units[0].planned_end():
+                    return units[0].planned_end()
 
     def cardboard_layers(self):
         if self.cardboard:
