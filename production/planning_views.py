@@ -79,6 +79,7 @@ def reorder_units(request, order_id):
     html = render_to_string("production/_order_detail_fragment.html", {
         "selected_order": order,
         "units": order.productionunit_set.order_by('sequence').select_related('work_station'),
+        "PRODUCTION_ORDER_STATUSES": PRODUCTION_ORDER_STATUSES,
         "work_stations": WorkStation.objects.all(),
     }, request=request)
 
@@ -101,6 +102,7 @@ def ajax_update_unit(request, unit_id):
         "selected_order": order,
         "units": order.productionunit_set.select_related('work_station'),
         "work_stations": WorkStation.objects.all(),
+        "PRODUCTION_ORDER_STATUSES": PRODUCTION_ORDER_STATUSES,
     }, request=request)
 
     return JsonResponse({"html": html})
@@ -119,6 +121,7 @@ def ajax_delete_unit(request, unit_id):
     html = render_to_string("production/_order_detail_fragment.html", {
         "selected_order": order,
         "units": order.productionunit_set.order_by('sequence').select_related('work_station'),
+        "PRODUCTION_ORDER_STATUSES": PRODUCTION_ORDER_STATUSES,
         "work_stations": WorkStation.objects.all(),
     }, request=request)
 
@@ -144,6 +147,7 @@ def ajax_add_unit(request, order_id):
         "selected_order": order,
         "units": order.productionunit_set.order_by('sequence').select_related('work_station'),
         "work_stations": WorkStation.objects.all(),
+        "PRODUCTION_ORDER_STATUSES": PRODUCTION_ORDER_STATUSES,
     }, request=request)
 
     return JsonResponse({"html": html})
