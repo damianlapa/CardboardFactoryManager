@@ -48,7 +48,7 @@ def find_similar_orders(order):
         try:
             diffs = [abs(base - comp) / base for base, comp in zip(base_dims, dims)]
             score = sum(diffs)
-            if order.quantity:
+            if order.quantity and o.quantity:
                 quantity_difference = abs(order.quantity - o.quantity)/order.quantity
             else:
                 quantity_difference = 1
@@ -208,8 +208,8 @@ class IncompleteOrdersView(ListView):
     context_object_name = 'orders'
 
     def get_queryset(self):
-        return ProductionOrder.objects.filter(status='UNCOMPLETED')
-        # return ProductionOrder.objects.all()
+        # return ProductionOrder.objects.filter(status='UNCOMPLETED')
+        return ProductionOrder.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
