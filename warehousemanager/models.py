@@ -846,7 +846,7 @@ class Photopolymer(models.Model):
     link = models.URLField(null=True, blank=True)
 
     class Meta:
-        ordering = ['identification_number']
+        ordering = ['identification_number', 'identification_letter']
 
     def __str__(self):
         if self.identification_letter:
