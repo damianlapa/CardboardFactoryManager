@@ -235,7 +235,7 @@ class EditProductionUnit(View):
 
         if form.is_valid():
             obj = form.save(commit=False)
-            obj.production_order = unit.production_order  # przypisujemy z instancji
+            obj.production_order = unit.production_order
             obj.save()
             form.save_m2m()
 
@@ -248,7 +248,6 @@ class EditProductionUnit(View):
 
             return redirect('unit-details', unit_id=unit.id)
 
-        # jeśli formularz nievalid
         return render(request, 'production/production-unit-add.html', {
             "form": form,
             "source": request.POST.get('source'),
@@ -262,7 +261,7 @@ class AddProductionUnit(View):
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
         form = ProductionUnitForm(
-            initial={'production_order': production_order, 'sequence': order_units.count() + 1, 'status': 'FINISHED'},
+            initial={'sequence': order_units.count() + 1, 'status': 'FINISHED'},
             day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
@@ -270,32 +269,11 @@ class AddProductionUnit(View):
         today = datetime.datetime.today().date()
         form = ProductionUnitForm(today, request.POST)
         if form.is_valid():
-            data = form.cleaned_data
-            sequence = data['sequence']
-            production_order = data['production_order']
-            work_station = data['work_station']
-            punch = data['punch']
-            polymer = data['polymer']
-            order = data['order']
-            status = data['status']
-            estimated_time = data['estimated_time']
-            start = data['start']
-            end = data['end']
-            quantity_start = data['quantity_start']
-            quantity_end = data['quantity_end']
-            notes = data['notes']
-            persons = data['persons']
-
-            new_unit = ProductionUnit.objects.create(production_order=production_order, work_station=work_station,
-                                                     punch=punch, polymer=polymer,
-                                                     status=status,
-                                                     sequence=sequence, order=order, estimated_time=estimated_time,
-                                                     start=start,
-                                                     end=end, quantity_end=quantity_end, quantity_start=quantity_start,
-                                                     notes=notes)
-
-            for p in persons:
-                new_unit.persons.add(p)
+            production_order = ProductionOrder.objects.get(id=order_id)
+            obj = form.save(commit=False)
+            obj.production_order = production_order
+            obj.save()
+            form.save_m2m()
 
             return redirect('production-details', production_order_id=production_order.id)
 
