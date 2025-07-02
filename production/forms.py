@@ -16,9 +16,10 @@ class ProductionUnitForm(ModelForm):
     def __init__(self, day=None, *args, **kwargs):
         super(ProductionUnitForm, self).__init__(*args, **kwargs)
         all_workers = Person.objects.all()
+        if not day:
+            day = datetime.datetime.today()
         if day:
             c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True)
-
             all_workers = c_workers
 
         self.fields['persons'].queryset = all_workers
