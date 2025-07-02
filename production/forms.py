@@ -11,10 +11,9 @@ class ProductionOrderForm(ModelForm):
 
 
 class ProductionUnitForm(ModelForm):
-    def __init__(self, day=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ProductionUnitForm, self).__init__(*args, **kwargs)
-        if not day:
-            day = datetime.datetime.today()
+        day = datetime.datetime.today()
         c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC"))
 
         self.fields['persons'].widget.attrs['size'] = str(c_workers.count())
@@ -22,7 +21,7 @@ class ProductionUnitForm(ModelForm):
 
     class Meta:
         model = ProductionUnit
-        fields = '__all__'
+        exclude = ['production_order']
         widgets = {
             'start': DateTimeInput(attrs={'type': 'datetime'}),
             'end': DateTimeInput(attrs={'type': 'datetime'}),

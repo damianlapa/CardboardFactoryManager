@@ -220,7 +220,7 @@ class EditProductionUnit(View):
     def get(self, request, unit_id):
         source = request.GET.get('source')
         edit = True
-        form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id), day=None)
+        form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id))
 
         context = {
             "source": source,
@@ -230,26 +230,30 @@ class EditProductionUnit(View):
         return render(request, 'production/production-unit-add.html', context=context)
 
     def post(self, request, unit_id):
-        form = ProductionUnitForm(None, request.POST)
+        unit = ProductionUnit.objects.get(id=unit_id)
+        form = ProductionUnitForm(request.POST, instance=unit)
+
         if form.is_valid():
-            data = form.cleaned_data
-            persons = data['persons']
+            obj = form.save(commit=False)
+            obj.production_order = unit.production_order  # przypisujemy z instancji
+            obj.save()
+            form.save_m2m()
 
-            try:
-                source = form.data.get('source')
-            except KeyError:
-                source = None
+            source = request.POST.get('source')
+            if source:
+                try:
+                    return redirect('workstation-details', workstation_id=int(source))
+                except ValueError:
+                    pass
 
-            unit = ProductionUnit.objects.get(id=unit_id)
+            return redirect('unit-details', unit_id=unit.id)
 
-            unit.persons.set(persons)
-
-            form.save()
-
-            try:
-                return redirect('workstation-details', workstation_id=int(source))
-            except ValueError:
-                return redirect('unit-details', unit_id=unit.id)
+        # jeśli formularz nievalid
+        return render(request, 'production/production-unit-add.html', {
+            "form": form,
+            "source": request.POST.get('source'),
+            "edit": True,
+        })
 
 
 class AddProductionUnit(View):
