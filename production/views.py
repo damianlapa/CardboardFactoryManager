@@ -213,7 +213,7 @@ class WorkStationDetails(View):
 class ProductionUnitDetails(View):
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
-        return render(request, 'production/production-unit-details.html', locals())
+        return render(request, 'production/production-unit-details.html', context={"unit": unit})
 
 
 class EditProductionUnit(View):
@@ -221,47 +221,26 @@ class EditProductionUnit(View):
         source = request.GET.get('source')
         edit = True
         form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id), day=None)
-        return render(request, 'production/production-unit-add.html', locals())
+
+        context = {
+            "source": source,
+            "edit": edit,
+            "form": form
+        }
+        return render(request, 'production/production-unit-add.html', context=context)
 
     def post(self, request, unit_id):
         form = ProductionUnitForm(None, request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            sequence = data['sequence']
-            production_order = data['production_order']
-            work_station = data['work_station']
-            punch = data['punch']
-            polymer = data['polymer']
-            order = data['order']
-            status = data['status']
-            estimated_time = data['estimated_time']
-            start = data['start']
-            end = data['end']
-            quantity_start = data['quantity_start']
-            quantity_end = data['quantity_end']
-            notes = data['notes']
             persons = data['persons']
-            source = None
+
             try:
                 source = form.data.get('source')
             except KeyError:
-                pass
+                source = None
 
             unit = ProductionUnit.objects.get(id=unit_id)
-
-            unit.production_order = production_order
-            unit.work_station = work_station
-            unit.punch = punch
-            unit.polymer = polymer
-            unit.status = status
-            unit.sequence = sequence
-            unit.order = order
-            unit.estimated_time = estimated_time
-            unit.start = start
-            unit.end = end
-            unit.quantity_end = quantity_end
-            unit.quantity_start = quantity_start
-            unit.notes = notes
 
             if persons:
                 unit.persons.clear()
@@ -270,25 +249,7 @@ class EditProductionUnit(View):
             else:
                 unit.persons.clear()
 
-            unit.save()
-
-            '''all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
-
-            all_finished = True
-            all_planned = True
-            for u in all_production_order_units:
-                if u.status not in ('FINISHED', 'PLANNED'):
-                    all_planned = False
-                if u.status != 'FINISHED':
-                    all_finished = False
-
-            if all_finished:
-                unit.production_order.status = 'FINISHED'
-                unit.production_order.save()
-
-            if all_planned:
-                unit.production_order.status = 'PLANNED'
-                unit.production_order.save()'''
+            form.save()
 
             try:
                 return redirect('workstation-details', workstation_id=int(source))
