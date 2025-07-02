@@ -170,6 +170,7 @@ class Person(models.Model):
             if not date:
                 return contracts[-1].salary
             else:
+                date = date.date()
                 contracts = list(Contract.objects.filter(worker=self, date_start__lte=date).order_by('date_start'))
                 for c in contracts:
                     if c.date_end:
