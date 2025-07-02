@@ -19,14 +19,14 @@ class ProductionUnitForm(ModelForm):
         if not day:
             day = datetime.datetime.today()
         if day:
-            c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type="PRODUCTION")
+            c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC"))
             all_workers = c_workers
 
         self.fields['persons'].queryset = all_workers
         workers_num = len(all_workers)
 
     class Meta:
-        size = len(Person.objects.filter(job_start__lte=datetime.datetime.today(), job_end__isnull=True, occupancy_type="PRODUCTION"))
+        size = len(Person.objects.filter(job_start__lte=datetime.datetime.today(), job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC")))
         model = ProductionUnit
         fields = '__all__'
         widgets = {
