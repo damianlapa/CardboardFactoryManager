@@ -77,9 +77,13 @@ class ProductionOrder(models.Model):
 
     def total_cost(self):
         units = self.order_units()
-        cost = 0
+        cost = [0, 0]
         for u in units:
-            cost += u.unit_production_cost()
+            work, energy = u.unit_production_cost()
+            cost[0] += work
+            cost[1] += energy
+
+        cost = (round(cost[0], 2), round(cost[1], 2))
 
         return cost
 
@@ -127,9 +131,14 @@ class ProductionOrder(models.Model):
 
 class WorkStation(models.Model):
     name = models.CharField(max_length=48)
+    energy = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
+
+    def calculate_energy_cost(self, duration, price):
+        amount = int(self.energy) * duration * price
+        return round(amount, 2)
 
     def currently_in_production(self):
         units = ProductionUnit.objects.filter(work_station=self, status='IN PROGRESS')
@@ -267,8 +276,10 @@ class ProductionUnit(models.Model):
             if not current_contract:
                 current_contract = 0
             worker_cost += float(current_contract) * float(unit_duration) / 168
-        worker_cost = round(worker_cost, 2)
-        return worker_cost
+        worker_cost = round(worker_cost * 1.205, 2)
+        energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
+
+        return round(worker_cost, 2), round(energy_cost, 2)
 
     @classmethod
     def last_in_line(cls, station, point=None):
