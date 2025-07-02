@@ -242,12 +242,7 @@ class EditProductionUnit(View):
 
             unit = ProductionUnit.objects.get(id=unit_id)
 
-            if persons:
-                unit.persons.clear()
-                for p in persons:
-                    unit.persons.add(p)
-            else:
-                unit.persons.clear()
+            unit.persons.set(persons)
 
             form.save()
 
