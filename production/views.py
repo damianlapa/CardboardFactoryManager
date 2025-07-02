@@ -1233,14 +1233,3 @@ def generate_production_csv(request):
         ])
 
     return response
-
-class MakeOrder(View):
-    def get(self, request):
-        div = request.GET.get('div')
-        orders = ProductionOrder.objects.all()
-        if div:
-            s, e = map(int, div.split('x'))
-            orders = list(orders)[s:e]
-        for o in orders:
-            o.make_order()
-        return HttpResponse('git')

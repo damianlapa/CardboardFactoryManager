@@ -75,13 +75,6 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
 
-    def make_order(self):
-        units = list(self.order_units().order_by('sequence'))
-        for num in range(len(units)):
-            unit = units[num]
-            unit.sequence = num + 1
-            unit.save()
-
     def order_units(self):
         units = ProductionUnit.objects.filter(production_order=self)
         return units
