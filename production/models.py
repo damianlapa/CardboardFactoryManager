@@ -75,6 +75,13 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
 
+    def make_order(self):
+        units = list(self.order_units().order_by('sequence'))
+        for num in range(len(units)):
+            unit = units[num]
+            unit.sequence = num + 1
+            unit.save()
+
     def order_units(self):
         units = ProductionUnit.objects.filter(production_order=self)
         return units
@@ -243,6 +250,9 @@ class ProductionUnit(models.Model):
     notes = models.CharField(max_length=1000, null=True, blank=True)
     required_operators = models.PositiveIntegerField(default=1)
     required_helpers = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('production_order', 'sequence')
 
     def __str__(self):
         return f'{self.sequence}) {self.work_station} {self.production_order} {self.status}'
