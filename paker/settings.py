@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'deliveries',
     'finances',
     'customers',
-    'warehouse'
+    'warehouse',
+    'debug_toolbar',
 
 ]
 
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'paker.urls'
@@ -85,6 +87,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'paker.wsgi.application'
 
+INTERNAL_IPS = [
+    '127.0.0.1', '10.0.2.2'
+]
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
