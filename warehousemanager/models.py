@@ -164,6 +164,21 @@ class Person(models.Model):
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
+    def contract(self, date=None):
+        contracts = list(Contract.objects.filter(worker=self).order_by('date_start'))
+        if contracts:
+            if not date:
+                return contracts[-1].salary
+            else:
+                contracts = list(Contract.objects.filter(worker=self, date_start__lte=date).order_by('date_start'))
+                for c in contracts:
+                    if c.date_end:
+                        if c.date_end >= date:
+                            return c.salary
+                else:
+                    return contracts[-1].salary
+
+
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
 

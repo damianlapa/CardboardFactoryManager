@@ -75,6 +75,14 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
 
+    def total_cost(self):
+        units = self.order_units()
+        cost = 0
+        for u in units:
+            cost += u.unit_production_cost()
+
+        return cost
+
     def order_units(self):
         units = ProductionUnit.objects.filter(production_order=self)
         return units
@@ -249,6 +257,18 @@ class ProductionUnit(models.Model):
 
     def __str__(self):
         return f'{self.sequence}) {self.work_station} {self.production_order} {self.status}'
+
+    def unit_production_cost(self):
+        worker_cost = 0
+        unit_duration = self.unit_duration2() / 3600
+        unit_start = self.start
+        for worker in self.persons.all():
+            current_contract = worker.contract(unit_start)
+            if not current_contract:
+                current_contract = 0
+            worker_cost += float(current_contract) * float(unit_duration) / 168
+        worker_cost = round(worker_cost, 2)
+        return worker_cost
 
     @classmethod
     def last_in_line(cls, station, point=None):
