@@ -1,0 +1,21 @@
+#gluernumber-add button {
+  background-color: #ff8c00; /* pomarańczowy */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#gluernumber-add button:hover {
+  background-color: #e67600;
+  transform: scale(1.05);
+}
+
+#gluernumber-add button:active {
+  background-color: #cc5f00;
+  transform: scale(0.98);
+}

@@ -8,6 +8,7 @@ urlpatterns = [
     path('production/', include('production.urls')),
     path('orders/', include('orders.urls')),
     path('deliveries/', include('deliveries.urls')),
+    path('whm/', include('warehousemanager.urls')),
     path('warehouse/', include('warehouse.urls', namespace='warehouse')),
     # path('customers/', include('customers.urls')),
 

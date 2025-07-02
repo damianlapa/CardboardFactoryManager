@@ -122,3 +122,9 @@ class WorkReminderForm(forms.ModelForm):
     class Meta:
         model = WorkReminder
         fields = '__all__'
+
+
+class GluerNumberForm(forms.ModelForm):
+    class Meta:
+        model = GluerNumber
+        fields = "__all__"

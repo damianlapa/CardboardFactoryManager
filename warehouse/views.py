@@ -308,6 +308,7 @@ class LoadWZ(View):
             errors.append(f'Error creating delivery: {str(e)}')
 
         for order in orders:
+            print(order)
             try:
                 p_quantity_counted = 0
                 for p in order[4].split(';'):
