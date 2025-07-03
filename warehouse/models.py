@@ -328,3 +328,12 @@ class ProductSell(models.Model):
     def total_value(self):
         return self.quantity * self.price
 
+
+class MonthResults(models.Model):
+    month = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()
+    expenses = models.PositiveIntegerField()
+    management_expenses = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'{self.year} {self.month}'
