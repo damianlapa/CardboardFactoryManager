@@ -77,13 +77,14 @@ class ProductionOrder(models.Model):
 
     def total_cost(self):
         units = self.order_units()
-        cost = [0, 0]
+        cost = [0, 0, 0]
         for u in units:
-            work, energy = u.unit_production_cost()
+            work, energy, usage = u.unit_production_cost()
             cost[0] += work
             cost[1] += energy
+            cost[2] += usage
 
-        cost = (round(cost[0], 2), round(cost[1], 2))
+        cost = (round(cost[0], 2), round(cost[1], 2), round(cost[2], 2))
 
         return cost
 
@@ -284,8 +285,9 @@ class ProductionUnit(models.Model):
             worker_cost += float(current_contract) * float(unit_duration) / 168
         worker_cost = round(worker_cost * 1.205, 2)
         energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
+        machine_usage = self.work_station.calculate_machine_usage(unit_duration)
 
-        return round(worker_cost, 2), round(energy_cost, 2)
+        return round(worker_cost, 2), round(energy_cost, 2), machine_usage
 
     @classmethod
     def last_in_line(cls, station, point=None):

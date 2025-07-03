@@ -395,7 +395,7 @@ class OrderDetailView(View):
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
             cost = production_order.total_cost()
-            total = round(cost[0] + cost[1], 2)
+            total = round(cost[0] + cost[1] + cost[2], 2)
             for p in production_units:
                 p.unit_production_cost()
             if production_units:

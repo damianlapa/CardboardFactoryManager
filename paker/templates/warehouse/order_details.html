@@ -65,7 +65,7 @@
 </table>
 
 <h2>Production</h2>
-<h3>Total Cost: {{ total }} ({{ cost.0 }} || {{ cost.1 }})</h3>
+<h3>Total Cost: {{ total }} ({{ cost.0 }} || {{ cost.1 }} || {{ cost.2 }})</h3>
 <table>
   <thead>
     <tr>
@@ -79,6 +79,7 @@
       <th>Workers</th>
       <th>Cost work</th>
       <th>Cost energy</th>
+      <th>Exploatation</th>
     </tr>
   </thead>
   <tbody>
@@ -94,6 +95,7 @@
       <td>{{ unit.persons.all|join:", " }}</td>
       <td>{{ unit.unit_production_cost.0 }}</td>
       <td>{{ unit.unit_production_cost.1 }}</td>
+      <td>{{ unit.unit_production_cost.2 }}</td>
     </tr>
     {% empty %}
     <tr>
