@@ -132,9 +132,15 @@ class ProductionOrder(models.Model):
 class WorkStation(models.Model):
     name = models.CharField(max_length=48)
     energy = models.PositiveIntegerField(default=0)
+    value = models.PositiveIntegerField(default=0)
+    lifetime = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
+
+    def calculate_machine_usage(self, duration):
+        return round(int(self.value) * duration/int(self.lifetime), 2)
+
 
     def calculate_energy_cost(self, duration, price):
         amount = int(self.energy) * duration * price
