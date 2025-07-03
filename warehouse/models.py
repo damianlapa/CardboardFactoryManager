@@ -173,6 +173,18 @@ class DeliveryItem(models.Model):
         settlement = OrderSettlement.objects.filter(order=self.order)
         return settlement
 
+    def calculate_value(self):
+        dimensions = self.order.dimensions
+        price = self.order.price
+
+        try:
+            dimensions = list(map(int, dimensions.lower().strip().split('x')))
+            area = dimensions[0] * dimensions[1] / 1000000
+            value = area * price
+            return round(self.quantity*value/1000, 2)
+        except:
+            return 0
+
 
 class DeliveryPalette(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
