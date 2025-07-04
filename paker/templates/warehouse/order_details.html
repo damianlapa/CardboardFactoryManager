@@ -28,12 +28,85 @@
   ];
   console.log(availableStockTypes);
 </script>
-<h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
-<button id="settleOrderBtn">Settle Order</button>
-<input type="checkbox" id="order_delivered" name="order_delivered" {% if order.delivered %}checked{% endif %}>
-<label for="order_delivered" class="label" id="delivery_cbx">Delivered</label>
-<input type="checkbox" id="order_finished" {% if order.finished %}checked{% endif %}>
-<label for="order_finished" class="label" id="finished_cbx">Finished</label>
+<div class="order-header-container">
+  <div class="left-header">
+    <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
+    <button id="settleOrderBtn">Settle Order</button>
+    <input type="checkbox" id="order_delivered" name="order_delivered" {% if order.delivered %}checked{% endif %}>
+    <label for="order_delivered" class="label" id="delivery_cbx">Delivered</label>
+    <input type="checkbox" id="order_finished" {% if order.finished %}checked{% endif %}>
+    <label for="order_finished" class="label" id="finished_cbx">Finished</label>
+  </div>
+
+  <div class="right-header">
+    <h2>RESULTS</h2>
+    <table>
+  <thead>
+    <tr>
+      <th>Part</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Result</td>
+      <td>{{ result }}</td>
+    </tr>
+    <tr>
+      <td>Materials</td>
+      <td>{{ order.material_cost }}</td>
+    </tr>
+
+    <!-- Koszty produkcji -->
+    <tr>
+      <td colspan="2"><strong>Production Costs</strong></td>
+    </tr>
+    <tr>
+      <td>– Labor</td>
+      <td>{{ cost.0 }}</td>
+    </tr>
+    <tr>
+      <td>– Energy</td>
+      <td>{{ cost.1 }}</td>
+    </tr>
+    <tr>
+      <td>– Equipment Usage</td>
+      <td>{{ cost.2 }}</td>
+    </tr>
+
+    <!-- Pozostałe koszty -->
+    <tr>
+      <td colspan="2"><strong>Other Costs</strong></td>
+    </tr>
+    <tr>
+      <td>– Financial</td>
+      <td>{{ other.0 }}</td>
+    </tr>
+    <tr>
+      <td>– Management</td>
+      <td>{{ other.1 }}</td>
+    </tr>
+    <tr>
+      <td>– Logistics</td>
+      <td>{{ other.2 }}</td>
+    </tr>
+    <tr>
+      <td>– Miscellaneous</td>
+      <td>{{ other.3 }}</td>
+    </tr>
+    <tr>
+      <td><strong>Total</strong></td>
+      <td><strong>{{ total_expenses }}</strong></td>
+    </tr>
+    <tr>
+      <td>Sales</td>
+      <td>{{ earnings }}</td>
+    </tr>
+  </tbody>
+</table>
+
+  </div>
+</div>
 <h2>Deliveries</h2>
 <table>
   <thead>
@@ -67,7 +140,7 @@
 </table>
 
 <h2>Production</h2>
-<h3>Total Cost: {{ total }} ({{ cost.0 }} || {{ cost.1 }} || {{ cost.2 }})</h3>
+<h3>Total Cost: {{ order.production_cost }} ({{ cost.0 }} || {{ cost.1 }} || {{ cost.2 }})</h3>
 <table>
   <thead>
     <tr>
@@ -112,6 +185,34 @@
   <thead>
     <tr>
       <th>Warehouse Stock</th>
+      <th>Stock Supply</th>
+      <th>Quantity before</th>
+      <th>Quantity after</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w_history in warehouse_stocks_history %}
+    <tr>
+      <td>{{ w_history.warehouse_stock }}</td>
+      <td>{{ w_history.stock_supply }}</td>
+      <td>{{ w_history.quantity_before }}</td>
+      <td>{{ w_history.quantity_after }}</td>
+      <td>{{ w_history.date|date:"Y-m-d" }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No history.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Results</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Part</th>
       <th>Stock Supply</th>
       <th>Quantity before</th>
       <th>Quantity after</th>

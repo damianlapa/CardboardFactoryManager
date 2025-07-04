@@ -394,10 +394,11 @@ class OrderDetailView(View):
         try:
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
-            cost = production_order.total_cost()
-            total = round(cost[0] + cost[1] + cost[2], 2)
-            for p in production_units:
-                p.unit_production_cost()
+            cost = order.production_cost()
+            other = order.other_costs()
+            total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
+            earnings = order.total_sales()
+            result = earnings - total_expenses
             if production_units:
                 last_unit = list(production_units)[-1]
                 lq = last_unit.quantity_end

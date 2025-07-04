@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
-from warehouse.models import MonthResults
+from warehouse.models import MonthResults, DeliveryItem, Order
 
 import datetime
 
@@ -76,9 +76,6 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
 
-    def material_cost(self):
-        pass
-
     def month_year_order(self):
         month, year = datetime.date.today().month, datetime.date.today().year
         try:
@@ -94,21 +91,14 @@ class ProductionOrder(models.Model):
 
         return month, year
 
-    def total_cost(self):
-        month, year = self.month_year_order()
-        month_report = MonthResults.objects.filter(month=month, year=year).first()
+    def work_energy_usage_cost(self):
         units = self.order_units()
-        cost = [0, 0, 0, 0, 0, 0, 0]
+        cost = [0, 0, 0]
         for u in units:
             work, energy, usage = u.unit_production_cost()
             cost[0] += work
             cost[1] += energy
             cost[2] += usage
-
-        if month_report:
-            cost[3] = round(month_report.financial_expenses * cost)
-
-        cost = round(sum(cost), 2)
 
         return cost
 

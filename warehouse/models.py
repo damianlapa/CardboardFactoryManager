@@ -66,6 +66,45 @@ class Order(models.Model):
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
 
+    def total_sales(self):
+        sells = ProductSell2.objects.filter(order=self)
+        result = 0
+        for s in sells:
+            result += s.calculate_value()
+
+        return result
+
+    def material_cost(self):
+        items = DeliveryItem.objects.filter(order=self)
+        cost = 0
+
+        for i in items:
+            cost += i.calculate_value()
+
+        return round(cost, 2)
+
+    def production_cost(self):
+        from production.models import ProductionOrder
+        production_order = ProductionOrder.objects.filter(id_number=f'{self.provider} {self.order_id}').first()
+        if production_order:
+            return production_order.work_energy_usage_cost()
+        else:
+            return 0, 0, 0
+
+    def other_costs(self):
+        month, year = self.order_date.month, self.order_date.year
+        month_results = MonthResults.objects.get(month=month, year=year)
+        value = self.material_cost()
+        expenses = month_results.expenses
+        factor = value / expenses
+
+        financial_expenses = round(month_results.financial_expenses * factor, 2)
+        management_expenses = round(month_results.management_expenses * factor, 2)
+        logistic_expenses = round(month_results.logistic_expenses * factor, 2)
+        other_expenses = round(month_results.other_expenses * factor, 2)
+
+        return financial_expenses, management_expenses, logistic_expenses, other_expenses
+
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
         unique_together = ('provider', 'order_id', 'order_year')
@@ -340,3 +379,20 @@ class MonthResults(models.Model):
 
     def __str__(self):
         return f'{self.year} {self.month}'
+
+
+class ProductSell2(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+    price = models.DecimalField(max_digits=5, decimal_places=2)
+    date = models.DateField()
+
+    class Meta:
+        ordering = ['date']
+
+    def __str__(self):
+        return f'{self.product} {self.order} {self.quantity}'
+
+    def calculate_value(self):
+        return round(float(self.price) * float(self.quantity), 2)
