@@ -220,7 +220,7 @@ class EditProductionUnit(View):
     def get(self, request, unit_id):
         source = request.GET.get('source')
         edit = True
-        form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id))
+        form = ProductionUnitForm(None, instance=ProductionUnit.objects.get(id=unit_id))
 
         context = {
             "source": source,
@@ -231,7 +231,7 @@ class EditProductionUnit(View):
 
     def post(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
-        form = ProductionUnitForm(request.POST, instance=unit)
+        form = ProductionUnitForm(None, request.POST, instance=unit)
 
         if form.is_valid():
             obj = form.save(commit=False)
