@@ -1,0 +1,19 @@
+<h2>Import CSV</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Importuj</button>
+</form>
+
+{% if success %}
+    <p style="color: green">{{ success }} rekordów zaimportowano!</p>
+{% endif %}
+
+{% if error_lines %}
+    <p style="color: red">Błędy w wierszach:</p>
+    <ul>
+        {% for line, error in error_lines %}
+            <li>Wiersz {{ line }}: {{ error }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}

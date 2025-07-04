@@ -1,11 +1,11 @@
 from django.urls import path
 from warehouse.views import *
 from warehouse.ajax_views import *
-#
-#
+from warehouse.load_csv_views import *
+
+
 app_name = 'warehouse'
-#
-#
+
 urlpatterns = [
     path('test/', TestView.as_view()),
     path('load_wz/', LoadWZ.as_view(), name='load-transport-document'),
@@ -36,4 +36,9 @@ urlpatterns += [
 urlpatterns += [
     path('sells/list/', SellProductList.as_view(), name='sells-list-view'),
     path('sells/create/', ProductSellCreateView.as_view(), name="productsell-create")
+]
+
+# temporary
+urlpatterns += [
+    path('import-csv/', import_csv_view, name='import_csv'),
 ]

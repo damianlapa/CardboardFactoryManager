@@ -12,6 +12,16 @@ from django.db.models import F, Max
 from django.db.models import Q
 import re
 from .models import PRODUCTION_ORDER_STATUSES
+from calendar import day_name
+
+
+DAYS_MAP = {
+    '1': 'Poniedziałek',
+    '2': 'Wtorek',
+    '3': 'Środa',
+    '4': 'Czwartek',
+    '5': 'Piątek'
+}
 
 
 def parse_dimensions(dim_str):
@@ -193,11 +203,23 @@ class WeeklyPlanDetailView(DetailView):
     template_name = 'production/weekly_plan_detail.html'
     context_object_name = 'plan'
 
+
+
+    # w context:
+
+
     def get_object(self, queryset=None):
         year = self.kwargs.get('year')
         week = self.kwargs.get('week')
         plan, _ = WeeklyPlan.objects.get_or_create(year=year, week=week)
         return plan
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['work_stations'] = WorkStation.objects.all()
+        context['days']: DAYS_MAP
+        context['unassigned_units']: ProductionUnit.objects.filter(start__isnull=True)
+        return context
 
 
 class WeeklyPlanGenerateView(View):

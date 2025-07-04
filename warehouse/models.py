@@ -333,7 +333,10 @@ class MonthResults(models.Model):
     month = models.PositiveIntegerField()
     year = models.PositiveIntegerField()
     expenses = models.PositiveIntegerField()
+    financial_expenses = models.PositiveIntegerField()
     management_expenses = models.PositiveIntegerField()
+    logistic_expenses = models.PositiveIntegerField()
+    other_expenses = models.PositiveIntegerField()
 
     def __str__(self):
         return f'{self.year} {self.month}'

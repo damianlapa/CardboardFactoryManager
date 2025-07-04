@@ -1,57 +1,112 @@
 <!DOCTYPE html>
-{% extends '__base3__.html' %}
-{% block content %}
-<h2>Plan produkcji – tydzień {{ plan.week }}, {{ plan.year }}</h2>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Harmonogram produkcji</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .timeline {
+      display: grid;
+      grid-template-columns: 120px repeat(32, 50px);
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 10;
+      border-bottom: 1px solid #ccc;
+    }
+    .timeline div {
+      padding: 6px;
+      font-size: 12px;
+      text-align: center;
+      border-left: 1px solid #eee;
+    }
+    .schedule-container {
+      overflow-x: scroll;
+    }
+    .schedule-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: 120px repeat(32, 50px);
+      grid-auto-rows: 60px;
+    }
+    .machine-label {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      background: #fafafa;
+      font-weight: bold;
+      font-size: 13px;
+    }
+    .task {
+      position: absolute;
+      height: 48px;
+      background: #4caf50;
+      color: white;
+      font-size: 12px;
+      text-align: center;
+      border-radius: 4px;
+      cursor: move;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div class="schedule-container">
+    <div class="timeline">
+      <div>Maszyna</div>
+      {% for slot in 0|to:31 %}
+        <div>{{ 7|add:slot|divisibleby:4 and "{:02}:00" or "{:02}:{:02}"|format(7 + slot//4, (slot % 4)*15) }}</div>
+      {% endfor %}
+    </div>
+    <div class="schedule-grid" id="scheduleGrid">
+      {% for machine in machines %}
+        <div class="machine-label">{{ machine.name }}</div>
+        {% for _ in 1|to:32 %}<div></div>{% endfor %}
+      {% endfor %}
 
-<form method="post" action="{% url 'weekly_plan_generate' year=plan.year week=plan.week %}">
-    {% csrf_token %}
-    <button type="submit">Wygeneruj propozycję planu</button>
-</form>
-<table border="1">
-    <thead>
-        <tr>
-            <th>Jednostka</th>
-            <th>Maszyna</th>
-            <th>Start</th>
-            <th>Koniec</th>
-            <th>Operatorzy</th>
-            <th>Pomocnicy</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for task in plan.tasks.all %}
-        <tr {% if task.is_temporary %}style="background-color: #ffffdd;"{% endif %}>
-            <td>{{ task.production_unit }}</td>
-            <td>{{ task.work_station }}</td>
-            <td>{{ task.start|date:"Y-m-d H:i" }}</td>
-            <td>{{ task.end|date:"Y-m-d H:i" }}</td>
-            <td>
-                {% for person in task.persons.all %}
-                    {% if person.role == 'operator' %}
-                        {{ person }}<br/>
-                    {% endif %}
-                {% endfor %}
-            </td>
-            <td>
-                {% for person in task.persons.all %}
-                    {% if person.role != 'operator' %}
-                        {{ person }}<br/>
-                    {% endif %}
-                {% endfor %}
-            </td>
-            <td>
-                {% if task.is_temporary %}
-                    <strong>Tymczasowe</strong>
-                {% else %}
-                    Zatwierdzone
-                {% endif %}
-            </td>
-        </tr>
-    {% empty %}
-        <tr><td colspan="7">Brak zadań w tym tygodniu.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
+      <!-- Przykładowy task -->
+      <div class="task" data-id="1" style="top: 0px; left: 250px; width: 150px;">
+        Zadanie A
+      </div>
+      <div class="task" data-id="2" style="top: 60px; left: 300px; width: 100px; background: #2196f3">
+        Zadanie B
+      </div>
+    </div>
+  </div>
 
-{% endblock %}
+  <script>
+    const grid = document.getElementById('scheduleGrid');
+    let dragged = null;
+    let offsetX = 0, offsetY = 0;
+
+    document.querySelectorAll('.task').forEach(task => {
+      task.addEventListener('mousedown', (e) => {
+        dragged = task;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+        dragged.style.zIndex = 100;
+      });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragged) return;
+      const rect = grid.getBoundingClientRect();
+      let x = e.clientX - rect.left - offsetX;
+      let y = e.clientY - rect.top - offsetY;
+      x = Math.max(120, x);
+      y = Math.max(0, y);
+      dragged.style.left = x + 'px';
+      dragged.style.top = y + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragged) return;
+      dragged.style.zIndex = 20;
+      dragged = null;
+    });
+  </script>
+</body>
+</html>
