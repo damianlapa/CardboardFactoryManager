@@ -119,5 +119,5 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    path('epuc/', export_production_units_csv, name='epuc')
+    path('epuc/', export_production_units_csv_streaming, name='epuc')
 ]

@@ -21,64 +21,67 @@ from warehousemanager.functions import visit_counter
 
 from warehousemanager.models import Absence, ExtraHour, Punch, Photopolymer
 
-import csv
-import datetime
+from django.http import StreamingHttpResponse
 
 
-def export_production_units_csv(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="production_units_detailed.csv"'
+class Echo:
+    def write(self, value):
+        return value
 
-    writer = csv.writer(response)
-    writer.writerow([
-        'ID', 'Production Order', 'Sequence', 'Work Station', 'Status',
-        'Start', 'End', 'Estimated Time (min)', 'Estimated Duration (hh:mm)',
-        'Suggested Time (min)', 'Planned Start', 'Planned End',
-        'Real Duration (min)', 'Persons Count', 'Total Person Time (min)',
-        'Worker Cost (PLN)', 'Energy Cost (PLN)', 'Machine Usage'
-    ])
 
-    queryset = ProductionUnit.objects.filter(start__lte=datetime.date(2025, 1, 1)).prefetch_related('persons').select_related(
-        'production_order', 'work_station', 'punch', 'polymer'
-    )
+def export_production_units_csv_streaming(request):
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer)
 
-    for unit in queryset:
-        # Czas i personel
-        real_minutes = unit.unit_duration_minutes()
-        est_duration = unit.estimated_duration()
-        suggested = unit.suggested_time()
-        planned_start = unit.planned_start()
-        planned_end = unit.planned_end()
-        persons_count, total_person_minutes = unit.duration_person()
+    # generator CSV
+    def generate_rows():
+        header = [
+            'ID', 'Production Order', 'Sequence', 'Work Station', 'Status',
+            'Start', 'End', 'Estimated Time (min)', 'Estimated Duration (hh:mm)',
+            'Suggested Time (min)', 'Planned Start', 'Planned End',
+            'Real Duration (min)', 'Persons Count', 'Total Person Time (min)',
+            'Worker Cost (PLN)', 'Energy Cost (PLN)', 'Machine Usage'
+        ]
+        yield writer.writerow(header)
 
-        # Koszty
-        try:
-            worker_cost, energy_cost, machine_usage = unit.unit_production_cost()
-        except Exception:
-            worker_cost = energy_cost = machine_usage = None
+        for unit in ProductionUnit.objects.all().iterator():  # ważne: .iterator() oszczędza RAM!
+            try:
+                suggested = unit.suggested_time()
+            except Exception:
+                suggested = None
+            try:
+                worker_cost, energy_cost, machine_usage = unit.unit_production_cost()
+            except Exception:
+                worker_cost = energy_cost = machine_usage = None
 
-        writer.writerow([
-            unit.id,
-            str(unit.production_order),
-            unit.sequence,
-            str(unit.work_station),
-            unit.status,
-            unit.start.strftime('%Y-%m-%d %H:%M:%S') if unit.start else '',
-            unit.end.strftime('%Y-%m-%d %H:%M:%S') if unit.end else '',
-            unit.estimated_time,
-            est_duration,
-            suggested,
-            planned_start.strftime('%Y-%m-%d %H:%M:%S') if planned_start else '',
-            planned_end.strftime('%Y-%m-%d %H:%M:%S') if planned_end else '',
-            real_minutes,
-            persons_count,
-            total_person_minutes,
-            worker_cost,
-            energy_cost,
-            machine_usage
-        ])
+            persons_count, total_person_minutes = unit.duration_person()
 
+            row = [
+                unit.id,
+                str(unit.production_order),
+                unit.sequence,
+                str(unit.work_station),
+                unit.status,
+                unit.start,
+                unit.end,
+                unit.estimated_time,
+                unit.estimated_duration(),
+                suggested,
+                unit.planned_start(),
+                unit.planned_end(),
+                unit.unit_duration_minutes(),
+                persons_count,
+                total_person_minutes,
+                worker_cost,
+                energy_cost,
+                machine_usage
+            ]
+            yield writer.writerow(row)
+
+    response = StreamingHttpResponse(generate_rows(), content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="production_units_streamed.csv"'
     return response
+
 
 
 class ToolsUsage(View):

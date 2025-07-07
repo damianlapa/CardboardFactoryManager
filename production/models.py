@@ -722,8 +722,12 @@ class ProductionUnit(models.Model):
                     time_value = None
                 return time_value
         elif self.work_station.name == 'ROTACJA':
-            dimensions = self.production_order.dimensions.lower().split('x')
+            dimensions_raw = self.production_order.dimensions
+            if not dimensions_raw:
+                return 0
+
             try:
+                dimensions = dimensions_raw.lower().split('x')
                 dimensions = [int(dimension) for dimension in dimensions]
             except Exception:
                 dimensions = []
