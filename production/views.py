@@ -29,14 +29,15 @@ class Echo:
         return value
 
 
-def export_person_performance_data(request):
+def export_person_performance_with_quantities(request):
     pseudo_buffer = Echo()
     writer = csv.writer(pseudo_buffer)
 
     def generate_rows():
         yield writer.writerow([
             'Person', 'Unit ID', 'Production Order', 'Work Station',
-            'Start', 'End', 'Real Duration (min)', 'Group Size'
+            'Start', 'End', 'Real Duration (min)', 'Group Size',
+            'Quantity Start', 'Quantity End'
         ])
 
         queryset = ProductionUnit.objects.prefetch_related('persons') \
@@ -49,6 +50,8 @@ def export_person_performance_data(request):
                 real_duration = None
 
             group_size = unit.persons.count()
+            quantity_start = unit.quantity_start if unit.quantity_start else 0
+            quantity_end = unit.quantity_end if unit.quantity_end else 0
 
             for person in unit.persons.all():
                 yield writer.writerow([
@@ -59,11 +62,13 @@ def export_person_performance_data(request):
                     unit.start.strftime('%Y-%m-%d %H:%M:%S') if unit.start else '',
                     unit.end.strftime('%Y-%m-%d %H:%M:%S') if unit.end else '',
                     real_duration,
-                    group_size
+                    group_size,
+                    quantity_start,
+                    quantity_end
                 ])
 
     response = StreamingHttpResponse(generate_rows(), content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="person_performance.csv"'
+    response['Content-Disposition'] = 'attachment; filename="person_performance_with_quantities.csv"'
     return response
 
 
