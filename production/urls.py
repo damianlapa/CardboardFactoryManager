@@ -119,5 +119,6 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    path('epuc/', export_production_units_csv_streaming, name='epuc')
+    path('epuc/', export_production_units_csv_streaming, name='epuc'),
+    path('eppd/', export_person_performance_data, name='eppd'),
 ]

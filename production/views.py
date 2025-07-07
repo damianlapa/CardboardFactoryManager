@@ -29,6 +29,44 @@ class Echo:
         return value
 
 
+def export_person_performance_data(request):
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer)
+
+    def generate_rows():
+        yield writer.writerow([
+            'Person', 'Unit ID', 'Production Order', 'Work Station',
+            'Start', 'End', 'Real Duration (min)', 'Group Size'
+        ])
+
+        queryset = ProductionUnit.objects.prefetch_related('persons') \
+                                         .select_related('production_order', 'work_station')
+
+        for unit in queryset:
+            try:
+                real_duration = unit.unit_duration_minutes()
+            except Exception:
+                real_duration = None
+
+            group_size = unit.persons.count()
+
+            for person in unit.persons.all():
+                yield writer.writerow([
+                    str(person),
+                    unit.id,
+                    str(unit.production_order),
+                    str(unit.work_station),
+                    unit.start.strftime('%Y-%m-%d %H:%M:%S') if unit.start else '',
+                    unit.end.strftime('%Y-%m-%d %H:%M:%S') if unit.end else '',
+                    real_duration,
+                    group_size
+                ])
+
+    response = StreamingHttpResponse(generate_rows(), content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="person_performance.csv"'
+    return response
+
+
 def export_production_units_csv_streaming(request):
     pseudo_buffer = Echo()
     writer = csv.writer(pseudo_buffer)
