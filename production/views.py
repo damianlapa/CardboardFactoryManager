@@ -21,6 +21,65 @@ from warehousemanager.functions import visit_counter
 
 from warehousemanager.models import Absence, ExtraHour, Punch, Photopolymer
 
+import csv
+import datetime
+
+
+def export_production_units_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="production_units_detailed.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'ID', 'Production Order', 'Sequence', 'Work Station', 'Status',
+        'Start', 'End', 'Estimated Time (min)', 'Estimated Duration (hh:mm)',
+        'Suggested Time (min)', 'Planned Start', 'Planned End',
+        'Real Duration (min)', 'Persons Count', 'Total Person Time (min)',
+        'Worker Cost (PLN)', 'Energy Cost (PLN)', 'Machine Usage'
+    ])
+
+    queryset = ProductionUnit.objects.filter(start__lte=datetime.date(2025, 1, 1)).prefetch_related('persons').select_related(
+        'production_order', 'work_station', 'punch', 'polymer'
+    )
+
+    for unit in queryset:
+        # Czas i personel
+        real_minutes = unit.unit_duration_minutes()
+        est_duration = unit.estimated_duration()
+        suggested = unit.suggested_time()
+        planned_start = unit.planned_start()
+        planned_end = unit.planned_end()
+        persons_count, total_person_minutes = unit.duration_person()
+
+        # Koszty
+        try:
+            worker_cost, energy_cost, machine_usage = unit.unit_production_cost()
+        except Exception:
+            worker_cost = energy_cost = machine_usage = None
+
+        writer.writerow([
+            unit.id,
+            str(unit.production_order),
+            unit.sequence,
+            str(unit.work_station),
+            unit.status,
+            unit.start.strftime('%Y-%m-%d %H:%M:%S') if unit.start else '',
+            unit.end.strftime('%Y-%m-%d %H:%M:%S') if unit.end else '',
+            unit.estimated_time,
+            est_duration,
+            suggested,
+            planned_start.strftime('%Y-%m-%d %H:%M:%S') if planned_start else '',
+            planned_end.strftime('%Y-%m-%d %H:%M:%S') if planned_end else '',
+            real_minutes,
+            persons_count,
+            total_person_minutes,
+            worker_cost,
+            energy_cost,
+            machine_usage
+        ])
+
+    return response
+
 
 class ToolsUsage(View):
     def get(self, request):

@@ -117,3 +117,7 @@ urlpatterns += [
     path('orders/ajax/<int:order_id>/reorder_units/', reorder_units, name='reorder_units'),
     path('orders/ajax/<int:order_id>/update_status/', ajax_update_order_status, name='ajax_update_order_status'),
 ]
+
+urlpatterns += [
+    path('epuc/', export_production_units_csv, name='epuc')
+]
