@@ -347,11 +347,28 @@ class OrderListView(View):
     def get(self, request):
         sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
+        manual = request.GET.get('manual')
 
         if order_direction == 'desc':
             sort_by = f'-{sort_by}'
 
         orders = Order.objects.all().order_by(sort_by)
+        if manual:
+            year = request.GET.get('year')
+            orders = Order.objects.filter(provider=Provider.objects.get(name=manual))
+            orders_ = []
+            for o in orders:
+                try:
+                    number, year_str = o.order_id.split('/')
+                    number = int(number)
+                    if year and year == year_str:
+                        orders_.append((number, o))
+                except:
+                    pass
+            orders_ = sorted(orders_, key=lambda x: x[0])
+
+            orders = [o[1] for o in orders_]
+
         return render(request, 'warehouse/order_list.html', locals())
 
 
