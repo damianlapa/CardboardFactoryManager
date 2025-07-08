@@ -33,6 +33,7 @@
       <th><a href="?sort=order_quantity&dir={% if current_sort == 'order_quantity' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Quantity</a></th>
       <th><a href="?sort=delivered_quantity&dir={% if current_sort == 'delivered_quantity' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Delivered Quantity</a></th>
       <th><a href="?sort=price&dir={% if current_sort == 'price' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Price</a></th>
+      <th>Area</th>
       <th>Status</th>
     </tr>
   </thead>
@@ -48,6 +49,7 @@
         <td>{{ order.order_quantity }}</td>
         <td>{{ order.delivered_quantity }}</td>
         <td>{{ order.price }}</td>
+        <td>{{ order.total_area }}</td>
         <td>
           {% if order.finished %}
             Finished

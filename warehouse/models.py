@@ -105,6 +105,16 @@ class Order(models.Model):
 
         return financial_expenses, management_expenses, logistic_expenses, other_expenses
 
+    def total_area(self):
+        items = DeliveryItem.objects.filter(order=self)
+        total = 0
+
+        for item in items:
+            area = item.calculate_area()
+            total += area
+
+        return total
+
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
         unique_together = ('provider', 'order_id', 'order_year')
@@ -151,10 +161,7 @@ class Delivery(models.Model):
         total = 0
 
         for item in items:
-            dimensions = item.order.dimensions
-            dimensions = dimensions.lower().split('x')
-            dimensions = list(map(int, dimensions))
-            area = round(dimensions[0]*dimensions[1]/1000000, 5) * item.quantity
+            area = item.calculate_area()
             total += area
 
         return total
@@ -222,6 +229,17 @@ class DeliveryItem(models.Model):
             value = area * price
             return round(self.quantity*value/1000, 2)
         except:
+            return 0
+
+    def calculate_area(self):
+        try:
+            dimensions = self.order.dimensions
+            dimensions = dimensions.lower().split('x')
+            dimensions = list(map(int, dimensions))
+            area = round(dimensions[0] * dimensions[1] / 1000000, 5) * self.quantity
+
+            return area
+        except Exception as e:
             return 0
 
 
