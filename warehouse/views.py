@@ -507,12 +507,16 @@ class DeliveriesStatistics(View):
         from collections import defaultdict
 
         orders_by_customer = defaultdict(int)
+        orders_by_provider = defaultdict(int)
+
         for d in Delivery.objects.all():
-            print(d)
+            provider = d.provider.name
+            area = d.count_area()
+            orders_by_provider[provider] += int(round(area, 0))
             for item in DeliveryItem.objects.filter(delivery=d):
                 try:
                     customer = item.order.customer.name  # Zakładam strukturę relacji
-                    orders_by_customer[customer] += int(d.count_area())
+                    orders_by_customer[customer] += int(round(item.calculate_area(), 0))
                 except AttributeError:
                     continue  # Pomijamy błędne wpisy
 
@@ -520,7 +524,8 @@ class DeliveriesStatistics(View):
         customer_labels = list(orders_by_customer.keys())
         customer_values = list(orders_by_customer.values())
 
-        print(customer_values, customer_labels)
+        provider_labels = list(orders_by_provider.keys())
+        provider_values = list(orders_by_provider.values())
 
         return render(request, 'warehouse/deliveries-statistics.html', locals())
 
