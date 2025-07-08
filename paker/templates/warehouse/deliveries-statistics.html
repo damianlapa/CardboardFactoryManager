@@ -2,107 +2,172 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 40px;
+    }
+
+    .dashboard-box {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 span {
+        font-weight: bold;
+        font-size: 1.4em;
+    }
+
+    h2 {
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    canvas {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .stats-header {
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    .stats-header h1 {
+        margin: 10px 0;
+    }
+</style>
 {% endblock %}
+
 {% block content %}
-<h1>DO 2.400.000 METRÓW POZOSTAŁO: <span style="color:red" id="counter">{{ ile }}</span></h1>
-<h1>W 2025 DOSTARCZONO: <span style="color:green" id="counter2">{{ total_amount }}</span></h1>
-<h1>DO KOŃCA ROKU POZOSTAŁO: <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
-<canvas id="weeksChart" width="400" height="200"></canvas>
-<canvas id="weeksChartSingle" width="400" height="200"></canvas>
+<div class="stats-header">
+    <h1>DO 2.400.000 METRÓW POZOSTAŁO: <span style="color:red" id="counter">{{ ile }}</span></h1>
+    <h1>W 2025 DOSTARCZONO: <span style="color:green" id="counter2">{{ total_amount }}</span></h1>
+    <h1>DO KOŃCA ROKU POZOSTAŁO: <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-box">
+        <h2>Postęp roczny</h2>
+        <canvas id="weeksChart"></canvas>
+    </div>
+    <div class="dashboard-box">
+        <h2>Dostawy tygodniowe</h2>
+        <canvas id="weeksChartSingle"></canvas>
+    </div>
+    <div class="dashboard-box">
+        <h2>Zamówienia wg klienta</h2>
+        <canvas id="customerChart"></canvas>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
+    // Wykres postępu całkowitego
     const ctx = document.getElementById('weeksChart').getContext('2d');
     const chartData = {
-        labels: [
-            {% for d in dates %}
-                "{{ d }}",
-            {% endfor %}
-        ],
+        labels: [{% for d in dates %}"{{ d }}",{% endfor %}],
         datasets: [{
-            label: 'Increasing Amounts',
-            data: [
-                {% for a in values %}
-                    {{ a }},
-                {% endfor %}
-            ],
+            label: 'Suma narastająco',
+            data: [{% for a in values %}{{ a }},{% endfor %}],
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true
         }]
     };
-    const transactionChart = new Chart(ctx, {
-        type: 'line', // Możesz użyć 'bar', 'pie', itp.
+    new Chart(ctx, {
+        type: 'line',
         data: chartData,
         options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
-</script>
-<script>
+
+    // Wykres tygodniowy
     const ctx2 = document.getElementById('weeksChartSingle').getContext('2d');
     const chartData2 = {
-        labels: [
-            {% for w in weeks %}
-                "{{ w }}",
-            {% endfor %}
-        ],
+        labels: [{% for w in weeks %}"{{ w }}",{% endfor %}],
         datasets: [{
-            label: 'Week Amounts',
-            data: [
-                {% for a in values_by_week %}
-                    {{ a }},
-                {% endfor %}
-            ],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
+            label: 'Dostawy tygodniowe',
+            data: [{% for a in values_by_week %}{{ a }},{% endfor %}],
+            backgroundColor: 'rgba(255, 159, 64, 0.3)',
+            borderColor: 'rgba(255, 159, 64, 1)',
             borderWidth: 1
         }]
     };
-    const transactionChart2 = new Chart(ctx2, {
-        type: 'bar', // Możesz użyć 'bar', 'pie', itp.
+    new Chart(ctx2, {
+        type: 'bar',
         data: chartData2,
         options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Wykres klientów
+    const ctx3 = document.getElementById('customerChart').getContext('2d');
+    const customerChart = new Chart(ctx3, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for label in customer_labels %}"{{ label }}",{% endfor %}],
+            datasets: [{
+                label: 'Dostawy na klienta',
+                data: [{% for val in customer_values %}{{ val }},{% endfor %}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.4)',
+                    'rgba(54, 162, 235, 0.4)',
+                    'rgba(255, 206, 86, 0.4)',
+                    'rgba(75, 192, 192, 0.4)',
+                    'rgba(153, 102, 255, 0.4)',
+                    'rgba(255, 159, 64, 0.4)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
             }
         }
     });
-</script>
-<script>
-        function animateCounter(startValue, endValue, duration, counter) {
 
-            const startTime = performance.now();
-
-            function updateCounter(currentTime) {
-                const elapsedTime = currentTime - startTime;
-                const progress = Math.min(elapsedTime / duration, 1); // Zapewnia, że progress nie przekroczy 1
-                const currentValue = Math.floor(startValue - (startValue - endValue) * progress);
-
-                counter.textContent = currentValue.toLocaleString(); // Formatowanie liczby z separatorami
-
-                if (progress < 1) {
-                    requestAnimationFrame(updateCounter);
-                }
+    // Animowane liczniki
+    function animateCounter(startValue, endValue, duration, counter) {
+        const startTime = performance.now();
+        function updateCounter(currentTime) {
+            const elapsedTime = currentTime - startTime;
+            const progress = Math.min(elapsedTime / duration, 1);
+            const currentValue = Math.floor(startValue - (startValue - endValue) * progress);
+            counter.textContent = currentValue.toLocaleString();
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
             }
-
-            requestAnimationFrame(updateCounter);
         }
+        requestAnimationFrame(updateCounter);
+    }
 
-        // Uruchomienie animacji: od 2 400 000 do 1 200 000 w 5 sekund
-        const counter = document.getElementById('counter');
-        const counter2 = document.getElementById('counter2');
-        const counter3 = document.getElementById('counter3');
-        animateCounter(2400000, {{ ile }}, 2000, counter);
-        animateCounter(0, {{ total_amount }}, 2000, counter2);
-        animateCounter({{ year_days }}, {{ days_left }}, 2000, counter3);
-    </script>
-
+    const counter = document.getElementById('counter');
+    const counter2 = document.getElementById('counter2');
+    const counter3 = document.getElementById('counter3');
+    animateCounter(2400000, {{ ile }}, 2000, counter);
+    animateCounter(0, {{ total_amount }}, 2000, counter2);
+    animateCounter({{ year_days }}, {{ days_left }}, 2000, counter3);
+</script>
 {% endblock %}
 
 {% block scripts %}

@@ -488,7 +488,6 @@ class DeliveriesStatistics(View):
         while start <= datetime.date.today():
 
             deliveries = Delivery.objects.all().filter(date__gte=start, date__lte=end)
-            print(start, end, deliveries)
             total = 0
             for d in deliveries:
                 total += int(d.count_area())
@@ -504,6 +503,24 @@ class DeliveriesStatistics(View):
         ile = 2400000 - total_amount
         year_days = 365 + calendar.isleap(datetime.datetime.now().year)
         days_left = year_days - datetime.datetime.now().timetuple().tm_yday
+
+        from collections import defaultdict
+
+        orders_by_customer = defaultdict(int)
+        for d in Delivery.objects.all():
+            print(d)
+            for item in DeliveryItem.objects.filter(delivery=d):
+                try:
+                    customer = item.order.customer.name  # Zakładam strukturę relacji
+                    orders_by_customer[customer] += int(d.count_area())
+                except AttributeError:
+                    continue  # Pomijamy błędne wpisy
+
+        # Zamieniamy na listy do wykresu
+        customer_labels = list(orders_by_customer.keys())
+        customer_values = list(orders_by_customer.values())
+
+        print(customer_values, customer_labels)
 
         return render(request, 'warehouse/deliveries-statistics.html', locals())
 
