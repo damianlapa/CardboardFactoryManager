@@ -113,7 +113,7 @@ class Order(models.Model):
             area = item.calculate_area()
             total += area
 
-        return total
+        return int(round(total, 0))
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
