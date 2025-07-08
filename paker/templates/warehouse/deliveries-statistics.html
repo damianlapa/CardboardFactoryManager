@@ -64,31 +64,55 @@
         <canvas id="customerChart"></canvas>
     </div>
     <div class="dashboard-box">
-        <h2>Zamówienia wg klienta</h2>
+        <h2>Zamówienia wg dostawcy</h2>
         <canvas id="providerChart"></canvas>
+    </div>
+    <div class="dashboard-box">
+        <h2>Zamówienia wg klienta z filtrem</h2>
+        <label for="threshold_min">Pokaż klientów z udziałem powierzchni ≥</label>
+        <select id="threshold_min">
+            <option value="0">0%</option>
+            <option value="1">1%</option>
+            <option value="2">2%</option>
+            <option value="3">3%</option>
+            <option value="5" selected>5%</option>
+            <option value="10">10%</option>
+            <option value="15">15%</option>
+        </select>
+
+        <label for="threshold_max">... i ≤</label>
+        <select id="threshold_max">
+            <option value="100">100%</option>
+            <option value="50">50%</option>
+            <option value="25">25%</option>
+            <option value="15" selected>15%</option>
+            <option value="10">10%</option>
+            <option value="5">5%</option>
+            <option value="3">3%</option>
+            <option value="1">1%</option>
+        </select>
+        <canvas id="customer2Chart"></canvas>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-    // Wykres postępu całkowitego
+    // Wykres postępu rocznego
     const ctx = document.getElementById('weeksChart').getContext('2d');
-    const chartData = {
-        labels: [{% for d in dates %}"{{ d }}",{% endfor %}],
-        datasets: [{
-            label: 'Suma narastająco',
-            data: [{% for a in values %}{{ a }},{% endfor %}],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-        }]
-    };
     new Chart(ctx, {
         type: 'line',
-        data: chartData,
+        data: {
+            labels: [{% for d in dates %}"{{ d }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Suma narastająco',
+                data: [{% for a in values %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
         options: {
             scales: { y: { beginAtZero: true } }
         }
@@ -96,33 +120,32 @@
 
     // Wykres tygodniowy
     const ctx2 = document.getElementById('weeksChartSingle').getContext('2d');
-    const chartData2 = {
-        labels: [{% for w in weeks %}"{{ w }}",{% endfor %}],
-        datasets: [{
-            label: 'Dostawy tygodniowe',
-            data: [{% for a in values_by_week %}{{ a }},{% endfor %}],
-            backgroundColor: 'rgba(255, 159, 64, 0.3)',
-            borderColor: 'rgba(255, 159, 64, 1)',
-            borderWidth: 1
-        }]
-    };
     new Chart(ctx2, {
         type: 'bar',
-        data: chartData2,
+        data: {
+            labels: [{% for w in weeks %}"{{ w }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Dostawy tygodniowe',
+                data: [{% for a in values_by_week %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(255, 159, 64, 0.3)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
         options: {
             scales: { y: { beginAtZero: true } }
         }
     });
 
-    // Wykres klientów
+    // Wykres klientów - statyczny
     const ctx3 = document.getElementById('customerChart').getContext('2d');
-    const customerChart = new Chart(ctx3, {
+    new Chart(ctx3, {
         type: 'doughnut',
         data: {
-            labels: [{% for label in customer_labels %}"{{ label }}",{% endfor %}],
+            labels: [{% for label in customer_labels %}"{{ label }}"{% if not forloop.last %},{% endif %}{% endfor %}],
             datasets: [{
                 label: 'Dostawy na klienta',
-                data: [{% for val in customer_values %}{{ val }},{% endfor %}],
+                data: [{% for val in customer_values %}{{ val }}{% if not forloop.last %},{% endif %}{% endfor %}],
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.4)',
                     'rgba(54, 162, 235, 0.4)',
@@ -149,15 +172,16 @@
             }
         }
     });
-    // Wykres klientów
+
+    // Wykres dostawców
     const ctx4 = document.getElementById('providerChart').getContext('2d');
-    const providerChart = new Chart(ctx4, {
+    new Chart(ctx4, {
         type: 'doughnut',
         data: {
-            labels: [{% for label in provider_labels %}"{{ label }}",{% endfor %}],
+            labels: [{% for label in provider_labels %}"{{ label }}"{% if not forloop.last %},{% endif %}{% endfor %}],
             datasets: [{
-                label: 'Dostawy na dostawce',
-                data: [{% for val in provider_values %}{{ val }},{% endfor %}],
+                label: 'Dostawy na dostawcę',
+                data: [{% for val in provider_values %}{{ val }}{% if not forloop.last %},{% endif %}{% endfor %}],
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.4)',
                     'rgba(54, 162, 235, 0.4)',
@@ -184,6 +208,59 @@
             }
         }
     });
+
+    // Wykres klientów z filtrem powierzchni
+    const ctx5 = document.getElementById('customer2Chart').getContext('2d');
+    let chart;
+
+    function loadChart(min, max) {
+        fetch(`{% url 'warehouse:customer-distribution' %}?min=${min}&max=${max}`)
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.customer);
+                const percentages = data.map(item => item.percentage);
+
+                if (chart) chart.destroy();
+
+                chart = new Chart(ctx5, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Udział % powierzchni',
+                            data: percentages,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => value + '%'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+    }
+
+    const selectMin = document.getElementById('threshold_min');
+    const selectMax = document.getElementById('threshold_max');
+
+    function updateChart() {
+        const min = parseFloat(selectMin.value);
+        const max = parseFloat(selectMax.value);
+        loadChart(min, max);
+    }
+
+    selectMin.addEventListener('change', updateChart);
+    selectMax.addEventListener('change', updateChart);
+
+    loadChart(selectMin.value, selectMax.value);
 
     // Animowane liczniki
     function animateCounter(startValue, endValue, duration, counter) {
@@ -200,12 +277,9 @@
         requestAnimationFrame(updateCounter);
     }
 
-    const counter = document.getElementById('counter');
-    const counter2 = document.getElementById('counter2');
-    const counter3 = document.getElementById('counter3');
-    animateCounter(2400000, {{ ile }}, 2000, counter);
-    animateCounter(0, {{ total_amount }}, 2000, counter2);
-    animateCounter({{ year_days }}, {{ days_left }}, 2000, counter3);
+    animateCounter(2400000, {{ ile }}, 2000, document.getElementById('counter'));
+    animateCounter(0, {{ total_amount }}, 2000, document.getElementById('counter2'));
+    animateCounter({{ year_days }}, {{ days_left }}, 2000, document.getElementById('counter3'));
 </script>
 {% endblock %}
 

@@ -2,6 +2,7 @@ from django.urls import path
 from warehouse.views import *
 from warehouse.ajax_views import *
 from warehouse.load_csv_views import *
+from warehouse.statstics_views import *
 
 
 app_name = 'warehouse'
@@ -41,4 +42,8 @@ urlpatterns += [
 # temporary
 urlpatterns += [
     path('import-csv/', import_csv_view, name='import_csv'),
+]
+
+urlpatterns += [
+    path('customer-distribution/', customer_distribution, name='customer-distribution'),
 ]
