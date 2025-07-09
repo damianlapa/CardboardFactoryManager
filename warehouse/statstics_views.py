@@ -10,8 +10,6 @@ def customer_distribution(request):
     except ValueError:
         min_percent, max_percent = 0, 100
 
-    print(min_percent, max_percent)
-
     orders = Order.objects.select_related('customer')
     area_by_customer = defaultdict(float)
     total_area = 0.0
@@ -31,5 +29,7 @@ def customer_distribution(request):
                 'surface_area': round(area, 2),
                 'percentage': round(percent, 2)
             })
+            
+    result = sorted(result, key=lambda x: x['percentage'], reverse=True)
 
     return JsonResponse(result, safe=False)
