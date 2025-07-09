@@ -521,8 +521,19 @@ class DeliveriesStatistics(View):
                     continue  # Pomijamy błędne wpisy
 
         # Zamieniamy na listy do wykresu
-        customer_labels = list(orders_by_customer.keys())
-        customer_values = list(orders_by_customer.values())
+        customer_labels = []
+        customer_values = []
+
+        customer_results = []
+        for key in orders_by_customer.keys():
+            customer_results.append((key, orders_by_customer[key]))
+
+        customer_results = sorted(customer_results, key=lambda x: x[0])
+
+        for c in customer_results:
+            customer_, result = c
+            customer_labels.append(customer_)
+            customer_values.append(result)
 
         provider_labels = list(orders_by_provider.keys())
         provider_values = list(orders_by_provider.values())
