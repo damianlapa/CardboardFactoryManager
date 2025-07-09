@@ -500,7 +500,8 @@ class DeliveriesStatistics(View):
             end = end + datetime.timedelta(days=7)
 
         total_amount = sum(values_by_week)
-        ile = 2400000 - total_amount
+        cel = 2000000
+        ile = cel - total_amount
         year_days = 365 + calendar.isleap(datetime.datetime.now().year)
         days_left = year_days - datetime.datetime.now().timetuple().tm_yday
 

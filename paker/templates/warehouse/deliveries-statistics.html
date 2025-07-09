@@ -45,7 +45,7 @@
 
 {% block content %}
 <div class="stats-header">
-    <h1>DO 2.400.000 METRÓW POZOSTAŁO: <span style="color:red" id="counter">{{ ile }}</span></h1>
+    <h1>DO {{ cel }} METRÓW POZOSTAŁO: <span style="color:red" id="counter">{{ ile }}</span></h1>
     <h1>W 2025 DOSTARCZONO: <span style="color:green" id="counter2">{{ total_amount }}</span></h1>
     <h1>DO KOŃCA ROKU POZOSTAŁO: <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
 </div>
@@ -277,9 +277,9 @@
         requestAnimationFrame(updateCounter);
     }
 
-    animateCounter(2400000, {{ ile }}, 2000, document.getElementById('counter'));
-    animateCounter(0, {{ total_amount }}, 2000, document.getElementById('counter2'));
-    animateCounter({{ year_days }}, {{ days_left }}, 2000, document.getElementById('counter3'));
+    animateCounter({{ cel }}, {{ ile }}, 1000, document.getElementById('counter'));
+    animateCounter(0, {{ total_amount }}, 1000, document.getElementById('counter2'));
+    animateCounter({{ year_days }}, {{ days_left }}, 1000, document.getElementById('counter3'));
 </script>
 {% endblock %}
 
