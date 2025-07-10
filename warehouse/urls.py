@@ -46,4 +46,5 @@ urlpatterns += [
 
 urlpatterns += [
     path('customer-distribution/', customer_distribution, name='customer-distribution'),
+    path('customer-orders/', customer_orders, name='customer-orders-statistic'),
 ]
