@@ -14,7 +14,7 @@ from django.db.models.deletion import ProtectedError
 
 from warehouse.gs_connection import *
 from warehouse.models import *
-from warehouse.forms import DeliveryItemForm
+from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet
 from warehousemanager.models import Buyer
 
 from production.models import ProductionOrder, ProductionUnit
@@ -437,6 +437,33 @@ class DeliveryDetailView(View):
         items = DeliveryItem.objects.filter(delivery=delivery)
         form = DeliveryItemForm(initial={'delivery': delivery})
         return render(request, 'warehouse/delivery_details.html', locals())
+
+
+class DeliveryEditView(View):
+    def get(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        form = DeliveryForm(instance=delivery)
+        palette_formset = DeliveryPaletteFormSet(instance=delivery)
+        context = {'delivery': delivery, "form": form, "palette_formset": palette_formset}
+
+        return render(request, "warehouse/delivery-edit.html", context=context)
+
+    def post(self, request, delivery_id):
+        delivery = Delivery.objects.get(id=delivery_id)
+        form = DeliveryForm(request.POST, instance=delivery)
+        palette_formset = DeliveryPaletteFormSet(request.POST, instance=delivery)
+
+        if form.is_valid() and palette_formset.is_valid():
+            form.save()
+            palette_formset.save()
+            return redirect('warehouse:delivery-detail-view', delivery_id=delivery_id)
+
+        context = {
+            'delivery': delivery,
+            'form': form,
+            'palette_formset': palette_formset,
+        }
+        return render(request, "warehouse/delivery-edit.html", context)
 
 
 class AddDeliveryItem(View):

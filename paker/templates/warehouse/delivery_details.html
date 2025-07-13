@@ -22,7 +22,9 @@
           <button type="button" class="process-button" id="update-button">Update</button>
       </a>
     {% endif %}
-
+    <a href="{% url 'warehouse:delivery-edit' delivery_id=delivery.id %}" id="edit-link">
+          <button type="button" class="process-button" id="edit-button">Edit</button>
+    </a>
   </h1>
 
   <table>

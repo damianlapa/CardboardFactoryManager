@@ -1,0 +1,38 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/delivery-edit.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>Delivery #{{ delivery.number }} – {{ delivery }}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="delivery-edit-container">
+
+        <div class="delivery-form">
+            <h3>Dane dostawy</h3>
+            {{ form.as_p }}
+        </div>
+        
+        <div class="palettes-formset">
+            <h3>Palety</h3>
+            {{ palette_formset.management_form }}
+            {% for form in palette_formset %}
+                {{ form.id }}
+                <div class="palette-entry">
+                    {{ form.palette.label_tag }} {{ form.palette }}
+                    {{ form.quantity.label_tag }} {{ form.quantity }}
+                    {% if form.DELETE %}
+                        Usuń? {{ form.DELETE }}
+        {% endif %}
+    </div>
+{% endfor %}
+        </div>
+    </div>
+
+    <button type="submit" class="submit-button">Zapisz</button>
+</form>
+{% endblock %}
