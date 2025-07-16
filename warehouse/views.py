@@ -179,6 +179,8 @@ class LoadWZ(View):
         quantity = ''
         order_numbers = []
 
+        palletes_list = []
+
         if 'tfp' in all_text or 'TFP' in all_text:
 
             for num in range(len(lines)):
@@ -193,10 +195,11 @@ class LoadWZ(View):
                     wz_number = line.split('.:')[1].strip()
                 if "Nr rej./Nazwisko" in line and not car_number:
                     car_number = line.split('.:')[1].split('/')[0].strip()
-                if "Rodzaj palety Typ platności Ilość pobrana" in line:
-                    p_line = lines[num + 1]
+                if "Powierzone" in line:
+                    p_line = line
                     p_line = p_line.split(' ')
                     palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
+                    palletes_list.append(palettes)
                 if "Nr zam. klienta:" in line:
                     number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
                     # try:
@@ -251,6 +254,7 @@ class LoadWZ(View):
                     palette_dimensions = palette[2].lower().split('x')
                     palette_dimensions = f'{palette_dimensions[1]}x{palette_dimensions[0]}'
                     palettes = f'{palette_type};{palette_dimensions};{p_line[1]}'
+                    palletes_list.append(palettes)
                 if "nr zam.:" in line.lower():
                     number = line.lower().split("nr zam.:")[1].replace('jass', '').strip()
                     if number not in order_numbers:
@@ -273,13 +277,6 @@ class LoadWZ(View):
                     p_quantity = ''
 
         try:
-            palette = Palette.objects.get(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
-        except Palette.DoesNotExist:
-            palette = Palette.objects.create(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
-            palette.save()
-
-
-        try:
             delivery, created = Delivery.objects.get_or_create(
                 number=wz_number,
                 defaults={
@@ -295,12 +292,21 @@ class LoadWZ(View):
                     "errors": errors
                 })
 
-            delivery_palette = DeliveryPalette.objects.create(
-                delivery=delivery,
-                palette=palette,
-                quantity=int(palettes.split(';')[2])
-            )
-            delivery_palette.save()
+            for p in palletes_list:
+                palettes = p
+
+                try:
+                    palette = Palette.objects.get(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
+                except Palette.DoesNotExist:
+                    palette = Palette.objects.create(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
+                    palette.save()
+
+                delivery_palette = DeliveryPalette.objects.create(
+                    delivery=delivery,
+                    palette=palette,
+                    quantity=int(palettes.split(';')[2])
+                )
+                delivery_palette.save()
 
         except Provider.DoesNotExist:
             errors.append(f'Provider {provider} does not exist.')
