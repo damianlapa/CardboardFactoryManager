@@ -2,10 +2,25 @@
   cursor: pointer;
   user-select: none;
   color: #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.collapsible-header:hover {
-  color: #3377bb;
+.collapsible-header .left {
+  font-weight: bold;
+}
+
+.collapsible-header .right {
+  font-weight: bold;
+}
+
+.result-positive {
+  color: green;
+}
+
+.result-negative {
+  color: red;
 }
 
 .order-header-container {

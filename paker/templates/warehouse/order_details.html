@@ -39,7 +39,14 @@
   </div>
 
   <div class="right-header">
-    <h2 class="collapsible-header" id="results-toggle">Results ▸</h2>
+    <h2 class="collapsible-header" id="results-toggle">
+      <span class="left">
+        Results <span id="results-arrow">▸</span>
+      </span>
+      <span class="right {% if result < 0 %}result-negative{% else %}result-positive{% endif %}">
+        {{ result }}
+      </span>
+    </h2>
     <div id="results-section" style="display: none;">
     <table>
   <thead>

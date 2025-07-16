@@ -26,11 +26,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const toggle = document.getElementById("results-toggle");
     const section = document.getElementById("results-section");
+    const arrow = document.getElementById("results-arrow");
 
-    toggle.addEventListener("click", function() {
+    toggle.addEventListener("click", function () {
       const isVisible = section.style.display === "block";
       section.style.display = isVisible ? "none" : "block";
-      toggle.textContent = isVisible ? "Results ▸" : "Results ▾";
+      arrow.textContent = isVisible ? "▸" : "▾";
     });
 
 })
