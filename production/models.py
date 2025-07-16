@@ -100,7 +100,7 @@ class ProductionOrder(models.Model):
             cost[1] += energy
             cost[2] += usage
 
-        cost = ([round(cost[0], 2)], [round(cost[1], 2)], [round(cost[2], 2)])
+        cost = [round(cost[0], 2), round(cost[1], 2), round(cost[2], 2)]
 
         return cost
 
