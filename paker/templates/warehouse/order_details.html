@@ -30,6 +30,9 @@
 </script>
 <div class="order-header-container">
   <div class="left-header">
+    <a href="{% url 'warehouse:generate_order_inline' order_id=order.id %}" target="_blank">
+    🧾 Wygeneruj zlecenie (podgląd)
+    </a>
     <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
     <button id="settleOrderBtn">Settle Order</button>
     <input type="checkbox" id="order_delivered_cbx" name="order_delivered" {% if order.delivered %}checked{% endif %}>

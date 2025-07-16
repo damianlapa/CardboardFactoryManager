@@ -3,6 +3,7 @@ from warehouse.views import *
 from warehouse.ajax_views import *
 from warehouse.load_csv_views import *
 from warehouse.statstics_views import *
+from warehouse.create_order_views import GenerateOrderInlineView
 
 
 app_name = 'warehouse'
@@ -16,6 +17,10 @@ urlpatterns = [
     path('warehouse/warehouses/', WarehouseListView.as_view(), name='warehouse-list-view'),
     path('warehouse/<int:warehouse_id>/', WarehouseView.as_view(), name='warehouse-detail-view'),
     path('stock-details/<int:stock_id>/', StockView.as_view(), name='stock-details')
+]
+
+urlpatterns += [
+    path('generate-order-inline/<int:order_id>/', GenerateOrderInlineView.as_view(), name='generate_order_inline'),
 ]
 
 # delivery urls
