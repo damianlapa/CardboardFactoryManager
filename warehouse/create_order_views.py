@@ -94,7 +94,7 @@ class GenerateOrderInlineView(View):
         order_provider = order.provider.shortcut
 
         data = get_data_by_values(order_provider, num, year, f'20{year}')
-        
+
         if response.status_code != 200:
             return HttpResponse("Nie udało się pobrać wzoru", status=500)
 
@@ -111,7 +111,6 @@ class GenerateOrderInlineView(View):
         ws['A29'] = data[25]
         numer_zlecenia = f'{data[0]} {data[1]}/{data[2]} {data[18]}'
         nazwa_zlecenia = f'{data[0]} {data[1]}_{data[2]}_{data[18]}'
-        output_file_path = f'{DESTINATION}/zlecenie {nazwa_zlecenia}.xlsx'
         ws['J3'] = numer_zlecenia
 
         # DATY
@@ -195,5 +194,5 @@ class GenerateOrderInlineView(View):
             output,
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
-        response['Content-Disposition'] = 'inline; filename="zlecenie_test.xlsx"'
+        response['Content-Disposition'] = f'inline; filename="{nazwa_zlecenia}.xlsx"'
         return response
