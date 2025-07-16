@@ -314,7 +314,6 @@ class LoadWZ(View):
             errors.append(f'Error creating delivery: {str(e)}')
 
         for order in orders:
-            print(order)
             try:
                 p_quantity_counted = 0
                 for p in order[4].split(';'):
@@ -346,7 +345,7 @@ class LoadWZ(View):
             except Exception as e:
                 errors.append(f'Error with delivery item for order {order[0]}: {str(e)}')
 
-        return render(request, "warehouse/load_wz_result.html", {"results": result, "errors": errors})
+        return render(request, "warehouse/load_wz_result.html", {"results": result, "errors": errors, "delivery": delivery})
 
 
 class OrderListView(View):
@@ -361,7 +360,7 @@ class OrderListView(View):
         if all_orders:
             orders = Order.objects.all().order_by(sort_by)
         else:
-            orders = Order.objects.filter(delivered=True).order_by(sort_by)
+            orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
         if manual:
             year = request.GET.get('year')
             orders = Order.objects.filter(provider=Provider.objects.get(name=manual))

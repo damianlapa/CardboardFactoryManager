@@ -7,7 +7,9 @@
 {% block content %}
   <div class="import-results">
     <h1>Import Results</h1>
-
+    {% if delivery %}
+    <a href="{% url 'warehouse:delivery-detail-view' delivery_id=delivery.id %}"><h2>{{ delivery }}</h2></a>
+    {% endif %}
     {% if results %}
       <h2>Processed Orders</h2>
       <ul class="results-list">
