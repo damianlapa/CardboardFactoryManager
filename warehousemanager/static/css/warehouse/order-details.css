@@ -1,3 +1,13 @@
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  color: #333;
+}
+
+.collapsible-header:hover {
+  color: #3377bb;
+}
+
 .order-header-container {
   display: flex;
   flex-wrap: wrap;

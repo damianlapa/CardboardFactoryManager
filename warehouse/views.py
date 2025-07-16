@@ -348,11 +348,14 @@ class OrderListView(View):
         sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
         manual = request.GET.get('manual')
+        all_orders = request.GET.get('all')
 
         if order_direction == 'desc':
             sort_by = f'-{sort_by}'
-
-        orders = Order.objects.all().order_by(sort_by)
+        if all_orders:
+            orders = Order.objects.all().order_by(sort_by)
+        else:
+            orders = Order.objects.filter(delivered=True).order_by(sort_by)
         if manual:
             year = request.GET.get('year')
             orders = Order.objects.filter(provider=Provider.objects.get(name=manual))

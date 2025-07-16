@@ -32,14 +32,15 @@
   <div class="left-header">
     <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
     <button id="settleOrderBtn">Settle Order</button>
-    <input type="checkbox" id="order_delivered" name="order_delivered" {% if order.delivered %}checked{% endif %}>
-    <label for="order_delivered" class="label" id="delivery_cbx">Delivered</label>
-    <input type="checkbox" id="order_finished" {% if order.finished %}checked{% endif %}>
-    <label for="order_finished" class="label" id="finished_cbx">Finished</label>
+    <input type="checkbox" id="order_delivered_cbx" name="order_delivered" {% if order.delivered %}checked{% endif %}>
+    <label for="order_delivered_cbx" class="label" id="delivery_cbx">Delivered</label>
+    <input type="checkbox" id="order_finished_cbx" {% if order.finished %}checked{% endif %}>
+    <label for="order_finished_cbx" class="label" id="finished_cbx">Finished</label>
   </div>
 
   <div class="right-header">
-    <h2>RESULTS</h2>
+    <h2 class="collapsible-header" id="results-toggle">Results ▸</h2>
+    <div id="results-section" style="display: none;">
     <table>
   <thead>
     <tr>
@@ -104,7 +105,7 @@
     </tr>
   </tbody>
 </table>
-
+</div>
   </div>
 </div>
 <h2>Deliveries</h2>

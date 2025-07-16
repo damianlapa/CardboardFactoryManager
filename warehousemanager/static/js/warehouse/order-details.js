@@ -1,8 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const delivery = document.getElementById('delivery_cbx')
-    const finished = document.getElementById('finished_cbx')
-
-    console.log(order_id)
+    const delivery = document.getElementById('order_delivered_cbx')
+    const finished = document.getElementById('order_finished_cbx')
 
     delivery.addEventListener('click', function() {
         $.ajax({
@@ -25,5 +23,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     console.log(data)
                 })
     })
+
+    const toggle = document.getElementById("results-toggle");
+    const section = document.getElementById("results-section");
+
+    toggle.addEventListener("click", function() {
+      const isVisible = section.style.display === "block";
+      section.style.display = isVisible ? "none" : "block";
+      toggle.textContent = isVisible ? "Results ▸" : "Results ▾";
+    });
 
 })
