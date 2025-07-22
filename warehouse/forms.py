@@ -1,5 +1,5 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory
-from warehouse.models import DeliveryItem, Delivery, DeliveryPalette
+from warehouse.models import DeliveryItem, Delivery, DeliveryPalette, ProductSell2
 
 
 class DeliveryItemForm(ModelForm):
@@ -26,3 +26,9 @@ class DeliveryForm(ModelForm):
     class Meta:
         model = Delivery
         fields = ('date', 'car_number', 'telephone', 'description', 'processed', 'updated')
+
+
+class ProductSell2Form(ModelForm):
+    class Meta:
+        model = ProductSell2
+        fields = ['product', 'quantity', 'price', 'date']

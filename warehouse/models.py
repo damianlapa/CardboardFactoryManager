@@ -414,3 +414,47 @@ class ProductSell2(models.Model):
 
     def calculate_value(self):
         return round(float(self.price) * float(self.quantity), 2)
+
+
+class CustomerDelivery(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    date = models.DateField()
+    description = models.CharField(max_length=256, null=True, blank=True)
+    palettes = models.ManyToManyField(Palette, through='DeliveryCustomerPalette', blank=True)
+    items = models.ManyToManyField(ProductSell2, through='DeliverySell', blank=True)
+
+    def __str__(self):
+        return f'{self.customer} {self.date}'
+
+    class Meta:
+        ordering = ['-date']
+
+
+class DeliveryCustomerPalette(models.Model):
+    customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
+
+
+class DeliverySell(models.Model):
+    customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
+    item = models.ForeignKey(ProductSell2, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return f'{self.customer_delivery} :: {self.item}'
+
+
+class CustomerPalette(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.customer} :: {self.palette} :: {self.quantity}'
+
+    class Meta:
+        unique_together = ['customer', 'palette']
+        ordering = ['customer']
