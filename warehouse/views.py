@@ -27,6 +27,10 @@ from django.views.generic import ListView
 from django.db import transaction
 from django.contrib.auth.decorators import user_passes_test
 
+from django.utils.timezone import now
+from django.db.models import Sum
+from collections import defaultdict
+
 
 def load_orders(year, row=None, division=None):
     def get_flute(text):
@@ -80,10 +84,29 @@ def load_orders(year, row=None, division=None):
                 provider = Provider(name=data[0], shortcut=data[0])
                 provider.save()
 
+            flute = get_flute(data[19].upper().strip())
+            dimensions = f'{data[12].strip()}x{data[13].strip()}'
+            product_additional_name = data[24].upper().strip()
+
+            product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
+
+            # Pobierz lub utwórz produkt
+            try:
+                product = Product.objects.get(name=product_name)
+            except Product.DoesNotExist:
+                if all((product_name, dimensions, flute)):
+                    product = Product.objects.create(
+                        name=product_name,
+                        dimensions=dimensions,
+                        flute=flute,
+                        gsm=0  # lub odczytaj z danych, jeśli dostępne
+                    )
+
             try:
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                           provider=Provider.objects.get(shortcut=data[0].upper().strip()))
                 result += f'{order} already exists<br>'
+
             except Order.DoesNotExist:
                 order = Order(
                     customer=customer,
@@ -100,7 +123,8 @@ def load_orders(year, row=None, division=None):
                     order_quantity=data[14].upper().strip(),
                     delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
                     price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                        22] else 0
+                        22] else 0,
+                    product=product
                 )
                 order.save()
                 result += f'{order} saved<br>'
@@ -423,7 +447,7 @@ class OrderDetailView(View):
             other = order.other_costs()
             total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
             earnings = order.total_sales()
-            result = earnings - total_expenses
+            result = round(earnings - total_expenses, 2)
             if production_units:
                 last_unit = list(production_units)[-1]
                 lq = last_unit.quantity_end
@@ -646,15 +670,10 @@ class ProductSellCreateView(CreateView):
         return super().form_valid(form)
 
 
-from django.utils.timezone import now
-from django.db.models import Sum
-from collections import defaultdict
-
-
 class PaletteView(View):
     def get(self, request):
         palettes = Palette.objects.all()
-        customers = Buyer.objects.all()
+        customers = Buyer.objects.all().exclude(name__in=["JASS", "TFP"])
 
         # 1. Dane klientów (pomijamy dostawców JASS, TFP)
         customer_palette_map = {

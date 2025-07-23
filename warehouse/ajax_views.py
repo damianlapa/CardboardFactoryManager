@@ -71,7 +71,7 @@ def settle_order(request, order_id):
 
                     stock, created = Stock.objects.get_or_create(
                         stock_type=product_type,
-                        name=f'{product_type} | {dimensions}'
+                        name=f'{product.name}'
                     )
 
                     warehouse_stock, created = WarehouseStock.objects.get_or_create(
