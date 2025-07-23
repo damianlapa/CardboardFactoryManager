@@ -504,6 +504,14 @@ class WorkStationQualification(models.Model):
         return f"{self.person} → {self.workstation} ({self.acquired_at})"
 
 
+class LocalSetting(models.Model):
+    name = models.CharField(max_length=64)
+    value = models.CharField(max_length=128)
+
+    def __str__(self):
+        return f'Setting "{self.name}"'
+
+
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=6, blank=True)

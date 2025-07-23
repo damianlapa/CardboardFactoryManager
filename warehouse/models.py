@@ -433,7 +433,7 @@ class CustomerDelivery(models.Model):
 class DeliveryCustomerPalette(models.Model):
     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
     palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
@@ -450,7 +450,7 @@ class DeliverySell(models.Model):
 class CustomerPalette(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.customer} :: {self.palette} :: {self.quantity}'
