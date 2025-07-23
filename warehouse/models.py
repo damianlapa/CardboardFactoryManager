@@ -67,7 +67,7 @@ class Order(models.Model):
         return f'{self.provider} {self.order_id} {self.name}'
 
     def total_sales(self):
-        sells = ProductSell2.objects.filter(order=self)
+        sells = ProductSell3.objects.filter(order=self)
         result = 0
         for s in sells:
             result += s.calculate_value()
