@@ -15,7 +15,7 @@ from django.db.models.deletion import ProtectedError
 from warehouse.gs_connection import *
 from warehouse.models import *
 from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet
-from warehousemanager.models import Buyer
+from warehousemanager.models import Buyer, LocalSetting
 
 from production.models import ProductionOrder, ProductionUnit
 
@@ -645,4 +645,86 @@ class ProductSellCreateView(CreateView):
 
         return super().form_valid(form)
 
+
+from django.utils.timezone import now
+from django.db.models import Sum
+from collections import defaultdict
+
+
+class PaletteView(View):
+    def get(self, request):
+        palettes = Palette.objects.all()
+        customers = Buyer.objects.all()
+
+        # 1. Dane klientów (pomijamy dostawców JASS, TFP)
+        customer_palette_map = {
+            (cp.customer_id, cp.palette_id): cp.quantity
+            for cp in CustomerPalette.objects.exclude(customer__name__in=["JASS", "TFP"])
+        }
+
+        header = [''] + [p.name for p in palettes]
+        result = []
+
+        for customer in customers:
+            row = [customer]
+            for palette in palettes:
+                quantity = customer_palette_map.get((customer.id, palette.id), '-')
+                row.append(quantity)
+            result.append(row)
+
+        # 2. Stan bazowy dostawców (z CustomerPalette)
+        provider_inventory = defaultdict(dict)
+
+        for cp in CustomerPalette.objects.filter(customer__name__in=["JASS", "TFP"]):
+            provider_inventory[cp.customer.name][cp.palette.name] = cp.quantity
+
+        print(provider_inventory)
+
+        # 3. Data synchronizacji
+        try:
+            sync = LocalSetting.objects.get(name="delivery_sync")
+            sync_date = datetime.datetime.strptime(sync.value, "%d-%m-%Y").date()
+        except (LocalSetting.DoesNotExist, ValueError):
+            sync_date = now().date()
+
+        # 4. Dostawy od daty synchronizacji
+        providers = Provider.objects.filter(name__in=["JASS", "TFP"])
+        provider_deliveries = defaultdict(dict)
+
+        for provider in providers:
+            # wszystkie dostawy danego providera od daty synchronizacji
+            deliveries = Delivery.objects.filter(provider=provider, date__gte=sync_date)
+
+            # sumujemy dostarczone palety
+            delivery_palettes = (
+                DeliveryPalette.objects
+                .filter(delivery__in=deliveries)
+                .values('palette__name')
+                .annotate(total=Sum('quantity'))
+            )
+
+            for dp in delivery_palettes:
+                pname = provider.name
+                palette_name = dp['palette__name']
+                quantity = dp['total']
+
+                # zapisz same dostawy
+                provider_deliveries[pname][palette_name] = quantity
+
+                # dodaj do stanu końcowego (bazowy + dostawy)
+                if palette_name in provider_inventory[pname]:
+                    provider_inventory[pname][palette_name] += quantity
+                else:
+                    provider_inventory[pname][palette_name] = quantity
+
+        # 5. Kontekst
+        context = {
+            'header': header,
+            'result': result,
+            'provider_deliveries': dict(provider_deliveries),     # same dostawy
+            'provider_inventory': dict(provider_inventory),       # stan po bazie + dostawach
+            'sync_date': sync_date,
+        }
+
+        return render(request, 'warehouse/palette.html', context)
 

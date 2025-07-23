@@ -56,3 +56,8 @@ urlpatterns += [
     path('customer-distribution/', customer_distribution, name='customer-distribution'),
     path('customer-orders/', customer_orders, name='customer-orders-statistic'),
 ]
+
+#palette
+urlpatterns += [
+    path('palette/', PaletteView.as_view(), name='palette-list-view'),
+]
