@@ -458,3 +458,22 @@ class CustomerPalette(models.Model):
     class Meta:
         unique_together = ['customer', 'palette']
         ordering = ['customer']
+
+
+class ProductSell3(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    date = models.DateField()
+
+    class Meta:
+        ordering = ['date']
+
+    def __str__(self):
+        return f'{self.product} {self.quantity} -> {self.customer}'
+
+    def calculate_value(self):
+        return round(float(self.price) * float(self.quantity), 2)

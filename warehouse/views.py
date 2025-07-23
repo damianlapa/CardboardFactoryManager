@@ -413,6 +413,7 @@ class OrderDetailView(View):
         warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
 
         products = [order.product]
+
         warehouse_products = None
         for p in products:
             stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
@@ -454,6 +455,23 @@ class OrderDetailView(View):
                 ld = last_unit.end.date()
         except ProductionOrder.DoesNotExist:
             production_units = []
+
+        # product sell 3
+        products_sell = Product.objects.all()
+        default_product = order.product
+
+        customers_sell = Buyer.objects.all()
+        default_customer = order.customer
+
+        warehouse_stocks_sell = WarehouseStock.objects.all()
+        if settlements:
+            history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
+
+            for h in history:
+                if h.warehouse_stock.warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH':
+                    print(h)
+                    default_warehouse_stock = h.warehouse_stock
+
         return render(request, 'warehouse/order_details.html', locals())
 
 
@@ -747,3 +765,35 @@ class PaletteView(View):
 
         return render(request, 'warehouse/palette.html', context)
 
+
+def add_product_sell3(request):
+    if request.method == "POST":
+        with transaction.atomic():
+            product = Product.objects.get(id=int(request.POST.get("product")))
+            customer = Buyer.objects.get(id=int(request.POST.get("customer")))
+            warehouse_stock = WarehouseStock.objects.get(id=int(request.POST.get("warehouse_stock")))
+            order = Order.objects.get(id=int(request.POST.get("order")))
+            quantity = request.POST.get("quantity_sell")
+            date = request.POST.get("date_sell")
+            ProductSell3.objects.create(
+                product=product,
+                customer=customer,
+                warehouse_stock=warehouse_stock,
+                order=order,
+                quantity=quantity,
+                price=request.POST.get("price_sell"),
+                date=date,
+            )
+
+            WarehouseStockHistory.objects.create(
+                warehouse_stock=warehouse_stock,
+                quantity_before=warehouse_stock.quantity,
+                quantity_after=warehouse_stock.quantity - int(quantity),
+                date=date
+            )
+
+            warehouse_stock.quantity -= int(quantity)
+
+            warehouse_stock.save()
+
+        return redirect(request.META.get('HTTP_REFERER', '/'))

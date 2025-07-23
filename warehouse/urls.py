@@ -61,3 +61,8 @@ urlpatterns += [
 urlpatterns += [
     path('palette/', PaletteView.as_view(), name='palette-list-view'),
 ]
+
+# product sell
+urlpatterns += [
+    path('product-sell3/', add_product_sell3, name='add_product_sell3'),
+]

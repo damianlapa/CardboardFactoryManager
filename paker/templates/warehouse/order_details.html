@@ -26,7 +26,6 @@
       {id: "{{ st.id }}", name: "{{ st.stock_type }}"},
     {% endfor %}
   ];
-  console.log(availableStockTypes);
 </script>
 <div class="order-header-container">
   <div class="left-header">
@@ -115,6 +114,63 @@
     </tr>
   </tbody>
 </table>
+</div>
+    <button id="openProductSellModal">➕ Dodaj sprzedaż</button>
+<div id="productSellModal" class="modal">
+  <div class="modal-content">
+    <span class="closesell">&times;</span>
+    <h2>Nowa sprzedaż</h2>
+
+<form method="post" action="{% url 'warehouse:add_product_sell3' %}">
+  {% csrf_token %}
+
+  <label>Product:</label>
+  <select name="product" required>
+    {% for product_sell in products_sell %}
+      {% if product_sell.id == default_product.id %}
+        <option value="{{ product_sell.id }}" selected>{{ product_sell.name }}</option>
+      {% else %}
+        <option value="{{ product_sell.id }}">{{ product_sell.name }}</option>
+      {% endif %}
+    {% endfor %}
+  </select><br>
+
+  <label>Customer:</label>
+  <select name="customer">
+    {% for customer_sell in customers_sell %}
+      {% if customer_sell.id == default_customer.id %}
+        <option value="{{ customer_sell.id }}" selected>{{ customer_sell }}</option>
+      {% else %}
+        <option value="{{ customer_sell.id }}">{{ customer_sell }}</option>
+      {% endif %}
+    {% endfor %}
+  </select><br>
+
+  <label>Stock:</label>
+  <select name="warehouse_stock">
+    {% for stock_sell in warehouse_stocks_sell %}
+      {% if stock_sell.id == default_warehouse_stock.id %}
+        <option value="{{ stock_sell.id }}" selected>{{ stock_sell }}</option>
+      {% else %}
+        <option value="{{ stock_sell.id }}">{{ stock_sell }}</option>
+      {% endif %}
+    {% endfor %}
+  </select><br>
+
+  <input type="hidden" name="order" value="{{ order.id }}">
+
+  <label>Quantity:</label>
+  <input type="number" name="quantity_sell" min="1" value="1" required><br>
+
+  <label>Price:</label>
+  <input type="number" name="price_sell" step="0.01" required><br>
+
+  <label>Date:</label>
+  <input type="date" name="date_sell" value="{{ today }}" required><br>
+
+  <input type="submit" value="Save">
+</form>
+  </div>
 </div>
   </div>
 </div>
@@ -359,6 +415,28 @@
 
 {% endblock %}
 {% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("productSellModal");
+  const openBtn = document.getElementById("openProductSellModal");
+  const closeBtn = modal.querySelector(".closesell");
+
+  openBtn.onclick = function () {
+    modal.style.display = "block";
+    console.log('ok')
+  };
+
+  closeBtn.onclick = function () {
+    modal.style.display = "none";
+  };
+
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  });
+});
+</script>
 <script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
 <script src="{% static 'js/warehouse/order-details.js' %}"></script>
 {% endblock %}
