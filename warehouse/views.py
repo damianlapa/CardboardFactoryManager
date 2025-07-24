@@ -797,3 +797,89 @@ def add_product_sell3(request):
             warehouse_stock.save()
 
         return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
+def assign_products_to_orders(year=None, row=None, division=None):
+    def get_flute(text):
+        waves = 0
+        for letter in text:
+            if letter == '3':
+                waves = 3
+                break
+            elif letter == '5':
+                waves = 5
+                break
+        if waves == 3:
+            if 'E' in text.upper():
+                return 'E'
+            if 'B' in text.upper():
+                return 'B'
+            if 'C' in text.upper():
+                return 'C'
+        elif waves == 5:
+            if 'EB' in text.upper():
+                return 'EB'
+            if 'BC' in text.upper():
+                return 'BC'
+        return None
+
+    year = year if year else datetime.datetime.today().year
+    year = 2025
+    data_all = get_all(str(year)) if year else get_all(str(datetime.datetime.today().year))
+    result = ''
+    row = row if row else 100
+    division = division if division else '10, 1500'
+
+    if division:
+        start, end = division.split(',')
+        rows = [r for r in range(int(start), int(end) + 1)]
+    else:
+        rows = [row]
+
+    for row in rows:
+        try:
+            data = data_all[row]
+
+            # Klucze identyfikujące zlecenie
+            provider_code = data[0].upper().strip()
+            print(provider_code)
+            order_id = f'{data[1].upper().strip()}/{data[2].upper().strip()}'
+
+            # Szukamy istniejącego zlecenia BEZ przypisanego produktu
+            try:
+                order = Order.objects.get(order_id=order_id, provider__shortcut=provider_code, product__isnull=True)
+                print(order)
+            except Order.DoesNotExist:
+                # result += f'Order {provider_code}/{order_id} already has product or does not exist<br>'
+                continue
+
+            # Tworzymy dane produktu
+            customer_name = data[18].upper().strip()
+            flute = get_flute(data[19].upper().strip())
+            dimensions = f'{data[12].strip()}x{data[13].strip()}'
+            product_additional_name = data[24].upper().strip()
+            product_name = f'{customer_name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
+
+            if not all((product_name, dimensions, flute)):
+                result += f'Incomplete product data in row {row}<br>'
+                continue
+
+            # Szukamy lub tworzymy produkt
+            product, _ = Product.objects.get_or_create(
+                name=product_name,
+                defaults={
+                    'dimensions': dimensions,
+                    'flute': flute,
+                    'gsm': 0  # możesz podmienić na konkretną wartość jeśli dostępna
+                }
+            )
+
+            # Przypisujemy produkt do zlecenia
+            order.product = product
+            order.save()
+            result += f'Order {provider_code}/{order_id} updated with product<br>'
+
+        except Exception as e:
+            result += f'Error in row {row}: {e}<br>'
+
+    return HttpResponse(result)
