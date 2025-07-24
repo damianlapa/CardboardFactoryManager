@@ -108,26 +108,31 @@ def load_orders(year, row=None, division=None):
                 result += f'{order} already exists<br>'
 
             except Order.DoesNotExist:
+                price = int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
+                        22] else 0
+                order_date = data[6].upper().strip() if data[6].upper().strip() else None
                 order = Order(
                     customer=customer,
                     provider=provider,
                     order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                     customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
-                    order_date=data[6].upper().strip() if data[6].upper().strip() else None,
+                    order_date=order_date,
                     order_year=data[5][:4] if data[5] else data[6][:4],
-                    delivery_date=data[7].upper().strip() if data[7].upper().strip() else None,
+                    delivery_date=None,
                     production_date=None,
                     dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
                     name=data[19].upper().strip(),
                     weight=0,
                     order_quantity=data[14].upper().strip(),
                     delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
-                    price=int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                        22] else 0,
+                    price=price,
                     product=product
                 )
-                order.save()
-                result += f'{order} saved<br>'
+                if price and order_date:
+                    order.save()
+                    result += f'{order} saved<br>'
+                else:
+                    result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date'
 
         except Exception as e:
             result += f'{e}<br>'
@@ -890,6 +895,7 @@ def clear_orders(request):
 
     for o in orders:
         o.delivered_quantity = 0
+        o.delivery_date = None
         o.delivered = False
         o.finished = False
         o.save()

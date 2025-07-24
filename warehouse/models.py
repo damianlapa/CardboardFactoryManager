@@ -220,6 +220,7 @@ class DeliveryItem(models.Model):
         if self.order.order_quantity:
             if self.order.delivered_quantity / self.order.order_quantity > 0.92 and not self.order.delivered:
                 self.order.delivered = True
+                self.order.delivery_date = self.delivery.date
                 self.order.save()
 
         self.processed = True
