@@ -883,3 +883,34 @@ def assign_products_to_orders(year=None, row=None, division=None):
             result += f'Error in row {row}: {e}<br>'
 
     return HttpResponse(result)
+
+
+def clean_warehouse_app(request):
+    # Resetuj flagi przetworzenia w Delivery
+    for delivery in Delivery.objects.all():
+        delivery.processed = False
+        delivery.save()
+
+    # Usuwanie danych zależnych w odpowiedniej kolejności
+    print("Usuwanie danych sprzedażowych...")
+    ProductSell3.objects.all().delete()
+    ProductSell2.objects.all().delete()
+    ProductSell.objects.all().delete()
+    DeliverySell.objects.all().delete()
+
+    print("Usuwanie danych dostaw klienta...")
+    DeliveryCustomerPalette.objects.all().delete()
+    CustomerDelivery.objects.all().delete()
+
+    print("Usuwanie rozliczeń i historii stanów...")
+    WarehouseStockHistory.objects.all().delete()
+    OrderSettlementProduct.objects.all().delete()
+    OrderSettlement.objects.all().delete()
+
+    print("Usuwanie stanów magazynowych...")
+    WarehouseStock.objects.all().delete()
+    Stock.objects.all().delete()
+    StockSupply.objects.all().delete()
+
+    print("Czyszczenie zakończone.")
+

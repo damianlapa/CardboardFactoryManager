@@ -66,4 +66,5 @@ urlpatterns += [
 urlpatterns += [
     path('product-sell3/', add_product_sell3, name='add_product_sell3'),
     path('add-products/', assign_products_to_orders),
+    path('clear/', clean_warehouse_app),
 ]

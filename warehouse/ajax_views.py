@@ -1,5 +1,5 @@
 import datetime
-
+from django.shortcuts import render, HttpResponse, redirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -91,11 +91,13 @@ def settle_order(request, order_id):
                     warehouse_stock.quantity = warehouse_stock.quantity + int(product_quantity)
                     warehouse_stock.save()
 
-            return JsonResponse({"success": True})
+            return redirect(request.META.get('HTTP_REFERER', '/'))
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
 
-    return JsonResponse({"success": False, "error": "Invalid request"})
+    # return JsonResponse({"success": False, "error": "Invalid request"})
+
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def order_status(request):
