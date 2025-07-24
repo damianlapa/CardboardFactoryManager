@@ -212,6 +212,16 @@ class DeliveryItem(models.Model):
 
         warehouse_stock.increase_quantity(self.quantity if not quantity else quantity)
 
+        quantity_to_add = self.quantity if not quantity else quantity
+
+        self.order.delivered_quantity += quantity_to_add
+        self.order.save()
+
+        if self.order.order_quantity:
+            if self.order.delivered_quantity / self.order.order_quantity > 0.92 and not self.order.delivered:
+                self.order.delivered = True
+                self.order.save()
+
         self.processed = True
         self.save()
 

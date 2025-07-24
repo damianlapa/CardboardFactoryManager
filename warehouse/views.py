@@ -883,3 +883,13 @@ def assign_products_to_orders(year=None, row=None, division=None):
             result += f'Error in row {row}: {e}<br>'
 
     return HttpResponse(result)
+
+
+def clear_orders(request):
+    orders = Order.objects.all()
+
+    for o in orders:
+        o.delivered_quantity = 0
+        o.delivered = False
+        o.finished = False
+        o.save()
