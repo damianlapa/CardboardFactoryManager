@@ -931,6 +931,7 @@ def assign_price_to_orders(request):
 
                 if order_date:
                     result += f'Order {provider_code}/{order_id} updated with date<br>'
+                    order.save()
                 else:
                     result += f'Order {provider_code}/{order_id} no date<br>'
 
