@@ -889,6 +889,44 @@ def assign_products_to_orders(year=None, row=None, division=None):
 
     return HttpResponse(result)
 
+def assign_price_to_orders(request):
+    year = 2025
+    data_all = get_all(str(year)) if year else get_all(str(datetime.datetime.today().year))
+    result = ''
+    division = '10, 1500'
+    start, end = division.split(',')
+    rows = [r for r in range(int(start), int(end) + 1)]
+
+    for row in rows:
+        try:
+            data = data_all[row]
+
+            # Klucze identyfikujące zlecenie
+            provider_code = data[0].upper().strip()
+            order_id = f'{data[1].upper().strip()}/{data[2].upper().strip()}'
+
+            # Szukamy istniejącego zlecenia BEZ przypisanego produktu
+            try:
+                order = Order.objects.get(order_id=order_id, provider__shortcut=provider_code)
+                print(order)
+            except Order.DoesNotExist:
+                # result += f'Order {provider_code}/{order_id} already has product or does not exist<br>'
+                continue
+            if not order.price:
+                price = int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
+                    22] else 0
+                if price:
+                    order.price = price
+                    order.save()
+                    result += f'Order {provider_code}/{order_id} updated with price<br>'
+                else:
+                    result += f'Order {provider_code}/{order_id} no price<br>'
+
+        except Exception as e:
+            result += f'Error in row {row}: {e}<br>'
+
+    return HttpResponse(result)
+
 
 def clear_orders(request):
     orders = Order.objects.all()
