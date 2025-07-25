@@ -922,6 +922,18 @@ def assign_price_to_orders(request):
                 else:
                     result += f'Order {provider_code}/{order_id} no price<br>'
 
+            if not order.order_date:
+                order_date = data[6].upper().strip() if data[6].upper().strip() else None
+                order_year = data[5][:4] if data[5] else data[6][:4]
+
+                order.order_date = order_date
+                order.order_year = order_year
+
+                if order_date:
+                    result += f'Order {provider_code}/{order_id} updated with date<br>'
+                else:
+                    result += f'Order {provider_code}/{order_id} no date<br>'
+
         except Exception as e:
             result += f'Error in row {row}: {e}<br>'
 
