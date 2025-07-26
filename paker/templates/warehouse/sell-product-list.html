@@ -63,7 +63,7 @@
       <td>{{ sell.warehouse_stock.warehouse.name }}</td>
       <td>{{ sell.quantity }}</td>
       <td>{{ sell.price|floatformat:2 }} zł</td>
-      <td>{{ sell.total_value|floatformat:2 }} zł</td>
+      <td>{{ sell.calculate_value|floatformat:2 }} zł</td>
       <td>{{ sell.customer }}</td>
     </tr>
     {% empty %}

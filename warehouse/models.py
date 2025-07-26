@@ -488,3 +488,27 @@ class ProductSell3(models.Model):
 
     def calculate_value(self):
         return round(float(self.price) * float(self.quantity), 2)
+
+
+class ProductComplex(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
+    dimensions = models.CharField(max_length=32, null=True, blank=True)
+    flute = models.CharField(max_length=8, null=True, blank=True)
+    gsm = models.PositiveIntegerField(default=0)
+    parts = models.ManyToManyField(Product, through='ProductComplexParts', blank=True)
+
+    def __str__(self):
+        return f'{self.name}'
+
+    class Meta:
+        ordering = ['name']
+
+
+class ProductComplexParts(models.Model):
+    product = models.ForeignKey(ProductComplex, on_delete=models.PROTECT)
+    part = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.product} :: {self.part} :: {self.quantity}'

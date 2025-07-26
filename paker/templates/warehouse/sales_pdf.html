@@ -1,0 +1,22 @@
+<!-- templates/sales_pdf.html (minimalny styl dla PDF) -->
+<h2>Raport sprzedaży od {{ start_date }} do {{ end_date }}</h2>
+<table border="1" cellpadding="5" cellspacing="0">
+  <tr>
+    <th>Data</th>
+    <th>Produkt</th>
+    <th>Ilość</th>
+    <th>Cena</th>
+    <th>Wartość</th>
+    <th>Klient</th>
+  </tr>
+  {% for s in sales %}
+  <tr>
+    <td>{{ s.date }}</td>
+    <td>{{ s.product }}</td>
+    <td>{{ s.quantity }}</td>
+    <td>{{ s.price }}</td>
+    <td>{{ s.calculate_value }}</td>
+    <td>{{ s.customer }}</td>
+  </tr>
+  {% endfor %}
+</table>

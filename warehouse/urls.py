@@ -4,6 +4,7 @@ from warehouse.ajax_views import *
 from warehouse.load_csv_views import *
 from warehouse.statstics_views import *
 from warehouse.create_order_views import GenerateOrderInlineView
+from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
 
 
 app_name = 'warehouse'
@@ -57,7 +58,7 @@ urlpatterns += [
     path('customer-orders/', customer_orders, name='customer-orders-statistic'),
 ]
 
-#palette
+# palette
 urlpatterns += [
     path('palette/', PaletteView.as_view(), name='palette-list-view'),
 ]
@@ -67,5 +68,13 @@ urlpatterns += [
     path('product-sell3/', add_product_sell3, name='add_product_sell3'),
     path('add-products/', assign_products_to_orders),
     path('add-price/', assign_price_to_orders),
-    path('clr/', clear_orders)
+    path('clr/', clear_orders),
+    path('sales-report/', sales_report_view, name='sales_report'),
+    path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
+]
+
+# report
+urlpatterns += [
+    path('sales-report/', sales_report_view, name='sales_report'),
+    path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
 ]

@@ -1,0 +1,35 @@
+{% extends '__base3__.html' %}
+{% block content %}
+<h2>Raport sprzedaży</h2>
+
+<form method="get">
+  Od: <input type="date" name="start" value="{{ start_date }}">
+  Do: <input type="date" name="end" value="{{ end_date }}">
+  <button type="submit">Filtruj</button>
+</form>
+
+<table border="1">
+  <tr>
+    <th>Data</th>
+    <th>Produkt</th>
+    <th>Ilość</th>
+    <th>Cena</th>
+    <th>Wartość</th>
+    <th>Klient</th>
+  </tr>
+  {% for s in sales %}
+  <tr>
+    <td>{{ s.date }}</td>
+    <td>{{ s.product }}</td>
+    <td>{{ s.quantity }}</td>
+    <td>{{ s.price }}</td>
+    <td>{{ s.calculate_value }}</td>
+    <td>{{ s.customer }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% if start_date and end_date %}
+  <a href="{% url 'warehouse:sales_pdf' %}?start={{ start_date }}&end={{ end_date }}" target="_blank">Pobierz PDF</a>
+{% endif %}
+{% endblock %}

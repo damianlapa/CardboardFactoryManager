@@ -655,7 +655,7 @@ class LoadDeliveryToGSFile(View):
 
 class SellProductList(View):
     def get(self, request):
-        sells = ProductSell.objects.select_related('warehouse_stock', 'customer').order_by('-date')
+        sells = ProductSell3.objects.select_related('warehouse_stock', 'customer').order_by('-date')
         warehouse_stocks = WarehouseStock.objects.filter(quantity__gte=0, warehouse=Warehouse.objects.get(name="MAGAZYN WYROBÓW GOTOWYCH"))
         context = {
             "warehouse_stocks": warehouse_stocks,
