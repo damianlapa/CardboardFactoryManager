@@ -1,9 +1,11 @@
+import math
+
 from django.shortcuts import render
 from datetime import datetime
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-from .models import ProductSell3
+from .models import ProductSell3, WarehouseStockHistory, WarehouseStock
 
 
 def sales_report_view(request):
@@ -38,29 +40,28 @@ def sales_pdf_view(request):
     start_raw = request.GET.get('start')
     end_raw = request.GET.get('end')
 
-    print("START RAW:", start_raw)
-    print("END RAW:", end_raw)
-
     start_date = parse_custom_date(start_raw)
     end_date = parse_custom_date(end_raw)
-
-    print("START PARSED:", start_date)
-    print("END PARSED:", end_date)
 
     if not start_date or not end_date:
         return HttpResponse("Nieprawidłowy format daty!", status=400)
 
-    result = []
-    sales = ProductSell3.objects.filter(date__range=(start_date, end_date))
+    # Pobranie sprzedaży wraz z relacjami
+    sales = ProductSell3.objects.filter(date__range=(start_date, end_date))\
+        .select_related('product', 'order', 'warehouse_stock', 'customer')
+
+    sales_with_materials = []
 
     for s in sales:
-        row = []
-        row.append(s)
-
+        materials = s.get_used_materials()
+        sales_with_materials.append({
+            'sale': s,
+            'materials': materials
+        })
 
     template = get_template('warehouse/sales_pdf.html')
     html = template.render({
-        'sales': sales,
+        'sales_with_materials': sales_with_materials,
         'start_date': start_date,
         'end_date': end_date,
     })

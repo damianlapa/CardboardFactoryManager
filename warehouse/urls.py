@@ -69,8 +69,6 @@ urlpatterns += [
     path('add-products/', assign_products_to_orders),
     path('add-price/', assign_price_to_orders),
     path('clr/', clear_orders),
-    path('sales-report/', sales_report_view, name='sales_report'),
-    path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
 ]
 
 # report

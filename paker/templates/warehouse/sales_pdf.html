@@ -1,22 +1,93 @@
-<!-- templates/sales_pdf.html (minimalny styl dla PDF) -->
-<h2>Raport sprzedaży od {{ start_date }} do {{ end_date }}</h2>
-<table border="1" cellpadding="5" cellspacing="0">
-  <tr>
-    <th>Data</th>
-    <th>Produkt</th>
-    <th>Ilość</th>
-    <th>Cena</th>
-    <th>Wartość</th>
-    <th>Klient</th>
-  </tr>
-  {% for s in sales %}
-  <tr>
-    <td>{{ s.date }}</td>
-    <td>{{ s.product }}</td>
-    <td>{{ s.quantity }}</td>
-    <td>{{ s.price }}</td>
-    <td>{{ s.calculate_value }}</td>
-    <td>{{ s.customer }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Report</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 11px;
+            margin: 40px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .sale-section {
+            margin-bottom: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #aaa;
+            padding: 6px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .material-table th, .material-table td {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Sales Report: {{ start_date }} - {{ end_date }}</h1>
+
+{% for entry in sales_with_materials %}
+    <div class="sale-section">
+        <table>
+            <tr>
+                <th>Product</th>
+                <td>{{ entry.sale.product.name }}</td>
+                <th>Customer</th>
+                <td>{{ entry.sale.customer.name }}</td>
+            </tr>
+            <tr>
+                <th>Quantity</th>
+                <td>{{ entry.sale.quantity }}</td>
+                <th>Date</th>
+                <td>{{ entry.sale.date }}</td>
+            </tr>
+        </table>
+
+        <table class="material-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Material name</th>
+                    <th>Quantity used</th>
+                    <th>Surface (m2)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mat in entry.materials %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ mat.name }}</td>
+                        <td>{{ mat.used_quantity }}</td>
+                        <td>{% if mat.area_m2 %}{{ mat.area_m2 }}{% else %}-{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4"><em>No material data available</em></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endfor %}
+
+</body>
+</html>

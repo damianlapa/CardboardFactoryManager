@@ -1,5 +1,6 @@
 import datetime
-
+import math
+import re
 from django.db import models
 from warehousemanager.models import Buyer
 from django.db.models import UniqueConstraint
@@ -488,6 +489,62 @@ class ProductSell3(models.Model):
 
     def calculate_value(self):
         return round(float(self.price) * float(self.quantity), 2)
+
+    def get_used_materials(self):
+        if not self.warehouse_stock:
+            return []
+
+        results = []
+
+        history_qs = WarehouseStockHistory.objects.filter(
+            warehouse_stock=self.warehouse_stock,
+            date__lte=self.date,
+            order_settlement__isnull=False
+        ).select_related('order_settlement__material__stock')
+
+        for h in history_qs:
+            before = h.quantity_before
+            after = h.quantity_after
+            delta = after - before
+
+            if delta == 0:
+                continue  # unikamy dzielenia przez zero
+
+            if self.quantity == delta:
+                ratio = 1
+            else:
+                ratio = self.quantity / delta
+
+            # zaokrąglenie zużycia materiału
+            used_qty = math.ceil(h.order_settlement.material_quantity * ratio)
+
+            # nazwa materiału
+            name = h.order_settlement.material.stock.name
+
+            # wyciąganie powierzchni
+            area_m2 = self._extract_area_from_name(name, used_qty)
+
+            results.append({
+                'name': name,
+                'used_quantity': used_qty,
+                'area_m2': area_m2
+            })
+
+        return results
+
+    def _extract_area_from_name(self, name, quantity=1):
+        """
+        Szuka wzorca [długość x szerokość] w mm w nazwie materiału
+        i zwraca powierzchnię w m² dla podanej liczby sztuk.
+        """
+        pattern = r'\[(\d+)[xX](\d+)\]'
+        match = re.search(pattern, name)
+        if match:
+            length = int(match.group(1))  # mm
+            width = int(match.group(2))  # mm
+            m2 = (length / 1000) * (width / 1000)  # m² dla 1 sztuki
+            return round(m2 * quantity, 2)  # m² łącznie
+        return None
 
 
 class ProductComplex(models.Model):
