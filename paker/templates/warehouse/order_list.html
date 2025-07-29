@@ -55,7 +55,9 @@
         <td>{{ order.price }}</td>
         <td>{{ order.total_area }}</td>
         <td>
-          {% if order.finished %}
+          {% if order.check_if_settled %}
+            Settled
+          {% elif order.finished %}
             Finished
           {% elif order.delivered %}
             Delivered

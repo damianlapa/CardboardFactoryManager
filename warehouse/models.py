@@ -116,6 +116,23 @@ class Order(models.Model):
 
         return int(round(total, 0))
 
+    def check_if_settled(self):
+        settlements = OrderSettlement.objects.filter(order=self)
+        sales = ProductSell3.objects.filter(order=self)
+
+        if settlements and sales:
+            pieces = 0
+            sold = 0
+            history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements, stock_supply__isnull=False)
+            for h in history:
+                pieces += (h.quantity_after - h.quantity_before)
+
+            for s in sales:
+                sold += s.quantity
+            if pieces and sold and pieces == sold:
+                return True
+        return False
+
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
         unique_together = ('provider', 'order_id', 'order_year')
