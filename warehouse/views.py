@@ -132,6 +132,7 @@ def load_orders(year, row=None, division=None):
                     order.save()
                     result += f'{order} saved<br>'
                 else:
+                    print(f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date')
                     result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date'
 
         except Exception as e:
@@ -459,6 +460,11 @@ class OrderDetailView(View):
                 lq = last_unit.quantity_end
                 ld = last_unit.end.date()
         except ProductionOrder.DoesNotExist:
+            cost = order.production_cost()
+            other = order.other_costs()
+            total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
+            earnings = order.total_sales()
+            result = round(earnings - total_expenses, 2)
             production_units = []
 
         # product sell 3
@@ -474,7 +480,6 @@ class OrderDetailView(View):
 
             for h in history:
                 if h.warehouse_stock.warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH':
-                    print(h)
                     default_warehouse_stock = h.warehouse_stock
 
         return render(request, 'warehouse/order_details.html', locals())
