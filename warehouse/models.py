@@ -153,7 +153,7 @@ class Delivery(models.Model):
         return f'{self.provider}({self.car_number}) {self.date}'
 
     class Meta:
-        ordering = ['-date']
+        ordering = ['-date', 'id']
 
     def add_to_warehouse(self, warehouse=None):
         items = DeliveryItem.objects.filter(delivery=self)

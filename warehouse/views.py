@@ -428,6 +428,7 @@ class OrderDetailView(View):
             date = models.DateField(null=True, blank=True)
             quantity = models.PositiveIntegerField(default=0)
             name = models.CharField(max_length=64)
+            price = p.price
             try:
                 warehouse_product_stock = Stock.objects.get(name=name)
                 warehouse_products.append(warehouse_product_stock)
@@ -481,6 +482,9 @@ class OrderDetailView(View):
             for h in history:
                 if h.warehouse_stock.warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH':
                     default_warehouse_stock = h.warehouse_stock
+                    quantity = h.warehouse_stock.quantity
+
+        today = datetime.date.today().isoformat()
 
         return render(request, 'warehouse/order_details.html', locals())
 
@@ -803,6 +807,8 @@ def add_product_sell3(request):
             )
 
             warehouse_stock.quantity -= int(quantity)
+            product.price = request.POST.get("price_sell")
+            product.save()
 
             warehouse_stock.save()
 

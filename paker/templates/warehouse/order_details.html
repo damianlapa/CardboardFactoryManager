@@ -160,10 +160,10 @@
   <input type="hidden" name="order" value="{{ order.id }}">
 
   <label>Quantity:</label>
-  <input type="number" name="quantity_sell" min="1" value="1" required><br>
+  <input type="number" name="quantity_sell" min="1" value="{{ quantity }}" required><br>
 
   <label>Price:</label>
-  <input type="number" name="price_sell" step="0.01" required><br>
+  <input type="number" name="price_sell" step="0.01" value="{{ price }}"required><br>
 
   <label>Date:</label>
   <input type="date" name="date_sell" value="{{ today }}" required><br>
