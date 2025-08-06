@@ -636,8 +636,16 @@ class DeliveriesStatistics(View):
 class StockView(View):
     def get(self, request, stock_id):
         stock = Stock.objects.get(id=stock_id)
-        # deliveries_items = DeliveryItem.objects.
-
+        try:
+            customer, flute, dimensions, name = list(map(lambda x: x.strip(), stock.name.split('|')))
+            product = Product.objects.get(name=stock.name)
+            orders = Order.objects.filter(product=product)
+        except ValueError:
+            dimensions = stock.name.split('[')[1].replace(']', '').lower()
+            supplies = StockSupply.objects.filter(dimensions=dimensions)
+        history = WarehouseStockHistory.objects.filter(warehouse_stock__stock=stock)
+        for h in history:
+            print(h)
         return render(request, 'warehouse/stock-details.html', locals())
 
 
