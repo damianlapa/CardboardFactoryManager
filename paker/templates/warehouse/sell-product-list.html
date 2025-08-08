@@ -13,33 +13,35 @@
   <div class="modal-content">
     <span class="close" id="closeModal">&times;</span>
     <h2>Dodaj sprzedaż produktu</h2>
-    <form method="post" action="{% url 'warehouse:productsell-create' %}">
-      {% csrf_token %}
-      <label>Magazyn:</label>
-      <select name="warehouse_stock">
-        {% for ws in warehouse_stocks %}
-          <option value="{{ ws.id }}">{{ ws.stock.name }} ({{ ws.quantity }})</option>
-        {% endfor %}
-      </select><br>
+    <form method="post" action="{% url 'warehouse:productsell3-create' %}">
+  {% csrf_token %}
 
-      <label>Ilość:</label>
-      <input type="number" name="quantity" min="1"><br>
+  <label>Magazyn:</label>
+  <select name="warehouse_stock" required>
+    {% for ws in warehouse_stocks %}
+      <option value="{{ ws.id }}">{{ ws.stock.name }} — {{ ws.warehouse.name }} ({{ ws.quantity }})</option>
+    {% endfor %}
+  </select><br>
 
-      <label>Klient:</label>
-      <select name="customer">
-        {% for buyer in customers %}
-          <option value="{{ buyer.id }}">{{ buyer.name }}</option>
-        {% endfor %}
-      </select><br>
+  <label>Ilość:</label>
+  <input type="number" name="quantity" min="1" required><br>
 
-      <label>Cena:</label>
-      <input type="number" name="price" step="0.01"><br>
+  <label>Klient:</label>
+  <select name="customer">
+    {% for buyer in customers %}
+      <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+    {% endfor %}
+  </select><br>
 
-      <label>Data:</label>
-      <input type="date" name="date"><br><br>
+  <label>Cena:</label>
+  <input type="number" name="price" step="0.01" required><br>
 
-      <button type="submit">Zapisz</button>
-    </form>
+  <label>Data:</label>
+  <input type="date" name="date" required><br><br>
+
+  <button type="submit">Zapisz</button>
+</form>
+
   </div>
 </div>
 <h2>Lista sprzedaży produktów</h2>

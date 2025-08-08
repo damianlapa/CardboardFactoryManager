@@ -5,6 +5,9 @@ from django.db import models
 from warehousemanager.models import Buyer
 from django.db.models import UniqueConstraint
 from django.db.models.functions import ExtractYear
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.db.models import Exists, OuterRef
 
 
 UNITS = (
@@ -538,24 +541,117 @@ class ProductSell3(models.Model):
             return round(m2 * quantity, 2)  # m² łącznie
         return None
 
+    def _resolve_product_from_ws(self):
+        """
+        Zwraca właściwy Product odpowiadający warehouse_stock.
+        Preferuje FK ws.stock.product, a jeśli go nie ma — dopasowanie po nazwie.
+        """
+        if not self.warehouse_stock_id:
+            return None
+        ws = self.warehouse_stock  # zakładamy, że select_related w widoku przyspieszy dostęp
+        # 1) jeśli masz FK: Stock -> Product (pole 'product')
+        prod = getattr(ws.stock, "product", None)
+        if prod:
+            return prod
+        # 2) fallback po nazwie
+        return Product.objects.filter(name=ws.stock.name).first()
+
+    def clean(self):
+        # ilość dodatnia
+        if self.quantity is not None and self.quantity <= 0:
+            raise ValidationError({"quantity": "Ilość musi być większa od zera."})
+
+        # cena nieujemna
+        if self.price is not None and self.price < 0:
+            raise ValidationError({"price": "Cena nie może być ujemna."})
+
+        # z warehouse_stock wyciągnij produkt i/lub zweryfikuj zgodność
+        if self.warehouse_stock_id:
+            resolved = self._resolve_product_from_ws()
+            if resolved is None:
+                raise ValidationError({"warehouse_stock": "Brak produktu powiązanego z tym stanem magazynowym."})
+
+            if self.product_id is None:
+                # ustaw automatycznie
+                self.product = resolved
+            else:
+                # sprawdź spójność, jeśli ktoś spróbuje wcisnąć inny produkt
+                if self.product_id != resolved.id:
+                    raise ValidationError({"product": "Wybrany produkt nie zgadza się z magazynem."})
+
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        # zabezpieczenie na wypadek braku full_clean() w wyższych warstwach
+        if self.warehouse_stock_id and self.product_id is None:
+            resolved = self._resolve_product_from_ws()
+            if resolved:
+                self.product = resolved
+        return super().save(*args, **kwargs)
+
+
+class ProductComplexAssemblyQuerySet(models.QuerySet):
+    def with_locked(self):
+        # podzapytanie: WS użyte do PRZYJĘCIA wyrobu gotowego z tej assembly
+        fg_ws_ids = WarehouseStockHistory.objects.filter(
+            assembly=OuterRef("pk"),
+            stock_supply__isnull=False,   # odróżnia „przyjęcie gotowca” od rozchodu części
+        ).values("warehouse_stock_id")
+
+        # locked jeśli istnieje sprzedaż z któregokolwiek z tych WS
+        return self.annotate(
+            _locked=Exists(
+                ProductSell3.objects.filter(warehouse_stock_id__in=fg_ws_ids)
+            )
+        )
+
 
 class ProductComplexAssembly(models.Model):
     date = models.DateField()
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.IntegerField()
     parts = models.ManyToManyField(WarehouseStock, through='ProductComplexParts', blank=True)
+    objects = ProductComplexAssemblyQuerySet.as_manager()
 
     def __str__(self):
         return f'{self.product} {self.date} -> {self.quantity}'
 
+    class Meta:
+        ordering = ['date', 'product']
+
+    @property
+    def is_locked(self) -> bool:
+        from .models import WarehouseStockHistory, ProductSell3  # jeśli w tym samym pliku, pominąć
+        fg_ws_ids = WarehouseStockHistory.objects.filter(
+            assembly=self, stock_supply__isnull=False
+        ).values_list("warehouse_stock_id", flat=True)
+        if not fg_ws_ids:
+            return False
+        return ProductSell3.objects.filter(warehouse_stock_id__in=fg_ws_ids).exists()
+
+    def clean(self):
+        # blokada modyfikacji/rozbiórki po sprzedaży
+        if self.pk and self.is_locked:
+            raise ValidationError("Nie można modyfikować: wyrób z tego montażu został sprzedany.")
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        # przy aktualizacji wymuś walidację -> zadziała blokada
+        if self.pk:
+            self.full_clean()
+        return super().save(*args, **kwargs)
+
 
 class ProductComplexParts(models.Model):
-    assembly = models.ForeignKey(ProductComplexAssembly, on_delete=models.PROTECT)
+    assembly = models.ForeignKey(ProductComplexAssembly, on_delete=models.PROTECT, related_name="assembly_parts")
     part = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f'{self.part} :: {self.quantity}'
+
+    class Meta:
+        ordering = ['assembly', 'part']
 
 
 class WarehouseStockHistory(models.Model):

@@ -1,0 +1,49 @@
+{% extends "__base3__.html" %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/assembly.css' %}">
+
+{% endblock %}
+{% block content %}
+<h1>Montaże</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Data</th>
+      <th>Produkt</th>
+      <th>Ilość</th>
+      <th>Locked?</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for a in assemblies %}
+    <tr>
+      <td>{{ a.pk }}</td>
+      <td>{{ a.date }}</td>
+      <td>{{ a.product }}</td>
+      <td>{{ a.quantity }}</td>
+      <td>{% if a.is_locked %}🔒{% else %}—{% endif %}</td>
+      <td><a href="{% url 'warehouse:assembly_detail' a.pk %}">Szczegóły</a></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6">Brak montaży.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if is_paginated %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}">←</a>
+    {% endif %}
+    <span>Strona {{ page_obj.number }} z {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">→</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

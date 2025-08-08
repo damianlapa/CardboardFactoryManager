@@ -12,6 +12,17 @@ from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
 from django.db.models.deletion import ProtectedError
 
+
+# views.py
+from django.views.generic import CreateView
+from django.urls import reverse_lazy, reverse
+from django.db import transaction
+from django.contrib import messages
+from django.shortcuts import redirect
+
+from .models import ProductSell3, WarehouseStock, WarehouseStockHistory, Product
+
+
 from warehouse.gs_connection import *
 from warehouse.models import *
 from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet
@@ -672,42 +683,76 @@ class LoadDeliveryToGSFile(View):
 
 class SellProductList(View):
     def get(self, request):
-        sells = ProductSell3.objects.select_related('warehouse_stock', 'customer').order_by('-date')
-        warehouse_stocks = WarehouseStock.objects.filter(quantity__gte=0, warehouse=Warehouse.objects.get(name="MAGAZYN WYROBÓW GOTOWYCH"))
+        sells = (
+            ProductSell3.objects
+            .select_related("product", "warehouse_stock__stock", "warehouse_stock__warehouse", "customer")
+            .order_by("-date")
+        )
+
+        warehouse_stocks = (
+            WarehouseStock.objects
+            .select_related("stock", "warehouse")
+            .filter(
+                quantity__gte=0,
+                warehouse=Warehouse.objects.get(name="MAGAZYN WYROBÓW GOTOWYCH")
+            )
+            .order_by("stock__name")
+        )
+
         context = {
             "warehouse_stocks": warehouse_stocks,
-            "customers": Buyer.objects.all(),
+            "products": Product.objects.all().order_by("name"),  # do <select> w modalu
+            "customers": Buyer.objects.all().order_by("name"),
             "sells": sells
         }
         return render(request, "warehouse/sell-product-list.html", context=context)
 
 
-class ProductSellCreateView(CreateView):
-    model = ProductSell
-    fields = ['warehouse_stock', 'quantity', 'customer', 'price', 'date']
-    success_url = reverse_lazy('warehouse:sells-list-view')
+class ProductSell3CreateView(CreateView):
+    model = ProductSell3
+    fields = ["warehouse_stock", "quantity", "customer", "price", "date"]
+    
+    def get_success_url(self):
+        return reverse("warehouse:sells-list-view")
 
     def form_valid(self, form):
         with transaction.atomic():
-            date = form.cleaned_data['date']
-            self.object = form.save()
-
-            stock = self.object.warehouse_stock
-
-            warehouse_stock_history = WarehouseStockHistory.objects.create(
-                warehouse_stock=stock,
-                quantity_before=stock.quantity,
-                quantity_after=stock.quantity - self.object.quantity,
-                date=date
+            ws = (
+                WarehouseStock.objects
+                .select_for_update()
+                .select_related("stock", "warehouse")
+                .get(pk=form.cleaned_data["warehouse_stock"].pk)
             )
+            qty = form.cleaned_data["quantity"]
 
-            stock.quantity -= self.object.quantity
-            if stock.quantity < 0:
-                form.add_error('quantity', 'Nie ma wystarczającej ilości w magazynie!')
-                raise transaction.TransactionManagementError("Za mało towaru")
-            stock.save()
+            if qty <= 0:
+                form.add_error("quantity", "Ilość musi być większa od zera.")
+                return self.form_invalid(form)
+            if ws.quantity < qty:
+                form.add_error("quantity", "Nie ma wystarczającej ilości w magazynie!")
+                return self.form_invalid(form)
 
-        return super().form_valid(form)
+            sell = form.save(commit=False)
+            sell.warehouse_stock = ws
+            # product zostanie ustawiony automatycznie w clean()/save()
+            sell.full_clean()  # uruchomi walidacje z modelu (w tym auto-resolve product)
+            sell.save()
+
+            before = ws.quantity
+            after = before - qty
+            WarehouseStockHistory.objects.create(
+                warehouse_stock=ws,
+                quantity_before=before,
+                quantity_after=after,
+                date=form.cleaned_data["date"],
+            )
+            ws.quantity = after
+            ws.save(update_fields=["quantity"])
+
+        messages.success(self.request, "Sprzedaż zapisana.")
+        return redirect(self.get_success_url())
+
+
 
 
 class PaletteView(View):

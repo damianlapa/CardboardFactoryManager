@@ -46,7 +46,7 @@ urlpatterns += [
 
 urlpatterns += [
     path('sells/list/', SellProductList.as_view(), name='sells-list-view'),
-    path('sells/create/', ProductSellCreateView.as_view(), name="productsell-create")
+    path('sells/create/', ProductSell3CreateView.as_view(), name="productsell3-create")
 ]
 
 # temporary
@@ -80,5 +80,6 @@ urlpatterns += [
 
 urlpatterns += [
     path("assembly/new/", AssemblyCreateView.as_view(), name="assembly_create"),
-    path("assembly/<int:pk>/", AssemblyUpdateView.as_view(), name="assembly_update"),
+    path("assembly/", AssemblyListView.as_view(), name="assembly_list"),
+    path("assembly/<int:pk>/", AssemblyDetailView.as_view(), name="assembly_detail"),
 ]

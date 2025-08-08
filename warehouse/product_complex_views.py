@@ -2,8 +2,8 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import CreateView, UpdateView
-from .models import ProductComplexAssembly, WarehouseStock, WarehouseStockHistory, Product, StockType, Stock, StockSupply, Warehouse
+from django.views.generic import CreateView, UpdateView, ListView, DetailView
+from .models import ProductComplexAssembly, WarehouseStock, WarehouseStockHistory, ProductComplexParts, StockType, Stock, StockSupply, Warehouse
 from .forms import ProductComplexAssemblyForm, PartsFormSet
 
 
@@ -37,9 +37,10 @@ class AssemblyMixin:
         messages.success(self.request, "Zapisano montaż i części.")
         return redirect(self.get_success_url())
 
+    # w AssemblyMixin
     def get_success_url(self):
-        # po zapisie wracamy do edycji bieżącego montażu
-        return reverse("warehouse:assembly_update", args=[self.object.pk])
+        # po zapisie wracamy do PODGLĄDU (read-only), nie do edycji
+        return reverse("warehouse:assembly_detail", args=[self.object.pk])
 
 
 class AssemblyCreateView(AssemblyMixin, CreateView):
@@ -159,6 +160,41 @@ class AssemblyCreateView(AssemblyMixin, CreateView):
         return redirect(self.get_success_url())
 
 
+from django.db.models import Prefetch
 
-class AssemblyUpdateView(AssemblyMixin, UpdateView):
-    pass
+from django.db.models import Prefetch
+
+class AssemblyDetailView(DetailView):
+    model = ProductComplexAssembly
+    template_name = "warehouse/assembly_detail.html"
+    context_object_name = "assembly"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["parts"] = self.object.assembly_parts.select_related(
+            "part__stock", "part__warehouse"
+        ).order_by("part__warehouse__name", "part__stock__name")
+        ctx["is_locked"] = self.object.is_locked
+        return ctx
+
+
+class AssemblyListView(ListView):
+    model = ProductComplexAssembly
+    template_name = "warehouse/assembly_list.html"
+    context_object_name = "assemblies"
+    paginate_by = 50
+
+    def get_queryset(self):
+        return (
+            ProductComplexAssembly.objects
+            .select_related("product")
+            .prefetch_related(
+                Prefetch(
+                    "assembly_parts",
+                    queryset=ProductComplexParts.objects.select_related(
+                        "part__stock", "part__warehouse"
+                    ).order_by("part__warehouse__name", "part__stock__name"),
+                )
+            )
+            .order_by("-date", "-pk")
+        )
