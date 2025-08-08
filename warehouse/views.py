@@ -693,10 +693,10 @@ class SellProductList(View):
             WarehouseStock.objects
             .select_related("stock", "warehouse")
             .filter(
-                quantity__gte=0,
-                warehouse=Warehouse.objects.get(name="MAGAZYN WYROBÓW GOTOWYCH")
+                quantity__gt=0,
+                warehouse__in=(Warehouse.objects.filter(name__in=("MAGAZYN WYROBÓW GOTOWYCH", "MAGAZYN MATERIAŁÓW POMOCNICZYCH", 'MAGAZYN GŁÓWNY')))
             )
-            .order_by("stock__name")
+            .order_by("-warehouse", "stock__name")
         )
 
         context = {
@@ -711,7 +711,7 @@ class SellProductList(View):
 class ProductSell3CreateView(CreateView):
     model = ProductSell3
     fields = ["warehouse_stock", "quantity", "customer", "price", "date"]
-    
+
     def get_success_url(self):
         return reverse("warehouse:sells-list-view")
 

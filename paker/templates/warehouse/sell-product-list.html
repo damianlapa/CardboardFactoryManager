@@ -16,7 +16,7 @@
     <form method="post" action="{% url 'warehouse:productsell3-create' %}">
   {% csrf_token %}
 
-  <label>Magazyn:</label>
+  <label>Towar:</label>
   <select name="warehouse_stock" required>
     {% for ws in warehouse_stocks %}
       <option value="{{ ws.id }}">{{ ws.stock.name }} — {{ ws.warehouse.name }} ({{ ws.quantity }})</option>
