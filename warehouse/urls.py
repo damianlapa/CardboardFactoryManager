@@ -5,6 +5,7 @@ from warehouse.load_csv_views import *
 from warehouse.statstics_views import *
 from warehouse.create_order_views import GenerateOrderInlineView
 from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
+from warehouse.product_complex_views import *
 
 
 app_name = 'warehouse'
@@ -75,4 +76,9 @@ urlpatterns += [
 urlpatterns += [
     path('sales-report/', sales_report_view, name='sales_report'),
     path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
+]
+
+urlpatterns += [
+    path("assembly/new/", AssemblyCreateView.as_view(), name="assembly_create"),
+    path("assembly/<int:pk>/", AssemblyUpdateView.as_view(), name="assembly_update"),
 ]

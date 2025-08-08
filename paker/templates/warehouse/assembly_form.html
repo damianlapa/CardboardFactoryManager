@@ -1,0 +1,148 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block title %}{% if object %}Edycja{% else %}Nowy{% endif %} montaż produktu złożonego{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/assembly.css' %}">
+
+{% endblock %}
+{% block content %}
+<h1>{% if object %}Edycja{% else %}Nowy{% endif %} montaż produktu złożonego</h1>
+
+{# (opcjonalnie) Komunikaty Django messages #}
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <fieldset>
+    <legend>Dane montażu</legend>
+    {{ form.non_field_errors }}
+    <div class="grid">
+      <div>
+        {{ form.date.label_tag }}<br>
+        {{ form.date }}
+        {% if form.date.errors %}<ul class="errorlist">{{ form.date.errors }}</ul>{% endif %}
+      </div>
+      <div>
+        {{ form.product.label_tag }}<br>
+        {{ form.product }}
+        {% if form.product.errors %}<ul class="errorlist">{{ form.product.errors }}</ul>{% endif %}
+      </div>
+      <div>
+        {{ form.quantity.label_tag }}<br>
+        {{ form.quantity }}
+        {% if form.quantity.errors %}<ul class="errorlist">{{ form.quantity.errors }}</ul>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Części</legend>
+
+    {% if parts_formset.non_form_errors %}
+      <div class="nonfield">{{ parts_formset.non_form_errors }}</div>
+    {% endif %}
+
+    {{ parts_formset.management_form }}
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 60%;">Część (WarehouseStock)</th>
+          <th style="width: 20%;">Ilość</th>
+          <th class="del-col">Usuń</th>
+        </tr>
+      </thead>
+      <tbody id="parts-tbody">
+        {% for f in parts_formset.forms %}
+          <tr class="parts-row">
+            <td>
+              {{ f.id }} {# potrzebne przy update #}
+              {{ f.part }}
+              {% if f.part.errors %}<ul class="errorlist">{{ f.part.errors }}</ul>{% endif %}
+            </td>
+            <td>
+              {{ f.quantity }}
+              {% if f.quantity.errors %}<ul class="errorlist">{{ f.quantity.errors }}</ul>{% endif %}
+            </td>
+            <td class="del-col">
+              <label>{{ f.DELETE }} Usuń</label>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Hidden template: Django generuje __prefix__ -->
+    <template id="empty-form-template">
+      <tr class="parts-row">
+        <td>
+          {{ parts_formset.empty_form.id }}
+          {{ parts_formset.empty_form.part }}
+        </td>
+        <td>
+          {{ parts_formset.empty_form.quantity }}
+        </td>
+        <td class="del-col">
+          <label>{{ parts_formset.empty_form.DELETE }} Usuń</label>
+        </td>
+      </tr>
+    </template>
+
+    <div class="actions">
+      <button type="button" id="add-row" class="secondary">Dodaj wiersz</button>
+      <span class="muted">Zaznacz „Usuń”, aby usunąć wiersz przy zapisie.</span>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button type="submit">Zapisz</button>
+    {% if object %}
+      <a class="btn secondary" href="{% url 'warehouse:assembly_create' %}">Nowy montaż</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+  // Działa z domyślnym prefixem: productcomplexparts_set
+  (function() {
+    const addBtn = document.getElementById('add-row');
+    const tbody = document.getElementById('parts-tbody');
+    const totalFormsInput = document.getElementById('id_productcomplexparts_set-TOTAL_FORMS');
+    const maxFormsInput = document.getElementById('id_productcomplexparts_set-MAX_NUM_FORMS'); // może nie istnieć
+    const template = document.getElementById('empty-form-template');
+
+    function canAddAnother() {
+      if (!maxFormsInput) return true;
+      const max = parseInt(maxFormsInput.value || '0', 10);
+      if (!max) return true;
+      return parseInt(totalFormsInput.value, 10) < max;
+    }
+
+    addBtn.addEventListener('click', function() {
+      if (!canAddAnother()) return;
+
+      const idx = parseInt(totalFormsInput.value, 10);
+      const html = template.innerHTML.replaceAll(/__prefix__/g, idx);
+
+      const wrapper = document.createElement('tbody');
+      wrapper.innerHTML = html.trim();
+      const row = wrapper.firstElementChild;
+
+      tbody.appendChild(row);
+      totalFormsInput.value = (idx + 1).toString();
+    });
+  })();
+</script>
+{% endblock scripts %}
