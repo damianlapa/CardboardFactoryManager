@@ -7,66 +7,74 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 30px;
-        margin-top: 40px;
+        margin-top: 20px;
     }
-
     .dashboard-box {
         background: #ffffff;
         padding: 25px;
         border-radius: 16px;
         box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     }
-
-    h1 span {
-        font-weight: bold;
-        font-size: 1.4em;
+    h1 span { font-weight: bold; font-size: 1.4em; }
+    h2 { margin-bottom: 15px; text-align: center; }
+    canvas { width: 100% !important; height: auto !important; }
+    .stats-header { text-align: center; margin-top: 10px; }
+    .stats-header h1 { margin: 10px 0; }
+    .toolbar {
+        display: flex; gap: 10px; align-items: center; justify-content: center;
+        margin: 10px 0 0;
     }
-
-    h2 {
-        margin-bottom: 15px;
-        text-align: center;
+    .toolbar .pill {
+        border: 1px solid #ddd; border-radius: 999px; padding: 6px;
+        display: inline-flex; gap: 4px; background: #f8f8f8;
     }
-
-    canvas {
-        width: 100% !important;
-        height: auto !important;
+    .toolbar button {
+        border: none; background: transparent; padding: 8px 14px; border-radius: 999px;
+        cursor: pointer; font-weight: 600;
     }
-
-    .stats-header {
-        text-align: center;
-        margin-top: 30px;
-    }
-
-    .stats-header h1 {
-        margin: 10px 0;
-    }
+    .toolbar button.active { background: #111; color: #fff; }
 </style>
 {% endblock %}
 
 {% block content %}
+
 <div class="stats-header">
-    <h1>DO {{ cel }} m² POZOSTAŁO: <span style="color:red" id="counter">{{ ile }} m²</span></h1>
-    <h1>W 2025 DOSTARCZONO: <span style="color:green" id="counter2">{{ total_amount }} m²</span></h1>
-    <h1>DO KOŃCA ROKU POZOSTAŁO: <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
+    <div class="toolbar">
+        <div class="pill">
+            <button id="btnWeek" class="{% if group == 'week' %}active{% endif %}">Tygodnie</button>
+            <button id="btnMonth" class="{% if group == 'month' %}active{% endif %}">Miesiące</button>
+        </div>
+    </div>
+
+    <h1>DO {{ cel }} m² POZOSTAŁO:
+        <span style="color:red" id="counter">{{ ile }} m²</span></h1>
+    <h1>W {{ start|date:"Y" }} DOSTARCZONO:
+        <span style="color:green" id="counter2">{{ total_amount }} m²</span></h1>
+    <h1>DO KOŃCA ROKU POZOSTAŁO:
+        <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
 </div>
 
 <div class="dashboard-grid">
     <div class="dashboard-box">
-        <h2>Postęp roczny</h2>
+        <h2>Postęp {% if group == 'week' %}tygodniowy{% else %}miesięczny{% endif %} (narastająco)</h2>
         <canvas id="weeksChart"></canvas>
     </div>
+
     <div class="dashboard-box">
-        <h2>Dostawy tygodniowe</h2>
+        <h2>Dostawy {% if group == 'week' %}tygodniowe{% else %}miesięczne{% endif %}</h2>
         <canvas id="weeksChartSingle"></canvas>
     </div>
+
     <div class="dashboard-box">
         <h2>Zamówienia m² wg klienta</h2>
         <canvas id="customerChart"></canvas>
     </div>
+
     <div class="dashboard-box">
         <h2>Zamówienia wg dostawcy</h2>
         <canvas id="providerChart"></canvas>
     </div>
+
     <div class="dashboard-box">
         <h2>Zamówienia wg klienta z filtrem m²</h2>
         <label for="threshold_min">Pokaż klientów z udziałem powierzchni ≥</label>
@@ -93,39 +101,61 @@
         </select>
         <canvas id="customer2Chart"></canvas>
     </div>
+
     <div class="dashboard-box">
-    <h2>Dni od ostatniej dostawy (klienci)</h2>
-    <label for="days_threshold_min">≥</label>
-    <select id="days_threshold_min">
-        <option value="0">0</option>
-        <option value="7">7</option>
-        <option value="14">14</option>
-        <option value="30" selected>30</option>
-    </select>
+        <h2>Dni od ostatniej dostawy (klienci)</h2>
+        <label for="days_threshold_min">≥</label>
+        <select id="days_threshold_min">
+            <option value="0">0</option>
+            <option value="7">7</option>
+            <option value="14">14</option>
+            <option value="30" selected>30</option>
+        </select>
 
-    <label for="days_threshold_max">i ≤</label>
-    <select id="days_threshold_max">
-        <option value="365">365</option>
-        <option value="180">180</option>
-        <option value="90" selected>90</option>
-        <option value="60">60</option>
-        <option value="30">30</option>
-        <option value="14">14</option>
-    </select>
+        <label for="days_threshold_max">i ≤</label>
+        <select id="days_threshold_max">
+            <option value="365">365</option>
+            <option value="180">180</option>
+            <option value="90" selected>90</option>
+            <option value="60">60</option>
+            <option value="30">30</option>
+            <option value="14">14</option>
+        </select>
 
-    <canvas id="lastDeliveryChart" width="800" height="400"></canvas>
+        <canvas id="lastDeliveryChart" width="800" height="400"></canvas>
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Wykres postępu rocznego
+    // --- helpers: querystring update preserving start/end ---
+    function setQueryParam(url, key, value) {
+        const u = new URL(url, window.location.origin);
+        if (value === null || value === undefined || value === '') {
+            u.searchParams.delete(key);
+        } else {
+            u.searchParams.set(key, value);
+        }
+        return u.toString();
+    }
+    function goWithGroup(group) {
+        const url = new URL(window.location.href);
+        const start = "{{ start|date:'d-m-Y' }}";
+        const end   = "{{ end|date:'d-m-Y' }}";
+        url.searchParams.set('group', group);
+        if (start) url.searchParams.set('start', start);
+        if (end)   url.searchParams.set('end', end);
+        window.location.href = url.toString();
+    }
+    document.getElementById('btnWeek').addEventListener('click', () => goWithGroup('week'));
+    document.getElementById('btnMonth').addEventListener('click', () => goWithGroup('month'));
+
+    // --- Chart 1: linia narastająca ---
     const ctx = document.getElementById('weeksChart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [{% for d in dates %}"{{ d }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            labels: [{% for d in dates %}"{{ d|date:'Y-m-d' }}"{% if not forloop.last %},{% endif %}{% endfor %}],
             datasets: [{
                 label: 'Suma narastająco',
                 data: [{% for a in values %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
@@ -141,26 +171,24 @@
         }
     });
 
-    // Wykres tygodniowy
+    // --- Chart 2: per okres (tydzień/miesiąc) ---
     const ctx2 = document.getElementById('weeksChartSingle').getContext('2d');
     new Chart(ctx2, {
         type: 'bar',
         data: {
-            labels: [{% for w in weeks %}"{{ w }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            labels: [{% for lbl in period_labels %}"{{ lbl }}"{% if not forloop.last %},{% endif %}{% endfor %}],
             datasets: [{
-                label: 'Dostawy tygodniowe',
-                data: [{% for a in values_by_week %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                label: 'Dostawy {% if group == "week" %}tygodniowe{% else %}miesięczne{% endif %}',
+                data: [{% for a in values_by_period %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
                 backgroundColor: 'rgba(255, 159, 64, 0.3)',
                 borderColor: 'rgba(255, 159, 64, 1)',
                 borderWidth: 1
             }]
         },
-        options: {
-            scales: { y: { beginAtZero: true } }
-        }
+        options: { scales: { y: { beginAtZero: true } } }
     });
 
-    // Wykres klientów - statyczny
+    // --- Chart 3: klienci (doughnut) ---
     const ctx3 = document.getElementById('customerChart').getContext('2d');
     new Chart(ctx3, {
         type: 'doughnut',
@@ -188,15 +216,10 @@
                 borderWidth: 1
             }]
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    // Wykres dostawców
+    // --- Chart 4: dostawcy (doughnut) ---
     const ctx4 = document.getElementById('providerChart').getContext('2d');
     new Chart(ctx4, {
         type: 'doughnut',
@@ -224,31 +247,30 @@
                 borderWidth: 1
             }]
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    // Wykres klientów z filtrem powierzchni
+    // --- Chart 5: klienci z progiem % (z zakresem & group) ---
     const ctx5 = document.getElementById('customer2Chart').getContext('2d');
     let chart;
-
     function loadChart(min, max) {
-        fetch(`{% url 'warehouse:customer-distribution' %}?min=${min}&max=${max}`)
-            .then(response => response.json())
+        const baseUrl = `{% url 'warehouse:customer-distribution' %}`;
+        const url = new URL(baseUrl, window.location.origin);
+        url.searchParams.set('min', min);
+        url.searchParams.set('max', max);
+        url.searchParams.set('group', '{{ group }}');
+        url.searchParams.set('start', '{{ start|date:"d-m-Y" }}');
+        url.searchParams.set('end', '{{ end|date:"d-m-Y" }}');
+        fetch(url.toString())
+            .then(r => r.json())
             .then(data => {
                 const labels = data.map(item => item.customer);
                 const percentages = data.map(item => item.percentage);
-
                 if (chart) chart.destroy();
-
                 chart = new Chart(ctx5, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels,
                         datasets: [{
                             label: 'Udział % powierzchni',
                             data: percentages,
@@ -261,52 +283,48 @@
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                ticks: {
-                                    callback: value => value + '%'
-                                }
+                                ticks: { callback: v => v + '%' }
                             }
                         }
                     }
                 });
             });
     }
-
-
     const selectMin = document.getElementById('threshold_min');
     const selectMax = document.getElementById('threshold_max');
-
     function updateChart() {
         const min = parseFloat(selectMin.value);
         const max = parseFloat(selectMax.value);
         loadChart(min, max);
     }
-
     selectMin.addEventListener('change', updateChart);
     selectMax.addEventListener('change', updateChart);
-
     loadChart(selectMin.value, selectMax.value);
 
-    // Wykres klientów z informacją o czasie od ostatniej dostawy
+    // --- Chart 6: dni od ostatniej dostawy (z zakresem & group) ---
     const ctxLastDelivery = document.getElementById('lastDeliveryChart').getContext('2d');
     let lastDeliveryChart;
-
     function loadLastDeliveryChart(min, max) {
-        fetch(`{% url 'warehouse:customer-orders-statistic' %}?min=${min}&max=${max}`)
-            .then(response => response.json())
+        const baseUrl = `{% url 'warehouse:customer-orders-statistic' %}`;
+        const url = new URL(baseUrl, window.location.origin);
+        url.searchParams.set('min', min);
+        url.searchParams.set('max', max);
+        url.searchParams.set('group', '{{ group }}');
+        url.searchParams.set('start', '{{ start|date:"d-m-Y" }}');
+        url.searchParams.set('end', '{{ end|date:"d-m-Y" }}');
+        fetch(url.toString())
+            .then(r => r.json())
             .then(data => {
                 const filtered = data.filter(item =>
                     item.days_since_last >= min && item.days_since_last <= max
                 );
-
                 const labels = filtered.map(item => item.customer);
                 const days = filtered.map(item => item.days_since_last);
-
                 if (lastDeliveryChart) lastDeliveryChart.destroy();
-
                 lastDeliveryChart = new Chart(ctxLastDelivery, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels,
                         datasets: [{
                             label: 'Dni od ostatniej dostawy',
                             data: days,
@@ -318,54 +336,49 @@
                     options: {
                         indexAxis: 'y',
                         scales: {
-                            x: {
-                                beginAtZero: true,
-                                title: { display: true, text: 'Dni' }
-                            },
-                            y: {
-                                title: { display: true, text: 'Klient' }
-                            }
+                            x: { beginAtZero: true, title: { display: true, text: 'Dni' } },
+                            y: { title: { display: true, text: 'Klient' } }
                         }
                     }
                 });
             });
     }
-
     const selectMinDays = document.getElementById('days_threshold_min');
     const selectMaxDays = document.getElementById('days_threshold_max');
-
     function updateLastDeliveryChart() {
         const min = parseInt(selectMinDays.value);
         const max = parseInt(selectMaxDays.value);
         loadLastDeliveryChart(min, max);
     }
-
     selectMinDays.addEventListener('change', updateLastDeliveryChart);
     selectMaxDays.addEventListener('change', updateLastDeliveryChart);
-
-    // Start
     loadLastDeliveryChart(parseInt(selectMinDays.value), parseInt(selectMaxDays.value));
 
-    // Animowane liczniki
-    function animateCounter(startValue, endValue, duration, counter) {
+    // --- animowane liczniki ---
+    function animateCounter(startValue, endValue, duration, el) {
         const startTime = performance.now();
-        function updateCounter(currentTime) {
-            const elapsedTime = currentTime - startTime;
-            const progress = Math.min(elapsedTime / duration, 1);
-            const currentValue = Math.floor(startValue - (startValue - endValue) * progress);
-            counter.textContent = currentValue.toLocaleString();
-            if (progress < 1) {
-                requestAnimationFrame(updateCounter);
-            }
+        function step(t) {
+            const p = Math.min((t - startTime) / duration, 1);
+            const val = Math.floor(startValue + (endValue - startValue) * p);
+            el.textContent = val.toLocaleString();
+            if (p < 1) requestAnimationFrame(step);
         }
-        requestAnimationFrame(updateCounter);
+        requestAnimationFrame(step);
     }
-
+    // 1) cel -> ile (malejąco)
     animateCounter({{ cel }}, {{ ile }}, 1000, document.getElementById('counter'));
+    // 2) 0 -> total_amount
     animateCounter(0, {{ total_amount }}, 1000, document.getElementById('counter2'));
-    animateCounter({{ year_days }}, {{ days_left }}, 1000, document.getElementById('counter3'));
+    // 3) year_days -> days_left (oblicz year_days po stronie JS)
+    (function(){
+        const y = new Date().getFullYear();
+        const start = new Date(y, 0, 1);
+        const end   = new Date(y, 11, 31);
+        const msPerDay = 24*60*60*1000;
+        const year_days = Math.round((end - start) / msPerDay) + 1; // 365/366
+        animateCounter(year_days, {{ days_left }}, 1000, document.getElementById('counter3'));
+    })();
 </script>
 {% endblock %}
 
-{% block scripts %}
-{% endblock %}
+{% block scripts %}{% endblock %}

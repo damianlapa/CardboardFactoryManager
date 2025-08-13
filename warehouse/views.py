@@ -1,46 +1,26 @@
-import datetime
-import calendar
-from django.shortcuts import render, HttpResponse, redirect
+
+from django.shortcuts import HttpResponse
 from django.views import View
-
-from django.views.generic import CreateView
-from django.urls import reverse_lazy
-
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import permission_required
-from django.utils.decorators import method_decorator
 from django.db.models.deletion import ProtectedError
-
-
-# views.py
 from django.views.generic import CreateView
-from django.urls import reverse_lazy, reverse
-from django.db import transaction
+from django.urls import reverse
 from django.contrib import messages
 from django.shortcuts import redirect
-
-from .models import ProductSell3, WarehouseStock, WarehouseStockHistory, Product
-
-
 from warehouse.gs_connection import *
 from warehouse.models import *
 from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet
 from warehousemanager.models import Buyer, LocalSetting
-
 from production.models import ProductionOrder, ProductionUnit
-
-import pandas as pd
 import pdfplumber
-
-from django.views.generic import ListView
-
 from django.db import transaction
-from django.contrib.auth.decorators import user_passes_test
-
-from django.utils.timezone import now
 from django.db.models import Sum
+import datetime, calendar
 from collections import defaultdict
+from django.shortcuts import render
+from django.utils.timezone import now
+from django.db.models import Prefetch
 
 
 def load_orders(year, row=None, division=None):
@@ -573,75 +553,139 @@ class WarehouseListView(View):
 
 
 class DeliveriesStatistics(View):
+    template_name = 'warehouse/deliveries-statistics.html'
+
+    def _parse_date(self, s, default):
+        if not s:
+            return default
+        try:
+            d, m, y = map(int, s.split('-'))  # 'dd-mm-yyyy'
+            return datetime.date(y, m, d)
+        except Exception:
+            return default
+
+    def _week_start(self, d: datetime.date) -> datetime.date:
+        return d - datetime.timedelta(days=d.isoweekday() - 1)  # poniedziałek
+
+    def _month_start(self, d: datetime.date) -> datetime.date:
+        return d.replace(day=1)
+
+    def _period_key_end(self, key: datetime.date, group: str) -> datetime.date:
+        if group == 'month':
+            last_day = calendar.monthrange(key.year, key.month)[1]
+            return key.replace(day=last_day)
+        # week
+        return key + datetime.timedelta(days=6)
+
+    def _period_label(self, key: datetime.date, group: str) -> str:
+        if group == 'month':
+            return key.strftime('%Y-%m')
+        iso = key.isocalendar()
+        return f"W{iso.week:02d} {key.year}"
+
     def get(self, request):
-        start = request.GET.get('start')
-        if start:
-            d, m, y = list(map(int, start.split('-')))
-            start = datetime.date(y, m, d)
-        else:
-            start = datetime.date(2025, 1, 1)
-        dates = [start]
-        weeks = ['#0']
-        values = [0]
-        values_by_week = [0]
+        # 1) Parametry
+        today = now().date()
+        year_start = datetime.date(today.year, 1, 1)
 
-        end = start + datetime.timedelta(days=7-start.isoweekday())
+        start_param = request.GET.get('start')  # oczekuje 'dd-mm-yyyy'
+        end_param   = request.GET.get('end')    # opcjonalnie 'dd-mm-yyyy'
+        group = (request.GET.get('group') or 'week').lower()
+        if group not in ('week', 'month'):
+            group = 'week'
 
-        while start <= datetime.date.today():
+        start = self._parse_date(start_param, year_start)
+        end   = self._parse_date(end_param, today)
+        if end < start:
+            start, end = end, start  # sanity
 
-            deliveries = Delivery.objects.all().filter(date__gte=start, date__lte=end)
-            total = 0
-            for d in deliveries:
-                total += int(d.count_area())
-            dates.append(end)
-            values.append(values[-1] + total)
-            weeks.append(f'#{len(weeks)}')
-            values_by_week.append(total)
+        # znormalizuj brzegi pod wybrany agregat
+        start = self._week_start(start) if group == 'week' else self._month_start(start)
+        # end trzymamy jako faktyczny koniec dnia/okresu
+        # (do iteracji i tak wyliczymy per-okres końcówki)
 
-            start = end + datetime.timedelta(days=1)
-            end = end + datetime.timedelta(days=7)
+        # 2) Dane – JEDEN queryset + prefetch
+        deliveries_qs = (
+            Delivery.objects
+            .filter(date__gte=start, date__lte=end)
+            .select_related('provider')
+            .prefetch_related(
+                Prefetch('deliveryitem_set',
+                         queryset=DeliveryItem.objects.select_related('order__customer'))
+            )
+        )
 
-        total_amount = sum(values_by_week)
-        cel = 2000000
-        ile = cel - total_amount
-        year_days = 365 + calendar.isleap(datetime.datetime.now().year)
-        days_left = year_days - datetime.datetime.now().timetuple().tm_yday
-
-        from collections import defaultdict
-
-        orders_by_customer = defaultdict(int)
+        # 3) Agregacja per okres (tydzień/miesiąc) + dostawcy/klienci
+        totals_by_period = defaultdict(int)
         orders_by_provider = defaultdict(int)
+        orders_by_customer = defaultdict(int)
 
-        for d in Delivery.objects.all():
-            provider = d.provider.name
-            area = d.count_area()
-            orders_by_provider[provider] += int(round(area, 0))
-            for item in DeliveryItem.objects.filter(delivery=d):
+        for d in deliveries_qs:
+            area = int(round(d.count_area() or 0, 0))
+            key = self._week_start(d.date) if group == 'week' else self._month_start(d.date)
+            totals_by_period[key] += area
+
+            # provider (po całym zakresie)
+            if getattr(d, 'provider', None):
+                orders_by_provider[d.provider.name] += area
+
+            # klienci (po całym zakresie) – z pozycji dostawy
+            for item in d.deliveryitem_set.all():
                 try:
-                    customer = item.order.customer.name  # Zakładam strukturę relacji
-                    orders_by_customer[customer] += int(round(item.calculate_area(), 0))
+                    customer = item.order.customer.name
+                    orders_by_customer[customer] += int(round(item.calculate_area() or 0, 0))
                 except AttributeError:
-                    continue  # Pomijamy błędne wpisy
+                    continue
 
-        # Zamieniamy na listy do wykresu
-        customer_labels = []
-        customer_values = []
+        # 4) Oś czasu + serie (per-okres i kumulacja)
+        period_keys = sorted(totals_by_period.keys())
+        dates = []
+        period_labels = []
+        values_by_period = []
+        values_cumulative = []
+        cum = 0
 
-        customer_results = []
-        for key in orders_by_customer.keys():
-            customer_results.append((key, orders_by_customer[key]))
+        for k in period_keys:
+            total = totals_by_period[k]
+            cum += total
+            values_by_period.append(total)
+            values_cumulative.append(cum)
+            dates.append(self._period_key_end(k, group))
+            period_labels.append(self._period_label(k, group))
 
-        customer_results = sorted(customer_results, key=lambda x: x[0])
+        total_amount = sum(values_by_period)
+        cel = 2_000_000
+        ile = max(cel - total_amount, 0)
+        year_days = 365 + calendar.isleap(today.year)
+        days_left = year_days - today.timetuple().tm_yday
 
-        for c in customer_results:
-            customer_, result = c
-            customer_labels.append(customer_)
-            customer_values.append(result)
+        customer_results = sorted(orders_by_customer.items(), key=lambda x: x[0])
+        customer_labels = [k for k, _ in customer_results]
+        customer_values = [v for _, v in customer_results]
 
-        provider_labels = list(orders_by_provider.keys())
-        provider_values = list(orders_by_provider.values())
+        provider_results = sorted(orders_by_provider.items(), key=lambda x: x[0])
+        provider_labels = [k for k, _ in provider_results]
+        provider_values = [v for _, v in provider_results]
 
-        return render(request, 'warehouse/deliveries-statistics.html', locals())
+        context = {
+            "group": group,
+            "start": start,
+            "end": end,
+            "dates": dates,
+            "period_labels": period_labels,
+            "values_by_period": values_by_period,
+            "values": values_cumulative,
+            "total_amount": total_amount,
+            "cel": cel,
+            "ile": ile,
+            "days_left": days_left,
+            "customer_labels": customer_labels,
+            "customer_values": customer_values,
+            "provider_labels": provider_labels,
+            "provider_values": provider_values,
+        }
+        return render(request, self.template_name, context)
+
 
 
 class StockView(View):
