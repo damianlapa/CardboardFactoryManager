@@ -323,7 +323,7 @@ class DeliverySpecial(models.Model):
 
 class DeliverySpecialItem(models.Model):
     delivery = models.ForeignKey(DeliverySpecial, on_delete=models.PROTECT)
-    name = models.CharField()
+    name = models.CharField(max_length=64)
     quantity = models.PositiveIntegerField(default=0)
     price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     processed = models.BooleanField(default=False)
