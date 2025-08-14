@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from warehouse.gs_connection import *
 from warehouse.models import *
-from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet
+from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm
 from warehousemanager.models import Buyer, LocalSetting
 from production.models import ProductionOrder, ProductionUnit
 import pdfplumber
@@ -483,6 +483,9 @@ class OrderDetailView(View):
 class DeliveriesView(View):
     def get(self, request):
         deliveries = Delivery.objects.all().prefetch_related('deliverypalette_set__palette')
+        special = request.GET.get("special")
+        if special:
+            deliveries = DeliverySpecial.objects.all()
         return render(request, 'warehouse/delivery_list.html', locals())
 
 
@@ -492,6 +495,14 @@ class DeliveryDetailView(View):
         items = DeliveryItem.objects.filter(delivery=delivery)
         form = DeliveryItemForm(initial={'delivery': delivery})
         return render(request, 'warehouse/delivery_details.html', locals())
+
+
+class DeliverySpecialDetailView(View):
+    def get(self, request, delivery_id):
+        delivery = DeliverySpecial.objects.get(id=delivery_id)
+        items = DeliverySpecialItem.objects.filter(delivery=delivery)
+        form = DeliverySpecialItemForm(initial={'delivery': delivery})
+        return render(request, 'warehouse/delivery_special_details.html', locals())
 
 
 class DeliveryEditView(View):
@@ -530,6 +541,21 @@ class AddDeliveryItem(View):
             return redirect('warehouse:delivery-detail-view', delivery_id=delivery_id)
 
 
+class AddDeliverySpecialItem(View):
+    def post(self, request):
+        form = DeliverySpecialItemForm(request.POST)
+        delivery_id = form.data['delivery']
+        if form.is_valid():
+            form.save()
+            return redirect('warehouse:delivery-special-detail-view', delivery_id=delivery_id)
+        else:
+            errors = form.errors
+            r = ''
+            for e in errors:
+                r += f'{e}<br>'
+            return HttpResponse(r)
+
+
 class AddDeliveryToWarehouse(View):
     def post(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
@@ -537,6 +563,16 @@ class AddDeliveryToWarehouse(View):
         delivery.add_to_warehouse()
 
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
+
+
+class AddDeliverySpecialToWarehouse(View):
+    def post(self, request, delivery_id):
+        print(delivery_id)
+        delivery = DeliverySpecial.objects.get(id=delivery_id)
+        items = DeliverySpecialItem.objects.filter(delivery=delivery)
+        delivery.add_to_warehouse()
+
+        return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
 class WarehouseView(View):
@@ -685,7 +721,6 @@ class DeliveriesStatistics(View):
             "provider_values": provider_values,
         }
         return render(request, self.template_name, context)
-
 
 
 class StockView(View):

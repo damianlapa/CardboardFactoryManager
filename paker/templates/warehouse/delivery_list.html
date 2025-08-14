@@ -24,8 +24,14 @@
     </thead>
     <tbody>
       {% for delivery in deliveries %}
+
+        {% if delivery.number %}
       <tr {% if delivery.all_settle %}style="font-weight: bold; font-style: italic; color: #6f7e96" {% endif %} >
         <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
+        {% else %}
+        <tr style="font-weight: bold; font-style: italic; color: #6f7e96">
+        <td><a href="{% url 'warehouse:delivery-special-detail-view' delivery_id=delivery.id %}">{{ delivery.id }}</a></td>
+        {% endif %}
         <td>{{ delivery.provider }}</td>
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td>{{ delivery.car_number }}</td>
@@ -47,7 +53,9 @@
           </ul>
         </td>
         <td>
+          {% if delivery.number %}
           <button class="btn btn-danger delete-btn" data-id="{{ delivery.id }}" data-number="{{ delivery.number }}">Delete</button>
+          {% endif %}
         </td>
       </tr>
       {% empty %}

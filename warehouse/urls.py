@@ -15,7 +15,6 @@ urlpatterns = [
     path('load_wz/', LoadWZ.as_view(), name='load-transport-document'),
     path('orders/', OrderListView.as_view(), name='order_list'),
     path('order_detail/<int:order_id>/', OrderDetailView.as_view(), name="order-detail-view"),
-    path('process_delivery/<int:delivery_id>/', AddDeliveryToWarehouse.as_view(), name="process-delivery"),
     path('warehouse/warehouses/', WarehouseListView.as_view(), name='warehouse-list-view'),
     path('warehouse/<int:warehouse_id>/', WarehouseView.as_view(), name='warehouse-detail-view'),
     path('stock-details/<int:stock_id>/', StockView.as_view(), name='stock-details')
@@ -34,6 +33,10 @@ urlpatterns += [
     path('deliveries/statistics/', DeliveriesStatistics.as_view(), name='deliveries-statistics'),
     path('deliveries/delivery/<int:delivery_id>/delete/', delete_delivery_ajax, name='delete_delivery_ajax'),
     path('deliveries/delivery/<int:delivery_id>/edit/', DeliveryEditView.as_view(), name='delivery-edit'),
+    path('delivery_special_detail/<int:delivery_id>/', DeliverySpecialDetailView.as_view(), name="delivery-special-detail-view"),
+    path('add-delivery-special-item/', AddDeliverySpecialItem.as_view(), name='add-delivery-special-item'),
+    path('process_delivery/<int:delivery_id>/', AddDeliveryToWarehouse.as_view(), name="process-delivery"),
+    path('process_delivery_special/<int:delivery_id>/', AddDeliverySpecialToWarehouse.as_view(), name="process-delivery-special"),
 ]
 
 urlpatterns += [

@@ -1,5 +1,5 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
-from warehouse.models import DeliveryItem, Delivery, DeliveryPalette, ProductSell2, ProductComplexAssembly, ProductComplexParts, WarehouseStock
+from warehouse.models import DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2, ProductComplexAssembly, ProductComplexParts, WarehouseStock
 from django import forms
 
 
@@ -8,6 +8,12 @@ class DeliveryItemForm(ModelForm):
         model = DeliveryItem
         fields = ['delivery', 'order', 'quantity', 'palettes_quantity']
         # fields = '__all__'
+
+
+class DeliverySpecialItemForm(ModelForm):
+    class Meta:
+        model = DeliverySpecialItem
+        fields = '__all__'
 
 
 class CSVUploadForm(Form):

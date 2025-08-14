@@ -284,6 +284,89 @@ class DeliveryPalette(models.Model):
         return f'{self.delivery} :: {self.palette} :: {self.quantity}'
 
 
+class DeliverySpecial(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    provider = models.CharField(max_length=64)
+    date = models.DateField()
+    description = models.CharField(max_length=256, null=True, blank=True)
+    processed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.provider} {self.date}'
+
+    class Meta:
+        ordering = ['-date', 'id']
+
+    def add_to_warehouse(self, warehouse=None):
+        items = DeliverySpecialItem.objects.filter(delivery=self)
+
+        for item in items:
+            if not warehouse:
+                warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
+            item.add_to_warehouse()
+
+        if self.check_if_processed():
+            self.processed = True
+            self.save()
+
+    def check_if_processed(self):
+        items = DeliverySpecialItem.objects.filter(delivery=self)
+        for item in items:
+            if not item.processed:
+                return False
+        return True
+
+    def all_settle(self):
+        items = DeliverySpecialItem.objects.filter(delivery=self)
+        return all([i.check_settlement() for i in items])
+
+
+class DeliverySpecialItem(models.Model):
+    delivery = models.ForeignKey(DeliverySpecial, on_delete=models.PROTECT)
+    name = models.CharField()
+    quantity = models.PositiveIntegerField(default=0)
+    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    processed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.delivery} :: {self.name} :: {self.quantity}'
+
+    def add_to_warehouse(self, warehouse=None, quantity=False):
+        if not warehouse:
+            warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
+
+        # Create Stock Supply
+        stock_supply, created = StockSupply.objects.get_or_create(
+            stock_type=StockType.objects.get(stock_type='Special', unit='PIECE'),
+            date=self.delivery.date,
+            quantity=self.quantity,
+            name=self.name
+        )
+
+        # Aktualizacja zapasów w magazynie
+        stock, created = Stock.objects.get_or_create(
+            name=self.name,
+            stock_type=StockType.objects.get(stock_type='Special', unit='PIECE')
+        )
+        warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
+
+        history, created = WarehouseStockHistory.objects.get_or_create(
+            warehouse_stock=warehouse_stock,
+            stock_supply=stock_supply,
+            quantity_before=warehouse_stock.quantity,
+            quantity_after=warehouse_stock.quantity+self.quantity
+
+        )
+
+        warehouse_stock.increase_quantity(self.quantity if not quantity else quantity)
+
+        self.processed = True
+        self.save()
+
+    def calculate_value(self):
+        return round(self.quantity * self.price, 2)
+
+
 class StockType(models.Model):
     stock_type = models.CharField(max_length=64)
     unit = models.CharField(max_length=16, choices=UNITS)
