@@ -1,5 +1,5 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
-from warehouse.models import DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2, ProductComplexAssembly, ProductComplexParts, WarehouseStock
+from warehouse.models import Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2, ProductComplexAssembly, ProductComplexParts, WarehouseStock
 from django import forms
 
 
@@ -51,6 +51,14 @@ class ProductComplexAssemblyForm(forms.ModelForm):
             "quantity": forms.NumberInput(attrs={"min": 1}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["product"].queryset = (
+            Product.objects
+            .filter(name__icontains="KOMPLET")
+            .order_by("name")
+        )
+
 
 class ProductComplexPartsForm(forms.ModelForm):
     class Meta:
@@ -59,6 +67,14 @@ class ProductComplexPartsForm(forms.ModelForm):
         widgets = {
             "quantity": forms.NumberInput(attrs={"min": 0}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["part"].queryset = (
+            WarehouseStock.objects
+            .filter(quantity__gt=0)
+            .order_by("-warehouse", "stock__name")
+        )
 
 
 class PartsInlineFormSet(BaseInlineFormSet):
