@@ -15,7 +15,7 @@
 {% if messages %}
   <ul class="messages">
     {% for message in messages %}
-      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
     {% endfor %}
   </ul>
 {% endif %}
@@ -115,25 +115,35 @@
 
 {% block scripts %}
 <script>
-  // Działa z domyślnym prefixem: productcomplexparts_set
-  (function() {
-    const addBtn = document.getElementById('add-row');
-    const tbody = document.getElementById('parts-tbody');
-    const totalFormsInput = document.getElementById('id_productcomplexparts_set-TOTAL_FORMS');
-    const maxFormsInput = document.getElementById('id_productcomplexparts_set-MAX_NUM_FORMS'); // może nie istnieć
+  (function () {
+    const addBtn   = document.getElementById('add-row');
+    const tbody    = document.getElementById('parts-tbody');
     const template = document.getElementById('empty-form-template');
 
+    // Zamiast sztywnego ID — znajdź inputy po NAZWIE (sufiks -TOTAL_FORMS / -MAX_NUM_FORMS)
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    const maxFormsInput   = document.querySelector('input[name$="-MAX_NUM_FORMS"]');
+
+    // Jeśli któregoś kluczowego elementu nie ma — przerwij bez błędu
+    if (!addBtn || !tbody || !template || !totalFormsInput) {
+      console.warn('Formset elements not found.');
+      return;
+    }
+
     function canAddAnother() {
+      // MAX może nie istnieć lub być puste — wtedy brak limitu
       if (!maxFormsInput) return true;
       const max = parseInt(maxFormsInput.value || '0', 10);
       if (!max) return true;
-      return parseInt(totalFormsInput.value, 10) < max;
+      return parseInt(totalFormsInput.value || '0', 10) < max;
     }
 
-    addBtn.addEventListener('click', function() {
+    addBtn.addEventListener('click', function () {
       if (!canAddAnother()) return;
 
-      const idx = parseInt(totalFormsInput.value, 10);
+      const idx  = parseInt(totalFormsInput.value || '0', 10);
+
+      // Wzorzec z <template> zawiera __prefix__ — podmień na nowy indeks
       const html = template.innerHTML.replaceAll(/__prefix__/g, idx);
 
       const wrapper = document.createElement('tbody');
@@ -141,8 +151,9 @@
       const row = wrapper.firstElementChild;
 
       tbody.appendChild(row);
-      totalFormsInput.value = (idx + 1).toString();
+      totalFormsInput.value = String(idx + 1);
     });
   })();
 </script>
 {% endblock scripts %}
+

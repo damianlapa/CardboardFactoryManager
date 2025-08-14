@@ -107,3 +107,11 @@ th {
   color: #6b7280;
   font-size: 0.92rem;
 }
+
+#parts-tbody select[name$="-part"] {
+  max-width: 800px;   /* usuń ograniczenie 420px */
+  width: 80%;       /* wykorzystaj całą szerokość kolumny (60%) */
+  height: 42px;      /* większa wysokość kontrolki */
+  padding: 10px 12px;
+  font-size: 1rem;   /* ~16px, czytelniejsze */
+}
