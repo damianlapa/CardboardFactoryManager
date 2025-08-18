@@ -560,7 +560,7 @@ class ProductSell3(models.Model):
     date = models.DateField()
 
     class Meta:
-        ordering = ['date']
+        ordering = ['date', '-customer', '-product']
 
     def __str__(self):
         return f'{self.product} {self.quantity} -> {self.customer}'
