@@ -765,7 +765,7 @@ class SellProductList(View):
         sells = (
             ProductSell3.objects
             .select_related("product", "warehouse_stock__stock", "warehouse_stock__warehouse", "customer")
-            .order_by("-date")
+            .order_by("-date", 'customer', 'product')
         )
 
         warehouse_stocks = (
