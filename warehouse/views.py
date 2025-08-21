@@ -23,7 +23,7 @@ from django.utils.timezone import now
 from django.db.models import Prefetch
 
 
-def load_orders(year, row=None, division=None):
+def load_orders(year, row=None, division=None, row_list=None):
     def get_flute(text):
         waves = 0
         for letter in text:
@@ -59,10 +59,12 @@ def load_orders(year, row=None, division=None):
     else:
         rows = [row]
 
+    if row_list:
+        rows = row_list
+    print(rows)
     for row in rows:
         try:
             data = data_all[row]
-
             try:
                 customer = Buyer.objects.get(name=data[18].upper().strip())
             except Buyer.DoesNotExist:
@@ -123,7 +125,6 @@ def load_orders(year, row=None, division=None):
                     order.save()
                     result += f'{order} saved<br>'
                 else:
-                    print(f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date')
                     result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date'
 
         except Exception as e:
@@ -334,6 +335,13 @@ class LoadWZ(View):
         except Exception as e:
             errors.append(f'Error creating delivery: {str(e)}')
 
+        numbers = []
+        for o in orders:
+            numbers.append(int(o[0].split('/')[0]))
+
+        nums = get_rows_numbers2(numbers, 2025, delivery.provider)
+        load_orders(2025, row_list=nums)
+
         for order in orders:
             try:
                 p_quantity_counted = 0
@@ -346,9 +354,14 @@ class LoadWZ(View):
             except Exception as e:
                 errors.append(f'Error with order {order[0]}: {str(e)}')
             try:
-                Order.objects.get(provider=delivery.provider, order_id=order[0])
+                order_id_num, order_id_year = order[0].split('/')
+                if len(order_id_year) > 2:
+                    order_id_year = str(int(order_id_year) - 2000)
+                    Order.objects.get(provider=delivery.provider, order_id=f'{order_id_num}/{order_id_year}')
+                else:
+                    Order.objects.get(provider=delivery.provider, order_id=order[0])
             except Order.DoesNotExist:
-                load_orders(year=None, row=None, division='5, 3000')
+                load_orders(year=None, row=None, division='1170, 1200')
             try:
                 if '/' in order[0] and len(order[0].split('/')[1]) > 2:
                     order_split = order[0].split('/')
