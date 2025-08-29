@@ -134,6 +134,6 @@ def get_rows_numbers2(numbers, year, provider):
     for i in range(1, len(column_a)):
         row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
         if row_data in numbers2:
-            result.append(i + 1)
+            result.append(i)
 
     return result

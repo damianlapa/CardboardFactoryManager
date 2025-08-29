@@ -61,7 +61,6 @@ def load_orders(year, row=None, division=None, row_list=None):
 
     if row_list:
         rows = row_list
-    print(rows)
     for row in rows:
         try:
             data = data_all[row]
@@ -98,7 +97,7 @@ def load_orders(year, row=None, division=None, row_list=None):
             try:
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                           provider=Provider.objects.get(shortcut=data[0].upper().strip()))
-                result += f'{order} already exists<br>'
+                result += f'{order} already exists<br>\n'
 
             except Order.DoesNotExist:
                 price = int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
@@ -125,10 +124,12 @@ def load_orders(year, row=None, division=None, row_list=None):
                     order.save()
                     result += f'{order} saved<br>'
                 else:
-                    result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date'
+                    result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date\n'
 
         except Exception as e:
-            result += f'{e}<br>'
+            result += f'{e}<br>\n'
+
+    # print(result)
     return result
 
 
@@ -361,7 +362,7 @@ class LoadWZ(View):
                 else:
                     Order.objects.get(provider=delivery.provider, order_id=order[0])
             except Order.DoesNotExist:
-                load_orders(year=None, row=None, division='1170, 1200')
+                pass
             try:
                 if '/' in order[0] and len(order[0].split('/')[1]) > 2:
                     order_split = order[0].split('/')
@@ -580,7 +581,6 @@ class AddDeliveryToWarehouse(View):
 
 class AddDeliverySpecialToWarehouse(View):
     def post(self, request, delivery_id):
-        print(delivery_id)
         delivery = DeliverySpecial.objects.get(id=delivery_id)
         items = DeliverySpecialItem.objects.filter(delivery=delivery)
         delivery.add_to_warehouse()
@@ -747,8 +747,6 @@ class StockView(View):
             dimensions = stock.name.split('[')[1].replace(']', '').lower()
             supplies = StockSupply.objects.filter(dimensions=dimensions)
         history = WarehouseStockHistory.objects.filter(warehouse_stock__stock=stock)
-        for h in history:
-            print(h)
         return render(request, 'warehouse/stock-details.html', locals())
 
 
@@ -873,8 +871,6 @@ class PaletteView(View):
 
         for cp in CustomerPalette.objects.filter(customer__name__in=["JASS", "TFP"]):
             provider_inventory[cp.customer.name][cp.palette.name] = cp.quantity
-
-        print(provider_inventory)
 
         # 3. Data synchronizacji
         try:
@@ -1003,13 +999,11 @@ def assign_products_to_orders(year=None, row=None, division=None):
 
             # Klucze identyfikujące zlecenie
             provider_code = data[0].upper().strip()
-            print(provider_code)
             order_id = f'{data[1].upper().strip()}/{data[2].upper().strip()}'
 
             # Szukamy istniejącego zlecenia BEZ przypisanego produktu
             try:
                 order = Order.objects.get(order_id=order_id, provider__shortcut=provider_code, product__isnull=True)
-                print(order)
             except Order.DoesNotExist:
                 # result += f'Order {provider_code}/{order_id} already has product or does not exist<br>'
                 continue
@@ -1064,7 +1058,6 @@ def assign_price_to_orders(request):
             # Szukamy istniejącego zlecenia BEZ przypisanego produktu
             try:
                 order = Order.objects.get(order_id=order_id, provider__shortcut=provider_code)
-                print(order)
             except Order.DoesNotExist:
                 # result += f'Order {provider_code}/{order_id} already has product or does not exist<br>'
                 continue
