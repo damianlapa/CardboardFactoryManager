@@ -97,15 +97,16 @@ def get_rows_numbers(numbers, year, provider, values):
         numbers2.append((provider.shortcut.lower(), str(n), year))
 
     for i in range(1, len(column_a)):
-        row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
-        print(row_data)
-        if row_data in numbers2:
-            current_value = sheet.cell(i+1, 16).value
-            if current_value:
-                current_value = int(current_value)
-            else:
-                current_value = 0
-            sheet.update_cell(i+1, 16, f'={current_value}+{values[numbers2.index(row_data)]}')
+        if len(column_a) > i and len(column_b) > i and len(column_c) > i:
+            row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
+            if row_data in numbers2:
+                current_value = sheet.cell(i+1, 16).value
+                print(current_value, i)
+                if current_value and current_value != 'None':
+                    current_value = int(current_value)
+                else:
+                    current_value = 0
+                sheet.update_cell(i+1, 16, f'={current_value}+{values[numbers2.index(row_data)]}')
 
 
 def get_rows_numbers2(numbers, year, provider):
@@ -132,8 +133,9 @@ def get_rows_numbers2(numbers, year, provider):
         numbers2.append((provider.shortcut.lower(), str(n), year))
 
     for i in range(1, len(column_a)):
-        row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
-        if row_data in numbers2:
-            result.append(i)
+        if len(column_a) > i and len(column_b) > i and len(column_c) > i:
+            row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
+            if row_data in numbers2:
+                result.append(i)
 
     return result
