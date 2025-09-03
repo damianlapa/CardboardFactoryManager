@@ -1,5 +1,7 @@
 from django.shortcuts import render, HttpResponse, redirect, reverse
 from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
 from deliveries.models import Event
 from deliveries.forms import EventForm
 from warehousemanager.models import Note
@@ -24,7 +26,9 @@ MONTHS = (
 )
 
 
-class CalendarView(View):
+class CalendarView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
 
         another_start = request.GET.get('start')
@@ -70,7 +74,9 @@ class CalendarView(View):
         return render(request, 'deliveries/calendar2.html', locals())
 
 
-class EventsByDay(View):
+class EventsByDay(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         calendar_date = request.GET.get('calendar')
         year, month, day = calendar_date.split('-')
@@ -85,7 +91,9 @@ class EventsByDay(View):
             return HttpResponse('')
 
 
-class EventCheck(View):
+class EventCheck(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, event_id):
         event = Event.objects.get(id=event_id)
         if event.event_type == 'ZREALIZOWANA DOSTAWA':
@@ -96,7 +104,9 @@ class EventCheck(View):
             return JsonResponse({'success': True})
 
 
-class DayDetails(View):
+class DayDetails(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, date):
         year, month, day = date.split('-')
         day = datetime.datetime(int(year), int(month), int(day))
@@ -106,7 +116,9 @@ class DayDetails(View):
         return render(request, 'deliveries/day-details.html', locals())
 
 
-class AddEvent(View):
+class AddEvent(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         form = EventForm()
 
@@ -134,7 +146,9 @@ class AddEvent(View):
             return redirect(f'{reverse("deliveries-calendar")}?start={day.year}-{day.month}')
 
 
-class EventDetail(View):
+class EventDetail(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, event_id):
         event = Event.objects.get(id=int(event_id))
 
@@ -143,7 +157,9 @@ class EventDetail(View):
         return render(request, 'deliveries/event-details.html', locals())
     
     
-class EventEdit(View):
+class EventEdit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, event_id):
         event = Event.objects.get(id=int(event_id))
         form = EventForm(initial={
@@ -178,7 +194,9 @@ class EventEdit(View):
             return redirect('event-detail', event_id=event.id)
 
 
-class EventDelete(View):
+class EventDelete(LoginRequiredMixin, View):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, event_id):
         event = Event.objects.get(id=event_id)
         day = f'{event.day.year}-{event.day.month}-{event.day.day}'

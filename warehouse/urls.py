@@ -11,7 +11,6 @@ from warehouse.product_complex_views import *
 app_name = 'warehouse'
 
 urlpatterns = [
-    path('test/', TestView.as_view()),
     path('load_wz/', LoadWZ.as_view(), name='load-transport-document'),
     path('orders/', OrderListView.as_view(), name='order_list'),
     path('order_detail/<int:order_id>/', OrderDetailView.as_view(), name="order-detail-view"),

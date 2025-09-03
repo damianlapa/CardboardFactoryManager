@@ -1,4 +1,3 @@
-
 from django.shortcuts import HttpResponse
 from django.views import View
 from django.http import JsonResponse
@@ -21,6 +20,8 @@ from collections import defaultdict
 from django.shortcuts import render
 from django.utils.timezone import now
 from django.db.models import Prefetch
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
 
 
 def load_orders(year, row=None, division=None, row_list=None):
@@ -150,22 +151,9 @@ def delete_delivery_ajax(request, delivery_id):
     return JsonResponse({"success": False, "message": "Invalid request method."})
 
 
-# to delete? 25-06-24
-class TestView(View):
-    def get(self, request):
-        pass
-        # year = request.GET.get('year')
-        # data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
-        # result = ''
-        # row = request.GET.get('row')
-        # division = request.GET.get('division')
-        #
-        # result = load_orders(year, row, division)
-        #
-        # return HttpResponse(result)
+class LoadWZ(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
-
-class LoadWZ(View):
     def get(self, request):
 
         return render(request, "warehouse/load_wz.html")
@@ -383,7 +371,9 @@ class LoadWZ(View):
         return render(request, "warehouse/load_wz_result.html", {"results": result, "errors": errors, "delivery": delivery})
 
 
-class OrderListView(View):
+class OrderListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
@@ -415,7 +405,9 @@ class OrderListView(View):
         return render(request, 'warehouse/order_list.html', locals())
 
 
-class OrderDetailView(View):
+class OrderDetailView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, order_id):
         stock_types = StockType.objects.all()
         order = Order.objects.get(id=order_id)
@@ -494,7 +486,9 @@ class OrderDetailView(View):
         return render(request, 'warehouse/order_details.html', locals())
 
 
-class DeliveriesView(View):
+class DeliveriesView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         deliveries = Delivery.objects.all().prefetch_related('deliverypalette_set__palette')
         special = request.GET.get("special")
@@ -503,7 +497,9 @@ class DeliveriesView(View):
         return render(request, 'warehouse/delivery_list.html', locals())
 
 
-class DeliveryDetailView(View):
+class DeliveryDetailView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
@@ -511,7 +507,9 @@ class DeliveryDetailView(View):
         return render(request, 'warehouse/delivery_details.html', locals())
 
 
-class DeliverySpecialDetailView(View):
+class DeliverySpecialDetailView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, delivery_id):
         delivery = DeliverySpecial.objects.get(id=delivery_id)
         items = DeliverySpecialItem.objects.filter(delivery=delivery)
@@ -519,7 +517,9 @@ class DeliverySpecialDetailView(View):
         return render(request, 'warehouse/delivery_special_details.html', locals())
 
 
-class DeliveryEditView(View):
+class DeliveryEditView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         form = DeliveryForm(instance=delivery)
@@ -546,7 +546,9 @@ class DeliveryEditView(View):
         return render(request, "warehouse/delivery-edit.html", context)
 
 
-class AddDeliveryItem(View):
+class AddDeliveryItem(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def post(self, request):
         form = DeliveryItemForm(request.POST)
         delivery_id = form.data['delivery']
@@ -555,7 +557,9 @@ class AddDeliveryItem(View):
             return redirect('warehouse:delivery-detail-view', delivery_id=delivery_id)
 
 
-class AddDeliverySpecialItem(View):
+class AddDeliverySpecialItem(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def post(self, request):
         form = DeliverySpecialItemForm(request.POST)
         delivery_id = form.data['delivery']
@@ -570,7 +574,9 @@ class AddDeliverySpecialItem(View):
             return HttpResponse(r)
 
 
-class AddDeliveryToWarehouse(View):
+class AddDeliveryToWarehouse(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def post(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
@@ -579,7 +585,9 @@ class AddDeliveryToWarehouse(View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliverySpecialToWarehouse(View):
+class AddDeliverySpecialToWarehouse(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def post(self, request, delivery_id):
         delivery = DeliverySpecial.objects.get(id=delivery_id)
         items = DeliverySpecialItem.objects.filter(delivery=delivery)
@@ -588,20 +596,26 @@ class AddDeliverySpecialToWarehouse(View):
         return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
-class WarehouseView(View):
+class WarehouseView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, warehouse_id):
         warehouse = Warehouse.objects.get(id=warehouse_id)
         stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
-class WarehouseListView(View):
+class WarehouseListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         warehouses = Warehouse.objects.all()
         return render(request, 'warehouse/warehouse_list.html', locals())
 
 
-class DeliveriesStatistics(View):
+class DeliveriesStatistics(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     template_name = 'warehouse/deliveries-statistics.html'
 
     def _parse_date(self, s, default):
@@ -736,7 +750,9 @@ class DeliveriesStatistics(View):
         return render(request, self.template_name, context)
 
 
-class StockView(View):
+class StockView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, stock_id):
         stock = Stock.objects.get(id=stock_id)
         try:
@@ -750,7 +766,9 @@ class StockView(View):
         return render(request, 'warehouse/stock-details.html', locals())
 
 
-class LoadDeliveryToGSFile(View):
+class LoadDeliveryToGSFile(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, delivery_id):
 
         delivery = Delivery.objects.get(id=delivery_id)
@@ -771,7 +789,9 @@ class LoadDeliveryToGSFile(View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class SellProductList(View):
+class SellProductList(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         sells = (
             ProductSell3.objects
@@ -798,7 +818,9 @@ class SellProductList(View):
         return render(request, "warehouse/sell-product-list.html", context=context)
 
 
-class ProductSell3CreateView(CreateView):
+class ProductSell3CreateView(LoginRequiredMixin, CreateView):
+    login_url = reverse_lazy('login')
+
     model = ProductSell3
     fields = ["warehouse_stock", "quantity", "customer", "price", "date"]
 
@@ -843,9 +865,9 @@ class ProductSell3CreateView(CreateView):
         return redirect(self.get_success_url())
 
 
+class PaletteView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
-
-class PaletteView(View):
     def get(self, request):
         palettes = Palette.objects.all()
         customers = Buyer.objects.all().exclude(name__in=["JASS", "TFP"])
@@ -1038,6 +1060,7 @@ def assign_products_to_orders(year=None, row=None, division=None):
             result += f'Error in row {row}: {e}<br>'
 
     return HttpResponse(result)
+
 
 def assign_price_to_orders(request):
     year = 2025

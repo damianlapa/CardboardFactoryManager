@@ -21,34 +21,6 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 
 
-class NewAllOrders(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request):
-        customer = request.GET.get('customer')
-        all_customers = Buyer.objects.all()
-        orders = Order.objects.all()
-        items = OrderItem.objects.all()
-        only_uncompleted = False if not request.GET.get('only_u') else True
-        provider = request.GET.get('provider')
-        if provider:
-            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
-        if customer:
-            orders = []
-            orders_ = OrderItem.objects.filter(buyer__name=customer)
-            for o in orders_:
-                if o.order not in orders:
-                    orders.append(o.order)
-        orders_num = len(orders) if request.GET.get('all-orders') else 10
-
-        paginator = Paginator(orders, orders_num)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        providers = CardboardProvider.objects.all()
-        quantities = OrderItemQuantity.objects.all()
-        return render(request, 'new-all-orders.html', locals())
-
-
 class StartPage(View):
     def get(self, request):
         user = request.user
@@ -67,6 +39,29 @@ class StartPage(View):
         return redirect('start-page')
 
 
+class LoginView(View):
+    def get(self, request):
+        print('here')
+        user = request.user
+        visit_counter(user, 'index')
+        next_url = request.GET.get('next')
+        print(next_url)
+        return render(request, 'start-page.html', locals())
+
+    def post(self, request):
+        name = request.POST.get('login')
+        password = request.POST.get('password')
+        next_url = request.POST.get('next')
+
+        user = authenticate(username=name, password=password)
+
+        if user is not None:
+            login(request, user)
+        if next_url:
+            return redirect(next_url)
+        return redirect('start-page')
+
+
 class LogoutView(View):
     def get(self, request):
         logout(request)
@@ -74,8 +69,8 @@ class LogoutView(View):
         return redirect('start-page')
 
 
-class MainPageView(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class MainPageView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
     def get(self, request):
         title = 'MAIN PAGE'
@@ -269,7 +264,9 @@ class AbsencesList(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-absenceslist.html', locals())
 
 
-class AbsencesAndHolidays(View):
+class AbsencesAndHolidays(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
 
     def get(self, request):
         def days_without_work(worker, mm_yyyy_str):
@@ -757,7 +754,7 @@ class BuyersList(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-buyers-list.html', locals())
 
 
-class PhotoPolymers(View, PermissionRequiredMixin):
+class PhotoPolymers(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_photopolymer'
 
     def get(self, request):
@@ -778,7 +775,7 @@ class PhotoPolymers(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-photopolymers.html', locals())
 
 
-class PhotoPolymerDetail(View, PermissionRequiredMixin):
+class PhotoPolymerDetail(PermissionRequiredMixin, View):
     permission_required('warehousemanager.view_photopolymer')
 
     def get(self, request, polymer_id):
@@ -838,12 +835,12 @@ class ServiceDelete(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy('photopolymers')
 
 
-class ColorListView(ListView, PermissionRequiredMixin):
+class ColorListView(PermissionRequiredMixin, ListView):
     permission_required = 'warehousemanager.view_color'
     model = Color
 
 
-class ColorRefresh(View, PermissionRequiredMixin):
+class ColorRefresh(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_color'
     def get(self, request):
         for color in Color.objects.all():
@@ -856,7 +853,7 @@ class ColorRefresh(View, PermissionRequiredMixin):
         return redirect('colors')
 
 
-class ColorDetail(View, PermissionRequiredMixin):
+class ColorDetail(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_color'
 
     def get(self, request, color_id):
@@ -1072,7 +1069,7 @@ class PersonAbsences(PermissionRequiredMixin, View):
 
 
 # person view
-class PersonListView(View, PermissionRequiredMixin):
+class PersonListView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_person'
 
     def get(self, request):
@@ -1087,7 +1084,7 @@ class PersonListView(View, PermissionRequiredMixin):
 
 
 # person view
-class PersonDetailView(View, PermissionRequiredMixin):
+class PersonDetailView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_person'
 
     def get(self, request, person_id):
@@ -1098,14 +1095,14 @@ class PersonDetailView(View, PermissionRequiredMixin):
 
 
 # contract view
-class ContractCreate(CreateView, PermissionRequiredMixin):
+class ContractCreate(PermissionRequiredMixin, CreateView):
     permission_required = 'warehousemanager.add_contract'
     model = Contract
     fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']
 
 
 # reminder view
-class ReminderListView(View, PermissionRequiredMixin):
+class ReminderListView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_reminder'
 
     def get(self, request):
@@ -1113,7 +1110,7 @@ class ReminderListView(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-reminders-list.html', locals())
 
 
-class ReminderDetailsView(View, PermissionRequiredMixin):
+class ReminderDetailsView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_reminder'
 
     def get(self, request, reminder_id):
@@ -1126,7 +1123,7 @@ class ReminderDetailsView(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-reminder-details.html', locals())
 
 
-class ReminderDeleteView(View, PermissionRequiredMixin):
+class ReminderDeleteView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_reminder'
 
     def get(self, request, reminder_id):
@@ -1136,7 +1133,7 @@ class ReminderDeleteView(View, PermissionRequiredMixin):
         return redirect('reminders')
 
 
-class PaletteQuantitiesView(View, PermissionRequiredMixin):
+class PaletteQuantitiesView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_palette'
 
     def get(self, request):
@@ -1200,8 +1197,8 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
 
 
 # profile-view
-class ProfileView(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class ProfileView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
     def get(self, request):
         user = request.user
@@ -1237,8 +1234,9 @@ class ProfileView(View, LoginRequiredMixin):
             return render(request, 'warehousemanager-profile.html', locals())
 
 
-class MonthlyCardPresence(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class MonthlyCardPresence(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month, worker_id):
 
         def get_weekday_name(day_num):
@@ -1554,8 +1552,9 @@ class MonthlyCardPresence(View, LoginRequiredMixin):
         return response
 
 
-class MonthlyCardPresenceAll(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class MonthlyCardPresenceAll(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month):
 
         def get_weekday_name(day_num):
@@ -1904,8 +1903,9 @@ class MonthlyCardPresenceAll(View, LoginRequiredMixin):
         return response
 
 
-class WorkRemindersView(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class WorkRemindersView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         if request.GET.get('all') == '+':
             reminders = WorkReminder.objects.all()
@@ -1915,8 +1915,9 @@ class WorkRemindersView(View, LoginRequiredMixin):
         return render(request, 'whm/workreminders.html', locals())
 
 
-class WorkReminderAdd(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class WorkReminderAdd(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         form = WorkReminderForm()
         return render(request, 'whm/workreminder-add.html', locals())
@@ -1933,8 +1934,9 @@ class WorkReminderAdd(View, LoginRequiredMixin):
             pass
 
 
-class GluerNumberView(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class GluerNumberView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         gluer_numbers = GluerNumber.objects.all().order_by('number')
         return render(request, 'whm/gluernumbers.html', locals())
@@ -2035,8 +2037,9 @@ class PunchNumberGet(View):
         return JsonResponse(data)
 
 
-class PrintPolymers(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
+class PrintPolymers(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         polymers = Photopolymer.objects.filter(active=True)
 
@@ -2066,9 +2069,9 @@ class PrintPolymers(View, LoginRequiredMixin):
         return response
 
 
-class ActiveHours(View, LoginRequiredMixin):
-    login_url = reverse_lazy('start-page')
-    import calendar
+class ActiveHours(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         d = request.GET.get('d')
         m = request.GET.get('m')

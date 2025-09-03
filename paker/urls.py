@@ -50,12 +50,8 @@ urlpatterns += [
 urlpatterns += [
     path('', StartPage.as_view(), name='start-page'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('login/', LoginView.as_view(), name='login'),
     path('main-page/', MainPageView.as_view(), name='main-page'),
-]
-
-# orders
-urlpatterns += [
-    path('new-all-orders/', NewAllOrders.as_view(), name='new-all-orders'),
 ]
 
 # palettes
