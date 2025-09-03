@@ -22,6 +22,13 @@ from warehousemanager.functions import visit_counter
 from warehousemanager.models import Absence, ExtraHour, Punch, Photopolymer
 
 from django.http import StreamingHttpResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from django.urls import reverse_lazy
+
+import csv
+from django.http import HttpResponse
+from .models import ProductionUnit, WorkStation
 
 
 class Echo:
@@ -126,7 +133,6 @@ def export_production_units_csv_streaming(request):
     return response
 
 
-
 class ToolsUsage(View):
     def get(self, request):
         punches = Punch.objects.all()
@@ -178,12 +184,16 @@ class GetProductionById(View):
             return HttpResponse(json.dumps(False))
 
 
-class ProductionMenu(View):
+class ProductionMenu(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         return render(request, 'production/production-menu.html', locals())
 
 
-class AllProductionOrders(View):
+class AllProductionOrders(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
@@ -192,7 +202,9 @@ class AllProductionOrders(View):
         return render(request, 'production/production-all.html', locals())
 
 
-class AddMoreProductionOrders(View):
+class AddMoreProductionOrders(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         pass
         query = request.GET.get('query', '')
@@ -208,10 +220,7 @@ class AddMoreProductionOrders(View):
             orders_number = orders.filter(id_number__icontains=query)
 
             orders = list(orders_customer) + list(orders_dimensions) + list(orders_cardboard_dimensions) + list(orders_number)
-        #
-        # if status_filter:
-        #     orders = orders.filter(status=status_filter)
-        #
+
         data = [{
             "id": order.id,
             "id_number": order.id_number,
@@ -226,7 +235,9 @@ class AddMoreProductionOrders(View):
         return JsonResponse({"orders": data})
 
 
-class ProductionDetails(View):
+class ProductionDetails(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, production_order_id):
         production_order_statuses = PRODUCTION_ORDER_STATUSES
         production_order = ProductionOrder.objects.get(id=production_order_id)
@@ -234,7 +245,9 @@ class ProductionDetails(View):
         return render(request, 'production/production-details.html', locals())
 
 
-class ChangeProductionStatus(View):
+class ChangeProductionStatus(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         production_order_id = int(request.GET.get('production-order-id'))
         status = request.GET.get('status')
@@ -245,7 +258,9 @@ class ChangeProductionStatus(View):
         return redirect('production-details', production_order_id=production_order.id)
 
 
-class AddProductionOrder(View):
+class AddProductionOrder(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         form = ProductionOrderForm()
         return render(request, 'production/production-order-add.html', locals())
@@ -277,7 +292,9 @@ class AddProductionOrder(View):
         return redirect('all-production-orders')
 
 
-class WorkStations(View):
+class WorkStations(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         visit_counter(request.user, 'Production Workstations')
         workers_data = []
@@ -289,7 +306,9 @@ class WorkStations(View):
         return render(request, 'production/workstations.html', locals())
 
 
-class WorkStationDetails(View):
+class WorkStationDetails(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, workstation_id):
         def get_date_str(some_date):
             date = some_date
@@ -315,13 +334,17 @@ class WorkStationDetails(View):
         return render(request, 'production/workstation-details.html', locals())
 
 
-class ProductionUnitDetails(View):
+class ProductionUnitDetails(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         return render(request, 'production/production-unit-details.html', context={"unit": unit})
 
 
-class EditProductionUnit(View):
+class EditProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         source = request.GET.get('source')
         edit = True
@@ -360,7 +383,9 @@ class EditProductionUnit(View):
         })
 
 
-class AddProductionUnit(View):
+class AddProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, order_id):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
@@ -383,7 +408,9 @@ class AddProductionUnit(View):
             return redirect('production-details', production_order_id=production_order.id)
 
 
-class DeleteProductionUnit(View):
+class DeleteProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         order_id = unit.production_order.id
@@ -391,7 +418,9 @@ class DeleteProductionUnit(View):
         return redirect('production-details', production_order_id=order_id)
 
 
-class StartProductionUnit(View):
+class StartProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'IN PROGRESS'
@@ -401,7 +430,9 @@ class StartProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class FinishProductionUnit(View):
+class FinishProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'FINISHED'
@@ -429,7 +460,9 @@ class FinishProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class PlanProductionUnit(View):
+class PlanProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'PLANNED'
@@ -439,7 +472,9 @@ class PlanProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class RemoveProductionUnit(View):
+class RemoveProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'NOT STARTED'
@@ -451,7 +486,9 @@ class RemoveProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class UpProductionUnit(View):
+class UpProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.move_up_unit()
@@ -460,7 +497,9 @@ class UpProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class DownProductionUnit(View):
+class DownProductionUnit(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.move_down_unit()
@@ -469,7 +508,9 @@ class DownProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class WorkersByMonth(View):
+class WorkersByMonth(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, year, month):
         month_date = datetime.datetime.strptime(f'{year}-{month}', '%Y-%m').strftime("%B")
         month_date = f'{month_date} {year}'
@@ -477,7 +518,9 @@ class WorkersByMonth(View):
         return render(request, 'production/workers-by-month.html', locals())
 
 
-class WorkerEfficiency(View):
+class WorkerEfficiency(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, year, month, worker_id):
         worker = Person.objects.get(id=worker_id)
         if month == 2:
@@ -573,7 +616,9 @@ class WorkerEfficiency(View):
         return render(request, 'production/worker-efficiency.html', locals())
 
 
-class WorkerEfficiencyPrintPDF(View):
+class WorkerEfficiencyPrintPDF(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, year, month, worker_id):
         date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
                                                '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
@@ -837,7 +882,9 @@ class WorkerEfficiencyPrintPDF(View):
         return response
 
 
-class WorkStationEfficiency(View):
+class WorkStationEfficiency(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, year, month, station_id):
         station = WorkStation.objects.get(id=station_id)
 
@@ -865,7 +912,9 @@ class WorkStationEfficiency(View):
         return render(request, 'production/station-efficiency.html', locals())
 
 
-class StationEfficiencyPrintPDF(View):
+class StationEfficiencyPrintPDF(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request, year, month, station_id):
         date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
                                                '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
@@ -960,7 +1009,9 @@ class StationEfficiencyPrintPDF(View):
         return response
 
 
-class CustomReport(View):
+class CustomReport(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         workers = Person.objects.all()
         worker = None
@@ -985,7 +1036,9 @@ class CustomReport(View):
         return render(request, 'production/custom-report.html', locals())
 
 
-class MachinesOccupancy(View):
+class MachinesOccupancy(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         date_from = None if not request.GET.get("date_from") else request.GET.get("date_from")
         date_to = None if not request.GET.get("date_to") else request.GET.get("date_to")
@@ -1006,7 +1059,9 @@ class MachinesOccupancy(View):
         return render(request, 'production/workstations-occupancy.html', locals())
 
 
-class ChangeAllOrders(View):
+class ChangeAllOrders(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         all_orders = ProductionOrder.objects.all()
         for a in all_orders:
@@ -1017,7 +1072,9 @@ class ChangeAllOrders(View):
         return HttpResponse('Done!')
 
 
-class ChangeOrderQuantity(View):
+class ChangeOrderQuantity(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         order_id = request.GET.get('order_id')
         value = request.GET.get('value')
@@ -1030,7 +1087,9 @@ class ChangeOrderQuantity(View):
         return HttpResponse('OK')
 
 
-class ChangeAllOrdersCustom(View):
+class ChangeAllOrdersCustom(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         prefix = request.GET.get('prefix')
         suffix = request.GET.get('suffix')
@@ -1081,7 +1140,9 @@ class ChangeAllOrdersCustom(View):
         return HttpResponse(result)
 
 
-class ChangeManyOrdersStatus(View):
+class ChangeManyOrdersStatus(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         all_orders = ProductionOrder.objects.all()
         result = ''
@@ -1095,7 +1156,9 @@ class ChangeManyOrdersStatus(View):
         return HttpResponse(result)
 
 
-class SetEstimatedTimeView(View):
+class SetEstimatedTimeView(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         correct = request.GET.get('correct')
         start = request.GET.get('start')
@@ -1135,7 +1198,9 @@ class SetEstimatedTimeView(View):
         return render(request, 'production/set-estimated-time.html', locals())
 
 
-class UpdateEstimatedTime(View):
+class UpdateEstimatedTime(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def post(self, request):
         if request:
             import json
@@ -1156,7 +1221,9 @@ class UpdateEstimatedTime(View):
             return JsonResponse({'success': False, 'error': 'Invalid request method or not AJAX'})
 
 
-class WrongDateUnits(View):
+class WrongDateUnits(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
         units = ProductionUnit.objects.all()
         wrong_units = []
@@ -1170,7 +1237,9 @@ class WrongDateUnits(View):
         return render(request, 'production/wrong-date-units.html', locals())
 
 
-class PrepareOrders(View):
+class PrepareOrders(View, LoginRequiredMixin):
+    login_url = reverse_lazy('start-page')
+
     def get(self, request):
 
         def get_data(row_number, year='2024'):
@@ -1269,21 +1338,6 @@ class PrepareOrders(View):
             return JsonResponse({'results': results})
 
         return redirect('production-menu')
-
-
-class UnitTest(View):
-    def get(self, request):
-        units = ProductionUnit.objects.all()
-        for u in units:
-            print(u.unit_duration2())
-
-        return HttpResponse('ok')
-
-
-import csv
-from datetime import timedelta
-from django.http import HttpResponse
-from .models import ProductionUnit, WorkStation
 
 
 def generate_production_csv(request):
