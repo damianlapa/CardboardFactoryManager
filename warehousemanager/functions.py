@@ -341,8 +341,3 @@ def year_weeks(year):
         first_monday += datetime.timedelta(days=7)
 
     return all_weeks
-
-
-def active_workers_at_day(day):
-    active_workers = Person.objects.filter()
-
