@@ -274,25 +274,25 @@
   </tbody>
 </table>
 
-<h2>Results</h2>
+<h2>Sales</h2>
 <table>
   <thead>
     <tr>
-      <th>Part</th>
-      <th>Stock Supply</th>
-      <th>Quantity before</th>
-      <th>Quantity after</th>
       <th>Date</th>
+      <th>Customer</th>
+      <th>Product</th>
+      <th>Quantity</th>
+      <th>Price</th>
     </tr>
   </thead>
   <tbody>
-    {% for w_history in warehouse_stocks_history %}
+    {% for s in sales %}
     <tr>
-      <td>{{ w_history.warehouse_stock }}</td>
-      <td>{{ w_history.stock_supply }}</td>
-      <td>{{ w_history.quantity_before }}</td>
-      <td>{{ w_history.quantity_after }}</td>
-      <td>{{ w_history.date|date:"Y-m-d" }}</td>
+      <td>{{ s.date }}</td>
+      <td>{{ s.customer }}</td>
+      <td>{{ s.product }}</td>
+      <td>{{ s.quantity }}</td>
+      <td>{{ s.price }}</td>
     </tr>
     {% empty %}
     <tr>
