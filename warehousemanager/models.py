@@ -526,12 +526,26 @@ class CardboardProvider(models.Model):
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=32)
+    tax_number = models.CharField(max_length=16, blank=True, null=True)
 
     class Meta:
         ordering = ['name']
 
     def __str__(self):
         return self.name
+
+
+class CustomerDeliveryPlace(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    name = models.CharField(max_length=32, default='Main')
+    latitude = models.CharField(max_length=16)
+    longitude = models.CharField(max_length=16)
+
+    class Meta:
+        ordering = ['customer__name']
+
+    def __str__(self):
+        return f'{self.customer.name} [{self.name}]'
 
 
 class Order(models.Model):
