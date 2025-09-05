@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mapa miejsc dostaw</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 600px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Mapa miejsc dostaw</h2>
+  <div id="map"></div>
+
+  <script>
+    var map = L.map('map').setView([52.0, 19.0], 6); // Polska jako start
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Lista markerów z Django
+    var places = [
+      {% for place in places %}
+        {
+          name: "{{ place.customer.name }} - {{ place.name }}",
+          lat: {{ place.latitude }},
+          lng: {{ place.longitude }}
+        },
+      {% endfor %}
+    ];
+
+    // Dodawanie markerów
+    places.forEach(function(p) {
+      L.marker([p.lat, p.lng]).addTo(map)
+        .bindPopup(p.name);
+    });
+  </script>
+</body>
+</html>
