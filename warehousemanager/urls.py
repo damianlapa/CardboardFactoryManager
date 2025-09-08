@@ -9,4 +9,5 @@ urlpatterns = [
 
 urlpatterns += [
     path("map-deliveries/", DeliveryPlacesMapView.as_view(), name="delivery_places_map"),
+    path("acv/", AllCustomersView.as_view(), name="acv"),
 ]

@@ -536,16 +536,37 @@ class Buyer(models.Model):
 
 
 class CustomerDeliveryPlace(models.Model):
+    FREQ_CHOICES = [
+        ("rare", "Rare"),
+        ("occasional", "Occasional"),
+        ("regular", "Regular"),
+        ("frequent", "Frequent"),
+    ]
+
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     name = models.CharField(max_length=32, default='Main')
-    latitude = models.CharField(max_length=16)
-    longitude = models.CharField(max_length=16)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    lat_long = models.CharField(max_length=64, null=True, blank=True)
+    delivery_frequency = models.CharField(
+        max_length=16, choices=FREQ_CHOICES, default="occasional"
+    )
 
     class Meta:
         ordering = ['customer__name']
 
     def __str__(self):
         return f'{self.customer.name} [{self.name}]'
+
+    def save(self, *args, **kwargs):
+        if self.lat_long and (self.latitude is None or self.longitude is None):
+            try:
+                lat, lon = str(self.lat_long).split(',')
+                self.latitude = float(lat.strip())
+                self.longitude = float(lon.strip())
+            except ValueError:
+                pass
+        super().save(*args, **kwargs)
 
 
 class Order(models.Model):
