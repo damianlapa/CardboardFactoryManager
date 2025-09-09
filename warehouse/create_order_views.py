@@ -8,6 +8,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 import os
 import gspread
 from warehouse.models import Order
+from warehousemanager.models import LocalSetting
+
+
+def euro_clients():
+    setting = LocalSetting.objects.get(name="euro_clients")
+    return tuple(map(lambda x:x.upper().strip(), setting.value.split(';')))
 
 
 def get_gluer_number(dimensions, customer=None):
@@ -86,14 +92,19 @@ def get_data_by_values(provider: str, number: str, year_short: str, year_full: s
 
 class GenerateOrderInlineView(View):
     def get(self, request, order_id, *args, **kwargs):
-        # Pobierz plik wzoru z linku
-        url = "https://paker.eu/wp-content/uploads/2025/07/wzor2euro.xlsx"
-        response = requests.get(url)
+
         order = Order.objects.get(id=order_id)
         num, year = order.order_id.split('/')
         order_provider = order.provider.shortcut
 
         data = get_data_by_values(order_provider, num, year, f'20{year}')
+
+        # Pobierz plik wzoru z linku
+        euro = order.customer.name in euro_clients()
+        url = "https://paker.eu/wp-content/uploads/2025/09/wzor2.xlsx"
+        if euro:
+            url = "https://paker.eu/wp-content/uploads/2025/07/wzor2euro.xlsx"
+        response = requests.get(url)
 
         if response.status_code != 200:
             return HttpResponse("Nie udało się pobrać wzoru", status=500)
