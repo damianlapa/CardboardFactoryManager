@@ -446,6 +446,8 @@ class OrderDetailView(LoginRequiredMixin, View):
                 pass
         stocks = StockSupply.objects.all()
 
+        ld = None
+
         try:
             production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
             production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
@@ -483,6 +485,15 @@ class OrderDetailView(LoginRequiredMixin, View):
                     quantity = h.warehouse_stock.quantity
 
         today = datetime.date.today().isoformat()
+
+        if not ld:
+            if items:
+                for i in items:
+                    if ld:
+                        if ld < i.delivery.date:
+                            ld = i.delivery.date
+                    else:
+                        ld = i.delivery.date
 
         return render(request, 'warehouse/order_details.html', locals())
 

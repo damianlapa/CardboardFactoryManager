@@ -12,8 +12,11 @@ from warehousemanager.models import LocalSetting
 
 
 def euro_clients():
-    setting = LocalSetting.objects.get(name="euro_clients")
-    return tuple(map(lambda x:x.upper().strip(), setting.value.split(';')))
+    try:
+        setting = LocalSetting.objects.get(name="euro_clients")
+        return tuple(map(lambda x:x.upper().strip(), setting.value.split(';')))
+    except LocalSetting.ObjectDoesNotExist:
+        raise Exception('There is no Euro Clients Key')
 
 
 def get_gluer_number(dimensions, customer=None):
