@@ -59,6 +59,7 @@ class Order(models.Model):
     dimensions = models.CharField(max_length=32)
     name = models.CharField(max_length=32)
     weight = models.PositiveIntegerField(default=0)
+    default_pieces = models.DecimalField(max_digits=5, decimal_places=2, default=1.0)
     order_quantity = models.PositiveIntegerField()
     delivered_quantity = models.PositiveIntegerField(default=0)
     price = models.PositiveIntegerField(default=0)
@@ -79,11 +80,19 @@ class Order(models.Model):
         return result
 
     def material_cost(self):
+        orders_from = OrderToOrderShift.objects.filter(order_from=self)
+        orders_to = OrderToOrderShift.objects.filter(order_to=self)
         items = DeliveryItem.objects.filter(order=self)
         cost = 0
 
         for i in items:
             cost += i.calculate_value()
+
+        for of in orders_from:
+            cost -= of.get_value()
+
+        for ot in orders_to:
+            cost += ot.get_value()
 
         return round(cost, 2)
 
@@ -132,13 +141,58 @@ class Order(models.Model):
 
             for s in sales:
                 sold += s.quantity
+
             if pieces and sold and pieces == sold:
                 return True
         return False
 
+    def check_material_usage(self):
+        settlements = OrderSettlement.objects.filter(order=self)
+        for s in settlements:
+            print(s)
+
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
         unique_together = ('provider', 'order_id', 'order_year')
+
+
+class OrderToOrderShift(models.Model):
+    date = models.DateField()
+    order_from = models.ForeignKey(Order, related_name='shifts_from', on_delete=models.PROTECT)
+    order_to = models.ForeignKey(Order, related_name='shifts_to', on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'{self.order_from.order_id} -> {self.order_to.order_id} :: {self.quantity}'
+
+    def get_value(self):
+        items = DeliveryItem.objects.filter(order=self.order_from)
+        if items:
+            item = items[0]
+            one_piece_value = item.calculate_piece_value()
+            return round(one_piece_value * self.quantity, 2)
+        return None
+
+    def get_items(self):
+        items = []
+
+        s_items = DeliveryItem.objects.filter(order=self.order_from)
+        if s_items:
+            items.append(s_items[0])
+
+        stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
+        stock_materials = []
+        for stock_supply in stock_supplies:
+            try:
+                stock = Stock.objects.get(name=stock_supply.name)
+                warehouse_stock = WarehouseStock.objects.get(stock=stock)
+                if warehouse_stock not in stock_materials:
+                    stock_materials.append(warehouse_stock)
+
+            except Exception as e:
+                pass
+
+        return stock_materials
 
 
 class Delivery(models.Model):
@@ -251,7 +305,7 @@ class DeliveryItem(models.Model):
         settlement = OrderSettlement.objects.filter(order=self.order)
         return settlement
 
-    def calculate_value(self):
+    def calculate_piece_value(self):
         dimensions = self.order.dimensions
         price = self.order.price
 
@@ -259,9 +313,12 @@ class DeliveryItem(models.Model):
             dimensions = list(map(int, dimensions.lower().strip().split('x')))
             area = dimensions[0] * dimensions[1] / 1000000
             value = area * price
-            return round(self.quantity*value/1000, 2)
+            return value / 1000
         except:
             return 0
+
+    def calculate_value(self):
+        return round(int(self.quantity) * self.calculate_piece_value(), 2)
 
     def calculate_area(self):
         try:

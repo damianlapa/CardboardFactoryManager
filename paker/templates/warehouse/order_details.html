@@ -115,7 +115,7 @@
   </tbody>
 </table>
 </div>
-    <button id="openProductSellModal">➕ Dodaj sprzedaż</button>
+    <button id="openProductSellModal">➕︎ Add Sale</button>
 <div id="productSellModal" class="modal">
   <div class="modal-content">
     <span class="closesell">&times;</span>
@@ -174,6 +174,7 @@
 </div>
   </div>
 </div>
+{% if not shifts %}
 <h2>Deliveries</h2>
 <table>
   <thead>
@@ -201,6 +202,60 @@
     {% empty %}
     <tr>
       <td colspan="10">No deliveries available.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<h2>Shifts</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Shift date</th>
+      <th>Order from</th>
+      <th>Quantity</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for shift in shifts %}
+    <tr>
+      <td>{{ shift.date|date:"Y-m-d" }}</td>
+      <td><a href="{% url 'warehouse:order-detail-view' order_id=shift.order_from.id %}">{{ shift.order_from }}</a></td>
+      <td>{{ shift.quantity }}</td>
+      <td>{{ shift.get_value }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No shifts available.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Shifts</h2>
+<button id="openShiftModal">➕︎ Add Shift</button>
+<table>
+  <thead>
+    <tr>
+      <th>Shift date</th>
+      <th>Order to</th>
+      <th>Quantity</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for shift_f in shifts_from %}
+    <tr>
+      <td>{{ shift_f.date|date:"Y-m-d" }}</td>
+      <td><a href="{% url 'warehouse:order-detail-view' order_id=shift_f.order_to.id %}">{{ shift_f.order_to }}</a></td>
+      <td>{{ shift_f.quantity }}</td>
+      <td>{{ shift_f.get_value }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10">No shifts available.</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -335,7 +390,7 @@
                     name="material_quantity"
                     max="{{ material.quantity }}"
                     min="0"
-                    value="{{ material.quantity }}"
+                    value="{% if shift_quantity %}{{ shift_quantity }}{%else %}{{ material.quantity }}{% endif %}"
                     required
                   >
                   <input type="hidden" name="material_id" value="{{ material.id }}">
@@ -411,10 +466,61 @@
 </div>
 
 
+<div id="shiftModal" class="modal">
+  <div class="modal-content">
+    <span class="closeshift">&times;</span>
+    <h2>Add Shift from: {{ order }} </h2>
+
+    <form method="post" action="{% url 'warehouse:add_shift' order.id %}">
+      {% csrf_token %}
+
+      <label>Date:</label>
+      <input type="date" name="date" value="{{ today }}" required><br>
+
+      <label>Order to:</label>
+      <select name="order_to" required>
+        {% for o in orders_other %}
+          <option value="{{ o.id }}">{{ o }}</option>
+        {% endfor %}
+      </select><br>
+
+      <label>Quantity:</label>
+      <input type="number" name="quantity" min="1" required><br>
+
+      <!-- Jeśli w modelu są dodatkowe pola (np. price, note), dodaj je tutaj -->
+
+      <input type="submit" value="Save">
+    </form>
+  </div>
+</div>
+
+
 
 
 {% endblock %}
 {% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const shiftModal = document.getElementById("shiftModal");
+  const openShiftBtn = document.getElementById("openShiftModal");
+  const closeShiftBtn = shiftModal.querySelector(".closeshift");
+
+  openShiftBtn.onclick = function () {
+    shiftModal.style.display = "block";
+  };
+
+  closeShiftBtn.onclick = function () {
+    shiftModal.style.display = "none";
+  };
+
+  shiftModal.addEventListener("click", function (event) {
+    if (event.target === shiftModal) {
+      shiftModal.style.display = "none";
+    }
+  });
+});
+</script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("productSellModal");

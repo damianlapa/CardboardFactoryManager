@@ -1,5 +1,6 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
-from warehouse.models import Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2, ProductComplexAssembly, ProductComplexParts, WarehouseStock
+from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2,
+                              ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift)
 from django import forms
 
 
@@ -40,6 +41,20 @@ class ProductSell2Form(ModelForm):
         model = ProductSell2
         fields = ['product', 'quantity', 'price', 'date']
 
+
+class OrderToOrderShiftForm(forms.ModelForm):
+    class Meta:
+        model = OrderToOrderShift
+        exclude = ["order_from"]  # "value" również, jeśli istnieje i jest wyliczane
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def clean_quantity(self):
+        q = self.cleaned_data.get("quantity")
+        if q is None or q <= 0:
+            raise forms.ValidationError("Quantity must be a positive number.")
+        return q
 
 
 class ProductComplexAssemblyForm(forms.ModelForm):
@@ -105,4 +120,3 @@ PartsFormSet = inlineformset_factory(
     extra=3,           # ile pustych wierszy startowo
     can_delete=True,   # możliwość usuwania wierszy
 )
-

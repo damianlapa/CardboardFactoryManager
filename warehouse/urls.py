@@ -85,3 +85,7 @@ urlpatterns += [
     path("assembly/", AssemblyListView.as_view(), name="assembly_list"),
     path("assembly/<int:pk>/", AssemblyDetailView.as_view(), name="assembly_detail"),
 ]
+
+urlpatterns += [
+    path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
+]

@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from warehouse.gs_connection import *
 from warehouse.models import *
-from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm
+from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, OrderToOrderShiftForm
 from warehousemanager.models import Buyer, LocalSetting
 from production.models import ProductionOrder, ProductionUnit
 import pdfplumber
@@ -416,6 +416,10 @@ class OrderDetailView(LoginRequiredMixin, View):
         warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
         sales = ProductSell3.objects.filter(order=order)
 
+        # attempt
+        shifts_to = OrderToOrderShift.objects.filter(order_to=order)
+        shifts_from = OrderToOrderShift.objects.filter(order_from=order)
+        shifts = shifts_to
         products = [order.product]
 
         warehouse_products = None
@@ -432,7 +436,17 @@ class OrderDetailView(LoginRequiredMixin, View):
                 warehouse_products.append(warehouse_product_stock)
             except Stock.DoesNotExist:
                 pass
+
+        # attempt
         items = DeliveryItem.objects.filter(order=order)
+        items = list(items)
+
+        # for s in shifts_to:
+        #     print(s.get_value())
+        #     s_items = DeliveryItem.objects.filter(order=s.order_from)
+        #     if s_items:
+        #         items.append(s_items[0])
+
         stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
         stock_materials = []
         all_materials_in_warehouse = WarehouseStock.objects.filter(warehouse=Warehouse.objects.get(name="MAGAZYN GŁÓWNY"))
@@ -440,10 +454,18 @@ class OrderDetailView(LoginRequiredMixin, View):
             try:
                 stock = Stock.objects.get(name=stock_supply.name)
                 warehouse_stock = WarehouseStock.objects.get(stock=stock)
-                stock_materials.append(warehouse_stock)
+                if warehouse_stock not in stock_materials:
+                    stock_materials.append(warehouse_stock)
 
             except Exception as e:
                 pass
+
+        if shifts_to:
+            stock_materials = shifts_to[0].get_items()
+            shift_quantity = 0
+            for s in shifts_to:
+                shift_quantity += s.quantity
+
         stocks = StockSupply.objects.all()
 
         ld = None
@@ -495,7 +517,32 @@ class OrderDetailView(LoginRequiredMixin, View):
                     else:
                         ld = i.delivery.date
 
+        # w OrderDetailView.get(...)
+        orders_other = Order.objects.exclude(id=order.id).order_by("-id")#[:100]  # do selecta w modalu
+
         return render(request, 'warehouse/order_details.html', locals())
+
+
+class AddShiftView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def post(self, request, order_id):
+        order_from = get_object_or_404(Order, id=order_id)
+        form = OrderToOrderShiftForm(request.POST)
+
+        if form.is_valid():
+            shift: OrderToOrderShift = form.save(commit=False)
+            shift.order_from = order_from
+            # jeśli masz logikę wyliczania wartości, możesz tu ją uzupełnić
+            # shift.value = shift.quantity * (shift.order_to.product.price or 0)
+            shift.save()
+            messages.success(request, "Shift added.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        else:
+            messages.error(request, f"Cannot add shift: {form.errors.as_text()}")
+
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
 
 
 class DeliveriesView(LoginRequiredMixin, View):
