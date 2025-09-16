@@ -37,6 +37,7 @@
         <th>Dimensions</th>
         <th>Quantity</th>
         <th>Palettes quantity</th>
+        <th>Processed</th>
       </tr>
     </thead>
     <tbody>
@@ -49,6 +50,12 @@
         <td>{{ item.order.dimensions }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
+        <td>{% if item.processed %}✅{% else %}
+          <a href="{% url 'warehouse:process-delivery-item' delivery_id=delivery.id item_id=item.id %}">
+          ⬇️
+          </a>
+          {% endif %}
+        </td>
       </tr>
       {% empty %}
       <tr>

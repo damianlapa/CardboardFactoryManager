@@ -216,9 +216,10 @@ class Delivery(models.Model):
         items = DeliveryItem.objects.filter(delivery=self)
 
         for item in items:
-            if not warehouse:
-                warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
-            item.add_to_warehouse()
+            if not item.processed:
+                if not warehouse:
+                    warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
+                item.add_to_warehouse()
 
         if self.check_if_processed():
             self.processed = True

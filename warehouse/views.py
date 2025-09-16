@@ -544,7 +544,6 @@ class AddShiftView(LoginRequiredMixin, View):
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
-
 class DeliveriesView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
@@ -561,7 +560,7 @@ class DeliveryDetailView(LoginRequiredMixin, View):
 
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
-        items = DeliveryItem.objects.filter(delivery=delivery)
+        items = DeliveryItem.objects.filter(delivery=delivery).order_by('id')
         form = DeliveryItemForm(initial={'delivery': delivery})
         return render(request, 'warehouse/delivery_details.html', locals())
 
@@ -631,6 +630,16 @@ class AddDeliverySpecialItem(LoginRequiredMixin, View):
             for e in errors:
                 r += f'{e}<br>'
             return HttpResponse(r)
+
+
+class AddDeliveryItemToWarehouse(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request, delivery_id, item_id):
+        item = DeliveryItem.objects.get(id=item_id)
+        item.add_to_warehouse()
+
+        return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
 class AddDeliveryToWarehouse(LoginRequiredMixin, View):

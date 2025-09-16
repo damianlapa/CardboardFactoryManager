@@ -35,6 +35,7 @@ urlpatterns += [
     path('delivery_special_detail/<int:delivery_id>/', DeliverySpecialDetailView.as_view(), name="delivery-special-detail-view"),
     path('add-delivery-special-item/', AddDeliverySpecialItem.as_view(), name='add-delivery-special-item'),
     path('process_delivery/<int:delivery_id>/', AddDeliveryToWarehouse.as_view(), name="process-delivery"),
+    path('process_delivery/<int:delivery_id>/<int:item_id>/', AddDeliveryItemToWarehouse.as_view(), name="process-delivery-item"),
     path('process_delivery_special/<int:delivery_id>/', AddDeliverySpecialToWarehouse.as_view(), name="process-delivery-special"),
 ]
 
@@ -88,4 +89,8 @@ urlpatterns += [
 
 urlpatterns += [
     path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
+]
+
+urlpatterns += [
+    path("orders/<int:order_id>/add-shift/", AddDeliveryItemToWarehouse.as_view(), name="add_shift"),
 ]
