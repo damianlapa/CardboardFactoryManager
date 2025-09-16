@@ -610,6 +610,7 @@ class CustomerPalette(models.Model):
 
 class ProductSell3(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, null=True, blank=True)
+    customer_alter_name = models.CharField(max_length=32, null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.PROTECT, null=True, blank=True)

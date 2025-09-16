@@ -33,6 +33,9 @@
     {% endfor %}
   </select><br>
 
+  <label>Klient zastępczy:</label>
+  <input type="text" name="customer_alter_name"><br>
+
   <label>Cena:</label>
   <input type="number" name="price" step="0.01" required><br>
 
@@ -49,6 +52,7 @@
   <thead>
     <tr>
       <th>Data</th>
+      <th>Klient</th>
       <th>Produkt</th>
       <th>Magazyn</th>
       <th>Ilość</th>
@@ -61,6 +65,13 @@
     {% for sell in sells %}
     <tr>
       <td>{{ sell.date }}</td>
+      <td>
+        {% if not sell.customer_alter_name %}
+          {{ sell.customer }}
+        {% else %}
+          {{ sell.customer_alter_name }}
+        {% endif %}
+      </td>
       <td>{{ sell.warehouse_stock.stock.name }}</td>
       <td>{{ sell.warehouse_stock.warehouse.name }}</td>
       <td>{{ sell.quantity }}</td>

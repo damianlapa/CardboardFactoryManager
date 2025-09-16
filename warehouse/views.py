@@ -890,7 +890,7 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
     login_url = reverse_lazy('login')
 
     model = ProductSell3
-    fields = ["warehouse_stock", "quantity", "customer", "price", "date"]
+    fields = ["warehouse_stock", "quantity", "customer", "price", "date", "customer_alter_name"]
 
     def get_success_url(self):
         return reverse("warehouse:sells-list-view")
@@ -913,6 +913,7 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
                 return self.form_invalid(form)
 
             sell = form.save(commit=False)
+            sell.customer_alter_name = form.cleaned_data["customer_alter_name"]
             sell.warehouse_stock = ws
             # product zostanie ustawiony automatycznie w clean()/save()
             sell.full_clean()  # uruchomi walidacje z modelu (w tym auto-resolve product)
@@ -930,6 +931,10 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
             ws.save(update_fields=["quantity"])
 
         messages.success(self.request, "Sprzedaż zapisana.")
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        print(form.cleaned_data)
         return redirect(self.get_success_url())
 
 
