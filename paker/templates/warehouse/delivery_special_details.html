@@ -23,6 +23,7 @@
         <th>Delivery date</th>
         <th>Name</th>
         <th>Quantity</th>
+        <th>Processed</th>
       </tr>
     </thead>
     <tbody>
@@ -31,6 +32,12 @@
         <td>{{ delivery.date|date:"Y-m-d" }}</td>
         <td>{{ item.name }}</td>
         <td>{{ item.quantity }}</td>
+        <td>{% if item.processed %}✅{% else %}
+          <a href="{% url 'warehouse:process-delivery-special-item' delivery_id=delivery.id item_id=item.id %}">
+          ⬇️
+          </a>
+          {% endif %}
+        </td>
       </tr>
       {% empty %}
       <tr>

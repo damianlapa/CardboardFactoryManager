@@ -58,7 +58,6 @@
       <th>Ilość</th>
       <th>Cena</th>
       <th>Wartość</th>
-      <th>Klient</th>
     </tr>
   </thead>
   <tbody>
@@ -77,7 +76,6 @@
       <td>{{ sell.quantity }}</td>
       <td>{{ sell.price|floatformat:2 }} zł</td>
       <td>{{ sell.calculate_value|floatformat:2 }} zł</td>
-      <td>{{ sell.customer }}</td>
     </tr>
     {% empty %}
     <tr><td colspan="7">Brak transakcji sprzedaży.</td></tr>

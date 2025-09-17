@@ -664,6 +664,16 @@ class AddDeliverySpecialToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
+class AddDeliverySpecialItemToWarehouse(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request, delivery_id, item_id):
+        item = DeliverySpecialItem.objects.get(id=item_id)
+        item.add_to_warehouse()
+
+        return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
+
+
 class WarehouseView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
@@ -906,9 +916,11 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
             qty = form.cleaned_data["quantity"]
 
             if qty <= 0:
+                print('qty')
                 form.add_error("quantity", "Ilość musi być większa od zera.")
                 return self.form_invalid(form)
             if ws.quantity < qty:
+                print(ws.quantity, qty)
                 form.add_error("quantity", "Nie ma wystarczającej ilości w magazynie!")
                 return self.form_invalid(form)
 
@@ -934,6 +946,7 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
         return redirect(self.get_success_url())
 
     def form_invalid(self, form):
+        print(form.errors)
         print(form.cleaned_data)
         return redirect(self.get_success_url())
 

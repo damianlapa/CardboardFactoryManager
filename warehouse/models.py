@@ -689,8 +689,10 @@ class ProductSell3(models.Model):
         Preferuje FK ws.stock.product, a jeśli go nie ma — dopasowanie po nazwie.
         """
         if not self.warehouse_stock_id:
+            print('#1')
             return None
         ws = self.warehouse_stock  # zakładamy, że select_related w widoku przyspieszy dostęp
+        print(ws.stock.name)
         # 1) jeśli masz FK: Stock -> Product (pole 'product')
         prod = getattr(ws.stock, "product", None)
         if prod:
