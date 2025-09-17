@@ -1034,6 +1034,7 @@ def add_product_sell3(request):
         with transaction.atomic():
             product = Product.objects.get(id=int(request.POST.get("product")))
             customer = Buyer.objects.get(id=int(request.POST.get("customer")))
+            customer_alter_name = request.POST.get("customer_alter_name")
             warehouse_stock = WarehouseStock.objects.get(id=int(request.POST.get("warehouse_stock")))
             order = Order.objects.get(id=int(request.POST.get("order")))
             quantity = request.POST.get("quantity_sell")
@@ -1041,6 +1042,7 @@ def add_product_sell3(request):
             ProductSell3.objects.create(
                 product=product,
                 customer=customer,
+                customer_alter_name=customer_alter_name,
                 warehouse_stock=warehouse_stock,
                 order=order,
                 quantity=quantity,
