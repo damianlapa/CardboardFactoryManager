@@ -619,10 +619,11 @@ class ProductSell3(models.Model):
     date = models.DateField()
 
     class Meta:
-        ordering = ['date', '-customer', '-product']
+        ordering = ['-date', '-customer', '-product']
 
     def __str__(self):
-        return f'{self.product} {self.quantity} -> {self.customer}'
+        customer = self.customer if self.customer else self.customer_alter_name
+        return f'{self.date} | {self.product} {self.quantity} -> {customer}'
 
     def calculate_value(self):
         return round(float(self.price) * float(self.quantity), 2)
