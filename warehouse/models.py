@@ -807,6 +807,9 @@ class WarehouseStockHistory(models.Model):
     quantity_after = models.PositiveIntegerField(default=0)
     date = models.DateField(null=True, blank=True)
 
+    class Meta:
+        ordering = ['-date', '-warehouse_stock']
+
     def save(self, *args, **kwargs):
         if not self.date:
             if self.stock_supply:
