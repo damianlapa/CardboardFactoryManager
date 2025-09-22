@@ -3,6 +3,7 @@ from production.views import *
 from production.views_rap import *
 from production.effectivity_views import *
 from production.planning_views import *
+from production.reports_view import *
 
 
 urlpatterns = [
@@ -120,4 +121,8 @@ urlpatterns += [
 urlpatterns += [
     path('epuc/', export_production_units_csv_streaming, name='epuc'),
     path('eppd/', export_person_performance_with_quantities, name='eppd'),
+    ]
+
+urlpatterns += [
+    path('reports/losses/<int:year>/<int:month>/<int:station_id>/', WorkStationLossesXLSX.as_view(), name='ws_losses_xlsx'),
 ]
