@@ -126,3 +126,7 @@ urlpatterns += [
 urlpatterns += [
     path('reports/losses/<int:year>/<int:month>/<int:station_id>/', WorkStationLossesXLSX.as_view(), name='ws_losses_xlsx'),
 ]
+
+urlpatterns += [
+    path('order/redirect/<int:order_id>/', OrderDetailsRedirect.as_view(), name='order-redirect')
+]

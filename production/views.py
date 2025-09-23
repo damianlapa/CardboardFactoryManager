@@ -1372,3 +1372,19 @@ def generate_production_csv(request):
         ])
 
     return response
+
+
+class OrderDetailsRedirect(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request, order_id):
+        from warehouse.models import Order, Provider
+        try:
+            production_order = ProductionOrder.objects.get(id=order_id)
+            provider, number = production_order.id_number.split(' ')
+            provider = Provider.objects.get(name=provider)
+            number, year = number.split('/')
+            order = Order.objects.get(provider=provider, order_id=f'{number}/{year}', order_year=f'20{year}')
+            return redirect('warehouse:order-detail-view', order_id=order.id)
+        except ObjectDoesNotExist:
+            return HttpResponse('notok')
