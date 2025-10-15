@@ -6,6 +6,7 @@ from warehouse.statstics_views import *
 from warehouse.create_order_views import GenerateOrderInlineView
 from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
 from warehouse.product_complex_views import *
+from warehouse.price_list_view import PriceListUploadView
 
 
 app_name = 'warehouse'
@@ -94,4 +95,9 @@ urlpatterns += [
 
 urlpatterns += [
     path("orders/<int:order_id>/add-shift/", AddDeliveryItemToWarehouse.as_view(), name="add_shift"),
+]
+
+# price list
+urlpatterns += [
+    path('price_list/upload/', PriceListUploadView.as_view(), name='price_list-upload'),
 ]

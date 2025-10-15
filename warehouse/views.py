@@ -323,13 +323,20 @@ class LoadWZ(LoginRequiredMixin, View):
             errors.append(f'Provider {provider} does not exist.')
         except Exception as e:
             errors.append(f'Error creating delivery: {str(e)}')
-
+        wrong_orders = []
         numbers = []
         for o in orders:
-            numbers.append(int(o[0].split('/')[0]))
+            try:
+                numbers.append(int(o[0].split('/')[0]))
+            except ValueError:
+                errors.append(f'Error creating item: {o}')
+                wrong_orders.append(o)
 
         nums = get_rows_numbers2(numbers, 2025, delivery.provider)
         load_orders(2025, row_list=nums)
+
+        for wrong_order in wrong_orders:
+            orders.remove(wrong_order)
 
         for order in orders:
             try:
@@ -440,6 +447,25 @@ class OrderDetailView(LoginRequiredMixin, View):
         # attempt
         items = DeliveryItem.objects.filter(order=order)
         items = list(items)
+
+        # price list
+        price_list_date = order.order_date
+        price_list_provider = order.provider
+        price_item_name = order.name
+
+        price_list = PriceList.objects.filter(
+            provider=price_list_provider,
+            # date_start__lte=price_list_date,
+            # date_end__gte=price_list_date
+        )
+        print(price_list)
+        if price_list:
+            price_item = PriceListItem.objects.filter(price_list=price_list[0], name=price_item_name)[0]
+            print(price_item)
+
+
+
+
 
         # for s in shifts_to:
         #     print(s.get_value())

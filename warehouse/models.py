@@ -828,3 +828,33 @@ class WarehouseStockHistory(models.Model):
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
         else:
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
+
+
+class PriceList(models.Model):
+    provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
+    date_start = models.DateField()
+    date_end = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        if self.date_end:
+            return f'{self.provider} :: {self.date_start} - {self.date_end}'
+        return f'[ACTIVE]{self.provider} :: {self.date_start}'
+
+    class Meta:
+        unique_together = ['provider', 'date_start']
+
+
+class PriceListItem(models.Model):
+    price_list = models.ForeignKey(PriceList, on_delete=models.CASCADE)
+    name = models.CharField(max_length=16)
+    flute = models.CharField(max_length=4)
+    weight = models.IntegerField(default=0)
+    etc = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    price = models.IntegerField()
+    price2 = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.name} - {self.price}'
+
+    class Meta:
+        unique_together = ['price_list', 'name']

@@ -1,7 +1,8 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
 from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2,
-                              ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift)
+                              ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem)
 from django import forms
+from django.core.validators import FileExtensionValidator
 
 
 class DeliveryItemForm(ModelForm):
@@ -120,3 +121,13 @@ PartsFormSet = inlineformset_factory(
     extra=3,           # ile pustych wierszy startowo
     can_delete=True,   # możliwość usuwania wierszy
 )
+
+
+class PriceListUploadForm(forms.Form):
+    date_start = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+    date_end = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    pdf_file = forms.FileField(
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+        help_text="Wgraj plik PDF z cennikiem."
+    )
+
