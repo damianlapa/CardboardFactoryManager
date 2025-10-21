@@ -352,7 +352,15 @@ class LoadWZ(LoginRequiredMixin, View):
             try:
                 order_id_num, order_id_year = order[0].split('/')
                 if len(order_id_year) > 2:
-                    order_id_year = str(int(order_id_year) - 2000)
+                    temp_order_id_year = ''
+                    for char in order_id_year:
+                        if str(char).isdigit() and str(char) in '0123456789':
+                            print(char)
+                            temp_order_id_year += str(char)
+                    order_id_year = temp_order_id_year
+                    if len(order_id_year) > 2:
+                        order_id_year = str(int(order_id_year) - 2000)
+                    print(order_id_year)
                     Order.objects.get(provider=delivery.provider, order_id=f'{order_id_num}/{order_id_year}')
                 else:
                     Order.objects.get(provider=delivery.provider, order_id=order[0])
@@ -361,7 +369,14 @@ class LoadWZ(LoginRequiredMixin, View):
             try:
                 if '/' in order[0] and len(order[0].split('/')[1]) > 2:
                     order_split = order[0].split('/')
-                    order[0] = str(order_split[0]) + '/' + str(order_split[1][2:4])
+                    temp = ''
+                    for char in order_split[1]:
+                        if str(char).isdigit() and str(char) in '0123456789':
+                            temp += str(char)
+                    if len(temp) > 2:
+                        order[0] = str(order_split[0]) + '/' + temp[2:4]
+                    else:
+                        order[0] = str(order_split[0]) + '/' + temp
                 delivery_item = DeliveryItem.objects.create(
                     delivery=delivery,
                     order=Order.objects.get(provider=delivery.provider, order_id=order[0]),
