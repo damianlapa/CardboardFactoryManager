@@ -1,6 +1,6 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
 from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2,
-                              ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem)
+                              ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem, Provider)
 from django import forms
 from django.core.validators import FileExtensionValidator
 
@@ -35,6 +35,10 @@ class DeliveryForm(ModelForm):
     class Meta:
         model = Delivery
         fields = ('date', 'car_number', 'telephone', 'description', 'processed', 'updated')
+
+
+class ManuallyOrdersForm(forms.Form):
+    providers = forms.Select(choices=Provider.objects.all())
 
 
 class ProductSell2Form(ModelForm):

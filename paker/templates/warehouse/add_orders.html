@@ -1,0 +1,15 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+{% block content %}
+  <div class="import-container">
+    <h1>Import Data from Sheet</h1>
+    <p>-</p>
+    {{ orders_form.as_p }}
+  </div>
+{% endblock %}
+{% block scripts %}
+{% load static %}
+{% endblock %}

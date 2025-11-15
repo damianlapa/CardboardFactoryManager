@@ -9,7 +9,8 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from warehouse.gs_connection import *
 from warehouse.models import *
-from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, OrderToOrderShiftForm
+from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, \
+    OrderToOrderShiftForm, ManuallyOrdersForm
 from warehousemanager.models import Buyer, LocalSetting
 from production.models import ProductionOrder, ProductionUnit
 import pdfplumber
@@ -51,29 +52,37 @@ def load_orders(year, row=None, division=None, row_list=None):
     year = year if year else datetime.datetime.today().year
     data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
     result = ''
-    row = row if row else 100
-    division = division if division else '10, 15'
+    row = row if row else None
+    division = division if division else None
 
     if division:
         start, end = division.split(',')
         rows = [r for r in range(int(start), int(end) + 1)]
-    else:
+    elif row:
         rows = [row]
+    else:
+        rows = []
 
     if row_list:
         rows = row_list
     for row in rows:
+        print(row)
         try:
             data = data_all[row]
+            print(data)
             try:
+                print('customer jest')
                 customer = Buyer.objects.get(name=data[18].upper().strip())
             except Buyer.DoesNotExist:
+                print('customer jest nie ')
                 customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
                 customer.save()
 
             try:
+                print('dostawca jest')
                 provider = Provider.objects.get(shortcut=data[0].upper().strip())
             except Provider.DoesNotExist:
+                print('dostawca jest nie')
                 provider = Provider(name=data[0], shortcut=data[0])
                 provider.save()
 
@@ -83,10 +92,14 @@ def load_orders(year, row=None, division=None, row_list=None):
 
             product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
 
+            print(product_name, dimensions, flute)
+
             # Pobierz lub utwórz produkt
             try:
+                print('produkt jest')
                 product = Product.objects.get(name=product_name)
             except Product.DoesNotExist:
+                print('produkt jest nie')
                 if all((product_name, dimensions, flute)):
                     product = Product.objects.create(
                         name=product_name,
@@ -96,13 +109,15 @@ def load_orders(year, row=None, division=None, row_list=None):
                     )
 
             try:
+                print('order jest')
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                           provider=Provider.objects.get(shortcut=data[0].upper().strip()))
                 result += f'{order} already exists<br>\n'
 
             except Order.DoesNotExist:
+                print('order jest nie')
                 price = int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                        22] else 0
+                    22] else 0
                 order_date = data[6].upper().strip() if data[6].upper().strip() else None
                 order = Order(
                     customer=customer,
@@ -130,7 +145,7 @@ def load_orders(year, row=None, division=None, row_list=None):
         except Exception as e:
             result += f'{e}<br>\n'
 
-    # print(result)
+    print(result)
     return result
 
 
@@ -274,7 +289,8 @@ class LoadWZ(LoginRequiredMixin, View):
                     cardboard_line = line.split(' ')
                     cardboard = cardboard_line[1][:-9] if cardboard_line[1][2].isdigit() else cardboard_line[1][:-8]
                     dimensions = cardboard_line[1][-9:] if cardboard_line[1][2].isdigit() else cardboard_line[1][-8:]
-                    p_quantity += f'{cardboard_line[3]};' if len(cardboard_line) == 7 else f'{cardboard_line[3]}{cardboard_line[4]};'
+                    p_quantity += f'{cardboard_line[3]};' if len(
+                        cardboard_line) == 7 else f'{cardboard_line[3]}{cardboard_line[4]};'
                     p_quantity.replace(',', '')
                 if cardboard in line and "RAZEM" in line:
                     quantity_line = line.split(" ")
@@ -333,6 +349,7 @@ class LoadWZ(LoginRequiredMixin, View):
                 wrong_orders.append(o)
 
         nums = get_rows_numbers2(numbers, 2025, delivery.provider)
+        print(nums)
         load_orders(2025, row_list=nums)
 
         for wrong_order in wrong_orders:
@@ -365,6 +382,7 @@ class LoadWZ(LoginRequiredMixin, View):
                 else:
                     Order.objects.get(provider=delivery.provider, order_id=order[0])
             except Order.DoesNotExist:
+                print('none')
                 pass
             try:
                 if '/' in order[0] and len(order[0].split('/')[1]) > 2:
@@ -390,7 +408,8 @@ class LoadWZ(LoginRequiredMixin, View):
             except Exception as e:
                 errors.append(f'Error with delivery item for order {order[0]}: {str(e)}')
 
-        return render(request, "warehouse/load_wz_result.html", {"results": result, "errors": errors, "delivery": delivery})
+        return render(request, "warehouse/load_wz_result.html",
+                      {"results": result, "errors": errors, "delivery": delivery})
 
 
 class OrderListView(LoginRequiredMixin, View):
@@ -478,10 +497,6 @@ class OrderDetailView(LoginRequiredMixin, View):
             price_item = PriceListItem.objects.filter(price_list=price_list[0], name=price_item_name)[0]
             print(price_item)
 
-
-
-
-
         # for s in shifts_to:
         #     print(s.get_value())
         #     s_items = DeliveryItem.objects.filter(order=s.order_from)
@@ -490,7 +505,8 @@ class OrderDetailView(LoginRequiredMixin, View):
 
         stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
         stock_materials = []
-        all_materials_in_warehouse = WarehouseStock.objects.filter(warehouse=Warehouse.objects.get(name="MAGAZYN GŁÓWNY"))
+        all_materials_in_warehouse = WarehouseStock.objects.filter(
+            warehouse=Warehouse.objects.get(name="MAGAZYN GŁÓWNY"))
         for stock_supply in stock_supplies:
             try:
                 stock = Stock.objects.get(name=stock_supply.name)
@@ -559,7 +575,7 @@ class OrderDetailView(LoginRequiredMixin, View):
                         ld = i.delivery.date
 
         # w OrderDetailView.get(...)
-        orders_other = Order.objects.exclude(id=order.id).order_by("-id")#[:100]  # do selecta w modalu
+        orders_other = Order.objects.exclude(id=order.id).order_by("-id")  # [:100]  # do selecta w modalu
 
         return render(request, 'warehouse/order_details.html', locals())
 
@@ -589,10 +605,17 @@ class DeliveriesView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
-        deliveries = Delivery.objects.all().prefetch_related('deliverypalette_set__palette')
         special = request.GET.get("special")
+        provider = request.GET.get("provider")
+        if not provider:
+            deliveries = Delivery.objects.all().prefetch_related('deliverypalette_set__palette').order_by("-date",
+                                                                                                          "-number")
+        else:
+            provider = Provider.objects.get(shortcut=provider)
+            deliveries = Delivery.objects.filter(provider=provider).prefetch_related(
+                'deliverypalette_set__palette').order_by("-date", "-number")
         if special:
-            deliveries = DeliverySpecial.objects.all()
+            deliveries = DeliverySpecial.objects.all().order_by("-date", "-number")
         return render(request, 'warehouse/delivery_list.html', locals())
 
 
@@ -771,13 +794,13 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         year_start = datetime.date(today.year, 1, 1)
 
         start_param = request.GET.get('start')  # oczekuje 'dd-mm-yyyy'
-        end_param   = request.GET.get('end')    # opcjonalnie 'dd-mm-yyyy'
+        end_param = request.GET.get('end')  # opcjonalnie 'dd-mm-yyyy'
         group = (request.GET.get('group') or 'week').lower()
         if group not in ('week', 'month'):
             group = 'week'
 
         start = self._parse_date(start_param, year_start)
-        end   = self._parse_date(end_param, today)
+        end = self._parse_date(end_param, today)
         if end < start:
             start, end = end, start  # sanity
 
@@ -889,7 +912,6 @@ class LoadDeliveryToGSFile(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
-
         delivery = Delivery.objects.get(id=delivery_id)
         items = DeliveryItem.objects.filter(delivery=delivery)
         numbers = []
@@ -923,7 +945,8 @@ class SellProductList(LoginRequiredMixin, View):
             .select_related("stock", "warehouse")
             .filter(
                 quantity__gt=0,
-                warehouse__in=(Warehouse.objects.filter(name__in=("MAGAZYN WYROBÓW GOTOWYCH", "MAGAZYN MATERIAŁÓW POMOCNICZYCH", 'MAGAZYN GŁÓWNY')))
+                warehouse__in=(Warehouse.objects.filter(
+                    name__in=("MAGAZYN WYROBÓW GOTOWYCH", "MAGAZYN MATERIAŁÓW POMOCNICZYCH", 'MAGAZYN GŁÓWNY')))
             )
             .order_by("-warehouse", "stock__name")
         )
@@ -1062,12 +1085,35 @@ class PaletteView(LoginRequiredMixin, View):
         context = {
             'header': header,
             'result': result,
-            'provider_deliveries': dict(provider_deliveries),     # same dostawy
-            'provider_inventory': dict(provider_inventory),       # stan po bazie + dostawach
+            'provider_deliveries': dict(provider_deliveries),  # same dostawy
+            'provider_inventory': dict(provider_inventory),  # stan po bazie + dostawach
             'sync_date': sync_date,
         }
 
         return render(request, 'warehouse/palette.html', context)
+
+
+class AddOrdersManually(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request):
+        providers = Provider.objects.all()
+        numbers = [n for n in range(1, 1000)]
+        rows = [r for r in range(1, 3000)]
+
+        orders_form = ManuallyOrdersForm()
+
+        context = {
+            'providers': providers,
+            'numbers': numbers,
+            'rows': rows,
+            'orders_form': orders_form
+        }
+
+        return render(request, 'warehouse/add_orders.html', context=context)
+
+    def post(self, request):
+        pass
 
 
 def add_product_sell3(request):

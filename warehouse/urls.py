@@ -101,3 +101,7 @@ urlpatterns += [
 urlpatterns += [
     path('price_list/upload/', PriceListUploadView.as_view(), name='price_list-upload'),
 ]
+
+urlpatterns += [
+    path('orders/add/', AddOrdersManually.as_view(), name='add-orders'),
+]

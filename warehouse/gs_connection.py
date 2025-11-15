@@ -132,6 +132,8 @@ def get_rows_numbers2(numbers, year, provider):
     for n in numbers:
         numbers2.append((provider.shortcut.lower(), str(n), year))
 
+    print(numbers, numbers2)
+
     for i in range(1, len(column_a)):
         if len(column_a) > i and len(column_b) > i and len(column_c) > i:
             row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
