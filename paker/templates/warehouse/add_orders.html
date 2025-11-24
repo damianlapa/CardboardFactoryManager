@@ -6,8 +6,18 @@
 {% block content %}
   <div class="import-container">
     <h1>Import Data from Sheet</h1>
-    <p>-</p>
-    {{ orders_form.as_p }}
+    {% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {{ orders_form.as_p }}
+      <button type="submit">Dodaj zlecenie</button>
+    </form>
   </div>
 {% endblock %}
 {% block scripts %}

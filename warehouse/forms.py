@@ -38,7 +38,60 @@ class DeliveryForm(ModelForm):
 
 
 class ManuallyOrdersForm(forms.Form):
-    providers = forms.Select(choices=Provider.objects.all())
+    SOURCE_CHOICES = [
+        ('sheet', 'Wiersz w Google Sheet'),
+        ('provider', 'Zamówienie u dostawcy'),
+    ]
+
+    source = forms.ChoiceField(
+        choices=SOURCE_CHOICES,
+        label='Źródło danych'
+    )
+
+    # wariant 1: Google Sheet
+    sheet_row = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label='Numer wiersza w Google Sheet'
+    )
+
+    # wariant 2: dostawca + numer zamówienia
+    provider = forms.ModelChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+        label='Dostawca'
+    )
+    provider_order_number = forms.CharField(
+        required=False,
+        label='Numer zamówienia u dostawcy'
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        source = cleaned_data.get('source')
+        sheet_row = cleaned_data.get('sheet_row')
+        provider = cleaned_data.get('provider')
+        provider_order_number = cleaned_data.get('provider_order_number')
+
+        if source == 'sheet':
+            if not sheet_row:
+                self.add_error('sheet_row', 'Podaj numer wiersza w Google Sheet.')
+            # opcjonalnie czyścimy drugi wariant
+            cleaned_data['provider'] = None
+            cleaned_data['provider_order_number'] = ''
+
+        elif source == 'provider':
+            if not provider:
+                self.add_error('provider', 'Wybierz dostawcę.')
+            if not provider_order_number:
+                self.add_error(
+                    'provider_order_number',
+                    'Podaj numer zamówienia u dostawcy.'
+                )
+            # opcjonalnie czyścimy pierwszy wariant
+            cleaned_data['sheet_row'] = None
+
+        return cleaned_data
 
 
 class ProductSell2Form(ModelForm):

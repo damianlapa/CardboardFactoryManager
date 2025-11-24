@@ -66,10 +66,9 @@ def load_orders(year, row=None, division=None, row_list=None):
     if row_list:
         rows = row_list
     for row in rows:
-        print(row)
         try:
             data = data_all[row]
-            print(data)
+            print(data, '#2')
             try:
                 print('customer jest')
                 customer = Buyer.objects.get(name=data[18].upper().strip())
@@ -1093,27 +1092,84 @@ class PaletteView(LoginRequiredMixin, View):
         return render(request, 'warehouse/palette.html', context)
 
 
+# from django.contrib import messages
+# from django.shortcuts import render, redirect
+# from django.urls import reverse_lazy
+# from django.views import View
+#
+# from .forms import ManuallyOrdersForm
+# from .models import Provider
+# from .utils import load_orders   # przykładowo, dostosuj import
+
+
 class AddOrdersManually(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
-    def get(self, request):
+    def get_context_data(self, form=None):
+        if form is None:
+            form = ManuallyOrdersForm()
+
         providers = Provider.objects.all()
         numbers = [n for n in range(1, 1000)]
         rows = [r for r in range(1, 3000)]
 
-        orders_form = ManuallyOrdersForm()
-
-        context = {
+        return {
             'providers': providers,
             'numbers': numbers,
             'rows': rows,
-            'orders_form': orders_form
+            'orders_form': form,
         }
 
+    def get(self, request):
+        context = self.get_context_data()
         return render(request, 'warehouse/add_orders.html', context=context)
 
     def post(self, request):
-        pass
+        form = ManuallyOrdersForm(request.POST)
+
+        if form.is_valid():
+            source = form.cleaned_data['source']
+
+            try:
+                if source == 'sheet':
+                    row = form.cleaned_data['sheet_row']
+                    result = load_orders(2025, row=int(row) - 1, division=None, row_list=None)
+                    messages.success(
+                        request,
+                        f'Pomyślnie załadowano zamówienia z wiersza {row}.'
+                        f'{result}'
+                    )
+
+                elif source == 'provider':
+                    provider = form.cleaned_data['provider']
+                    order_no = form.cleaned_data['provider_order_number']
+                    # tutaj Twoja funkcja np.:
+                    # count = import_from_provider(provider, order_no)
+                    print(provider, order_no)
+                    messages.success(
+                        request,
+                        f'Pomyślnie załadowano zamówienie {order_no} od dostawcy {provider}.'
+                    )
+                    z = get_rows_numbers2([int(order_no)], datetime.datetime.today().year, provider)
+                    load_orders(datetime.datetime.today().year, row_list=z)
+
+                # po sukcesie: redirect, żeby uniknąć ponownego POSTa po F5
+                return redirect('warehouse:add-orders')  # podmień na swoją nazwę URL
+
+            except Exception as e:
+                # Błąd w trakcie importu (np. problem z API, bazą itd.)
+                messages.error(
+                    request,
+                    f'Wystąpił błąd podczas importu zamówień: {e}'
+                )
+                context = self.get_context_data(form=form)
+                return render(request, 'warehouse/add_orders.html', context=context)
+
+        # jeśli formularz jest niepoprawny
+        messages.error(request, 'Formularz zawiera błędy. Popraw je i spróbuj ponownie.')
+        context = self.get_context_data(form=form)
+        return render(request, 'warehouse/add_orders.html', context=context)
+
 
 
 def add_product_sell3(request):
