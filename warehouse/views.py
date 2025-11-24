@@ -199,6 +199,8 @@ class LoadWZ(LoginRequiredMixin, View):
         order_num = 1
         number = ''
 
+        order_data = []
+
         cardboard = ''
         dimensions = ''
         quantity = ''
@@ -253,6 +255,64 @@ class LoadWZ(LoginRequiredMixin, View):
             date = date.replace('­', '.').split('.')
             if int(date[0]) > 31:
                 date = (date[2], date[1], date[0])
+
+        elif 'AQUILA' in all_text or 'aquila' in all_text:
+
+            for num in range(len(lines)):
+                line = lines[num]
+
+                if not provider:
+                    if 'aquila' in line.lower():
+                        provider = 'AQ'
+
+                if not wz_number:
+                    if "PAKER SPÓŁKA Z OGRANICZONĄ" in line:
+                        s_line = line.split(' ')
+                        wz_number = s_line[-2]
+                        date = s_line[-1].split('/')
+
+                if not phone:
+                    if "Nr tel./rejestracyjny" in line:
+                        phone = line.split(' ')[-1]
+
+                if "Tektura falista Jakość " in line:
+                    if order_data:
+                        orders.append(order_data)
+                        order_data = []
+                    line = line.replace('Tektura falista Jakość ', '')
+                    line = line.split(' ')
+                    cardboard = line[0]
+                    dimensions = ''.join((line[1], line[2], line[3]))
+                    quantity = line[6]
+
+                    order_data.extend((None, cardboard, dimensions, quantity, None))
+
+                if "Bigi" in line:
+                    order_num_line = lines[num + 1]
+                    order_num = order_num_line.split(' ')[1]
+                    if order_data:
+                        order_data[0] = order_num
+
+                if "STOS" in line:
+                    line = line.split(' ')
+                    if order_data:
+                        if not order_data[4]:
+                            order_data[4] = f'{line[0]}x{line[3].replace(".", "")}'
+                        else:
+                            order_data[4] += f';{line[0]}x{line[3].replace(".", "")}'
+
+                if "Paleta" in line:
+                    palletes_item = ''
+                    if "Euro" in line:
+                        palletes_item += 'EPAL;'
+                    else:
+                        palletes_item += 'Paleta;'
+                    line = line.replace('..', '')
+                    line = line.strip().split(' ')
+                    palletes_item += f'{line[-3]}x{line[-5]};{line[-1]}'
+                    palletes_list.append(palletes_item)
+
+            orders.append(order_data)
 
         else:
             for num in range(len(lines)):
@@ -359,6 +419,9 @@ class LoadWZ(LoginRequiredMixin, View):
                 p_quantity_counted = 0
                 for p in order[4].split(';'):
                     if p:
+                        if 'x' in p:
+                            p = p.split('x')
+                            p = int(p[0]) * int(p[1])
                         p_quantity_counted += int(p)
                 if p_quantity_counted != int(order[3]):
                     order[3] = p_quantity_counted
