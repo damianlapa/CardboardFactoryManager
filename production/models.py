@@ -290,6 +290,21 @@ class ProductionUnit(models.Model):
     def __str__(self):
         return f'{self.sequence}) {self.work_station} {self.production_order} {self.status}'
 
+    def pieces_per_hour(self):
+        people = self.persons.all().count()
+        if people:
+            quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
+            duration = self.unit_duration2()/60
+            estimated = self.estimated_time
+
+            print(duration)
+            if quantity and duration:
+                return round(quantity*60/(duration*people)), round(quantity*60/(estimated*people))
+            else:
+                return 0
+        else:
+            return 0
+
     def unit_production_cost(self):
         worker_cost = 0
         unit_duration = self.unit_duration2() / 3600

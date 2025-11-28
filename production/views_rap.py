@@ -5,7 +5,9 @@ from warehousemanager.models import Person, Holiday, Absence, ExtraHour
 from production.models import ProductionUnit
 from xhtml2pdf import pisa
 from django.template.loader import get_template
-from django.shortcuts import HttpResponse
+from django.shortcuts import HttpResponse, render
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
 
 
 class WorkerEfficiencyPrintPDF2(View):
@@ -291,3 +293,16 @@ class WorkerEfficiencyPrintPDF2(View):
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
+
+
+class MonthReport(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request):
+        dates = (datetime.date(2025, 11, 1), datetime.date(2025, 11, 30))
+        units = ProductionUnit.objects.filter(start__lte=dates[1], end__gte=dates[0])
+        context = {
+            'units': units
+        }
+
+        return render(request, 'production/month_report.html', context=context)

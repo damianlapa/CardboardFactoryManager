@@ -130,3 +130,7 @@ urlpatterns += [
 urlpatterns += [
     path('order/redirect/<int:order_id>/', OrderDetailsRedirect.as_view(), name='order-redirect')
 ]
+
+urlpatterns += [
+    path('month-report/', MonthReport.as_view(), name='month-report')
+]
