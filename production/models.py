@@ -151,13 +151,16 @@ class WorkStation(models.Model):
     energy = models.PositiveIntegerField(default=0)
     value = models.PositiveIntegerField(default=0)
     lifetime = models.PositiveIntegerField(default=0)
+    setup_time = models.CharField(max_length=128, null=True, blank=True)
 
     def __str__(self):
         return self.name
 
+    def get_setup_time(self, unit):
+        return int(self.setup_time)
+
     def calculate_machine_usage(self, duration):
         return round(int(self.value) * duration/int(self.lifetime), 2)
-
 
     def calculate_energy_cost(self, duration, price):
         amount = int(self.energy) * duration * price
@@ -297,8 +300,8 @@ class ProductionUnit(models.Model):
             duration = self.unit_duration2()/60
             estimated = self.estimated_time
 
-            print(duration)
             if quantity and duration:
+                duration -= self.work_station.get_setup_time(self)
                 return round(quantity*60/(duration*people)), round(quantity*60/(estimated*people))
             else:
                 return 0
