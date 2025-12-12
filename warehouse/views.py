@@ -672,7 +672,7 @@ class AddShiftView(LoginRequiredMixin, View):
 class DeliveriesView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
-    PAGE_SIZE = 15
+    PAGE_SIZE = 30
 
     def get_queryset(self, request):
         special = request.GET.get("special")
@@ -917,7 +917,8 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
             .select_related('provider')
             .prefetch_related(
                 Prefetch('deliveryitem_set',
-                         queryset=DeliveryItem.objects.select_related('order__customer'))
+                         queryset=DeliveryItem.objects.select_related('order__customer')
+                         .only('delivery_id', 'quantity', 'order__dimensions', 'order__customer__name'))
             )
         )
 
@@ -927,21 +928,25 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         orders_by_customer = defaultdict(int)
 
         for d in deliveries_qs:
-            area = int(round(d.count_area() or 0, 0))
-            key = self._week_start(d.date) if group == 'week' else self._month_start(d.date)
-            totals_by_period[key] += area
-
-            # provider (po całym zakresie)
-            if getattr(d, 'provider', None):
-                orders_by_provider[d.provider.name] += area
-
-            # klienci (po całym zakresie) – z pozycji dostawy
+            # ✅ area dla dostawy liczone z prefetchnietych itemów (bez dodatkowych zapytań)
+            delivery_area = 0
             for item in d.deliveryitem_set.all():
+                delivery_area += item.calculate_area() or 0
+
+                # ✅ klienci (od razu, w tej samej pętli)
                 try:
                     customer = item.order.customer.name
                     orders_by_customer[customer] += int(round(item.calculate_area() or 0, 0))
                 except AttributeError:
-                    continue
+                    pass
+
+            area = int(round(delivery_area, 0))
+
+            key = self._week_start(d.date) if group == 'week' else self._month_start(d.date)
+            totals_by_period[key] += area
+
+            if getattr(d, 'provider', None):
+                orders_by_provider[d.provider.name] += area
 
         # 4) Oś czasu + serie (per-okres i kumulacja)
         period_keys = sorted(totals_by_period.keys())
