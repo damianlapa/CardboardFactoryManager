@@ -23,6 +23,8 @@ from django.utils.timezone import now
 from django.db.models import Prefetch
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
+from django.core.paginator import Paginator
+from django.template.loader import render_to_string
 
 
 def load_orders(year, row=None, division=None, row_list=None):
@@ -670,19 +672,52 @@ class AddShiftView(LoginRequiredMixin, View):
 class DeliveriesView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
+    PAGE_SIZE = 15
+
+    def get_queryset(self, request):
+        special = request.GET.get("special")
+        provider = request.GET.get("provider")
+
+        if special:
+            return DeliverySpecial.objects.all().order_by("-date", "-number")
+
+        qs = Delivery.objects.all().prefetch_related(
+            'deliverypalette_set__palette'
+        ).order_by("-date", "-number")
+
+        if provider:
+            qs = qs.filter(provider__shortcut=provider)
+
+        return qs
+
     def get(self, request):
         special = request.GET.get("special")
         provider = request.GET.get("provider")
-        if not provider:
-            deliveries = Delivery.objects.all().prefetch_related('deliverypalette_set__palette').order_by("-date",
-                                                                                                          "-number")
-        else:
-            provider = Provider.objects.get(shortcut=provider)
-            deliveries = Delivery.objects.filter(provider=provider).prefetch_related(
-                'deliverypalette_set__palette').order_by("-date", "-number")
-        if special:
-            deliveries = DeliverySpecial.objects.all().order_by("-date", "-number")
-        return render(request, 'warehouse/delivery_list.html', locals())
+
+        deliveries_qs = self.get_queryset(request)
+
+        paginator = Paginator(deliveries_qs, self.PAGE_SIZE)
+        page_obj = paginator.get_page(request.GET.get("page", 1))
+
+        deliveries = page_obj.object_list
+        is_paginated = page_obj.paginator.num_pages > 1
+
+        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+        if is_ajax:
+            html = render_to_string(
+                "warehouse/_delivery_rows.html",
+                {"deliveries": deliveries},
+                request=request
+            )
+            return JsonResponse({"html": html, "has_next": page_obj.has_next()})
+
+        return render(request, "warehouse/delivery_list.html", {
+            "deliveries": deliveries,
+            "page_obj": page_obj,
+            "is_paginated": is_paginated,
+            "special": special,
+            "provider": provider,
+        })
 
 
 class DeliveryDetailView(LoginRequiredMixin, View):
