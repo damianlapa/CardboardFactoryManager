@@ -1016,9 +1016,8 @@ class CustomReport(LoginRequiredMixin, View):
 
     def get(self, request):
         today = datetime.datetime.today()
-        month_start = datetime.date(today.year, today.month, 1)
 
-        workers = Person.objects.filter(job_start__lte=month_start-datetime.timedelta(days=31), job_end__isnull=True)
+        workers = Person.objects.filter(job_end__isnull=True)
         worker = None
         stations = WorkStation.objects.all()
         station = None
