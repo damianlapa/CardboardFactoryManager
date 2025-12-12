@@ -7,18 +7,23 @@
         <label>Pracownik:
             <select name="worker_id">
                 {% for w in workers %}
+                {% if worker == w %}
+                <option value="{{ w.id }}" selected>
+                    {{ w }}
+                {% else %}
                 <option value="{{ w.id }}">
                     {{ w }}
                 </option>
+                {% endif %}
                 {% endfor %}
             </select>
         </label>
         <hr>
         <label>Od:
-            <input type="date" name="from" required>
+            <input type="date" name="from" required value="{{ date_from }}">
         </label>
         <label>Do:
-            <input type="date" name="to" required>
+            <input type="date" name="to" required value="{{ date_to }}">
         </label>
         <hr>
         <input type="submit" value="GENERUJ">

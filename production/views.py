@@ -1015,7 +1015,10 @@ class CustomReport(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
-        workers = Person.objects.all()
+        today = datetime.datetime.today()
+        month_start = datetime.date(today.year, today.month, 1)
+
+        workers = Person.objects.filter(job_start__lte=month_start-datetime.timedelta(days=31), job_end__isnull=True)
         worker = None
         stations = WorkStation.objects.all()
         station = None
