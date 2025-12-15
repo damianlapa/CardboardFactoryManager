@@ -1019,16 +1019,19 @@ class LoadDeliveryToGSFile(LoginRequiredMixin, View):
 
     def get(self, request, delivery_id):
         delivery = Delivery.objects.get(id=delivery_id)
-        items = DeliveryItem.objects.filter(delivery=delivery)
+        items = DeliveryItem.objects.filter(delivery=delivery, updated=False)
         numbers = []
         values = []
         for item in items:
+            item.updated = True
+            item.save()
             order_id = item.order.order_id
             number, year = map(int, order_id.split('/'))
             numbers.append(number)
             values.append(item.quantity)
 
-        get_rows_numbers(numbers, 2025, delivery.provider, values)
+        if all((numbers, values)):
+            get_rows_numbers(numbers, 2025, delivery.provider, values)
 
         delivery.updated = True
         delivery.save()

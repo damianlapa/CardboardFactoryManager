@@ -253,6 +253,7 @@ class DeliveryItem(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     palettes_quantity = models.CharField(max_length=256, blank=True, null=True)
     processed = models.BooleanField(default=False)
+    updated = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.delivery} :: {self.order}'
