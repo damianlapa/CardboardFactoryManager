@@ -1,10 +1,13 @@
 from django.contrib import messages
 from django.db import transaction
-from django.shortcuts import redirect
-from django.urls import reverse
+from django.shortcuts import redirect, render
+from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, UpdateView, ListView, DetailView
 from .models import ProductComplexAssembly, WarehouseStock, WarehouseStockHistory, ProductComplexParts, StockType, Stock, StockSupply, Warehouse
 from .forms import ProductComplexAssemblyForm, PartsFormSet
+from django.db.models import Prefetch
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class AssemblyMixin:
@@ -160,10 +163,6 @@ class AssemblyCreateView(AssemblyMixin, CreateView):
         return redirect(self.get_success_url())
 
 
-from django.db.models import Prefetch
-
-from django.db.models import Prefetch
-
 class AssemblyDetailView(DetailView):
     model = ProductComplexAssembly
     template_name = "warehouse/assembly_detail.html"
@@ -198,3 +197,11 @@ class AssemblyListView(ListView):
             )
             .order_by("-date", "-pk")
         )
+
+
+class BOMCreateView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request):
+        ctx = {}
+        return render(request, 'warehouse/bom_create.html', context=ctx)

@@ -831,6 +831,26 @@ class WarehouseStockHistory(models.Model):
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
 
 
+class BillOfMaterials(models.Model):
+    name = models.CharField(max_length=64)
+    parts = models.ManyToManyField(Stock, through='BOMParts', blank=True)
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class BOMParts(models.Model):
+    bom = models.ForeignKey(BillOfMaterials, on_delete=models.PROTECT, related_name="bom_parts")
+    part = models.ForeignKey(Stock, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.bom} -> {self.part} :: {self.quantity}'
+
+    class Meta:
+        ordering = ['bom', 'part']
+
+
 class PriceList(models.Model):
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
     date_start = models.DateField()

@@ -105,3 +105,7 @@ urlpatterns += [
 urlpatterns += [
     path('orders/add/', AddOrdersManually.as_view(), name='add-orders'),
 ]
+
+urlpatterns += [
+    path('bom/create/', BOMCreateView.as_view(), name='bom-create')
+]
