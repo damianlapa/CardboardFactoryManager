@@ -1,5 +1,5 @@
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
-from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette, ProductSell2,
+from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette,
                               ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem, Provider)
 from django import forms
 from django.core.validators import FileExtensionValidator
@@ -94,10 +94,10 @@ class ManuallyOrdersForm(forms.Form):
         return cleaned_data
 
 
-class ProductSell2Form(ModelForm):
-    class Meta:
-        model = ProductSell2
-        fields = ['product', 'quantity', 'price', 'date']
+# class ProductSell2Form(ModelForm):
+#     class Meta:
+#         model = ProductSell2
+#         fields = ['product', 'quantity', 'price', 'date']
 
 
 class OrderToOrderShiftForm(forms.ModelForm):

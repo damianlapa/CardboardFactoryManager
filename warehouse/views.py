@@ -551,19 +551,19 @@ class OrderDetailView(LoginRequiredMixin, View):
         items = list(items)
 
         # price list
-        price_list_date = order.order_date
-        price_list_provider = order.provider
-        price_item_name = order.name
-
-        price_list = PriceList.objects.filter(
-            provider=price_list_provider,
-            # date_start__lte=price_list_date,
-            # date_end__gte=price_list_date
-        )
-        print(price_list)
-        if price_list:
-            price_item = PriceListItem.objects.filter(price_list=price_list[0], name=price_item_name)[0]
-            print(price_item)
+        # price_list_date = order.order_date
+        # price_list_provider = order.provider
+        # price_item_name = order.name
+        #
+        # price_list = PriceList.objects.filter(
+        #     provider=price_list_provider,
+        #     # date_start__lte=price_list_date,
+        #     # date_end__gte=price_list_date
+        # )
+        # print(price_list)
+        # if price_list:
+        #     price_item = PriceListItem.objects.filter(price_list=price_list[0], name=price_item_name)[0]
+        #     print(price_item)
 
         # for s in shifts_to:
         #     print(s.get_value())

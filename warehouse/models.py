@@ -8,6 +8,9 @@ from django.db.models.functions import ExtractYear
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import Exists, OuterRef
+from django.db import transaction
+from django.db.models import Sum
+from decimal import Decimal, ROUND_HALF_UP
 
 
 UNITS = (
@@ -269,7 +272,8 @@ class DeliveryItem(models.Model):
             date=self.delivery.date,
             dimensions=self.order.dimensions,
             quantity=self.quantity,
-            name=f'{self.order.name}[{self.order.dimensions}]'
+            name=f'{self.order.name}[{self.order.dimensions}]',
+            value=self.calculate_value()
         )
 
         # Aktualizacja zapasów w magazynie
@@ -308,19 +312,19 @@ class DeliveryItem(models.Model):
         return settlement
 
     def calculate_piece_value(self):
-        dimensions = self.order.dimensions
-        price = self.order.price
-
         try:
-            dimensions = list(map(int, dimensions.lower().strip().split('x')))
-            area = dimensions[0] * dimensions[1] / 1000000
-            value = area * price
-            return value / 1000
+            dims = list(map(int, self.order.dimensions.lower().strip().split('x')))
+            area_m2 = (Decimal(dims[0]) * Decimal(dims[1])) / Decimal("1000000")
+            price = Decimal(self.order.price)  # u Ciebie price jest intem
+            value = (area_m2 * price) / Decimal("1000")
+            return value.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)  # dokładniej za sztukę
         except:
-            return 0
+            return Decimal("0")
 
     def calculate_value(self):
-        return round(int(self.quantity) * self.calculate_piece_value(), 2)
+        return (Decimal(self.quantity) * self.calculate_piece_value()).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
 
     def calculate_area(self):
         try:
@@ -444,6 +448,12 @@ class StockSupply(models.Model):
     date = models.DateField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
+    used = models.BooleanField(default=False)
+    value = models.DecimalField(max_digits=7, decimal_places=2, default=Decimal("0.00"))
+
+
+    def piece_value(self):
+        return round(self.value/self.quantity, 2) if self.quantity else 0
 
 
 class Stock(models.Model):
@@ -476,6 +486,13 @@ class Warehouse(models.Model):
         warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=self, stock=stock)
         warehouse_stock.increase_quantity(quantity)
 
+    def count_warehouse_value(self):
+        stocks = WarehouseStock.objects.filter(warehouse=self, quantity__gt=0)
+        value = 0
+        for s in stocks:
+            value += s.count_value()
+        return value
+
 
 class WarehouseStock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='warehouse_stocks')
@@ -494,6 +511,50 @@ class WarehouseStock(models.Model):
             raise ValueError("Cannot decrease quantity below zero.")
         self.quantity -= quantity
         self.save()
+
+    def count_value(self):
+        supplies_sum = (
+                StockSupply.objects
+                .filter(name=self.stock.name, used=False)
+                .aggregate(total=Sum('value'))
+                .get('total') or Decimal('0')
+        )
+
+        settlements_sum = (
+                StockSupplySettlement.objects
+                .filter(stock_supply__name=self.stock.name)
+                .aggregate(total=Sum('value'))
+                .get('total') or Decimal('0')
+        )
+
+        return supplies_sum - settlements_sum
+
+    @staticmethod
+    def use_specified_stock_supply(order_settlement, quantity: int):
+        with transaction.atomic():
+            print('tas')
+            order = order_settlement.order
+            stock_supplies = StockSupply.objects.filter(delivery_item__order=order, used=False)
+            stock_supplies_quantity = 0
+            for s in stock_supplies:
+                stock_supplies_quantity += s.quantity
+            if stock_supplies_quantity == quantity:
+                value = 0
+                for s in stock_supplies:
+                    print(value)
+                    StockSupplySettlement.objects.create(
+                        settlement=order_settlement, stock_supply=s, quantity=s.quantity
+                    )
+                    value += s.value
+                    print(value)
+                    s.used = True
+                    s.save()
+                return True, value
+        return False, 'not enough material'
+
+
+    def fifo(self):
+        pass
 
     class Meta:
         ordering = ['stock__name']
@@ -520,19 +581,30 @@ class OrderSettlementProduct(models.Model):
         return f"{self.stock_supply.name} ({self.quantity}) - {'Semi-Product' if self.is_semi_product else 'Product'}"
 
 
-class ProductSell(models.Model):
-    warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
-    quantity = models.IntegerField(default=1)
-    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, null=True, blank=True)
-    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
-    date = models.DateField()
+class StockSupplySettlement(models.Model):
+    stock_supply = models.ForeignKey(StockSupply, on_delete=models.PROTECT)
+    settlement = models.ForeignKey(OrderSettlement, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    value = models.DecimalField(max_digits=12, decimal_places=2, editable=False, default=Decimal("0.00"))
 
-    def __str__(self):
-        return f'{self.date} :: {self.warehouse_stock} - {self.customer} - {self.quantity}'
+    def calculate_value(self):
+        supply_qty = self.stock_supply.quantity or 0
+        if supply_qty == 0:
+            return Decimal("0.00")
 
-    @property
-    def total_value(self):
-        return self.quantity * self.price
+        supply_value = self.stock_supply.value or Decimal("0.00")
+
+        ratio = Decimal(self.quantity) / Decimal(supply_qty)
+        result = ratio * supply_value
+
+        # pieniądze -> 2 miejsca
+        return result.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def save(self, *args, **kwargs):
+        self.value = self.calculate_value()
+        super().save(*args, **kwargs)
+
+
 
 
 class MonthResults(models.Model):
@@ -548,52 +620,35 @@ class MonthResults(models.Model):
         return f'{self.year} {self.month}'
 
 
-class ProductSell2(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField(default=0)
-    price = models.DecimalField(max_digits=5, decimal_places=2)
-    date = models.DateField()
-
-    class Meta:
-        ordering = ['date']
-
-    def __str__(self):
-        return f'{self.product} {self.order} {self.quantity}'
-
-    def calculate_value(self):
-        return round(float(self.price) * float(self.quantity), 2)
-
-
-class CustomerDelivery(models.Model):
-    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    date = models.DateField()
-    description = models.CharField(max_length=256, null=True, blank=True)
-    palettes = models.ManyToManyField(Palette, through='DeliveryCustomerPalette', blank=True)
-    items = models.ManyToManyField(ProductSell2, through='DeliverySell', blank=True)
-
-    def __str__(self):
-        return f'{self.customer} {self.date}'
-
-    class Meta:
-        ordering = ['-date']
-
-
-class DeliveryCustomerPalette(models.Model):
-    customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
-    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
-    quantity = models.IntegerField(default=0)
-
-    def __str__(self):
-        return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
-
-
-class DeliverySell(models.Model):
-    customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
-    item = models.ForeignKey(ProductSell2, on_delete=models.PROTECT)
-
-    def __str__(self):
-        return f'{self.customer_delivery} :: {self.item}'
+# class CustomerDelivery(models.Model):
+#     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+#     date = models.DateField()
+#     description = models.CharField(max_length=256, null=True, blank=True)
+#     palettes = models.ManyToManyField(Palette, through='DeliveryCustomerPalette', blank=True)
+#     items = models.ManyToManyField(ProductSell2, through='DeliverySell', blank=True)
+#
+#     def __str__(self):
+#         return f'{self.customer} {self.date}'
+#
+#     class Meta:
+#         ordering = ['-date']
+#
+#
+# class DeliveryCustomerPalette(models.Model):
+#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
+#     palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+#     quantity = models.IntegerField(default=0)
+#
+#     def __str__(self):
+#         return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
+#
+#
+# class DeliverySell(models.Model):
+#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
+#     item = models.ForeignKey(ProductSell2, on_delete=models.PROTECT)
+#
+#     def __str__(self):
+#         return f'{self.customer_delivery} :: {self.item}'
 
 
 class CustomerPalette(models.Model):
@@ -627,7 +682,7 @@ class ProductSell3(models.Model):
         return f'{self.date} | {self.product} {self.quantity} -> {customer}'
 
     def calculate_value(self):
-        return round(float(self.price) * float(self.quantity), 2)
+        return round(self.price * self.quantity, 2)
 
     def get_used_materials(self):
         if not self.warehouse_stock:
