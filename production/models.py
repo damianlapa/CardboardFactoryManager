@@ -319,7 +319,7 @@ class ProductionUnit(models.Model):
             current_contract = worker.contract(unit_start)
             if not current_contract:
                 current_contract = D(str(0))
-            worker_cost += D(str(current_contract)) * D(str(unit_duration)) / 168
+            worker_cost += (current_contract * unit_duration) / 168
         worker_cost = D(str(worker_cost * 1.205))
         energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
         machine_usage = self.work_station.calculate_machine_usage(unit_duration)
