@@ -100,9 +100,9 @@ class ProductionOrder(models.Model):
             cost[1] += energy
             cost[2] += usage
 
-        cost = [cost[0].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-                cost[1].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-                cost[2].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)]
+        cost = [Decimal(str(cost[0])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                Decimal(str(cost[1])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                Decimal(str(cost[2])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)]
 
         return cost
 
