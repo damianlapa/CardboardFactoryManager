@@ -11,6 +11,7 @@ from django.db.models import Exists, OuterRef
 from django.db import transaction
 from django.db.models import Sum
 from decimal import Decimal, ROUND_HALF_UP
+from utils.money import money, D, money_sum
 
 
 UNITS = (
@@ -38,7 +39,7 @@ class Provider(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=64, unique=True)
-    price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
+    price = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
@@ -62,7 +63,7 @@ class Order(models.Model):
     dimensions = models.CharField(max_length=32)
     name = models.CharField(max_length=32)
     weight = models.PositiveIntegerField(default=0)
-    default_pieces = models.DecimalField(max_digits=5, decimal_places=2, default=1.0)
+    default_pieces = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("1.00"))
     order_quantity = models.PositiveIntegerField()
     delivered_quantity = models.PositiveIntegerField(default=0)
     price = models.PositiveIntegerField(default=0)
@@ -76,11 +77,7 @@ class Order(models.Model):
 
     def total_sales(self):
         sells = ProductSell3.objects.filter(order=self)
-        result = 0
-        for s in sells:
-            result += s.calculate_value()
-
-        return result
+        return money_sum(s.calculate_value() for s in sells)
 
     def material_cost(self):
         orders_from = OrderToOrderShift.objects.filter(order_from=self)
@@ -89,7 +86,10 @@ class Order(models.Model):
         cost = Decimal('0.00')
 
         for i in items:
-            cost += Decimal(i.calculate_value())
+            print('ok', i)
+            print(type(i.calculate_value()))
+            value = i.calculate_value() if i.calculate_value() is not None else Decimal('0')
+            cost += value
 
         for of in orders_from:
             cost -= Decimal(of.get_value())
@@ -110,16 +110,21 @@ class Order(models.Model):
     def other_costs(self):
         month, year = self.order_date.month, self.order_date.year
         month_results = MonthResults.objects.get(month=month, year=year)
-        value = self.material_cost()
-        expenses = month_results.expenses
+
+        value = D(self.material_cost())
+        expenses = D(month_results.expenses)
+
+        if expenses == 0:
+            return money(0), money(0), money(0), money(0)
+
         factor = value / expenses
 
-        financial_expenses = month_results.financial_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        management_expenses = month_results.management_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        logistic_expenses = month_results.logistic_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        other_expenses = month_results.other_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        financial = money(D(month_results.financial_expenses) * factor)
+        management = money(D(month_results.management_expenses) * factor)
+        logistic = money(D(month_results.logistic_expenses) * factor)
+        other = money(D(month_results.other_expenses) * factor)
 
-        return financial_expenses, management_expenses, logistic_expenses, other_expenses
+        return financial, management, logistic, other
 
     def total_area(self):
         items = DeliveryItem.objects.filter(order=self)
@@ -170,11 +175,10 @@ class OrderToOrderShift(models.Model):
 
     def get_value(self):
         items = DeliveryItem.objects.filter(order=self.order_from)
-        if items:
-            item = items[0]
-            one_piece_value = item.calculate_piece_value()
-            return round(one_piece_value * self.quantity, 2)
-        return None
+        if not items:
+            return money(0)
+        one_piece_value = items[0].calculate_piece_value()
+        return money(D(one_piece_value) * D(self.quantity))
 
     def get_items(self):
         items = []
@@ -322,9 +326,8 @@ class DeliveryItem(models.Model):
             return Decimal("0")
 
     def calculate_value(self):
-        return (Decimal(self.quantity) * self.calculate_piece_value()).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        def calculate_value(self):
+            return money(D(self.price) * D(self.quantity))
 
     def calculate_area(self):
         try:
@@ -388,7 +391,7 @@ class DeliverySpecialItem(models.Model):
     delivery = models.ForeignKey(DeliverySpecial, on_delete=models.PROTECT)
     name = models.CharField(max_length=64)
     quantity = models.PositiveIntegerField(default=0)
-    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    price = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
     processed = models.BooleanField(default=False)
 
     def __str__(self):
@@ -427,7 +430,7 @@ class DeliverySpecialItem(models.Model):
         self.save()
 
     def calculate_value(self):
-        return round(self.quantity * self.price, 2)
+        return money(D(self.quantity) * D(self.price))
 
 
 class StockType(models.Model):
@@ -451,9 +454,8 @@ class StockSupply(models.Model):
     used = models.BooleanField(default=False)
     value = models.DecimalField(max_digits=7, decimal_places=2, default=Decimal("0.00"))
 
-
     def piece_value(self):
-        return round(self.value/self.quantity, 2) if self.quantity else 0
+        return money(D(self.value) / D(self.quantity)) if self.quantity else money(0)
 
 
 class Stock(models.Model):
@@ -670,7 +672,7 @@ class ProductSell3(models.Model):
     warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.IntegerField(default=1)
-    price = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    price = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
     date = models.DateField()
 
     class Meta:
@@ -904,7 +906,7 @@ class PriceListItem(models.Model):
     name = models.CharField(max_length=16)
     flute = models.CharField(max_length=4)
     weight = models.IntegerField(default=0)
-    etc = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    etc = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal("0.00"))
     price = models.IntegerField()
     price2 = models.IntegerField(null=True, blank=True)
 

@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
-
+from utils.money import money, D, money_sum
 from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 from warehouse.models import MonthResults, DeliveryItem, Order
 from decimal import Decimal, ROUND_HALF_UP
@@ -162,11 +162,12 @@ class WorkStation(models.Model):
         return int(self.setup_time)
 
     def calculate_machine_usage(self, duration):
-        return round(int(self.value) * duration/int(self.lifetime), 2)
+        if not self.lifetime:
+            return money(0)
+        return money(D(self.value) * D(duration) / D(self.lifetime))
 
     def calculate_energy_cost(self, duration, price):
-        amount = int(self.energy) * duration * price
-        return round(amount, 2)
+        return money(D(self.energy) * D(duration) * D(price))
 
     def currently_in_production(self):
         units = ProductionUnit.objects.filter(work_station=self, status='IN PROGRESS')
@@ -311,19 +312,19 @@ class ProductionUnit(models.Model):
             return 0
 
     def unit_production_cost(self):
-        worker_cost = 0
+        worker_cost = D(str(0))
         unit_duration = self.unit_duration2() / 3600
         unit_start = self.start
         for worker in self.persons.all():
             current_contract = worker.contract(unit_start)
             if not current_contract:
-                current_contract = 0
-            worker_cost += float(current_contract) * float(unit_duration) / 168
-        worker_cost = round(worker_cost * 1.205, 2)
+                current_contract = D(str(0))
+            worker_cost += D(str(current_contract)) * D(str(unit_duration)) / 168
+        worker_cost = D(str(worker_cost * 1.205))
         energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
         machine_usage = self.work_station.calculate_machine_usage(unit_duration)
 
-        return round(worker_cost, 2), round(energy_cost, 2), machine_usage
+        return money(worker_cost), money(energy_cost), money(machine_usage)
 
     @classmethod
     def last_in_line(cls, station, point=None):
