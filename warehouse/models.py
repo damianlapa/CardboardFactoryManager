@@ -86,18 +86,18 @@ class Order(models.Model):
         orders_from = OrderToOrderShift.objects.filter(order_from=self)
         orders_to = OrderToOrderShift.objects.filter(order_to=self)
         items = DeliveryItem.objects.filter(order=self)
-        cost = 0
+        cost = Decimal('0.00')
 
         for i in items:
-            cost += i.calculate_value()
+            cost += Decimal(i.calculate_value())
 
         for of in orders_from:
-            cost -= of.get_value()
+            cost -= Decimal(of.get_value())
 
         for ot in orders_to:
-            cost += ot.get_value()
+            cost += Decimal(ot.get_value())
 
-        return round(cost, 2)
+        return cost.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def production_cost(self):
         from production.models import ProductionOrder
@@ -105,7 +105,7 @@ class Order(models.Model):
         if production_order:
             return production_order.work_energy_usage_cost()
         else:
-            return 0, 0, 0
+            return Decimal('0.00'), Decimal('0.00'), Decimal('0.00')
 
     def other_costs(self):
         month, year = self.order_date.month, self.order_date.year
@@ -114,10 +114,10 @@ class Order(models.Model):
         expenses = month_results.expenses
         factor = value / expenses
 
-        financial_expenses = round(month_results.financial_expenses * factor, 2)
-        management_expenses = round(month_results.management_expenses * factor, 2)
-        logistic_expenses = round(month_results.logistic_expenses * factor, 2)
-        other_expenses = round(month_results.other_expenses * factor, 2)
+        financial_expenses = month_results.financial_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        management_expenses = month_results.management_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        logistic_expenses = month_results.logistic_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        other_expenses = month_results.other_expenses * factor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         return financial_expenses, management_expenses, logistic_expenses, other_expenses
 
@@ -594,10 +594,9 @@ class StockSupplySettlement(models.Model):
 
         supply_value = self.stock_supply.value or Decimal("0.00")
 
-        ratio = Decimal(self.quantity) / Decimal(supply_qty)
+        ratio = Decimal(str(self.quantity)) / Decimal(supply_qty)
         result = ratio * supply_value
 
-        # pieniądze -> 2 miejsca
         return result.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):

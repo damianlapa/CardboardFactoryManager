@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 from warehouse.models import MonthResults, DeliveryItem, Order
-
+from decimal import Decimal, ROUND_HALF_UP
 import datetime
 
 PRODUCTION_ORDER_STATUSES = (
@@ -100,7 +100,9 @@ class ProductionOrder(models.Model):
             cost[1] += energy
             cost[2] += usage
 
-        cost = [round(cost[0], 2), round(cost[1], 2), round(cost[2], 2)]
+        cost = [cost[0].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                cost[1].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                cost[2].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)]
 
         return cost
 
