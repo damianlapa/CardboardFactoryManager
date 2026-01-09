@@ -312,7 +312,7 @@ class ProductionUnit(models.Model):
             return 0
 
     def unit_production_cost(self):
-        worker_cost = D(str(0))
+        worker_cost = 0
         unit_duration = self.unit_duration2() / 3600
         unit_start = self.start
         for worker in self.persons.all():
