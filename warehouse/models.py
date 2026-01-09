@@ -39,7 +39,7 @@ class Provider(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=64, unique=True)
-    price = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
@@ -63,7 +63,7 @@ class Order(models.Model):
     dimensions = models.CharField(max_length=32)
     name = models.CharField(max_length=32)
     weight = models.PositiveIntegerField(default=0)
-    default_pieces = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("1.00"))
+    default_pieces = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("1.00"))
     order_quantity = models.PositiveIntegerField()
     delivered_quantity = models.PositiveIntegerField(default=0)
     price = models.PositiveIntegerField(default=0)
@@ -326,8 +326,8 @@ class DeliveryItem(models.Model):
             return Decimal("0")
 
     def calculate_value(self):
-        def calculate_value(self):
-            return money(D(self.price) * D(self.quantity))
+        value = self.calculate_area() * self.order.price / 1000
+        return money(value)
 
     def calculate_area(self):
         try:
@@ -391,7 +391,7 @@ class DeliverySpecialItem(models.Model):
     delivery = models.ForeignKey(DeliverySpecial, on_delete=models.PROTECT)
     name = models.CharField(max_length=64)
     quantity = models.PositiveIntegerField(default=0)
-    price = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     processed = models.BooleanField(default=False)
 
     def __str__(self):
@@ -452,7 +452,7 @@ class StockSupply(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
     used = models.BooleanField(default=False)
-    value = models.DecimalField(max_digits=7, decimal_places=2, default=Decimal("0.00"))
+    value = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
 
     def piece_value(self):
         return money(D(self.value) / D(self.quantity)) if self.quantity else money(0)
@@ -672,7 +672,7 @@ class ProductSell3(models.Model):
     warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.IntegerField(default=1)
-    price = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     date = models.DateField()
 
     class Meta:
@@ -906,7 +906,7 @@ class PriceListItem(models.Model):
     name = models.CharField(max_length=16)
     flute = models.CharField(max_length=4)
     weight = models.IntegerField(default=0)
-    etc = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal("0.00"))
+    etc = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     price = models.IntegerField()
     price2 = models.IntegerField(null=True, blank=True)
 

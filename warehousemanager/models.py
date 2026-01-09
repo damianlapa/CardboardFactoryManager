@@ -178,6 +178,7 @@ class Person(models.Model):
                             return c.salary
                 else:
                     return contracts[-1].salary
+        return 0
 
 
     def get_initials(self):
