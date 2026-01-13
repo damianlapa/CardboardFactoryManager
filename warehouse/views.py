@@ -1080,8 +1080,10 @@ class LoadDeliveryToGSFile(LoginRequiredMixin, View):
             item.save()
             order_id = item.order.order_id
             number, year = map(int, order_id.split('/'))
-            if len(year) == 2:
-                year = '20' + year
+            if len(str(year)) == 2:
+                year = '20' + str(year)
+            else:
+                year = str(year)
             if year in data.keys():
                 data[year][0].append(number)
                 data[year][1].append(item.quantity)
