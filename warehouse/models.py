@@ -454,8 +454,15 @@ class StockSupply(models.Model):
     used = models.BooleanField(default=False)
     value = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
 
+    class Meta:
+        ordering = ['date']
+        
+    def __str__(self):
+        return f'[{self.date}] {self.dimensions} {self.name}'
+
     def piece_value(self):
         return money(D(self.value) / D(self.quantity)) if self.quantity else money(0)
+
 
 
 class Stock(models.Model):
@@ -534,7 +541,6 @@ class WarehouseStock(models.Model):
     @staticmethod
     def use_specified_stock_supply(order_settlement, quantity: int):
         with transaction.atomic():
-            print('tas')
             order = order_settlement.order
             stock_supplies = StockSupply.objects.filter(delivery_item__order=order, used=False)
             stock_supplies_quantity = 0
