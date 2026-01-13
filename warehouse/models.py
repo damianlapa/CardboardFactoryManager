@@ -367,9 +367,11 @@ class DeliverySpecial(models.Model):
         items = DeliverySpecialItem.objects.filter(delivery=self)
 
         for item in items:
-            if not warehouse:
+            if not warehouse and not item.warehouse:
                 warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
-            item.add_to_warehouse()
+            elif item.warehouse:
+                warehouse = item.warehouse
+            item.add_to_warehouse(warehouse=warehouse)
 
         if self.check_if_processed():
             self.processed = True
@@ -403,6 +405,8 @@ class DeliverySpecialItem(models.Model):
     def add_to_warehouse(self, warehouse=None, quantity=False):
         if not warehouse:
             warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
+            if 'gotowe' in str(self.delivery.name).lower():
+                warehouse = Warehouse.objects.get(name='MAGAZYN WYROBÓW GOTOWYCH')
 
         # Create Stock Supply
         stock_supply, created = StockSupply.objects.get_or_create(
