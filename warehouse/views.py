@@ -858,7 +858,6 @@ class WarehouseListView(LoginRequiredMixin, View):
 
 class DeliveriesStatistics(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
-
     template_name = 'warehouse/deliveries-statistics.html'
 
     def _parse_date(self, s, default):
@@ -871,7 +870,8 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
             return default
 
     def _week_start(self, d: datetime.date) -> datetime.date:
-        return d - datetime.timedelta(days=d.isoweekday() - 1)  # poniedziałek
+        # poniedziałek wg ISO (1=Mon)
+        return d - datetime.timedelta(days=d.isoweekday() - 1)
 
     def _month_start(self, d: datetime.date) -> datetime.date:
         return d.replace(day=1)
@@ -880,63 +880,96 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         if group == 'month':
             last_day = calendar.monthrange(key.year, key.month)[1]
             return key.replace(day=last_day)
-        # week
-        return key + datetime.timedelta(days=6)
+        return key + datetime.timedelta(days=6)  # week end (Sun)
 
     def _period_label(self, key: datetime.date, group: str) -> str:
         if group == 'month':
             return key.strftime('%Y-%m')
         iso = key.isocalendar()
-        return f"W{iso.week:02d} {key.year}"
+        return f"W{iso.week:02d} {iso.year}"  # ✅ ISO year (ważne na przełomie roku)
+
+    def _add_month(self, d: datetime.date) -> datetime.date:
+        # d jest zawsze pierwszym dniem miesiąca
+        y, m = d.year, d.month
+        if m == 12:
+            return datetime.date(y + 1, 1, 1)
+        return datetime.date(y, m + 1, 1)
+
+    def _generate_period_keys(self, axis_start: datetime.date, axis_end: datetime.date, group: str):
+        """
+        Generuje wszystkie klucze okresów (week_start lub month_start) pokrywające zakres axis_start..axis_end.
+        Dzięki temu masz ciągłą oś czasu nawet gdy w okresie nie było dostaw (wtedy 0).
+        """
+        keys = []
+
+        if group == 'week':
+            k = self._week_start(axis_start)
+            while k <= axis_end:
+                keys.append(k)
+                k += datetime.timedelta(days=7)
+            return keys
+
+        # month
+        k = self._month_start(axis_start)
+        end_k = self._month_start(axis_end)
+        while k <= end_k:
+            keys.append(k)
+            k = self._add_month(k)
+        return keys
 
     def get(self, request):
         # 1) Parametry
         today = now().date()
         year_start = datetime.date(today.year, 1, 1)
 
-        start_param = request.GET.get('start')  # oczekuje 'dd-mm-yyyy'
-        end_param = request.GET.get('end')  # opcjonalnie 'dd-mm-yyyy'
+        start_param = request.GET.get('start')  # 'dd-mm-yyyy'
+        end_param = request.GET.get('end')      # 'dd-mm-yyyy'
         group = (request.GET.get('group') or 'week').lower()
         if group not in ('week', 'month'):
             group = 'week'
 
-        start = self._parse_date(start_param, year_start)
-        end = self._parse_date(end_param, today)
-        if end < start:
-            start, end = end, start  # sanity
+        start_raw = self._parse_date(start_param, year_start)
+        end_raw = self._parse_date(end_param, today)
+        if end_raw < start_raw:
+            start_raw, end_raw = end_raw, start_raw
 
-        # znormalizuj brzegi pod wybrany agregat
-        start = self._week_start(start) if group == 'week' else self._month_start(start)
-        # end trzymamy jako faktyczny koniec dnia/okresu
-        # (do iteracji i tak wyliczymy per-okres końcówki)
+        # ✅ do bazy: nie cofamy do poniedziałku / 1 dnia miesiąca
+        filter_start = start_raw
+        filter_end = end_raw
+
+        # ✅ do osi czasu (generowanie okresów): możemy “cofnąć” do początku okresu
+        axis_start = self._week_start(start_raw) if group == 'week' else self._month_start(start_raw)
+        axis_end = end_raw
 
         # 2) Dane – JEDEN queryset + prefetch
         deliveries_qs = (
             Delivery.objects
-            .filter(date__gte=start, date__lte=end)
+            .filter(date__gte=filter_start, date__lte=filter_end)
             .select_related('provider')
             .prefetch_related(
-                Prefetch('deliveryitem_set',
-                         queryset=DeliveryItem.objects.select_related('order__customer')
-                         .only('delivery_id', 'quantity', 'order__dimensions', 'order__customer__name'))
+                Prefetch(
+                    'deliveryitem_set',
+                    queryset=DeliveryItem.objects
+                    .select_related('order__customer')
+                    .only('delivery_id', 'quantity', 'order__dimensions', 'order__customer__name')
+                )
             )
         )
 
-        # 3) Agregacja per okres (tydzień/miesiąc) + dostawcy/klienci
+        # 3) Agregacja per okres + dostawcy/klienci
         totals_by_period = defaultdict(int)
         orders_by_provider = defaultdict(int)
         orders_by_customer = defaultdict(int)
 
         for d in deliveries_qs:
-            # ✅ area dla dostawy liczone z prefetchnietych itemów (bez dodatkowych zapytań)
             delivery_area = 0
             for item in d.deliveryitem_set.all():
-                delivery_area += item.calculate_area() or 0
+                a = item.calculate_area() or 0
+                delivery_area += a
 
-                # ✅ klienci (od razu, w tej samej pętli)
                 try:
                     customer = item.order.customer.name
-                    orders_by_customer[customer] += int(round(item.calculate_area() or 0, 0))
+                    orders_by_customer[customer] += int(round(a, 0))
                 except AttributeError:
                     pass
 
@@ -948,8 +981,9 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
             if getattr(d, 'provider', None):
                 orders_by_provider[d.provider.name] += area
 
-        # 4) Oś czasu + serie (per-okres i kumulacja)
-        period_keys = sorted(totals_by_period.keys())
+        # 4) ✅ Generowanie osi czasu (bez dziur) + serie
+        period_keys = self._generate_period_keys(axis_start, axis_end, group)
+
         dates = []
         period_labels = []
         values_by_period = []
@@ -957,16 +991,23 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         cum = 0
 
         for k in period_keys:
-            total = totals_by_period[k]
+            total = int(totals_by_period.get(k, 0))  # ✅ brak okresu => 0
             cum += total
             values_by_period.append(total)
             values_cumulative.append(cum)
-            dates.append(self._period_key_end(k, group))
+
+            # koniec okresu do wykresu (możesz też clampować do end_raw jeśli wolisz)
+            period_end = self._period_key_end(k, group)
+            # clamp, żeby nie “wychodziło” poza zakres, jeśli Ci to przeszkadza na osi
+            period_end = min(period_end, end_raw)
+
+            dates.append(period_end)
             period_labels.append(self._period_label(k, group))
 
         total_amount = sum(values_by_period)
         cel = 2_000_000
         ile = max(cel - total_amount, 0)
+
         year_days = 365 + calendar.isleap(today.year)
         days_left = year_days - today.timetuple().tm_yday
 
@@ -980,16 +1021,20 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
 
         context = {
             "group": group,
-            "start": start,
-            "end": end,
+            # pokazuj realnie wybrany zakres (bez cofania do poniedziałku)
+            "start": start_raw,
+            "end": end_raw,
+
             "dates": dates,
             "period_labels": period_labels,
             "values_by_period": values_by_period,
             "values": values_cumulative,
+
             "total_amount": total_amount,
             "cel": cel,
             "ile": ile,
             "days_left": days_left,
+
             "customer_labels": customer_labels,
             "customer_values": customer_values,
             "provider_labels": provider_labels,
