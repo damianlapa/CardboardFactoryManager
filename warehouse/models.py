@@ -397,6 +397,9 @@ class DeliverySpecialItem(models.Model):
     def __str__(self):
         return f'{self.delivery} :: {self.name} :: {self.quantity}'
 
+    def calculate_value(self):
+        return money(D(self.price) * D(self.quantity))
+
     def add_to_warehouse(self, warehouse=None, quantity=False):
         if not warehouse:
             warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
@@ -406,7 +409,8 @@ class DeliverySpecialItem(models.Model):
             stock_type=StockType.objects.get(stock_type='Special', unit='PIECE'),
             date=self.delivery.date,
             quantity=self.quantity,
-            name=self.name
+            name=self.name,
+            value=self.calculate_value()
         )
 
         # Aktualizacja zapasów w magazynie
@@ -428,9 +432,6 @@ class DeliverySpecialItem(models.Model):
 
         self.processed = True
         self.save()
-
-    def calculate_value(self):
-        return money(D(self.quantity) * D(self.price))
 
 
 class StockType(models.Model):
