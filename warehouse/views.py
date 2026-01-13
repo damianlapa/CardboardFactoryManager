@@ -679,7 +679,7 @@ class DeliveriesView(LoginRequiredMixin, View):
         provider = request.GET.get("provider")
 
         if special:
-            return DeliverySpecial.objects.all().order_by("-date", "-number")
+            return DeliverySpecial.objects.all().order_by("-date")
 
         qs = Delivery.objects.all().prefetch_related(
             'deliverypalette_set__palette'
