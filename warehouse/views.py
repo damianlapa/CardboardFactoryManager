@@ -406,19 +406,26 @@ class LoadWZ(LoginRequiredMixin, View):
             errors.append(f'Error creating delivery: {str(e)}')
         wrong_orders = []
         numbers = []
+        year_orders = {} # new
         for o in orders:
             try:
-                numbers.append(int(o[0].split('/')[0]))
+                order_num_split, year_num_split = o[0].split('/')
+                if len(year_num_split) == 2:
+                    year_num_split = '20' + year_num_split
+                if year_num_split in year_orders.keys():
+                    year_orders[year_num_split].append(int(order_num_split))
+                else:
+                    year_orders[year_num_split] = [int(order_num_split)]
             except ValueError:
                 errors.append(f'Error creating item: {o}')
                 wrong_orders.append(o)
 
-        nums = get_rows_numbers2(numbers, 2025, delivery.provider)
-        print(nums)
-        load_orders(2025, row_list=nums)
+        for key in year_orders:
+            nums = get_rows_numbers2(year_orders[key], int(key), delivery.provider)
+            load_orders(key, row_list=nums)
 
-        for wrong_order in wrong_orders:
-            orders.remove(wrong_order)
+            for wrong_order in wrong_orders:
+                orders.remove(wrong_order)
 
         for order in orders:
             try:
