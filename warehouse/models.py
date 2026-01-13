@@ -455,8 +455,8 @@ class StockSupply(models.Model):
     value = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
 
     class Meta:
-        ordering = ['date']
-        
+        ordering = ['-date']
+
     def __str__(self):
         return f'[{self.date}] {self.dimensions} {self.name}'
 
