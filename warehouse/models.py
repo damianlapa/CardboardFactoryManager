@@ -407,6 +407,8 @@ class DeliverySpecialItem(models.Model):
             warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
             if 'gotowe' in str(self.delivery.name).lower():
                 warehouse = Warehouse.objects.get(name='MAGAZYN WYROBÓW GOTOWYCH')
+            elif 'wyprzedażowe' in str(self.delivery.name).lower():
+                warehouse = Warehouse.objects.get(name='MAGAZYN WYPRZEDAŻOWY')
 
         # Create Stock Supply
         stock_supply, created = StockSupply.objects.get_or_create(
