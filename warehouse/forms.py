@@ -1,3 +1,5 @@
+import datetime
+
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
 from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette,
                               ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem, Provider)
@@ -64,6 +66,14 @@ class ManuallyOrdersForm(forms.Form):
     provider_order_number = forms.CharField(
         required=False,
         label='Numer zamówienia u dostawcy'
+    )
+
+    year = forms.IntegerField(
+        required=True,
+        label='Rok zamówienia',
+        min_value=2021,
+        max_value=datetime.date.today().year,
+        initial=datetime.date.today().year
     )
 
     def clean(self):

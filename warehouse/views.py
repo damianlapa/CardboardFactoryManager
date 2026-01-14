@@ -1307,7 +1307,8 @@ class AddOrdersManually(LoginRequiredMixin, View):
             try:
                 if source == 'sheet':
                     row = form.cleaned_data['sheet_row']
-                    result = load_orders(2025, row=int(row) - 1, division=None, row_list=None)
+                    year = form.cleaned_data['year']
+                    result = load_orders(int(year), row=int(row) - 1, division=None, row_list=None)
                     messages.success(
                         request,
                         f'Pomyślnie załadowano zamówienia z wiersza {row}.'
@@ -1317,6 +1318,7 @@ class AddOrdersManually(LoginRequiredMixin, View):
                 elif source == 'provider':
                     provider = form.cleaned_data['provider']
                     order_no = form.cleaned_data['provider_order_number']
+                    year = form.cleaned_data['year']
                     # tutaj Twoja funkcja np.:
                     # count = import_from_provider(provider, order_no)
                     print(provider, order_no)
@@ -1324,8 +1326,8 @@ class AddOrdersManually(LoginRequiredMixin, View):
                         request,
                         f'Pomyślnie załadowano zamówienie {order_no} od dostawcy {provider}.'
                     )
-                    z = get_rows_numbers2([int(order_no)], datetime.datetime.today().year, provider)
-                    load_orders(datetime.datetime.today().year, row_list=z)
+                    z = get_rows_numbers2([int(order_no)], int(year), provider)
+                    load_orders(int(year), row_list=z)
 
                 # po sukcesie: redirect, żeby uniknąć ponownego POSTa po F5
                 return redirect('warehouse:add-orders')  # podmień na swoją nazwę URL
