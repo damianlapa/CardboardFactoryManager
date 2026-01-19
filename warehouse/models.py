@@ -548,12 +548,16 @@ class WarehouseStock(models.Model):
         with transaction.atomic():
             order = order_settlement.order
             stock_supplies = StockSupply.objects.filter(delivery_item__order=order, used=False)
+            if not stock_supplies:
+                raise Exception('No stock supplies for this order')
             stock_supplies_quantity = 0
             for s in stock_supplies:
                 stock_supplies_quantity += s.quantity
                 stock_supply_settlements = StockSupplySettlement.objects.filter(stock_supply=s)
                 for sss in stock_supply_settlements:
                     stock_supplies_quantity -= sss.quantity
+            if stock_supplies_quantity < quantity:
+                raise Exception('There is not enough material')
             if stock_supplies_quantity == quantity:
                 value = 0
                 for s in stock_supplies:
