@@ -673,6 +673,9 @@ class StockSupplySettlement(models.Model):
     value = models.DecimalField(max_digits=12, decimal_places=2, editable=False, default=Decimal("0.00"))
     as_result = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f'{self.settlement.settlement_date} | {self.stock_supply.name} | {self.quantity} | {self.as_result}'
+
     def calculate_value(self):
         supply_qty = self.stock_supply.quantity or 0
         if supply_qty == 0:
