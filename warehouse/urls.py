@@ -17,7 +17,8 @@ urlpatterns = [
     path('order_detail/<int:order_id>/', OrderDetailView.as_view(), name="order-detail-view"),
     path('warehouse/warehouses/', WarehouseListView.as_view(), name='warehouse-list-view'),
     path('warehouse/<int:warehouse_id>/', WarehouseView.as_view(), name='warehouse-detail-view'),
-    path('stock-details/<int:stock_id>/', StockView.as_view(), name='stock-details')
+    path('stock-details/<int:stock_id>/', StockView.as_view(), name='stock-details'),
+    path('warehouse-stock-details/<int:warehouse_stock_id>/', WarehouseStockView.as_view(), name='warehouse-stock-details')
 ]
 
 urlpatterns += [

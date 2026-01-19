@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct, WarehouseStock, WarehouseStockHistory, \
-    Product, StockType, Stock, Warehouse
+    Product, StockType, Stock, Warehouse, StockSupplySettlement
 
 
 def settle_order(request, order_id):
@@ -36,7 +36,9 @@ def settle_order(request, order_id):
 
                 result, value = material.use_specified_stock_supply(settlement, material_quantity)
                 if not result:
-                    raise ValueError('Not enough material in this order!')
+                    print('we are here!')
+                    # raise ValueError('Not enough material in this order!')
+                    value = material.fifo_from_order(order, settlement, material_quantity)
 
                 history, created = WarehouseStockHistory.objects.get_or_create(
                     warehouse_stock=material,
@@ -72,6 +74,14 @@ def settle_order(request, order_id):
                         quantity=int(product_quantity),
                         name=product.name,
                         value=value
+                    )
+
+                    stock_supply_settlement = StockSupplySettlement.objects.create(
+                        stock_supply=supply,
+                        settlement=settlement,
+                        quantity=int(product_quantity),
+                        value=value,
+                        as_result=True
                     )
 
                     stock, created = Stock.objects.get_or_create(

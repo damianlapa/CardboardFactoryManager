@@ -60,6 +60,33 @@
     </tbody>
 </table>
 {% endif %}
+{% if product_supplies %}
+<h1>Product Supplies</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Quantity</th>
+      <th>Value</th>
+      <th>Used</th>
+    </tr>
+  </thead>
+    <tbody>
+      {% for product_supply in product_supplies %}
+      <tr>
+        <td>{{ product_supply.date }}</td>
+        <td>{{ product_supply.quantity }}</td>
+        <td>{{ product_supply.value }}</td>
+        <td>{{ product_supply.used }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No supplies available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 {% if supplies %}
 <h1>Supplies</h1>
 <table>

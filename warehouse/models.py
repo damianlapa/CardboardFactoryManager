@@ -86,8 +86,6 @@ class Order(models.Model):
         cost = Decimal('0.00')
 
         for i in items:
-            print('ok', i)
-            print(type(i.calculate_value()))
             value = i.calculate_value() if i.calculate_value() is not None else Decimal('0')
             cost += value
 
@@ -553,23 +551,95 @@ class WarehouseStock(models.Model):
             stock_supplies_quantity = 0
             for s in stock_supplies:
                 stock_supplies_quantity += s.quantity
+                stock_supply_settlements = StockSupplySettlement.objects.filter(stock_supply=s)
+                for sss in stock_supply_settlements:
+                    stock_supplies_quantity -= sss.quantity
             if stock_supplies_quantity == quantity:
                 value = 0
                 for s in stock_supplies:
-                    print(value)
                     StockSupplySettlement.objects.create(
                         settlement=order_settlement, stock_supply=s, quantity=s.quantity
                     )
                     value += s.value
-                    print(value)
                     s.used = True
                     s.save()
                 return True, value
+            elif stock_supplies_quantity > quantity:
+                quantity_left = quantity
+                value = 0
+                for s in sorted(list(stock_supplies), key=lambda x: x.date):
+                    stock_supply_quantity = s.quantity
+                    previously_used = StockSupplySettlement.objects.filter(stock_supply=s)
+                    for p in previously_used:
+                        stock_supply_quantity -= p.quantity
+                    if stock_supply_quantity > quantity_left:
+                        StockSupplySettlement.objects.create(
+                            settlement=order_settlement, stock_supply=s, quantity=quantity_left
+                        )
+                        value += s.piece_value() * quantity_left
+                        break
+                    elif stock_supply_quantity <= quantity_left:
+                        StockSupplySettlement.objects.create(
+                            settlement=order_settlement, stock_supply=s, quantity=stock_supply_quantity
+                        )
+                        value += s.piece_value() * stock_supply_quantity
+                        s.used = True
+                        s.save()
+                        quantity_left -= stock_supply_quantity
+                return True, value
         return False, 'not enough material'
+
+    def fifo_from_order(self, order, settlement, quantity):
+        value_sum = 0
+        with transaction.atomic():
+            print('ok1')
+            delivery_items = DeliveryItem.objects.filter(order=order)
+            stock_supplies = []
+            used_quantity = 0
+            for item in delivery_items:
+                print('ok11')
+                stock_supply = StockSupply.objects.filter(delivery_item=item, used=False)
+                if stock_supply:
+                    stock_supplies.extend(list(stock_supply))
+            stock_supplies.sort(key=lambda x: x.date)
+
+            for supply in stock_supplies:
+                print('ok11', stock_supplies, supply)
+                to_use = quantity - used_quantity
+                used = 0
+                supply_used = StockSupplySettlement.objects.filter(stock_supply=supply, as_result=False)
+                for su in supply_used:
+                    used += su.quantity
+                possible_to_use = supply.quantity - used
+                if possible_to_use >= to_use:
+                    print('option1')
+                    value = money(Decimal(to_use/supply.quantity)*supply.value)
+                    value_sum += value
+                    print(value, type(value))
+                    StockSupplySettlement.objects.create(settlement=settlement, stock_supply=supply, quantity=to_use, value=value)
+                    used_quantity += to_use
+                    if possible_to_use == to_use:
+                        supply.used = True
+                        supply.save()
+                    break
+                else:
+                    print('option2')
+                    value = money(Decimal(possible_to_use / supply.quantity) * supply.value)
+                    value_sum += value
+                    print(value, type(value))
+                    StockSupplySettlement.objects.create(settlement=settlement, stock_supply=supply, quantity=possible_to_use, value=value)
+                    supply.used = True
+                    supply.save()
+            return value_sum
+
 
 
     def fifo(self):
-        pass
+        stock_supplies = self.get_all_stock_supplies()
+        return stock_supplies
+
+    def get_all_stock_supplies(self):
+        return StockSupply.objects.filter(name=self.stock.name)
 
     class Meta:
         ordering = ['stock__name']
@@ -601,6 +671,7 @@ class StockSupplySettlement(models.Model):
     settlement = models.ForeignKey(OrderSettlement, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     value = models.DecimalField(max_digits=12, decimal_places=2, editable=False, default=Decimal("0.00"))
+    as_result = models.BooleanField(default=False)
 
     def calculate_value(self):
         supply_qty = self.stock_supply.quantity or 0
@@ -617,65 +688,6 @@ class StockSupplySettlement(models.Model):
     def save(self, *args, **kwargs):
         self.value = self.calculate_value()
         super().save(*args, **kwargs)
-
-
-
-
-class MonthResults(models.Model):
-    month = models.PositiveIntegerField()
-    year = models.PositiveIntegerField()
-    expenses = models.PositiveIntegerField()
-    financial_expenses = models.PositiveIntegerField()
-    management_expenses = models.PositiveIntegerField()
-    logistic_expenses = models.PositiveIntegerField()
-    other_expenses = models.PositiveIntegerField()
-
-    def __str__(self):
-        return f'{self.year} {self.month}'
-
-
-# class CustomerDelivery(models.Model):
-#     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-#     date = models.DateField()
-#     description = models.CharField(max_length=256, null=True, blank=True)
-#     palettes = models.ManyToManyField(Palette, through='DeliveryCustomerPalette', blank=True)
-#     items = models.ManyToManyField(ProductSell2, through='DeliverySell', blank=True)
-#
-#     def __str__(self):
-#         return f'{self.customer} {self.date}'
-#
-#     class Meta:
-#         ordering = ['-date']
-#
-#
-# class DeliveryCustomerPalette(models.Model):
-#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
-#     palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
-#     quantity = models.IntegerField(default=0)
-#
-#     def __str__(self):
-#         return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
-#
-#
-# class DeliverySell(models.Model):
-#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
-#     item = models.ForeignKey(ProductSell2, on_delete=models.PROTECT)
-#
-#     def __str__(self):
-#         return f'{self.customer_delivery} :: {self.item}'
-
-
-class CustomerPalette(models.Model):
-    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
-    quantity = models.IntegerField(default=0)
-
-    def __str__(self):
-        return f'{self.customer} :: {self.palette} :: {self.quantity}'
-
-    class Meta:
-        unique_together = ['customer', 'palette']
-        ordering = ['customer']
 
 
 class ProductSell3(models.Model):
@@ -803,6 +815,75 @@ class ProductSell3(models.Model):
             if resolved:
                 self.product = resolved
         return super().save(*args, **kwargs)
+
+
+class StockSupplySell(models.Model):
+    stock_supply = models.ForeignKey(StockSupply, on_delete=models.PROTECT)
+    sell = models.ForeignKey(ProductSell3, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ['-sell__date']
+
+    def __str__(self):
+        return f'[{self.sell.date}] {self.stock_supply.name} -> {self.sell.customer} ({self.quantity})'
+
+
+class MonthResults(models.Model):
+    month = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()
+    expenses = models.PositiveIntegerField()
+    financial_expenses = models.PositiveIntegerField()
+    management_expenses = models.PositiveIntegerField()
+    logistic_expenses = models.PositiveIntegerField()
+    other_expenses = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'{self.year} {self.month}'
+
+
+# class CustomerDelivery(models.Model):
+#     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+#     date = models.DateField()
+#     description = models.CharField(max_length=256, null=True, blank=True)
+#     palettes = models.ManyToManyField(Palette, through='DeliveryCustomerPalette', blank=True)
+#     items = models.ManyToManyField(ProductSell2, through='DeliverySell', blank=True)
+#
+#     def __str__(self):
+#         return f'{self.customer} {self.date}'
+#
+#     class Meta:
+#         ordering = ['-date']
+#
+#
+# class DeliveryCustomerPalette(models.Model):
+#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
+#     palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+#     quantity = models.IntegerField(default=0)
+#
+#     def __str__(self):
+#         return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
+#
+#
+# class DeliverySell(models.Model):
+#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
+#     item = models.ForeignKey(ProductSell2, on_delete=models.PROTECT)
+#
+#     def __str__(self):
+#         return f'{self.customer_delivery} :: {self.item}'
+
+
+class CustomerPalette(models.Model):
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
+    quantity = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.customer} :: {self.palette} :: {self.quantity}'
+
+    class Meta:
+        unique_together = ['customer', 'palette']
+        ordering = ['customer']
 
 
 class ProductComplexAssemblyQuerySet(models.QuerySet):

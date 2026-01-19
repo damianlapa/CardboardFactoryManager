@@ -1,0 +1,41 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>HISTORY</h1>
+{% if history %}
+<table>
+  <tr>
+    <th>Date</th>
+    <th>Quantity</th>
+  </tr>
+{% for record in history %}
+  {% if record.2 %}
+  <tr style="color: red">
+  {% else %}
+  <tr style="color: green">
+  {% endif %}
+    <td>{{ record.0 }}</td>
+    <td>{{ record.1 }}</td>
+  </tr>
+{% endfor %}
+</table>
+{% endif %}
+<h1>HISTORY</h1>
+{% if supplies %}
+<table>
+  <tr>
+    <th>Date</th>
+    <th>Quantity</th>
+  </tr>
+{% for s in supplies %}
+  <tr>
+    <td>{{ s }}</td>
+  </tr>
+{% endfor %}
+</table>
+{% endif %}
+{% endblock %}

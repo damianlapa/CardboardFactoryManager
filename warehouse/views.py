@@ -850,8 +850,12 @@ class WarehouseView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request, warehouse_id):
+        all_stocks = request.GET.get('all_stocks')
         warehouse = Warehouse.objects.get(id=warehouse_id)
-        stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
+        if not all_stocks:
+            stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
+        else:
+            stocks = WarehouseStock.objects.filter(warehouse=warehouse)
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
@@ -1059,11 +1063,36 @@ class StockView(LoginRequiredMixin, View):
             customer, flute, dimensions, name = list(map(lambda x: x.strip(), stock.name.split('|')))
             product = Product.objects.get(name=stock.name)
             orders = Order.objects.filter(product=product)
+            product_supplies = StockSupply.objects.filter(name=stock.name)
         except ValueError:
             dimensions = stock.name.split('[')[1].replace(']', '').lower()
             supplies = StockSupply.objects.filter(dimensions=dimensions)
         history = WarehouseStockHistory.objects.filter(warehouse_stock__stock=stock)
         return render(request, 'warehouse/stock-details.html', locals())
+
+
+class WarehouseStockView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request, warehouse_stock_id):
+        warehouse_stock = WarehouseStock.objects.get(id=warehouse_stock_id)
+        history = []
+        stock_increases = StockSupplySettlement.objects.filter(stock_supply__name=warehouse_stock.stock.name)
+        stock_decreases = StockSupplySell.objects.filter(stock_supply__name=warehouse_stock.stock.name)
+
+        for s in stock_increases:
+            record = (s.settlement.settlement_date, s.quantity, True)
+            history.append(record)
+        for s in stock_decreases:
+            record = (s.sell.date, s.quantity, False)
+            history.append(record)
+
+        history = sorted(history, key=lambda x:x[0])
+
+        supplies = warehouse_stock.fifo()
+
+        return render(request, 'warehouse/warehouse-stock-details.html', locals())
+
 
 
 class LoadDeliveryToGSFile(LoginRequiredMixin, View):
@@ -1153,11 +1182,9 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
             qty = form.cleaned_data["quantity"]
 
             if qty <= 0:
-                print('qty')
                 form.add_error("quantity", "Ilość musi być większa od zera.")
                 return self.form_invalid(form)
             if ws.quantity < qty:
-                print(ws.quantity, qty)
                 form.add_error("quantity", "Nie ma wystarczającej ilości w magazynie!")
                 return self.form_invalid(form)
 
@@ -1350,6 +1377,7 @@ class AddOrdersManually(LoginRequiredMixin, View):
 
 def add_product_sell3(request):
     if request.method == "POST":
+        print("add sell")
         with transaction.atomic():
             product = Product.objects.get(id=int(request.POST.get("product")))
             customer = Buyer.objects.get(id=int(request.POST.get("customer")))
@@ -1358,7 +1386,7 @@ def add_product_sell3(request):
             order = Order.objects.get(id=int(request.POST.get("order")))
             quantity = request.POST.get("quantity_sell")
             date = request.POST.get("date_sell")
-            ProductSell3.objects.create(
+            sale = ProductSell3.objects.create(
                 product=product,
                 customer=customer,
                 customer_alter_name=customer_alter_name,
@@ -1375,6 +1403,25 @@ def add_product_sell3(request):
                 quantity_after=warehouse_stock.quantity - int(quantity),
                 date=date
             )
+
+            if order:
+                stock_supply = None
+                stock_supply_settlements = StockSupplySettlement.objects.filter(settlement__order=order, as_result=True)
+                if len(stock_supply_settlements) == 1:
+                    stock_supply = stock_supply_settlements[0].stock_supply
+                    stock_supply.used = True
+                    stock_supply.save()
+                StockSupplySell.objects.create(
+                    stock_supply=stock_supply,
+                    sell=sale,
+                    quantity=int(quantity)
+                )
+
+            # StockSupplySell.objects.create(
+            #     stock_supply = StockSupply.objects.get(deli)
+            # )
+
+            # warehouse_stock.show_all_stock_supplies()
 
             warehouse_stock.quantity -= int(quantity)
             product.price = request.POST.get("price_sell")
