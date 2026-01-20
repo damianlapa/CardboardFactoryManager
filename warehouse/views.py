@@ -518,6 +518,7 @@ class OrderListView(LoginRequiredMixin, View):
 
             orders = [o[1] for o in orders_]
 
+        orders_num = len(list(orders))
         return render(request, 'warehouse/order_list.html', locals())
 
 

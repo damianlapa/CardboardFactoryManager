@@ -35,10 +35,10 @@ def settle_order(request, order_id):
                 )
 
                 result, value = material.use_specified_stock_supply(settlement, material_quantity)
-                if not result:
-                    print('we are here!')
-                    # raise ValueError('Not enough material in this order!')
-                    value = material.fifo_from_order(order, settlement, material_quantity)
+                # if not result:
+                #     print('we are here!')
+                #     # raise ValueError('Not enough material in this order!')
+                #     value = material.fifo_from_order(order, settlement, material_quantity)
 
                 history, created = WarehouseStockHistory.objects.get_or_create(
                     warehouse_stock=material,
