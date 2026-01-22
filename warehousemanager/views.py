@@ -776,7 +776,7 @@ class PhotoPolymers(PermissionRequiredMixin, View):
 
 
 class PhotoPolymerDetail(PermissionRequiredMixin, View):
-    permission_required('warehousemanager.view_photopolymer')
+    permission_required = 'warehousemanager.view_photopolymer'
 
     def get(self, request, polymer_id):
         polymer = Photopolymer.objects.get(id=polymer_id)
