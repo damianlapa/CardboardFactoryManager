@@ -8,6 +8,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from utils.money import money, D, money_sum
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Coalesce
 
 
 UNITS = (
@@ -485,6 +486,36 @@ class StockSupply(models.Model):
     def piece_value(self):
         return money(D(self.value) / D(self.quantity)) if self.quantity else money(0)
 
+    def used_quantity(self) -> int:
+        settled = (
+            StockSupplySettlement.objects
+            .filter(stock_supply=self, as_result=False)
+            .aggregate(s=Coalesce(Sum("quantity"), 0))["s"]
+        )
+        sold = (
+            StockSupplySell.objects
+            .filter(stock_supply=self)
+            .aggregate(s=Coalesce(Sum("quantity"), 0))["s"]
+        )
+        return int(settled) + int(sold)
+
+    def available_quantity(self) -> int:
+        """Ile jeszcze zostało w tej partii."""
+        return int(self.quantity) - int(self.used_quantity())
+
+    def refresh_used_flag(self, save: bool = True) -> bool:
+        """
+        used=True tylko gdy partia jest wyzerowana (available <= 0).
+        used=False gdy zostało cokolwiek.
+        """
+        new_used = self.available_quantity() <= 0
+        if self.used != new_used:
+            self.used = new_used
+            if save:
+                self.save(update_fields=["used"])
+        return self.used
+
+
 
 
 class Stock(models.Model):
@@ -587,6 +618,100 @@ class WarehouseStock(models.Model):
 
         return supplies_sum - settlements_sum
 
+    def fifo_sell(self, sell: "ProductSell3"):
+        """
+        FIFO sprzedaż z magazynu dla danego WarehouseStock:
+        - bierze StockSupply (partie) o tej samej nazwie co stock,
+        - tylko product/special (tu skupiamy się na product),
+        - rozpisuje sprzedaż na partie w StockSupplySell,
+        - aktualizuje used cache na StockSupply.
+        """
+        qty = int(sell.quantity)
+        if qty <= 0:
+            raise ValidationError("Ilość sprzedaży musi być > 0")
+
+        with transaction.atomic():
+            # blokujemy stan magazynowy (żeby 2 sprzedaże naraz nie zjadły tej samej partii)
+            ws = WarehouseStock.objects.select_for_update().get(pk=self.pk)
+
+            if ws.quantity < qty:
+                raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
+
+            # partie FIFO dla tego produktu (po nazwie)
+            # ważne: order_by(date,id) -> FIFO
+            supplies = (
+                StockSupply.objects
+                .select_for_update()
+                .filter(
+                    name=ws.stock.name,
+                    stock_type__stock_type="product",
+                )
+                .order_by("date", "id")
+            )
+
+            # DEBUG – sprawdzenie spójności FIFO vs stan magazynu
+            total_available = sum(s.available_quantity() for s in supplies)
+            print("DEBUG FIFO SELL")
+            print("WarehouseStock:", ws.id, ws.stock.name)
+            print("WS.quantity:", ws.quantity)
+            print("FIFO supplies count:", supplies.count())
+            print("FIFO total available:", total_available)
+
+            for s in supplies:
+                print(
+                    "  Supply:",
+                    s.id,
+                    "date:", s.date,
+                    "qty:", s.quantity,
+                    "used:", s.used_quantity(),
+                    "available:", s.available_quantity(),
+                )
+
+
+
+            remaining = qty
+
+            for supply in supplies:
+                sold = StockSupplySell.objects.filter(stock_supply=supply).aggregate(t=Sum("quantity"))["t"] or 0
+                settled = StockSupplySettlement.objects.filter(stock_supply=supply).aggregate(t=Sum("quantity"))[
+                              "t"] or 0
+                print("    breakdown -> sold:", sold, "settled:", settled)
+                if remaining <= 0:
+                    break
+
+                available = supply.available_quantity()
+                if available <= 0:
+                    supply.refresh_used_flag()
+                    continue
+
+                take = min(available, remaining)
+
+                StockSupplySell.objects.create(
+                    stock_supply=supply,
+                    sell=sell,
+                    quantity=take
+                )
+
+                supply.refresh_used_flag()
+                remaining -= take
+
+            if remaining > 0:
+                raise ValidationError("FIFO: zabrakło ilości w partiach (niespójność stanów).")
+
+            # aktualizacja stanu zbiorczego i historii
+            before = ws.quantity
+            after = before - qty
+
+            WarehouseStockHistory.objects.create(
+                warehouse_stock=ws,
+                quantity_before=before,
+                quantity_after=after,
+                date=sell.date
+            )
+
+            ws.quantity = after
+            ws.save(update_fields=["quantity"])
+
     @staticmethod
     def use_specified_stock_supply(order_settlement, quantity: int):
         with transaction.atomic():
@@ -609,8 +734,8 @@ class WarehouseStock(models.Model):
                         settlement=order_settlement, stock_supply=s, quantity=s.quantity
                     )
                     value += s.value
-                    s.used = True
-                    s.save()
+                    s.refresh_used_flag()
+
                 return True, value
             elif stock_supplies_quantity > quantity:
                 quantity_left = quantity
@@ -631,56 +756,79 @@ class WarehouseStock(models.Model):
                             settlement=order_settlement, stock_supply=s, quantity=stock_supply_quantity
                         )
                         value += s.piece_value() * stock_supply_quantity
-                        s.used = True
-                        s.save()
+                        s.refresh_used_flag()
+
                         quantity_left -= stock_supply_quantity
                 return True, value
         return False, 'not enough material'
 
-    def fifo_from_order(self, order, settlement, quantity):
-        value_sum = 0
+    def fifo_from_order(self, order, settlement, quantity: int):
+        """
+        Rozchód FIFO, ale TYLKO z partii (StockSupply) które zostały dostarczone na to konkretne zlecenie:
+        StockSupply.delivery_item.order == order
+        """
+        if quantity <= 0:
+            raise ValidationError("quantity musi być > 0")
+
+        value_sum = Decimal("0.00")
+
         with transaction.atomic():
-            print('ok1')
+            # 1) tylko dostawy tego zamówienia
             delivery_items = DeliveryItem.objects.filter(order=order)
-            stock_supplies = []
-            used_quantity = 0
-            for item in delivery_items:
-                print('ok11')
-                stock_supply = StockSupply.objects.filter(delivery_item=item, used=False)
-                if stock_supply:
-                    stock_supplies.extend(list(stock_supply))
-            stock_supplies.sort(key=lambda x: x.date)
 
-            for supply in stock_supplies:
-                print('ok11', stock_supplies, supply)
-                to_use = quantity - used_quantity
-                used = 0
-                supply_used = StockSupplySettlement.objects.filter(stock_supply=supply, as_result=False)
-                for su in supply_used:
-                    used += su.quantity
-                possible_to_use = supply.quantity - used
-                if possible_to_use >= to_use:
-                    print('option1')
-                    value = money(Decimal(to_use/supply.quantity)*supply.value)
-                    value_sum += value
-                    print(value, type(value))
-                    StockSupplySettlement.objects.create(settlement=settlement, stock_supply=supply, quantity=to_use, value=value)
-                    used_quantity += to_use
-                    if possible_to_use == to_use:
-                        supply.used = True
-                        supply.save()
+            # 2) tylko StockSupply z tych dostaw (i najlepiej nie-zużyte flagą used=False jako cache)
+            #    UWAGA: used to cache, ale i tak liczymy dostępność po settlementach.
+            supplies = (
+                StockSupply.objects
+                .select_for_update()
+                .filter(delivery_item__in=delivery_items)
+                .order_by("date", "id")  # FIFO
+            )
+
+            remaining = int(quantity)
+
+            for supply in supplies:
+                if remaining <= 0:
                     break
-                else:
-                    print('option2')
-                    value = money(Decimal(possible_to_use / supply.quantity) * supply.value)
-                    value_sum += value
-                    print(value, type(value))
-                    StockSupplySettlement.objects.create(settlement=settlement, stock_supply=supply, quantity=possible_to_use, value=value)
-                    supply.used = True
-                    supply.save()
+
+                # ile już zeszło z tej partii (rozchody materiałowe -> u Ciebie as_result=False)
+                already_used = (
+                        StockSupplySettlement.objects
+                        .filter(stock_supply=supply, as_result=False)
+                        .aggregate(s=Sum("quantity"))["s"] or 0
+                )
+
+                available = int(supply.quantity) - int(already_used)
+                if available <= 0:
+                    # cache
+                    supply.refresh_used_flag()
+                    continue
+
+                take = min(available, remaining)
+
+                # wartość proporcjonalna do zdjętej ilości
+                # (Twoje StockSupplySettlement i tak przelicza value w save(), ale tu sumujemy wartość do zwrotu)
+                part_value = (Decimal(str(take)) / Decimal(str(supply.quantity))) * Decimal(str(supply.value or 0))
+                part_value = part_value.quantize(Decimal("0.01"))
+
+                StockSupplySettlement.objects.create(
+                    settlement=settlement,
+                    stock_supply=supply,
+                    quantity=take,
+                    as_result=False,  # to jest rozchód materiału
+                    value=part_value,  # optional: u Ciebie i tak nadpisze save() -> ok
+                )
+
+                # odśwież cache "used"
+                supply.refresh_used_flag()
+
+                value_sum += part_value
+                remaining -= take
+
+            if remaining > 0:
+                raise ValidationError("Nie ma wystarczającej ilości materiału w partiach przypiętych do tego zlecenia.")
+
             return value_sum
-
-
 
     def fifo(self):
         stock_supplies = self.get_all_stock_supplies()

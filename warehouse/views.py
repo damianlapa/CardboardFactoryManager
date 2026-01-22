@@ -1216,22 +1216,13 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
             sell = form.save(commit=False)
             sell.customer_alter_name = form.cleaned_data["customer_alter_name"]
             sell.warehouse_stock = ws
-            # product zostanie ustawiony automatycznie w clean()/save()
-            sell.full_clean()  # uruchomi walidacje z modelu (w tym auto-resolve product)
+            sell.full_clean()
             sell.save()
 
-            before = ws.quantity
-            after = before - qty
-            WarehouseStockHistory.objects.create(
-                warehouse_stock=ws,
-                quantity_before=before,
-                quantity_after=after,
-                date=form.cleaned_data["date"],
-            )
-            ws.quantity = after
-            ws.save(update_fields=["quantity"])
+            # ✅ FIFO sprzedaż (rozpisze na partie + zrobi historię + zmniejszy ws.quantity)
+            ws.fifo_sell(sell)
 
-        messages.success(self.request, "Sprzedaż zapisana.")
+        messages.success(self.request, "Sprzedaż zapisana (FIFO).")
         return redirect(self.get_success_url())
 
     def form_invalid(self, form):
@@ -1401,16 +1392,31 @@ class AddOrdersManually(LoginRequiredMixin, View):
 
 
 def add_product_sell3(request):
-    if request.method == "POST":
-        print("add sell")
+    if request.method != "POST":
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    try:
         with transaction.atomic():
             product = Product.objects.get(id=int(request.POST.get("product")))
             customer = Buyer.objects.get(id=int(request.POST.get("customer")))
-            customer_alter_name = request.POST.get("customer_alter_name")
-            warehouse_stock = WarehouseStock.objects.get(id=int(request.POST.get("warehouse_stock")))
-            order = Order.objects.get(id=int(request.POST.get("order")))
-            quantity = request.POST.get("quantity_sell")
+            customer_alter_name = request.POST.get("customer_alter_name") or None
+            warehouse_stock = WarehouseStock.objects.select_for_update().get(id=int(request.POST.get("warehouse_stock")))
+
+            # order u Ciebie bywa opcjonalny, ale tutaj był wymagany w starym kodzie
+            order_id = request.POST.get("order")
+            order = Order.objects.get(id=int(order_id)) if order_id else None
+
+            quantity = int(request.POST.get("quantity_sell"))
             date = request.POST.get("date_sell")
+            price = request.POST.get("price_sell")
+
+            if quantity <= 0:
+                raise ValidationError("Ilość musi być większa od zera.")
+
+            if warehouse_stock.quantity < quantity:
+                raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
+
+            # 1) Tworzymy sprzedaż
             sale = ProductSell3.objects.create(
                 product=product,
                 customer=customer,
@@ -1418,43 +1424,26 @@ def add_product_sell3(request):
                 warehouse_stock=warehouse_stock,
                 order=order,
                 quantity=quantity,
-                price=request.POST.get("price_sell"),
+                price=price,
                 date=date,
             )
 
-            WarehouseStockHistory.objects.create(
-                warehouse_stock=warehouse_stock,
-                quantity_before=warehouse_stock.quantity,
-                quantity_after=warehouse_stock.quantity - int(quantity),
-                date=date
-            )
+            # 2) FIFO rozchód na partie + historia + aktualizacja ws.quantity
+            # (rozbije sprzedaż na wiele StockSupplySell jeśli trzeba)
+            warehouse_stock.fifo_sell(sale)
 
-            if order:
-                stock_supply = None
-                stock_supply_settlements = StockSupplySettlement.objects.filter(settlement__order=order, as_result=True)
-                if len(stock_supply_settlements) == 1:
-                    stock_supply = stock_supply_settlements[0].stock_supply
-                    stock_supply.used = True
-                    stock_supply.save()
-                StockSupplySell.objects.create(
-                    stock_supply=stock_supply,
-                    sell=sale,
-                    quantity=int(quantity)
-                )
+            # 3) Ustaw cenę produktu (tak jak miałeś)
+            product.price = price
+            product.save(update_fields=["price"])
 
-            # StockSupplySell.objects.create(
-            #     stock_supply = StockSupply.objects.get(deli)
-            # )
+        messages.success(request, "Sprzedaż zapisana (FIFO).")
 
-            # warehouse_stock.show_all_stock_supplies()
+    except ValidationError as e:
+        messages.error(request, str(e))
+    except Exception as e:
+        messages.error(request, f"Błąd zapisu sprzedaży: {e}")
 
-            warehouse_stock.quantity -= int(quantity)
-            product.price = request.POST.get("price_sell")
-            product.save()
-
-            warehouse_stock.save()
-
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def assign_products_to_orders(year=None, row=None, division=None):
