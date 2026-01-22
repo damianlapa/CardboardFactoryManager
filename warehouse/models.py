@@ -266,7 +266,7 @@ class DeliveryItem(models.Model):
 
         # Create Stock Supply
         stock_supply, created = StockSupply.objects.get_or_create(
-            stock_type=StockType.objects.get(stock_type='Material', unit='PIECE'),
+            stock_type=StockType.objects.get(stock_type='material', unit='PIECE'),
             delivery_item=self,
             date=self.delivery.date,
             dimensions=self.order.dimensions,
@@ -278,7 +278,7 @@ class DeliveryItem(models.Model):
         # Aktualizacja zapasów w magazynie
         stock, created = Stock.objects.get_or_create(
             name=f'{self.order.name}[{self.order.dimensions}]',
-            stock_type=StockType.objects.get(stock_type='Material', unit='PIECE')
+            stock_type=StockType.objects.get(stock_type='material', unit='PIECE')
         )
         warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
 
@@ -407,7 +407,7 @@ class DeliverySpecialItem(models.Model):
 
         # Create Stock Supply
         stock_supply, created = StockSupply.objects.get_or_create(
-            stock_type=StockType.objects.get(stock_type='Special', unit='PIECE'),
+            stock_type=StockType.objects.get(stock_type='special', unit='PIECE'),
             date=self.delivery.date,
             quantity=self.quantity,
             name=self.name,
@@ -417,7 +417,7 @@ class DeliverySpecialItem(models.Model):
         # Aktualizacja zapasów w magazynie
         stock, created = Stock.objects.get_or_create(
             name=self.name,
-            stock_type=StockType.objects.get(stock_type='Special', unit='PIECE')
+            stock_type=StockType.objects.get(stock_type='special', unit='PIECE')
         )
         warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
 

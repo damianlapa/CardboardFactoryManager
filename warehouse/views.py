@@ -558,7 +558,9 @@ class OrderDetailView(LoginRequiredMixin, View):
         return JsonResponse({"ok": False, "error": "Nieznana akcja."}, status=400)
 
     def get(self, request, order_id):
-        stock_types = StockType.objects.all()
+        stock_types = StockType.objects.filter(
+            stock_type__in=["material", "product", "special"]
+        ).order_by("stock_type", "unit")
         order = Order.objects.get(id=order_id)
         warehouses = Warehouse.objects.all()
         settlements = OrderSettlement.objects.filter(order=order)
