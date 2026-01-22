@@ -472,6 +472,9 @@ class Stock(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
 
+    class Meta:
+        ordering = ['stock_type__stock_type', 'name']
+
     def __str__(self):
         return f'{self.stock_type.stock_type}: {self.name}'
 
