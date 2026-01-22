@@ -394,6 +394,11 @@ class DeliverySpecialItem(models.Model):
     def __str__(self):
         return f'{self.delivery} :: {self.name} :: {self.quantity}'
 
+    def save(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name.strip()
+        super().save(*args, **kwargs)
+
     def calculate_value(self):
         return money(D(self.price) * D(self.quantity))
 

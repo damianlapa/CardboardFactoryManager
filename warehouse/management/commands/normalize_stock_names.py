@@ -15,18 +15,25 @@ def _normalize_name(name: str) -> str:
     """
     Pancerny normalizer:
     - strip() całości
-    - jeśli jest '|' to strip segmentów i składanie jako ' | '
-    - usuwa podwójne spacje
+    - collapse whitespace (podwójne spacje -> jedna)
+    - jeśli jest '|': strip segmentów, usuń puste segmenty na końcu
+      i składaj jako ' | '
     """
     if name is None:
         return ""
 
-    raw = " ".join(name.strip().split())  # collapse whitespace
-    if "|" in raw:
-        parts = [p.strip() for p in raw.split("|")]
-        # zachowaj puste segmenty, ale w kontrolowanym formacie
-        return " | ".join(parts)
-    return raw
+    raw = " ".join(name.strip().split())  # collapse whitespace + strip
+    if "|" not in raw:
+        return raw
+
+    parts = [p.strip() for p in raw.split("|")]
+
+    # USUŃ puste segmenty na końcu, żeby nie produkować " | " na końcu
+    while parts and parts[-1] == "":
+        parts.pop()
+
+    return " | ".join(parts)
+
 
 
 class Command(BaseCommand):

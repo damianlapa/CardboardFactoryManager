@@ -74,20 +74,15 @@ def load_orders(year, row=None, division=None, row_list=None):
     for row in rows:
         try:
             data = data_all[row]
-            print(data, '#2')
             try:
-                print('customer jest')
                 customer = Buyer.objects.get(name=data[18].upper().strip())
             except Buyer.DoesNotExist:
-                print('customer jest nie ')
                 customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
                 customer.save()
 
             try:
-                print('dostawca jest')
                 provider = Provider.objects.get(shortcut=data[0].upper().strip())
             except Provider.DoesNotExist:
-                print('dostawca jest nie')
                 provider = Provider(name=data[0], shortcut=data[0])
                 provider.save()
 
@@ -95,16 +90,15 @@ def load_orders(year, row=None, division=None, row_list=None):
             dimensions = f'{data[12].strip()}x{data[13].strip()}'
             product_additional_name = data[24].upper().strip()
 
-            product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
-
-            print(product_name, dimensions, flute)
+            if product_additional_name:
+                product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
+            else:
+                product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} |'
 
             # Pobierz lub utwórz produkt
             try:
-                print('produkt jest')
                 product = Product.objects.get(name=product_name)
             except Product.DoesNotExist:
-                print('produkt jest nie')
                 if all((product_name, dimensions, flute)):
                     product = Product.objects.create(
                         name=product_name,
@@ -114,13 +108,11 @@ def load_orders(year, row=None, division=None, row_list=None):
                     )
 
             try:
-                print('order jest')
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
                                           provider=Provider.objects.get(shortcut=data[0].upper().strip()))
                 result += f'{order} already exists<br>\n'
 
             except Order.DoesNotExist:
-                print('order jest nie')
                 price = int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
                     22] else 0
                 order_date = data[6].upper().strip() if data[6].upper().strip() else None
@@ -148,13 +140,11 @@ def load_orders(year, row=None, division=None, row_list=None):
                     order.price = 0
                     order.save()
                 else:
-                    print(provider, type(provider))
                     result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date\n'
 
         except Exception as e:
             result += f'{e}<br>\n'
 
-    print(result)
     return result
 
 
@@ -1524,7 +1514,11 @@ def assign_products_to_orders(year=None, row=None, division=None):
             flute = get_flute(data[19].upper().strip())
             dimensions = f'{data[12].strip()}x{data[13].strip()}'
             product_additional_name = data[24].upper().strip()
-            product_name = f'{customer_name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
+
+            if product_additional_name:
+                product_name = f'{customer_name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
+            else:
+                product_name = f'{customer_name} | {flute} | {data[23].lower().strip()} |'
 
             if not all((product_name, dimensions, flute)):
                 result += f'Incomplete product data in row {row}<br>'
