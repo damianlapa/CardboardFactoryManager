@@ -101,22 +101,42 @@ class Command(BaseCommand):
                 #    więc merge per warehouse
                 ws_list = list(WarehouseStock.objects.filter(stock=s).select_related("warehouse"))
                 for ws in ws_list:
-                    target_ws, _ = WarehouseStock.objects.get_or_create(
-                        warehouse=ws.warehouse,
-                        stock=target,
-                        defaults={"quantity": 0},
+                    # znajdź wszystkie WS dla (warehouse, target_stock)
+                    targets = (
+                        WarehouseStock.objects
+                        .filter(warehouse=ws.warehouse, stock=target)
+                        .order_by("id")
                     )
 
-                    if target_ws.id != ws.id:
-                        # sum quantity
-                        target_ws.quantity += ws.quantity
-                        target_ws.save(update_fields=["quantity"])
+                    target_ws = targets.first()
+                    if not target_ws:
+                        # nie ma żadnego -> bierzemy bieżący ws jako docelowy, ale podmieniamy stock
+                        ws.stock = target
+                        ws.save(update_fields=["stock"])
+                        target_ws = ws
+                    else:
+                        # jeśli jest wiele -> scalamy je do pierwszego
+                        extra_targets = targets.exclude(id=target_ws.id)
+                        if extra_targets.exists():
+                            for dup in extra_targets:
+                                target_ws.quantity += dup.quantity
+                                target_ws.save(update_fields=["quantity"])
 
-                        # przepnij historię / sprzedaż
-                        WarehouseStockHistory.objects.filter(warehouse_stock=ws).update(warehouse_stock=target_ws)
-                        ProductSell3.objects.filter(warehouse_stock=ws).update(warehouse_stock=target_ws)
+                                WarehouseStockHistory.objects.filter(warehouse_stock=dup).update(
+                                    warehouse_stock=target_ws)
+                                ProductSell3.objects.filter(warehouse_stock=dup).update(warehouse_stock=target_ws)
 
-                        ws.delete()
+                                dup.delete()
+
+                        # teraz scalamy bieżący ws (stary stock) do target_ws
+                        if ws.id != target_ws.id:
+                            target_ws.quantity += ws.quantity
+                            target_ws.save(update_fields=["quantity"])
+
+                            WarehouseStockHistory.objects.filter(warehouse_stock=ws).update(warehouse_stock=target_ws)
+                            ProductSell3.objects.filter(warehouse_stock=ws).update(warehouse_stock=target_ws)
+
+                            ws.delete()
 
                 # 3) usuń stary Stock
                 s.delete()

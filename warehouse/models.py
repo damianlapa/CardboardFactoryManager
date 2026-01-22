@@ -464,6 +464,21 @@ class StockSupply(models.Model):
     class Meta:
         ordering = ['-date']
 
+    def save(self, *args, **kwargs):
+        if self.name:
+            # 1) trim + collapse whitespace
+            n = " ".join(self.name.strip().split())
+
+            # 2) jeżeli są " | " segmenty, ustandaryzuj
+            if "|" in n:
+                parts = [p.strip() for p in n.split("|")]
+                while parts and parts[-1] == "":
+                    parts.pop()
+                n = " | ".join(parts)
+
+            self.name = n
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'[{self.date}] {self.dimensions} {self.name}'
 
@@ -482,6 +497,21 @@ class Stock(models.Model):
 
     def __str__(self):
         return f'{self.stock_type.stock_type}: {self.name}'
+
+    def save(self, *args, **kwargs):
+        if self.name:
+            # 1) trim + collapse whitespace
+            n = " ".join(self.name.strip().split())
+
+            # 2) jeżeli są " | " segmenty, ustandaryzuj
+            if "|" in n:
+                parts = [p.strip() for p in n.split("|")]
+                while parts and parts[-1] == "":
+                    parts.pop()
+                n = " | ".join(parts)
+
+            self.name = n
+        super().save(*args, **kwargs)
 
     def update_stock(self, supply_quantity):
         self.quantity += supply_quantity
