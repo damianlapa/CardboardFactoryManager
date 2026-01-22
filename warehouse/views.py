@@ -1,3 +1,5 @@
+# warehouse/views.py
+
 from django.shortcuts import HttpResponse
 from django.views import View
 from django.http import JsonResponse
@@ -25,6 +27,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
+from warehouse.services.bom_preview import bom_preview_for_order
+from warehouse.services.bom_realization import realize_order_bom
 
 
 def load_orders(year, row=None, division=None, row_list=None):
@@ -524,6 +528,34 @@ class OrderListView(LoginRequiredMixin, View):
 
 class OrderDetailView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
+
+    def post(self, request, order_id):
+        order = Order.objects.get(id=order_id)
+        action = request.POST.get("action")
+
+        if action == "bom_preview":
+            try:
+                data = bom_preview_for_order(order)
+                return JsonResponse({"ok": True, "data": data})
+            except ValidationError as e:
+                return JsonResponse({"ok": False, "error": str(e)}, status=400)
+            except Exception as e:
+                return JsonResponse({"ok": False, "error": f"{e}"}, status=500)
+
+        if action == "bom_execute":
+            try:
+                preview = bom_preview_for_order(order)
+                if not preview["ok"]:
+                    return JsonResponse({"ok": False, "error": "Braki materiałowe – rozchód zablokowany."}, status=400)
+
+                realize_order_bom(order=order)
+                return JsonResponse({"ok": True})
+            except ValidationError as e:
+                return JsonResponse({"ok": False, "error": str(e)}, status=400)
+            except Exception as e:
+                return JsonResponse({"ok": False, "error": f"{e}"}, status=500)
+
+        return JsonResponse({"ok": False, "error": "Nieznana akcja."}, status=400)
 
     def get(self, request, order_id):
         stock_types = StockType.objects.all()

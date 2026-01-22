@@ -176,8 +176,8 @@ class Person(models.Model):
                     if c.date_end:
                         if c.date_end >= date:
                             return c.salary
-                else:
-                    return contracts[-1].salary
+                    else:
+                        return contracts[-1].salary
         return 0
 
 

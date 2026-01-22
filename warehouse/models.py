@@ -1,17 +1,13 @@
 import datetime
 import math
 import re
-from django.db import models
 from warehousemanager.models import Buyer
-from django.db.models import UniqueConstraint
-from django.db.models.functions import ExtractYear
-from django.db import models
-from django.core.exceptions import ValidationError
 from django.db.models import Exists, OuterRef
-from django.db import transaction
 from django.db.models import Sum
 from decimal import Decimal, ROUND_HALF_UP
 from utils.money import money, D, money_sum
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
 
 
 UNITS = (
@@ -71,6 +67,7 @@ class Order(models.Model):
     delivered = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
     updated = models.BooleanField(default=False)
+    bom = models.ForeignKey("BOM", on_delete=models.PROTECT, null=True, blank=True, related_name="orders")
 
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
@@ -1016,3 +1013,103 @@ class PriceListItem(models.Model):
 
     class Meta:
         unique_together = ['price_list', 'name']
+
+
+class BOM(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="boms")
+    version = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "version"],
+                name="uniq_bom_product_version",
+            ),
+        ]
+
+    def __str__(self):
+        label = str(self.product)
+        return f"{label} v{self.version}"
+
+    def clean(self):
+        if self.is_active:
+            qs = BOM.objects.filter(product=self.product, is_active=True)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError("Dla danego produktu może być tylko jeden aktywny BOM.")
+
+    @classmethod
+    @transaction.atomic
+    def create_next_version(cls, *, product, base_bom=None, activate=True):
+        last = (
+            cls.objects.select_for_update()
+            .filter(product=product)
+            .order_by("-version")
+            .first()
+        )
+        next_version = 1 if not last else last.version + 1
+
+        if activate:
+            cls.objects.filter(product=product, is_active=True).update(is_active=False)
+
+        new_bom = cls.objects.create(
+            product=product,
+            version=next_version,
+            is_active=activate,
+        )
+
+        if base_bom:
+            parts = base_bom.parts.all()
+            cls._copy_parts(parts, new_bom)
+
+        return new_bom
+
+    @staticmethod
+    def _copy_parts(parts_qs, new_bom):
+        BOMPart.objects.bulk_create(
+            [
+                BOMPart(bom=new_bom, part=p.part, quantity=p.quantity)
+                for p in parts_qs.select_related("part")
+            ]
+        )
+
+    def requirements(self, order_quantity: int):
+        result = []
+        for bp in self.parts.select_related("part", "part__stock_type"):
+            required = bp.quantity * Decimal(order_quantity)
+            result.append((bp.part, required))
+        return result
+
+    def to_int_qty(self, stock: "Stock", qty: Decimal) -> int:
+        unit = stock.stock_type.unit
+        if unit in ("PIECE", "SET"):
+            return int(math.ceil(qty))
+        raise ValidationError(
+            f"Nieobsługiwana jednostka dla realizacji BOM: {unit}. "
+            f"Dla KG/M2 potrzebujesz Decimal w stanach magazynowych."
+        )
+
+
+class BOMPart(models.Model):
+    bom = models.ForeignKey(
+        BOM,
+        on_delete=models.CASCADE,
+        related_name="parts",
+    )
+    part = models.ForeignKey(Stock, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["bom", "part"],
+                name="uniq_bompart_bom_part",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.part} x {self.quantity}"
+

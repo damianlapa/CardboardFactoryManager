@@ -34,6 +34,12 @@
     </a>
     <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
     <button id="settleOrderBtn">Settle Order</button>
+    {% if order.bom %}
+    <button id="openBomModal">BOM</button>
+    {% else %}
+    <small style="margin-left:10px;color:#888;">brak BOM</small>
+    {% endif %}
+
     <input type="checkbox" id="order_delivered_cbx" name="order_delivered" {% if order.delivered %}checked{% endif %}>
     <label for="order_delivered_cbx" class="label" id="delivery_cbx">Delivered</label>
     <input type="checkbox" id="order_finished_cbx" {% if order.finished %}checked{% endif %}>
@@ -360,6 +366,24 @@
     {% endfor %}
   </tbody>
 </table>
+<div id="bomModal" class="modal">
+  <div class="modal-content">
+    <span class="closebom">&times;</span>
+
+    <h2>Receptura (BOM) — {{ order }}</h2>
+
+    <div id="bomAlert" style="margin:10px 0;"></div>
+
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <button type="button" id="btnBomCheck">Sprawdź dostępność na magazynach</button>
+      <button type="button" id="btnBomExecute" disabled>Wykonaj rozchód</button>
+    </div>
+
+    <div id="bomContent">
+      <p style="color:#777;">Kliknij „Sprawdź dostępność…”, aby zobaczyć recepturę i dostępne dostawy.</p>
+    </div>
+  </div>
+</div>
 
 <div id="settleOrderModal" class="modal">
   <div class="modal-content">
@@ -549,4 +573,5 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
 <script src="{% static 'js/warehouse/order-details.js' %}"></script>
+<script src="{% static 'js/warehouse/bom.js' %}"></script>
 {% endblock %}
