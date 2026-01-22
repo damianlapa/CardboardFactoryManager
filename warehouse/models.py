@@ -494,6 +494,9 @@ class Stock(models.Model):
 
     class Meta:
         ordering = ['stock_type__stock_type', 'name']
+        constraints = [
+            models.UniqueConstraint(fields=["stock_type", "name"], name="uniq_stock_type_name"),
+        ]
 
     def __str__(self):
         return f'{self.stock_type.stock_type}: {self.name}'
@@ -547,6 +550,12 @@ class WarehouseStock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='warehouse_stocks')
     stock = models.ForeignKey("Stock", on_delete=models.CASCADE, related_name='warehouse_stocks')
     quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["warehouse", "stock"], name="uniq_warehouse_stock_pair"),
+        ]
+        ordering = ['stock__name']
 
     def __str__(self):
         return f'{self.stock.name} in {self.warehouse.name}: {self.quantity}'
@@ -680,8 +689,6 @@ class WarehouseStock(models.Model):
     def get_all_stock_supplies(self):
         return StockSupply.objects.filter(name=self.stock.name)
 
-    class Meta:
-        ordering = ['stock__name']
 
 
 # <-- rozbudowa modeli
