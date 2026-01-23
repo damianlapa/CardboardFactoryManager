@@ -139,6 +139,7 @@ def load_orders(year, row=None, division=None, row_list=None):
                 elif provider.name == "PAKER":
                     order.price = 0
                     order.save()
+                    result += f'{order} saved<br>'
                 else:
                     result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date\n'
 
