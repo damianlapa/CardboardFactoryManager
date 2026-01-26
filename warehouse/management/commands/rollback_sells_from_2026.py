@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import F, IntegerField, ExpressionWrapper
 
 
 class Command(BaseCommand):
@@ -132,26 +133,33 @@ class Command(BaseCommand):
             deleted_sss, _ = sss_qs.delete()
             self.stdout.write(f"  Deleted StockSupplySell rows: {deleted_sss}")
 
-        # 2) Delete WarehouseStockHistory rows that match this sell
-        # Conservative matching:
-        # - same warehouse_stock
-        # - same date
-        # - no stock_supply, no order_settlement, no assembly
-        # - quantity_before/after corresponds exactly to movement we are reversing
-        hist_qs = (
-            WarehouseStockHistory.objects
-            .filter(
-                warehouse_stock_id=ws.id,
-                date=sell.date,
-                stock_supply__isnull=True,
-                order_settlement__isnull=True,
-                assembly__isnull=True,
-                quantity_before=qty_after,
-                quantity_after=qty_before,
-            )
-        )
+            # 2) Delete WarehouseStockHistory rows that match this sell
+            #
+            # UWAGA:
+            # Nie możemy polegać na qty_before/qty_after liczonych z "dzisiejszego" stanu magazynu,
+            # bo po sprzedaży mogły wystąpić kolejne ruchy (np. przyjęcie/korekta) i wtedy
+            # ws.quantity != stan z dnia sprzedaży.
+            #
+            # Najbezpieczniej: szukamy wpisu historii bez powiązań (stock_supply/order_settlement/assembly = NULL)
+            # i z deltą dokładnie równą sell.quantity:
+            #   quantity_before - quantity_after == sell.quantity
+            #
+            delta_expr = ExpressionWrapper(F("quantity_before") - F("quantity_after"), output_field=IntegerField())
 
-        hist_count = hist_qs.count()
+            hist_qs = (
+                WarehouseStockHistory.objects
+                .filter(
+                    warehouse_stock_id=ws.id,
+                    date=sell.date,
+                    stock_supply__isnull=True,
+                    order_settlement__isnull=True,
+                    assembly__isnull=True,
+                )
+                .annotate(delta=delta_expr)
+                .filter(delta=sell.quantity)
+            )
+
+            hist_count = hist_qs.count()
 
         if dry_run:
             self.stdout.write(f"  History matches to delete: {hist_count}")
