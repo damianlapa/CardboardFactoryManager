@@ -11,7 +11,7 @@ class Command(BaseCommand):
         "Rollback ProductSell3 from a given date (default 2026-01-01):\n"
         "- deletes StockSupplySell rows for the sell\n"
         "- restores WarehouseStock.quantity (adds sell.quantity)\n"
-        "- deletes matching WarehouseStockHistory rows (conservative match)\n"
+        "- deletes matching WarehouseStockHistory rows (delta-based match)\n"
         "- deletes ProductSell3\n"
         "Default is DRY RUN. Use --commit to apply."
     )
@@ -95,7 +95,6 @@ class Command(BaseCommand):
                 self.stdout.write("DONE.")
                 self.stdout.write("")
 
-                # rollback whole atomic block in dry-run mode without ugly stacktrace
                 if dry_run:
                     raise _DryRunRollback()
 
@@ -126,46 +125,34 @@ class Command(BaseCommand):
 
         # 1) StockSupplySell rows (FIFO mapping)
         sss_qs = StockSupplySell.objects.filter(sell_id=sell.id)
+        sss_count = sss_qs.count()
+        self.stdout.write(f"  StockSupplySell to delete: {sss_count}")
 
-        if dry_run:
-            self.stdout.write(f"  StockSupplySell to delete: {sss_qs.count()}")
-        else:
-            deleted_sss, _ = sss_qs.delete()
-            self.stdout.write(f"  Deleted StockSupplySell rows: {deleted_sss}")
+        # 2) WarehouseStockHistory rows that match this sell (delta-based)
+        #
+        # Szukamy wpisu historii bez powiązań (stock_supply/order_settlement/assembly = NULL)
+        # i z deltą dokładnie równą sell.quantity:
+        #   quantity_before - quantity_after == sell.quantity
+        #
+        delta_expr = ExpressionWrapper(
+            F("quantity_before") - F("quantity_after"),
+            output_field=IntegerField()
+        )
 
-            # 2) Delete WarehouseStockHistory rows that match this sell
-            #
-            # UWAGA:
-            # Nie możemy polegać na qty_before/qty_after liczonych z "dzisiejszego" stanu magazynu,
-            # bo po sprzedaży mogły wystąpić kolejne ruchy (np. przyjęcie/korekta) i wtedy
-            # ws.quantity != stan z dnia sprzedaży.
-            #
-            # Najbezpieczniej: szukamy wpisu historii bez powiązań (stock_supply/order_settlement/assembly = NULL)
-            # i z deltą dokładnie równą sell.quantity:
-            #   quantity_before - quantity_after == sell.quantity
-            #
-            delta_expr = ExpressionWrapper(F("quantity_before") - F("quantity_after"), output_field=IntegerField())
-
-            hist_qs = (
-                WarehouseStockHistory.objects
-                .filter(
-                    warehouse_stock_id=ws.id,
-                    date=sell.date,
-                    stock_supply__isnull=True,
-                    order_settlement__isnull=True,
-                    assembly__isnull=True,
-                )
-                .annotate(delta=delta_expr)
-                .filter(delta=sell.quantity)
+        hist_qs = (
+            WarehouseStockHistory.objects
+            .filter(
+                warehouse_stock_id=ws.id,
+                date=sell.date,
+                stock_supply__isnull=True,
+                order_settlement__isnull=True,
+                assembly__isnull=True,
             )
-
-            hist_count = hist_qs.count()
-
-        if dry_run:
-            self.stdout.write(f"  History matches to delete: {hist_count}")
-        else:
-            deleted_hist, _ = hist_qs.delete()
-            self.stdout.write(f"  Deleted history rows: {deleted_hist}")
+            .annotate(delta=delta_expr)
+            .filter(delta=sell.quantity)
+        )
+        hist_count = hist_qs.count()
+        self.stdout.write(f"  History matches to delete: {hist_count}")
 
         # Optional audit if we didn't find matches
         if audit_history and hist_count == 0:
@@ -193,20 +180,25 @@ class Command(BaseCommand):
             else:
                 self.stdout.write("    (no history rows in +-7 days window)")
 
-        # 3) Restore warehouse stock quantity
+        # DRY RUN ends here (we only printed what would happen)
         if dry_run:
             self.stdout.write(f"  WarehouseStock.quantity: {qty_before} -> {qty_after}")
-        else:
-            ws.quantity = qty_after
-            ws.save(update_fields=["quantity"])
-            self.stdout.write(f"  Updated WarehouseStock.quantity: {qty_before} -> {qty_after}")
-
-        # 4) Delete sell
-        if dry_run:
             self.stdout.write("  Would delete ProductSell3.")
-        else:
-            sell.delete()
-            self.stdout.write("  Deleted ProductSell3.")
+            return
+
+        # --- COMMIT (apply changes) ---
+        deleted_sss, _ = sss_qs.delete()
+        self.stdout.write(f"  Deleted StockSupplySell rows: {deleted_sss}")
+
+        deleted_hist, _ = hist_qs.delete()
+        self.stdout.write(f"  Deleted history rows: {deleted_hist}")
+
+        ws.quantity = qty_after
+        ws.save(update_fields=["quantity"])
+        self.stdout.write(f"  Updated WarehouseStock.quantity: {qty_before} -> {qty_after}")
+
+        sell.delete()
+        self.stdout.write("  Deleted ProductSell3.")
 
     def _parse_date(self, s: str) -> datetime.date:
         try:
