@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Q
 
 
 class Command(BaseCommand):
@@ -78,29 +77,30 @@ class Command(BaseCommand):
             self.stdout.write("Nothing to do.")
             return
 
-        # In commit mode we want everything atomic: either whole run or nothing.
-        # In dry-run mode atomic doesn't matter but keeps logic consistent.
-        with transaction.atomic():
-            for idx, sell in enumerate(sells_qs, start=1):
+        try:
+            with transaction.atomic():
+                for _idx, sell in enumerate(sells_qs, start=1):
+                    self.stdout.write("=" * 98)
+                    self._process_one_sell(
+                        sell=sell,
+                        dry_run=dry_run,
+                        audit_history=audit_history,
+                        StockSupplySell=StockSupplySell,
+                        WarehouseStock=WarehouseStock,
+                        WarehouseStockHistory=WarehouseStockHistory,
+                    )
+
                 self.stdout.write("=" * 98)
-                self._process_one_sell(
-                    sell=sell,
-                    dry_run=dry_run,
-                    audit_history=audit_history,
-                    StockSupplySell=StockSupplySell,
-                    WarehouseStock=WarehouseStock,
-                    WarehouseStockHistory=WarehouseStockHistory,
-                )
+                self.stdout.write("DONE.")
+                self.stdout.write("")
 
-            self.stdout.write("=" * 98)
-            self.stdout.write("DONE.")
+                # rollback whole atomic block in dry-run mode without ugly stacktrace
+                if dry_run:
+                    raise _DryRunRollback()
+
+        except _DryRunRollback:
+            self.stdout.write("DRY RUN: no changes were saved (transaction rolled back).")
             self.stdout.write("")
-
-            # Important: if dry-run, rollback transaction so nothing persists
-            if dry_run:
-                # Force rollback by raising and catching a controlled exception
-                # (Django doesn't provide an official "rollback now" API inside atomic)
-                raise _DryRunRollback()
 
     def _process_one_sell(
         self,
@@ -113,11 +113,7 @@ class Command(BaseCommand):
         WarehouseStockHistory,
     ):
         # Lock the WarehouseStock row so concurrent operations won't mess quantities
-        ws = (
-            WarehouseStock.objects
-            .select_for_update()
-            .get(pk=sell.warehouse_stock_id)
-        )
+        ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
 
         qty_before = ws.quantity  # current (post-sell) as in DB right now
         qty_after = qty_before + sell.quantity
@@ -141,7 +137,7 @@ class Command(BaseCommand):
         # - same warehouse_stock
         # - same date
         # - no stock_supply, no order_settlement, no assembly
-        # - quantity_before/after corresponds exactly to the movement we are reversing
+        # - quantity_before/after corresponds exactly to movement we are reversing
         hist_qs = (
             WarehouseStockHistory.objects
             .filter(
@@ -166,14 +162,15 @@ class Command(BaseCommand):
         # Optional audit if we didn't find matches
         if audit_history and hist_count == 0:
             self.stdout.write("  AUDIT: no exact matching history row found.")
-            # show a few history rows around that date for this warehouse_stock
             around = (
                 WarehouseStockHistory.objects
                 .filter(warehouse_stock_id=ws.id)
-                .filter(date__gte=sell.date - datetime.timedelta(days=2),
-                        date__lte=sell.date + datetime.timedelta(days=2))
+                .filter(
+                    date__gte=sell.date - datetime.timedelta(days=7),
+                    date__lte=sell.date + datetime.timedelta(days=7),
+                )
                 .order_by("date", "id")
-            )[:20]
+            )[:40]
 
             if around:
                 for h in around:
@@ -186,7 +183,7 @@ class Command(BaseCommand):
                         f"assembly_id={getattr(h, 'assembly_id', None)}"
                     )
             else:
-                self.stdout.write("    (no history rows in +-2 days window)")
+                self.stdout.write("    (no history rows in +-7 days window)")
 
         # 3) Restore warehouse stock quantity
         if dry_run:
