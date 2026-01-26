@@ -3,18 +3,21 @@ from __future__ import annotations
 import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import F
 
 
 class Command(BaseCommand):
     help = (
         "Rollback Deliveries from a given date (default 2026-01-01):\n"
-        "- for Delivery(date>=from_date) iterates DeliveryItem\n"
-        "- deletes WarehouseStockHistory rows linked by StockSupply\n"
-        "- deletes StockSupply (+ defensive cleanup of settlements/sells if any)\n"
-        "- restores WarehouseStock.quantity (subtracts stock_supply.quantity)\n"
-        "- updates Order.delivered_quantity / delivered / delivery_date\n"
-        "- deletes DeliveryItem and Delivery (if empty)\n"
+        "- for each DeliveryItem: finds StockSupply rows (delivery_item FK)\n"
+        "- deletes WarehouseStockHistory rows linked to stock_supply\n"
+        "- decreases WarehouseStock.quantity by delivered quantity\n"
+        "- deletes StockSupplySettlement rows for those supplies\n"
+        "- deletes empty OrderSettlement created for delivery (if no more StockSupplySettlement)\n"
+        "- deletes StockSupply rows\n"
+        "- sets DeliveryItem.processed=False\n"
+        "- updates Order.delivered_quantity and sets Order.delivered=False (forced)\n"
+        "- sets Delivery.processed=False\n"
         "Default is DRY RUN. Use --commit to apply."
     )
 
@@ -36,28 +39,35 @@ class Command(BaseCommand):
             default=None,
             help="Limit number of deliveries processed (newest first). Useful for testing.",
         )
+        parser.add_argument(
+            "--audit",
+            action="store_true",
+            help="Print additional info (items / supplies / history counts).",
+        )
 
     def handle(self, *args, **options):
         from_date = self._parse_date(options["from_date"])
         commit = bool(options["commit"])
         limit = options["limit"]
+        audit = bool(options["audit"])
         dry_run = not commit
 
-        # --- Import models here to avoid app loading issues ---
+        # --- import models here ---
         from warehouse.models import (
             Delivery,
             DeliveryItem,
             StockSupply,
+            StockSupplySettlement,
+            OrderSettlement,
             WarehouseStock,
             WarehouseStockHistory,
-            StockSupplySettlement,
-            StockSupplySell,
             Order,
         )
 
         deliveries_qs = (
             Delivery.objects
             .filter(date__gte=from_date)
+            .select_related("provider")
             .order_by("-date", "-id")
         )
         if limit:
@@ -83,12 +93,13 @@ class Command(BaseCommand):
                     self._process_one_delivery(
                         delivery=delivery,
                         dry_run=dry_run,
+                        audit=audit,
                         DeliveryItem=DeliveryItem,
                         StockSupply=StockSupply,
+                        StockSupplySettlement=StockSupplySettlement,
+                        OrderSettlement=OrderSettlement,
                         WarehouseStock=WarehouseStock,
                         WarehouseStockHistory=WarehouseStockHistory,
-                        StockSupplySettlement=StockSupplySettlement,
-                        StockSupplySell=StockSupplySell,
                         Order=Order,
                     )
 
@@ -108,15 +119,19 @@ class Command(BaseCommand):
         *,
         delivery,
         dry_run: bool,
+        audit: bool,
         DeliveryItem,
         StockSupply,
+        StockSupplySettlement,
+        OrderSettlement,
         WarehouseStock,
         WarehouseStockHistory,
-        StockSupplySettlement,
-        StockSupplySell,
         Order,
     ):
-        self.stdout.write(f"DELIVERY #{delivery.id} | date={delivery.date} | name={delivery.name}")
+        provider_label = getattr(delivery.provider, "name", None) or str(delivery.provider_id)
+        self.stdout.write(
+            f"DELIVERY #{delivery.id} | date={delivery.date} | provider={provider_label} | car={delivery.car_number or '-'}"
+        )
 
         items = (
             DeliveryItem.objects
@@ -125,117 +140,123 @@ class Command(BaseCommand):
             .order_by("id")
         )
 
-        self.stdout.write(f"  DeliveryItems: {items.count()}")
+        self.stdout.write(f"  Items: {items.count()}")
 
-        # Track orders touched to recompute delivery_date properly
-        touched_order_ids: set[int] = set()
+        # keep track of settlements we might remove (after deleting StockSupplySettlement)
+        touched_settlement_ids: set[int] = set()
 
         for item in items:
-            touched_order_ids.add(item.order_id)
+            self.stdout.write(f"  - ITEM #{item.id} | order_id={item.order_id} | stock_id={item.stock_id} | qty={item.quantity} | processed={item.processed}")
 
-            self.stdout.write(
-                f"  - ITEM #{item.id} | order_id={item.order_id} | stock_id={item.stock_id} | qty={item.quantity} | processed={item.processed}"
-            )
+            # StockSupply created in add_to_warehouse() has FK delivery_item=self
+            supplies_qs = StockSupply.objects.filter(delivery_item_id=item.id).select_related("warehouse_stock", "order")
 
-            supplies = (
-                StockSupply.objects
-                .filter(delivery_item_id=item.id)
-                .select_related("warehouse_stock")
-                .order_by("id")
-            )
+            supplies_count = supplies_qs.count()
+            if dry_run:
+                self.stdout.write(f"    StockSupply rows: {supplies_count}")
+            else:
+                self.stdout.write(f"    StockSupply rows: {supplies_count}")
 
-            self.stdout.write(f"    StockSupply rows: {supplies.count()}")
+            # If there are multiple (shouldn't, but be safe), rollback all
+            for ss in supplies_qs:
+                qty = ss.quantity
 
-            for ss in supplies:
-                # lock WarehouseStock
+                # Lock WarehouseStock row
                 ws = WarehouseStock.objects.select_for_update().get(pk=ss.warehouse_stock_id)
 
-                qty_before = ws.quantity
-                qty_after = qty_before - ss.quantity
+                ws_before = ws.quantity
+                ws_after = ws_before - qty
 
-                if qty_after < 0:
-                    # Nie blokuję rollbacku, ale to jest sygnał, że były kolejne ruchy
-                    self.stdout.write(
-                        f"    WARNING: WarehouseStock would go negative! ws_id={ws.id} {qty_before} - {ss.quantity} = {qty_after}"
-                    )
-
-                # history linked by stock_supply (PROTECT => must delete history first)
+                # History linked to this stock_supply
                 hist_qs = WarehouseStockHistory.objects.filter(stock_supply_id=ss.id)
                 hist_count = hist_qs.count()
 
-                # defensive cleanup (should be empty if 2026 had no BOM/settlements/sells)
-                ssett_qs = StockSupplySettlement.objects.filter(stock_supply_id=ss.id)
+                # Settlements linked to this stock_supply
+                ssett_qs = StockSupplySettlement.objects.filter(stock_supply_id=ss.id).select_related("settlement")
                 ssett_count = ssett_qs.count()
-
-                ssell_qs = StockSupplySell.objects.filter(stock_supply_id=ss.id)
-                ssell_count = ssell_qs.count()
+                if ssett_count:
+                    touched_settlement_ids.update(ssett_qs.values_list("settlement_id", flat=True))
 
                 if dry_run:
-                    self.stdout.write(f"    StockSupply #{ss.id} | qty={ss.quantity} | value={ss.value} | ws_id={ws.id}")
+                    self.stdout.write(f"    StockSupply #{ss.id} | ws_id={ws.id} | ws.qty: {ws_before} -> {ws_after}")
                     self.stdout.write(f"      History to delete: {hist_count}")
                     self.stdout.write(f"      StockSupplySettlement to delete: {ssett_count}")
-                    self.stdout.write(f"      StockSupplySell to delete: {ssell_count}")
-                    self.stdout.write(f"      WarehouseStock.quantity: {qty_before} -> {qty_after}")
-                    self.stdout.write(f"      Would delete StockSupply.")
                 else:
+                    # delete history
                     deleted_hist, _ = hist_qs.delete()
+                    # delete settlement rows
                     deleted_ssett, _ = ssett_qs.delete()
-                    deleted_ssell, _ = ssell_qs.delete()
 
-                    ws.quantity = qty_after
+                    # decrease warehouse stock
+                    ws.quantity = ws_after if ws_after >= 0 else 0
                     ws.save(update_fields=["quantity"])
 
-                    # delete supply (now safe)
+                    # delete stock supply
                     ss.delete()
 
-                    self.stdout.write(f"    StockSupply #{ss.id} rolled back.")
-                    self.stdout.write(f"      Deleted history: {deleted_hist}")
-                    self.stdout.write(f"      Deleted supply settlements: {deleted_ssett}")
-                    self.stdout.write(f"      Deleted supply sells: {deleted_ssell}")
-                    self.stdout.write(f"      Updated WarehouseStock.quantity: {qty_before} -> {qty_after}")
+                    self.stdout.write(f"    StockSupply #{ss.id} | ws_id={ws.id} | ws.qty: {ws_before} -> {ws.quantity}")
+                    self.stdout.write(f"      Deleted history rows: {deleted_hist}")
+                    self.stdout.write(f"      Deleted StockSupplySettlement rows: {deleted_ssett}")
+                    if ws_after < 0:
+                        self.stdout.write("      WARNING: ws_after < 0, clamped to 0 (data mismatch).")
 
-            # Update order delivered_quantity etc (based on item.quantity)
-            if dry_run:
-                self.stdout.write(f"    Would update Order #{item.order_id}: delivered_quantity -= {item.quantity}")
-                self.stdout.write(f"    Would delete DeliveryItem #{item.id}")
-            else:
+                # Update Order delivered_quantity and delivered flag (forced false)
+                # Use item's order (same as ss.order) to avoid weirdness.
                 order = item.order
-                order.delivered_quantity = max(0, (order.delivered_quantity or 0) - item.quantity)
+                if order_id := getattr(order, "id", None):
+                    if dry_run:
+                        new_delivered_qty = max(int(order.delivered_quantity) - int(qty), 0)
+                        self.stdout.write(
+                            f"      Order #{order_id}: delivered_quantity {order.delivered_quantity} -> {new_delivered_qty}, delivered=False"
+                        )
+                    else:
+                        # lock order to avoid race
+                        order_locked = Order.objects.select_for_update().get(pk=order_id)
+                        new_delivered_qty = max(int(order_locked.delivered_quantity) - int(qty), 0)
+                        order_locked.delivered_quantity = new_delivered_qty
+                        order_locked.delivered = False  # forced (as requested)
+                        if new_delivered_qty == 0:
+                            order_locked.delivery_date = None
+                        order_locked.save(update_fields=["delivered_quantity", "delivered", "delivery_date"])
+                        self.stdout.write(
+                            f"      Order #{order_id}: delivered_quantity {order.delivered_quantity} -> {new_delivered_qty}, delivered=False"
+                        )
 
-                # delivered flag
-                order.delivered = bool(order.delivered_quantity >= (order.order_quantity or 0))
-
-                order.save(update_fields=["delivered_quantity", "delivered"])
-
-                # delete item
-                item.delete()
-
-        # Recompute delivery_date for touched orders (max date among remaining processed items)
-        if touched_order_ids:
-            for oid in sorted(touched_order_ids):
-                if dry_run:
-                    self.stdout.write(f"  Would recompute Order #{oid}.delivery_date from remaining processed DeliveryItems.")
-                else:
-                    max_date = (
-                        DeliveryItem.objects
-                        .filter(order_id=oid, processed=True)
-                        .aggregate(mx=Max("delivery__date"))
-                        .get("mx")
-                    )
-                    Order.objects.filter(id=oid).update(delivery_date=max_date)
-
-        # delete delivery if now empty
-        remaining = DeliveryItem.objects.filter(delivery_id=delivery.id).count()
-        if dry_run:
-            self.stdout.write(f"  DeliveryItems remaining after rollback: {remaining}")
-            if remaining == 0:
-                self.stdout.write("  Would delete Delivery.")
-        else:
-            if remaining == 0:
-                delivery.delete()
-                self.stdout.write("  Deleted Delivery (no items left).")
+            # Mark item as not processed
+            if dry_run:
+                self.stdout.write("    Would set DeliveryItem.processed=False")
             else:
-                self.stdout.write(f"  Delivery kept (still has {remaining} items).")
+                if item.processed:
+                    item.processed = False
+                    item.save(update_fields=["processed"])
+                self.stdout.write("    Set DeliveryItem.processed=False")
+
+        # Clean up potentially empty settlements created by deliveries
+        # We only delete settlements that now have no StockSupplySettlement rows left.
+        if touched_settlement_ids:
+            if audit:
+                self.stdout.write(f"  Settlements touched: {sorted(touched_settlement_ids)}")
+
+            for sid in sorted(touched_settlement_ids):
+                # if anything still references it, skip
+                still_has = StockSupplySettlement.objects.filter(settlement_id=sid).exists()
+                if dry_run:
+                    self.stdout.write(f"  OrderSettlement #{sid}: would delete if empty (still_has_stocksupplysettlement={still_has})")
+                else:
+                    if not still_has:
+                        OrderSettlement.objects.filter(pk=sid).delete()
+                        self.stdout.write(f"  Deleted empty OrderSettlement #{sid}")
+                    else:
+                        self.stdout.write(f"  Kept OrderSettlement #{sid} (still has StockSupplySettlement)")
+
+        # Finally mark delivery as not processed
+        if dry_run:
+            self.stdout.write("  Would set Delivery.processed=False")
+        else:
+            if delivery.processed:
+                delivery.processed = False
+                delivery.save(update_fields=["processed"])
+            self.stdout.write("  Set Delivery.processed=False")
 
     def _parse_date(self, s: str) -> datetime.date:
         try:
