@@ -3,177 +3,214 @@ from __future__ import annotations
 import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Model
-from django.apps import apps
+from django.db.models import Q
 
 
 class Command(BaseCommand):
-    help = "Rollback ProductSell3 from 2026-01-01 (delete sells, restore WarehouseStock qty). Default DRY RUN."
+    help = (
+        "Rollback ProductSell3 from a given date (default 2026-01-01):\n"
+        "- deletes StockSupplySell rows for the sell\n"
+        "- restores WarehouseStock.quantity (adds sell.quantity)\n"
+        "- deletes matching WarehouseStockHistory rows (conservative match)\n"
+        "- deletes ProductSell3\n"
+        "Default is DRY RUN. Use --commit to apply."
+    )
 
     def add_arguments(self, parser):
-        parser.add_argument("--from-date", type=str, default="2026-01-01")
-        parser.add_argument("--commit", action="store_true", help="Apply changes (otherwise DRY RUN)")
-        parser.add_argument("--limit", type=int, default=0, help="Limit number of sells processed (0 = no limit)")
-        parser.add_argument("--verbose", action="store_true")
-
-    def _get_model(self, app_label: str, model_name: str) -> Model:
-        return apps.get_model(app_label, model_name)
-
-    def _print_model_fields(self, model):
-        fields = []
-        for f in model._meta.get_fields():
-            fields.append(f"{f.name} ({f.__class__.__name__})")
-        self.stdout.write(f"{model.__name__} fields: " + ", ".join(fields))
-
-    def _find_fk_field_name(self, model, target_model) -> str | None:
-        """
-        Returns name of FK field on `model` that points to `target_model` if exists.
-        """
-        for f in model._meta.get_fields():
-            if f.is_relation and f.many_to_one and getattr(f, "related_model", None) == target_model:
-                return f.name
-        return None
-
-    def _maybe_restore_stock_supply(self, sss, qty: int, verbose: bool):
-        """
-        Best-effort: if StockSupply has a 'quantity_left'/'available' style field,
-        increment it back. If we can't detect, we only delete StockSupplySell.
-        """
-        ss = getattr(sss, "stock_supply", None)
-        if not ss:
-            return
-
-        # Try common field names (adjust if you know the real one)
-        candidates = ["quantity_left", "qty_left", "available_quantity", "available_qty", "remaining_quantity", "remaining_qty"]
-        for name in candidates:
-            if hasattr(ss, name):
-                old = getattr(ss, name) or 0
-                setattr(ss, name, old + qty)
-                ss.save(update_fields=[name])
-                if verbose:
-                    print(f"    Restored StockSupply.{name}: {old} -> {old + qty}")
-                return
-
-        # If nothing matched, do nothing (we don't want to corrupt unknown logic)
-        if verbose:
-            print("    StockSupply restore skipped (no known remaining/available field detected).")
+        parser.add_argument(
+            "--from-date",
+            type=str,
+            default="2026-01-01",
+            help="Rollback sells with date >= FROM_DATE (YYYY-MM-DD). Default: 2026-01-01",
+        )
+        parser.add_argument(
+            "--commit",
+            action="store_true",
+            help="Apply changes. Without this flag it runs in dry-run mode.",
+        )
+        parser.add_argument(
+            "--audit-history",
+            action="store_true",
+            help="If no matching history rows found for a sell, print nearby history rows for inspection.",
+        )
+        parser.add_argument(
+            "--limit",
+            type=int,
+            default=None,
+            help="Limit number of sells processed (newest first). Useful for testing.",
+        )
 
     def handle(self, *args, **options):
-        from_date = datetime.date.fromisoformat(options["from_date"])
-        commit = options["commit"]
+        from_date = self._parse_date(options["from_date"])
+        commit = bool(options["commit"])
+        audit_history = bool(options["audit_history"])
         limit = options["limit"]
-        verbose = options["verbose"]
 
-        # Import your real models (adjust app label if different)
-        ProductSell3 = self._get_model("warehouse", "ProductSell3")
-        StockSupplySell = self._get_model("warehouse", "StockSupplySell")
-        WarehouseStock = self._get_model("warehouse", "WarehouseStock")
+        # --- Import models here to avoid app loading issues ---
+        from warehouse.models import (
+            ProductSell3,
+            StockSupplySell,
+            WarehouseStock,
+            WarehouseStockHistory,
+        )
 
-        # Optional (only if exists in your app)
-        WarehouseStockHistory = None
-        try:
-            WarehouseStockHistory = self._get_model("warehouse", "WarehouseStockHistory")
-        except Exception:
-            pass
+        dry_run = not commit
 
-        self.stdout.write("=== INTROSPECTION ===")
-        self._print_model_fields(ProductSell3)
-        self._print_model_fields(StockSupplySell)
-        self._print_model_fields(WarehouseStock)
-        if WarehouseStockHistory:
-            self._print_model_fields(WarehouseStockHistory)
-
-        hist_fk_name = None
-        if WarehouseStockHistory:
-            hist_fk_name = self._find_fk_field_name(WarehouseStockHistory, ProductSell3)
-            if hist_fk_name:
-                self.stdout.write(f"WarehouseStockHistory FK to ProductSell3 detected: {hist_fk_name}")
-            else:
-                self.stdout.write("WarehouseStockHistory: no FK to ProductSell3 detected (auto-delete history will be skipped).")
-
-        qs = (
+        sells_qs = (
             ProductSell3.objects
-            .select_related("warehouse_stock", "order")
             .filter(date__gte=from_date)
+            .select_related("warehouse_stock", "product", "customer", "order")
             .order_by("-date", "-id")
         )
-        if limit and limit > 0:
-            qs = qs[:limit]
+        if limit:
+            sells_qs = sells_qs[:limit]
 
-        sells = list(qs)
-        self.stdout.write(f"\n=== SELLS FROM {from_date} ===")
-        self.stdout.write(f"Total sells: {len(sells)}")
-        self.stdout.write(f"MODE: {'COMMIT' if commit else 'DRY RUN'}\n")
+        total = sells_qs.count()
 
-        @transaction.atomic
-        def process_one(sell):
-            self.stdout.write("=" * 90)
-            self.stdout.write(f"SELL id={sell.id} | date={sell.date} | qty={sell.quantity}")
-            ws = sell.warehouse_stock
-            self.stdout.write(f"  warehouse_stock_id: {getattr(ws, 'id', None)}")
+        self.stdout.write("")
+        self.stdout.write("=== ROLLBACK PRODUCTSELL3 ===")
+        self.stdout.write(f"FROM DATE: {from_date.isoformat()}")
+        self.stdout.write(f"TOTAL SELLS: {total}")
+        self.stdout.write(f"MODE: {'COMMIT' if commit else 'DRY RUN'}")
+        self.stdout.write("")
 
-            # FIFO rows
-            fifo_rows = list(StockSupplySell.objects.select_related("stock_supply").filter(sell=sell))
-            self.stdout.write("  StockSupplySell:")
-            if not fifo_rows:
-                self.stdout.write("    (BRAK)")
+        if total == 0:
+            self.stdout.write("Nothing to do.")
+            return
+
+        # In commit mode we want everything atomic: either whole run or nothing.
+        # In dry-run mode atomic doesn't matter but keeps logic consistent.
+        with transaction.atomic():
+            for idx, sell in enumerate(sells_qs, start=1):
+                self.stdout.write("=" * 98)
+                self._process_one_sell(
+                    sell=sell,
+                    dry_run=dry_run,
+                    audit_history=audit_history,
+                    StockSupplySell=StockSupplySell,
+                    WarehouseStock=WarehouseStock,
+                    WarehouseStockHistory=WarehouseStockHistory,
+                )
+
+            self.stdout.write("=" * 98)
+            self.stdout.write("DONE.")
+            self.stdout.write("")
+
+            # Important: if dry-run, rollback transaction so nothing persists
+            if dry_run:
+                # Force rollback by raising and catching a controlled exception
+                # (Django doesn't provide an official "rollback now" API inside atomic)
+                raise _DryRunRollback()
+
+    def _process_one_sell(
+        self,
+        *,
+        sell,
+        dry_run: bool,
+        audit_history: bool,
+        StockSupplySell,
+        WarehouseStock,
+        WarehouseStockHistory,
+    ):
+        # Lock the WarehouseStock row so concurrent operations won't mess quantities
+        ws = (
+            WarehouseStock.objects
+            .select_for_update()
+            .get(pk=sell.warehouse_stock_id)
+        )
+
+        qty_before = ws.quantity  # current (post-sell) as in DB right now
+        qty_after = qty_before + sell.quantity
+
+        self.stdout.write(
+            f"SELL #{sell.id} | date={sell.date} | qty={sell.quantity} | "
+            f"warehouse_stock_id={sell.warehouse_stock_id}"
+        )
+
+        # 1) StockSupplySell rows (FIFO mapping)
+        sss_qs = StockSupplySell.objects.filter(sell_id=sell.id)
+
+        if dry_run:
+            self.stdout.write(f"  StockSupplySell to delete: {sss_qs.count()}")
+        else:
+            deleted_sss, _ = sss_qs.delete()
+            self.stdout.write(f"  Deleted StockSupplySell rows: {deleted_sss}")
+
+        # 2) Delete WarehouseStockHistory rows that match this sell
+        # Conservative matching:
+        # - same warehouse_stock
+        # - same date
+        # - no stock_supply, no order_settlement, no assembly
+        # - quantity_before/after corresponds exactly to the movement we are reversing
+        hist_qs = (
+            WarehouseStockHistory.objects
+            .filter(
+                warehouse_stock_id=ws.id,
+                date=sell.date,
+                stock_supply__isnull=True,
+                order_settlement__isnull=True,
+                assembly__isnull=True,
+                quantity_before=qty_after,
+                quantity_after=qty_before,
+            )
+        )
+
+        hist_count = hist_qs.count()
+
+        if dry_run:
+            self.stdout.write(f"  History matches to delete: {hist_count}")
+        else:
+            deleted_hist, _ = hist_qs.delete()
+            self.stdout.write(f"  Deleted history rows: {deleted_hist}")
+
+        # Optional audit if we didn't find matches
+        if audit_history and hist_count == 0:
+            self.stdout.write("  AUDIT: no exact matching history row found.")
+            # show a few history rows around that date for this warehouse_stock
+            around = (
+                WarehouseStockHistory.objects
+                .filter(warehouse_stock_id=ws.id)
+                .filter(date__gte=sell.date - datetime.timedelta(days=2),
+                        date__lte=sell.date + datetime.timedelta(days=2))
+                .order_by("date", "id")
+            )[:20]
+
+            if around:
+                for h in around:
+                    self.stdout.write(
+                        "    "
+                        f"HIST id={h.id} | date={h.date} | "
+                        f"before={h.quantity_before} -> after={h.quantity_after} | "
+                        f"stock_supply_id={getattr(h, 'stock_supply_id', None)} | "
+                        f"order_settlement_id={getattr(h, 'order_settlement_id', None)} | "
+                        f"assembly_id={getattr(h, 'assembly_id', None)}"
+                    )
             else:
-                total_fifo = 0
-                for r in fifo_rows:
-                    self.stdout.write(f"    id={r.id} stock_supply_id={r.stock_supply_id} qty={r.quantity}")
-                    total_fifo += int(r.quantity)
-                self.stdout.write(f"    FIFO total qty: {total_fifo}")
+                self.stdout.write("    (no history rows in +-2 days window)")
 
-            # Restore WarehouseStock quantity
-            if not ws:
-                self.stdout.write("  WARNING: sell has no warehouse_stock; skipping qty restore.")
-            else:
-                old_qty = int(getattr(ws, "quantity", 0) or 0)
-                new_qty = old_qty + int(sell.quantity or 0)
-                self.stdout.write(f"  WarehouseStock.quantity: {old_qty} -> {new_qty}")
-                if commit:
-                    # Lock row to avoid race
-                    ws_locked = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
-                    ws_locked.quantity = new_qty
-                    ws_locked.save(update_fields=["quantity"])
+        # 3) Restore warehouse stock quantity
+        if dry_run:
+            self.stdout.write(f"  WarehouseStock.quantity: {qty_before} -> {qty_after}")
+        else:
+            ws.quantity = qty_after
+            ws.save(update_fields=["quantity"])
+            self.stdout.write(f"  Updated WarehouseStock.quantity: {qty_before} -> {qty_after}")
 
-            # Restore StockSupply remaining qty (best-effort) then delete FIFO rows
-            if fifo_rows and commit:
-                for r in fifo_rows:
-                    try:
-                        self._maybe_restore_stock_supply(r, int(r.quantity), verbose=verbose)
-                    except Exception as e:
-                        self.stdout.write(f"  WARNING: StockSupply restore failed for StockSupplySell id={r.id}: {e}")
-                StockSupplySell.objects.filter(id__in=[r.id for r in fifo_rows]).delete()
-                self.stdout.write(f"  Deleted StockSupplySell rows: {len(fifo_rows)}")
-            elif fifo_rows:
-                self.stdout.write(f"  Would delete StockSupplySell rows: {len(fifo_rows)}")
+        # 4) Delete sell
+        if dry_run:
+            self.stdout.write("  Would delete ProductSell3.")
+        else:
+            sell.delete()
+            self.stdout.write("  Deleted ProductSell3.")
 
-            # Delete WarehouseStockHistory rows linked to sell (if FK exists)
-            if WarehouseStockHistory and hist_fk_name:
-                hist_qs = WarehouseStockHistory.objects.filter(**{hist_fk_name: sell})
-                cnt = hist_qs.count()
-                if cnt:
-                    self.stdout.write(f"  WarehouseStockHistory linked rows: {cnt}")
-                    if commit:
-                        hist_qs.delete()
-                        self.stdout.write("  Deleted linked WarehouseStockHistory rows.")
-                else:
-                    self.stdout.write("  WarehouseStockHistory linked rows: 0")
+    def _parse_date(self, s: str) -> datetime.date:
+        try:
+            y, m, d = map(int, s.split("-"))
+            return datetime.date(y, m, d)
+        except Exception:
+            raise ValueError(f"Invalid date: {s}. Expected YYYY-MM-DD.")
 
-            # Finally delete sell
-            if commit:
-                sell.delete()
-                self.stdout.write("  Deleted ProductSell3.")
-            else:
-                self.stdout.write("  Would delete ProductSell3.")
 
-        # Process
-        for sell in sells:
-            if commit:
-                process_one(sell)
-            else:
-                # In DRY RUN keep it non-atomic so it doesn't hold locks
-                process_one.__wrapped__(sell)  # type: ignore
-
-        self.stdout.write("\nDONE.")
+class _DryRunRollback(Exception):
+    """Internal exception to force transaction rollback in dry-run mode."""
+    pass
