@@ -5,7 +5,7 @@ from django.views import View
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models.deletion import ProtectedError
-from django.views.generic import CreateView
+from django.views.generic import CreateView, DetailView
 from django.urls import reverse
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -29,6 +29,7 @@ from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
+from django.db.models import F
 
 
 def load_orders(year, row=None, division=None, row_list=None):
@@ -1097,6 +1098,7 @@ class StockView(LoginRequiredMixin, View):
         return render(request, 'warehouse/stock-details.html', locals())
 
 
+# toremove
 class WarehouseStockView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
@@ -1119,6 +1121,31 @@ class WarehouseStockView(LoginRequiredMixin, View):
 
         return render(request, 'warehouse/warehouse-stock-details.html', locals())
 
+
+class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
+    login_url = reverse_lazy('login')
+    model = WarehouseStock
+    template_name = "warehouse/warehouse_stock_history.html"
+    context_object_name = "ws"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        history_qs = (
+            WarehouseStockHistory.objects
+            .filter(warehouse_stock=self.object)
+            .select_related(
+                "stock_supply",
+                "order_settlement",
+                "order_settlement__order",
+                "assembly",
+            )
+            .annotate(delta=F("quantity_after") - F("quantity_before"))
+            .order_by("-date", "-id")
+        )
+
+        ctx["history"] = history_qs
+        return ctx
 
 
 class LoadDeliveryToGSFile(LoginRequiredMixin, View):

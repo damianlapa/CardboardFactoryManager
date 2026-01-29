@@ -106,3 +106,7 @@ urlpatterns += [
 urlpatterns += [
     path('orders/add/', AddOrdersManually.as_view(), name='add-orders'),
 ]
+
+urlpatterns += [
+    path("warehouse-stock/<int:pk>/history/", WarehouseStockHistoryDetailView.as_view(), name="warehouse_stock_history"),
+]

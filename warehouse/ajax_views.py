@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct, WarehouseStock, WarehouseStockHistory, \
     Product, StockType, Stock, Warehouse, StockSupplySettlement
+from warehouse.services.stock_moves import move_ws
 
 
 def settle_order(request, order_id):

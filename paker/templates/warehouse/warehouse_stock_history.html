@@ -1,0 +1,75 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+{% block content %}
+
+<h2>Historia stanu magazynowego</h2>
+
+<div style="margin-bottom: 12px;">
+  <b>Magazyn:</b> {{ ws.warehouse.name }}<br>
+  <b>Pozycja:</b> {{ ws.stock.name }}<br>
+  <b>Stan teraz:</b> {{ ws.quantity }}
+</div>
+
+<table class="table" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Typ</th>
+      <th>Źródło</th>
+      <th>Przed</th>
+      <th>Po</th>
+      <th>Δ</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for h in history %}
+      <tr>
+        <td>{{ h.date|date:"Y-m-d" }}</td>
+
+        <td>
+          {% if h.stock_supply_id %}
+            PRZYJĘCIE
+          {% elif h.order_settlement_id %}
+            ROZCHÓD (settlement)
+          {% elif h.assembly_id %}
+            ROZCHÓD (montaż)
+          {% else %}
+            ZMIANA
+          {% endif %}
+        </td>
+
+        <td>
+          {% if h.stock_supply_id %}
+            Dostawa/partia: {{ h.stock_supply.name }}
+            {% if h.stock_supply.date %} ({{ h.stock_supply.date|date:"Y-m-d" }}){% endif %}
+          {% elif h.order_settlement_id %}
+            Zlecenie: {{ h.order_settlement.order.provider }} {{ h.order_settlement.order.order_id }}
+            | ilość materiału: {{ h.order_settlement.material_quantity }}
+          {% elif h.assembly_id %}
+            Montaż: {{ h.assembly.product }} | qty: {{ h.assembly.quantity }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+
+        <td>{{ h.quantity_before }}</td>
+        <td>{{ h.quantity_after }}</td>
+
+        <td>
+          {% if h.delta > 0 %}
+            +{{ h.delta }}
+          {% else %}
+            {{ h.delta }}
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Brak historii dla tej pozycji.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
