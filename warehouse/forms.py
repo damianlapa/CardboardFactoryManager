@@ -1,10 +1,16 @@
+# warehouse/forms.py
+
 import datetime
 
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
 from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette,
                               ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem, Provider)
-from django import forms
 from django.core.validators import FileExtensionValidator
+from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+from .models import Buyer, Order
 
 
 class DeliveryItemForm(ModelForm):
@@ -197,4 +203,50 @@ class PriceListUploadForm(forms.Form):
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
         help_text="Wgraj plik PDF z cennikiem."
     )
+
+
+class WarehouseStockSellForm(forms.Form):
+    customer = forms.ModelChoiceField(queryset=Buyer.objects.all(), required=False, label="Klient")
+    customer_alter_name = forms.CharField(max_length=32, required=False, label="Klient (ręcznie)")
+
+    order = forms.ModelChoiceField(queryset=Order.objects.all(), required=False, label="Zlecenie (opcjonalnie)")
+
+    quantity = forms.IntegerField(min_value=1, label="Ilość")
+    price = forms.DecimalField(max_digits=12, decimal_places=2, required=True, label="Cena / szt.")
+    date = forms.DateField(initial=timezone.now().date, required=True, label="Data")
+
+    def clean(self):
+        cd = super().clean()
+        customer = cd.get("customer")
+        alt = (cd.get("customer_alter_name") or "").strip()
+
+        if not customer and not alt:
+            raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
+
+        if customer and alt:
+            raise ValidationError("Wybierz klienta ALBO wpisz nazwę ręcznie (nie oba).")
+
+        return cd
+
+
+class WarehouseStockFifoSellForm(forms.Form):
+    customer = forms.ModelChoiceField(queryset=Buyer.objects.all(), required=False, label="Klient")
+    customer_alter_name = forms.CharField(max_length=32, required=False, label="Klient (ręcznie)")
+    quantity = forms.IntegerField(min_value=1, label="Ilość")
+    price = forms.DecimalField(max_digits=12, decimal_places=2, required=True, label="Cena / szt.")
+    date = forms.DateField(initial=timezone.now().date, required=True, label="Data")
+
+    def clean(self):
+        cd = super().clean()
+        customer = cd.get("customer")
+        alt = (cd.get("customer_alter_name") or "").strip()
+
+        if not customer and not alt:
+            raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
+        if customer and alt:
+            raise ValidationError("Wybierz klienta ALBO wpisz nazwę ręcznie.")
+
+        return cd
+
+
 

@@ -1,5 +1,6 @@
 # warehouse/views.py
 
+from warehouse.forms import WarehouseStockFifoSellForm
 from django.shortcuts import HttpResponse
 from django.views import View
 from django.http import JsonResponse
@@ -30,6 +31,11 @@ from django.template.loader import render_to_string
 from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
 from django.db.models import F
+from warehouse.models import attach_origin_orders_to_sell
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 
 def load_orders(year, row=None, division=None, row_list=None):
@@ -1148,6 +1154,112 @@ class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
+class WarehouseStockDetailView(DetailView):
+    model = WarehouseStock
+    template_name = "warehouse/warehouse-stock-details.html"
+    context_object_name = "ws"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ws = self.object
+
+        # Historia: wszystko co zmieniało ws.quantity
+        history_qs = (
+            WarehouseStockHistory.objects
+            .filter(warehouse_stock=ws)
+            .select_related(
+                "stock_supply",
+                "stock_supply__delivery_item",
+                "stock_supply__delivery_item__delivery",
+                "order_settlement",
+                "order_settlement__order",
+                "sell",
+                "sell__customer",
+            )
+            .annotate(delta=F("quantity_after") - F("quantity_before"))
+            .order_by("-date", "-id")
+        )
+
+        # szybkie linki/źródła
+        order_ids = list(
+            history_qs
+            .filter(order_settlement__isnull=False)
+            .values_list("order_settlement__order_id", flat=True)
+            .distinct()
+        )
+
+        delivery_ids = list(
+            history_qs
+            .filter(stock_supply__delivery_item__delivery_id__isnull=False)
+            .values_list("stock_supply__delivery_item__delivery_id", flat=True)
+            .distinct()
+        )
+
+        ctx["history"] = history_qs
+        ctx["order_ids"] = order_ids
+        ctx["delivery_ids"] = delivery_ids
+
+        # formularz FIFO (na górze)
+        ctx["fifo_sell_form"] = WarehouseStockFifoSellForm(initial={"date": datetime.datetime.now().date()})
+
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        """
+        Obsługa sprzedaży FIFO bezpośrednio z widoku WarehouseStock.
+        """
+        self.object = self.get_object()
+        ws = self.object
+
+        form = WarehouseStockFifoSellForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, f"Błędy formularza: {form.errors}")
+            return redirect(request.path)
+
+        cd = form.cleaned_data
+
+        try:
+            with transaction.atomic():
+                ws_locked = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
+
+                if ws_locked.quantity < cd["quantity"]:
+                    raise ValidationError("Nie ma wystarczającej ilości w magazynie.")
+
+                # ... po ws_locked i walidacji ilości
+                prod = getattr(ws_locked.stock, "product", None)
+                if not prod:
+                    from .models import Product
+                    prod = Product.objects.filter(name=ws_locked.stock.name).first()
+                if not prod:
+                    raise ValidationError("Nie udało się dopasować produktu do tego stanu magazynowego.")
+
+                sale = ProductSell3.objects.create(
+                    product=prod,
+                    customer=cd.get("customer"),
+                    customer_alter_name=(cd.get("customer_alter_name") or None),
+                    warehouse_stock=ws_locked,
+                    order=None,  # FIFO
+                    quantity=cd["quantity"],
+                    price=cd["price"],
+                    date=cd["date"],
+                )
+
+                ws_locked.fifo_sell(sale)
+                attach_origin_orders_to_sell(sale)
+
+            messages.success(request, "Sprzedaż FIFO zapisana.")
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            # zostaw to — w razie błędu masz traceback w konsoli
+            import logging
+            logging.getLogger(__name__).exception("[WS_DETAIL FIFO SELL] ERROR")
+            messages.error(request, f"Błąd sprzedaży: {e}")
+
+        return redirect(request.path)
+
+
+
 class LoadDeliveryToGSFile(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
@@ -1418,7 +1530,6 @@ class AddOrdersManually(LoginRequiredMixin, View):
         return render(request, 'warehouse/add_orders.html', context=context)
 
 
-
 def add_product_sell3(request):
     if request.method != "POST":
         return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -1456,9 +1567,14 @@ def add_product_sell3(request):
                 date=date,
             )
 
-            # 2) FIFO rozchód na partie + historia + aktualizacja ws.quantity
-            # (rozbije sprzedaż na wiele StockSupplySell jeśli trzeba)
-            warehouse_stock.fifo_sell(sale)
+            # 2) Rozchód:
+            # - jeśli sprzedaż przypięta do orderu -> schodzimy z partii wyrobu z tego orderu
+            # - w przeciwnym razie -> FIFO po magazynie ogólnym
+            if sale.order_id:
+                warehouse_stock.sell_from_order(sale)
+            else:
+                warehouse_stock.fifo_sell(sale)
+                attach_origin_orders_to_sell(sale)
 
             # 3) Ustaw cenę produktu (tak jak miałeś)
             product.price = price
@@ -1469,7 +1585,9 @@ def add_product_sell3(request):
     except ValidationError as e:
         messages.error(request, str(e))
     except Exception as e:
+        logger.exception("[ADD_SELL] ERROR")
         messages.error(request, f"Błąd zapisu sprzedaży: {e}")
+
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
 

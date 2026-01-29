@@ -158,4 +158,21 @@ EMAIL_HOST_PASSWORD = os.environ.get('PPPASS')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        # Twoje appki – dopasuj nazwę modułu jeśli inna
+        "warehouse": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
+
+
 django_heroku.settings(locals())

@@ -1,41 +1,222 @@
 {% extends "__base3__.html" %}
-{% block style %}
 {% load static %}
+
+{% block style %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<style>
+  .ws-header { display:flex; gap:16px; align-items:stretch; justify-content:space-between; }
+  .ws-card { border-radius:14px; }
+  .ws-kpi { display:flex; gap:14px; flex-wrap:wrap; }
+  .ws-kpi .kpi { padding:10px 12px; border:1px solid rgba(0,0,0,.08); border-radius:12px; min-width:160px; }
+  .ws-kpi .kpi .label { font-size:12px; opacity:.75; }
+  .ws-kpi .kpi .value { font-size:18px; font-weight:700; }
+  .sticky-actions { position:sticky; top:12px; z-index:5; }
+  .history-table td, .history-table th { vertical-align:middle; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+</style>
 {% endblock %}
 
 {% block content %}
-<h1>HISTORY</h1>
-{% if history %}
-<table>
-  <tr>
-    <th>Date</th>
-    <th>Quantity</th>
-  </tr>
-{% for record in history %}
-  {% if record.2 %}
-  <tr style="color: red">
-  {% else %}
-  <tr style="color: green">
-  {% endif %}
-    <td>{{ record.0 }}</td>
-    <td>{{ record.1 }}</td>
-  </tr>
-{% endfor %}
-</table>
-{% endif %}
-<h1>HISTORY</h1>
-{% if supplies %}
-<table>
-  <tr>
-    <th>Date</th>
-    <th>Quantity</th>
-  </tr>
-{% for s in supplies %}
-  <tr>
-    <td>{{ s }}</td>
-  </tr>
-{% endfor %}
-</table>
-{% endif %}
+
+<div class="container-fluid">
+
+  <!-- HEADER -->
+  <div class="ws-header mb-3">
+    <div class="card ws-card p-3 flex-grow-1">
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+          <div class="text-muted small">WarehouseStock</div>
+          <h3 class="mb-1">{{ ws.stock.name }}</h3>
+          <div class="text-muted">
+            Magazyn: <b>{{ ws.warehouse.name }}</b>
+            <span class="mx-2">•</span>
+            ID: <span class="mono">{{ ws.id }}</span>
+          </div>
+        </div>
+
+        <div class="ws-kpi">
+          <div class="kpi">
+            <div class="label">Stan</div>
+            <div class="value">{{ ws.quantity }}</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Typ</div>
+            <div class="value">
+              {% if ws.stock.stock_type %}{{ ws.stock.stock_type.name }}{% else %}-{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIONS (sticky) -->
+    <div class="sticky-actions">
+      <div class="card ws-card p-3">
+        <div class="d-grid gap-2">
+          <button
+            class="btn btn-danger"
+            data-bs-toggle="modal"
+            data-bs-target="#fifoSellModal"
+            {% if ws.quantity|default:0 <= 0 %}disabled{% endif %}
+          >
+            + Sprzedaj FIFO
+          </button>
+
+          <a class="btn btn-outline-secondary" href="{% url 'warehouse:sells-list-view' %}">
+            Lista sprzedaży
+          </a>
+
+          <a class="btn btn-outline-secondary" href="{% url 'warehouse:warehouse-detail-view' ws.warehouse_id %}">
+            Powrót do magazynu
+          </a>
+        </div>
+
+        {% if ws.quantity|default:0 <= 0 %}
+          <div class="text-muted small mt-2">Brak stanu — sprzedaż FIFO zablokowana.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card ws-card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Historia zmian</h5>
+      <div class="text-muted small">Ostatnie wpisy</div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm history-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Delta</th>
+            <th>Przed</th>
+            <th>Po</th>
+            <th>Źródło</th>
+            <th>Linki</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+            <tr>
+              <td class="mono">{{ h.date }}</td>
+
+              <td class="mono">
+                {% if h.delta > 0 %}
+                  <span class="badge bg-success">+{{ h.delta }}</span>
+                {% elif h.delta < 0 %}
+                  <span class="badge bg-danger">{{ h.delta }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">0</span>
+                {% endif %}
+              </td>
+
+              <td class="mono">{{ h.quantity_before }}</td>
+              <td class="mono">{{ h.quantity_after }}</td>
+
+              <td>
+                {% if h.sell %}
+                  <span class="badge bg-danger">Sprzedaż</span>
+                {% elif h.order_settlement %}
+                  <span class="badge bg-primary">Settlement</span>
+                {% elif h.stock_supply %}
+                  <span class="badge bg-warning text-dark">Dostawa/Partia</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inne</span>
+                {% endif %}
+              </td>
+
+              <td class="small">
+                {% if h.order_settlement %}
+                  <a href="{% url 'warehouse:order-detail-view' h.order_settlement.order_id %}">Order</a>
+                {% endif %}
+
+                {% if h.stock_supply and h.stock_supply.delivery_item and h.stock_supply.delivery_item.delivery_id %}
+                  {% if h.order_settlement %} | {% endif %}
+                  <a href="{% url 'warehouse:delivery-detail-view' h.stock_supply.delivery_item.delivery_id %}">Delivery</a>
+                {% endif %}
+
+                {% if h.sell %}
+                  {% if h.order_settlement or h.stock_supply %} | {% endif %}
+                  <a href="{% url 'warehouse:sells-list-view' %}">Sell #{{ h.sell_id }}</a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-muted">Brak historii dla tego stanu magazynowego.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: FIFO SELL -->
+<div class="modal fade" id="fifoSellModal" tabindex="-1" aria-labelledby="fifoSellModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="fifoSellModalLabel">Sprzedaż FIFO</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+      </div>
+
+      <form method="post" action="{% url 'warehouse:warehouse_stock_detail' ws.id %}">
+
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-light border">
+            <div class="small text-muted">Sprzedajesz z:</div>
+            <div><b>{{ ws.stock.name }}</b> — stan: <b>{{ ws.quantity }}</b> (magazyn: {{ ws.warehouse.name }})</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Klient</label>
+              {{ fifo_sell_form.customer }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Klient (ręcznie)</label>
+              {{ fifo_sell_form.customer_alter_name }}
+              <div class="form-text">Wypełnij tylko jeśli nie wybierasz klienta z listy.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Ilość</label>
+              {{ fifo_sell_form.quantity }}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Cena / szt.</label>
+              {{ fifo_sell_form.price }}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Data</label>
+              {{ fifo_sell_form.date }}
+            </div>
+          </div>
+
+          {% if fifo_sell_form.errors %}
+            <div class="alert alert-danger mt-3">
+              {{ fifo_sell_form.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Anuluj</button>
+          <button type="submit" class="btn btn-danger">Zapisz sprzedaż FIFO</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
 {% endblock %}

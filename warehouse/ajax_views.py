@@ -36,20 +36,6 @@ def settle_order(request, order_id):
                 )
 
                 result, value = material.use_specified_stock_supply(settlement, material_quantity)
-                # if not result:
-                #     print('we are here!')
-                #     # raise ValueError('Not enough material in this order!')
-                #     value = material.fifo_from_order(order, settlement, material_quantity)
-
-                history, created = WarehouseStockHistory.objects.get_or_create(
-                    warehouse_stock=material,
-                    order_settlement=settlement,
-                    quantity_before=material.quantity,
-                    quantity_after=material.quantity - int(material_quantity)
-                )
-
-                material.quantity -= int(material_quantity)
-                material.save()
 
                 # Create products
                 # for stock_supply_id, quantity in zip(stock_supply_ids, stock_quantities):
@@ -95,17 +81,13 @@ def settle_order(request, order_id):
                         warehouse=warehouse
                     )
 
-                    warehouse_stock_history = WarehouseStockHistory.objects.create(
-                        warehouse_stock=warehouse_stock,
-                        order_settlement=settlement,
+                    move_ws(
+                        ws=warehouse_stock,
+                        delta=int(product_quantity),
+                        date=settlement_date,
                         stock_supply=supply,
-                        quantity_before=warehouse_stock.quantity,
-                        quantity_after=warehouse_stock.quantity + int(product_quantity),
-                        date=settlement_date
+                        order_settlement=settlement,
                     )
-
-                    warehouse_stock.quantity = warehouse_stock.quantity + int(product_quantity)
-                    warehouse_stock.save()
 
             return redirect(request.META.get('HTTP_REFERER', '/'))
         except Exception as e:

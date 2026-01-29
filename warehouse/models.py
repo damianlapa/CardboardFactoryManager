@@ -9,6 +9,9 @@ from utils.money import money, D, money_sum
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Coalesce
+from warehouse.services.stock_moves import move_ws
+import logging
+logger = logging.getLogger(__name__)
 
 
 UNITS = (
@@ -515,6 +518,21 @@ class StockSupply(models.Model):
                 self.save(update_fields=["used"])
         return self.used
 
+    def remaining_value(self) -> Decimal:
+        """
+        Wartość pozostała w tej partii (proporcjonalnie do dostępnej ilości).
+        """
+        qty = int(self.quantity or 0)
+        if qty <= 0:
+            return Decimal("0.00")
+
+        avail = int(self.available_quantity())
+        if avail <= 0:
+            return Decimal("0.00")
+
+        total_value = Decimal(self.value or 0)
+        return (total_value * Decimal(avail) / Decimal(qty)).quantize(Decimal("0.01"))
+
 
 
 
@@ -602,21 +620,20 @@ class WarehouseStock(models.Model):
         self.save()
 
     def count_value(self):
-        supplies_sum = (
-                StockSupply.objects
-                .filter(name=self.stock.name, used=False)
-                .aggregate(total=Sum('value'))
-                .get('total') or Decimal('0')
+        """
+        Wartość tego WarehouseStock = suma wartości pozostałej w partiach StockSupply
+        przypiętych do tego stocku (po nazwie + typie).
+        """
+        supplies = StockSupply.objects.filter(
+            name=self.stock.name,
+            stock_type=self.stock.stock_type,
         )
 
-        settlements_sum = (
-                StockSupplySettlement.objects
-                .filter(stock_supply__name=self.stock.name)
-                .aggregate(total=Sum('value'))
-                .get('total') or Decimal('0')
-        )
+        total = Decimal("0.00")
+        for s in supplies:
+            total += s.remaining_value()
 
-        return supplies_sum - settlements_sum
+        return total
 
     def fifo_sell(self, sell: "ProductSell3"):
         """
@@ -644,7 +661,7 @@ class WarehouseStock(models.Model):
                 .select_for_update()
                 .filter(
                     name=ws.stock.name,
-                    stock_type__stock_type="product",
+                    stock_type=ws.stock.stock_type,
                 )
                 .order_by("date", "id")
             )
@@ -698,69 +715,189 @@ class WarehouseStock(models.Model):
             if remaining > 0:
                 raise ValidationError("FIFO: zabrakło ilości w partiach (niespójność stanów).")
 
-            # aktualizacja stanu zbiorczego i historii
-            before = ws.quantity
-            after = before - qty
+            move_ws(ws=ws, delta=-qty, date=sell.date, sell=sell)
 
-            WarehouseStockHistory.objects.create(
-                warehouse_stock=ws,
-                quantity_before=before,
-                quantity_after=after,
-                date=sell.date
+
+    def sell_from_order(self, sell: "ProductSell3"):
+        import logging
+        logger = logging.getLogger(__name__)
+
+        if not sell.order_id:
+            raise ValidationError("sell_from_order wymaga ustawionego sell.order")
+
+        qty = int(sell.quantity or 0)
+        if qty <= 0:
+            raise ValidationError("Ilość sprzedaży musi być > 0")
+
+        with transaction.atomic():
+            # blokujemy stan magazynowy (agregat)
+            ws = WarehouseStock.objects.select_for_update().get(pk=self.pk)
+
+            if ws.quantity < qty:
+                raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
+
+            # ============================================================
+            # A) GŁÓWNE: bierzemy partie wyrobu po StockSupplySettlement(as_result=True)
+            #    + settlement.order = sell.order
+            #    + dopasowanie po StockType (pewne), opcjonalnie też po name
+            # ============================================================
+            supply_ids = list(
+                StockSupply.objects.filter(
+                    stocksupplysettlement__as_result=True,
+                    stocksupplysettlement__settlement__order=sell.order,
+                    stock_type=ws.stock.stock_type,  # ✅ pewne (nie string)
+                    name=ws.stock.name,  # ✅ u Ciebie to działa (StockSupply.name)
+                )
+                .values_list("id", flat=True)
+                .distinct()
             )
 
-            ws.quantity = after
-            ws.save(update_fields=["quantity"])
+            # debug (zostaw na chwilę – potem możesz wywalić)
+            any_result_ids = list(
+                StockSupply.objects.filter(
+                    stocksupplysettlement__as_result=True,
+                    stocksupplysettlement__settlement__order=sell.order,
+                ).values_list("id", flat=True).distinct()[:20]
+            )
+
+            # ============================================================
+            # B) FALLBACK: jeśli A nie zwróciło nic, wyciągamy partie z historii magazynu
+            #    (działa, gdy wynik produkcji nie tworzy stocksupplysettlement as_result)
+            # ============================================================
+            if not supply_ids:
+                hist_qs = (
+                    WarehouseStockHistory.objects.filter(
+                        warehouse_stock=ws,
+                        order_settlement__order=sell.order,
+                        stock_supply__isnull=False,
+                    )
+                    .order_by("date", "id")
+                )
+
+                tmp = []
+                for h in hist_qs:
+                    delta = int(h.quantity_after) - int(h.quantity_before)
+                    if delta > 0:  # tylko przyjęcia wyrobu
+                        tmp.append(h.stock_supply_id)
+
+                seen = set()
+                supply_ids = []
+                for sid in tmp:
+                    if sid and sid not in seen:
+                        seen.add(sid)
+                        supply_ids.append(sid)
+
+            supplies = StockSupply.objects.filter(id__in=supply_ids).order_by("date", "id")
+            # ^ show_used() jeśli masz taką metodę managera – jeśli nie masz, usuń .show_used()
+
+
+            total_available = sum(int(s.available_quantity()) for s in supplies) if supplies.exists() else 0
+
+            if total_available < qty:
+                raise ValidationError(
+                    f"Brak wyrobu z tego zlecenia w partiach (dostępne {total_available}, wymagane {qty})."
+                )
+
+            # ============================================================
+            # Rozpisanie sprzedaży na partie (StockSupplySell)
+            # ============================================================
+            remaining = qty
+
+            for supply in supplies:
+                if remaining <= 0:
+                    break
+
+                available = int(supply.available_quantity())
+                if available <= 0:
+                    supply.refresh_used_flag()
+                    continue
+
+                take = min(available, remaining)
+
+                StockSupplySell.objects.create(
+                    stock_supply=supply,
+                    sell=sell,
+                    quantity=take
+                )
+
+                supply.refresh_used_flag()
+                remaining -= take
+
+            if remaining > 0:
+                raise ValidationError("Niespójność: zabrakło ilości w partiach przypiętych do zlecenia.")
+
+            # ============================================================
+            # Jeden spójny ruch magazynowy + historia (agregat WarehouseStock)
+            # ============================================================
+            move_ws(ws=ws, delta=-qty, date=sell.date, sell=sell)
 
     @staticmethod
     def use_specified_stock_supply(order_settlement, quantity: int):
+        from warehouse.services.stock_moves import move_ws  # import lokalny
+
         with transaction.atomic():
+            ws_material = order_settlement.material  # WarehouseStock
             order = order_settlement.order
-            stock_supplies = StockSupply.objects.filter(delivery_item__order=order, used=False)
+
+            stock_supplies = StockSupply.objects.filter(delivery_item__order=order, used=False).select_for_update()
             if not stock_supplies:
                 raise Exception('No stock supplies for this order')
-            stock_supplies_quantity = 0
+
+            # policz dostępność po settlementach
+            total_available = 0
             for s in stock_supplies:
-                stock_supplies_quantity += s.quantity
-                stock_supply_settlements = StockSupplySettlement.objects.filter(stock_supply=s)
-                for sss in stock_supply_settlements:
-                    stock_supplies_quantity -= sss.quantity
-            if stock_supplies_quantity < quantity:
+                used = \
+                StockSupplySettlement.objects.filter(stock_supply=s, as_result=False).aggregate(t=Sum("quantity"))[
+                    "t"] or 0
+                total_available += int(s.quantity) - int(used)
+
+            if total_available < quantity:
                 raise Exception('There is not enough material')
-            if stock_supplies_quantity == quantity:
-                value = 0
-                for s in stock_supplies:
-                    StockSupplySettlement.objects.create(
-                        settlement=order_settlement, stock_supply=s, quantity=s.quantity
-                    )
-                    value += s.value
+
+            value = Decimal("0.00")
+            remaining = int(quantity)
+
+            # FIFO po dacie
+            for s in sorted(list(stock_supplies), key=lambda x: (x.date or datetime.date.min, x.id)):
+                if remaining <= 0:
+                    break
+
+                already_used = (
+                        StockSupplySettlement.objects
+                        .filter(stock_supply=s, as_result=False)
+                        .aggregate(t=Sum("quantity"))["t"] or 0
+                )
+                available = int(s.quantity) - int(already_used)
+                if available <= 0:
                     s.refresh_used_flag()
+                    continue
 
-                return True, value
-            elif stock_supplies_quantity > quantity:
-                quantity_left = quantity
-                value = 0
-                for s in sorted(list(stock_supplies), key=lambda x: x.date):
-                    stock_supply_quantity = s.quantity
-                    previously_used = StockSupplySettlement.objects.filter(stock_supply=s)
-                    for p in previously_used:
-                        stock_supply_quantity -= p.quantity
-                    if stock_supply_quantity > quantity_left:
-                        StockSupplySettlement.objects.create(
-                            settlement=order_settlement, stock_supply=s, quantity=quantity_left
-                        )
-                        value += s.piece_value() * quantity_left
-                        break
-                    elif stock_supply_quantity <= quantity_left:
-                        StockSupplySettlement.objects.create(
-                            settlement=order_settlement, stock_supply=s, quantity=stock_supply_quantity
-                        )
-                        value += s.piece_value() * stock_supply_quantity
-                        s.refresh_used_flag()
+                take = min(available, remaining)
 
-                        quantity_left -= stock_supply_quantity
-                return True, value
-        return False, 'not enough material'
+                # 1) zapis partii (księga partii)
+                StockSupplySettlement.objects.create(
+                    settlement=order_settlement,
+                    stock_supply=s,
+                    quantity=take,
+                    as_result=False,
+                )
+
+                # 2) stan magazynu + historia (księga magazynu)
+                move_ws(
+                    ws=ws_material,
+                    delta=-take,
+                    date=order_settlement.settlement_date,
+                    stock_supply=s,
+                    order_settlement=order_settlement,
+                )
+
+                # 3) wartość zużycia proporcjonalnie
+                value += Decimal(str(s.piece_value())) * Decimal(str(take))
+
+                s.refresh_used_flag()
+                remaining -= take
+
+            return True, value
 
     def fifo_from_order(self, order, settlement, quantity: int):
         """
@@ -903,6 +1040,35 @@ class ProductSell3(models.Model):
     def __str__(self):
         customer = self.customer if self.customer else self.customer_alter_name
         return f'{self.date} | {self.product} {self.quantity} -> {customer}'
+
+    def revenue(self) -> Decimal:
+        return (Decimal(self.price) * Decimal(self.quantity)).quantize(Decimal("0.01"))
+
+    def cogs(self) -> Decimal:
+        """
+        Koszt własny sprzedaży na bazie StockSupplySell.
+        Liczymy: sum(qty * unit_cost), gdzie unit_cost = stock_supply.value / stock_supply.quantity
+        """
+        qs = StockSupplySell.objects.filter(sell=self).select_related("stock_supply")
+        total = Decimal("0.00")
+
+        for row in qs:
+            ss = row.stock_supply
+            if not ss or not ss.quantity:
+                continue
+            unit = (Decimal(ss.value) / Decimal(ss.quantity)) if ss.value is not None else Decimal("0.00")
+            total += (unit * Decimal(row.quantity))
+
+        return total.quantize(Decimal("0.01"))
+
+    def profit(self) -> Decimal:
+        return (self.revenue() - self.cogs()).quantize(Decimal("0.01"))
+
+    def margin_percent(self) -> Decimal:
+        rev = self.revenue()
+        if rev == 0:
+            return Decimal("0.00")
+        return (self.profit() / rev * Decimal("100")).quantize(Decimal("0.01"))
 
     def calculate_value(self):
         return round(self.price * self.quantity, 2)
@@ -1155,20 +1321,25 @@ class WarehouseStockHistory(models.Model):
     quantity_before = models.PositiveIntegerField(default=0)
     quantity_after = models.PositiveIntegerField(default=0)
     date = models.DateField(null=True, blank=True)
+    sell = models.ForeignKey("ProductSell3", on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
         ordering = ['-date', '-warehouse_stock']
 
     def save(self, *args, **kwargs):
         if not self.date:
-            if self.stock_supply:
+            if self.sell:
+                self.date = self.sell.date
+            elif self.stock_supply:
                 self.date = self.stock_supply.date
             elif self.order_settlement:
                 self.date = self.order_settlement.settlement_date
         super().save(*args, **kwargs)
 
     def __str__(self):
-        if self.stock_supply:
+        if self.sell:
+            return f'{self.date} | SELL | {self.warehouse_stock.stock.name} {self.quantity_before} -> {self.quantity_after}'
+        elif self.stock_supply:
             return f'{self.date} | {self.warehouse_stock.stock.name} INCREASE {self.quantity_before} -> {self.quantity_after}'
         elif self.order_settlement:
             return f'{self.date} | {self.warehouse_stock.stock.name} DECREASE {self.quantity_before} -> {self.quantity_after}'
@@ -1306,3 +1477,77 @@ class BOMPart(models.Model):
     def __str__(self):
         return f"{self.part} x {self.quantity}"
 
+
+class ProductSellOrderPart(models.Model):
+    sell = models.ForeignKey("ProductSell3", on_delete=models.CASCADE, related_name="order_parts")
+    order = models.ForeignKey("Order", on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("sell", "order")
+
+    def __str__(self):
+        return f"Sell#{self.sell_id} <- Order#{self.order_id} qty={self.quantity}"
+
+
+def resolve_orders_for_supply(stock_supply):
+    """
+    Zwraca listę order_id, z których pochodzi dana partia (StockSupply).
+    A: StockSupplySettlement(as_result=True) -> settlement -> order
+    B: WarehouseStockHistory delta>0 dla tej stock_supply -> order_settlement.order
+    """
+    # A) po settlementach wynikowych
+    order_ids = list(
+        stock_supply.stocksupplysettlement_set
+        .filter(as_result=True, settlement__order_id__isnull=False)
+        .values_list("settlement__order_id", flat=True)
+        .distinct()
+    )
+    if order_ids:
+        return order_ids
+
+    # B) fallback po historii (przyjęcie delta>0)
+    order_ids = list(
+        WarehouseStockHistory.objects
+        .filter(stock_supply=stock_supply, order_settlement__order_id__isnull=False)
+        .annotate(delta=F("quantity_after") - F("quantity_before"))
+        .filter(delta__gt=0)
+        .values_list("order_settlement__order_id", flat=True)
+        .distinct()
+    )
+    return order_ids
+
+
+def attach_origin_orders_to_sell(sell):
+    """
+    Na podstawie StockSupplySell dopina zlecenia pochodzenia do sprzedaży.
+    Zapisuje w ProductSellOrderPart.
+    """
+    rows = (
+        StockSupplySell.objects
+        .filter(sell=sell)
+        .select_related("stock_supply")
+    )
+
+    agg = {}  # order_id -> qty
+
+    for r in rows:
+        ss = r.stock_supply
+        if not ss:
+            continue
+        order_ids = resolve_orders_for_supply(ss)
+        if not order_ids:
+            continue
+
+        # zazwyczaj 1 order; jeśli będzie wiele, bierzemy pierwszy (możemy rozbić później)
+        oid = order_ids[0]
+        agg[oid] = agg.get(oid, 0) + int(r.quantity)
+
+    for oid, q in agg.items():
+        obj, created = ProductSellOrderPart.objects.get_or_create(
+            sell=sell, order_id=oid,
+            defaults={"quantity": q}
+        )
+        if not created:
+            obj.quantity = obj.quantity + q
+            obj.save(update_fields=["quantity"])
