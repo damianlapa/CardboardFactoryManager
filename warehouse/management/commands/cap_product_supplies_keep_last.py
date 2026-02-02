@@ -48,10 +48,23 @@ class Command(BaseCommand):
         else:
             adj_date = timezone.now().date()
 
-        # 1) find supplies for this name (PRODUCT) and preferably as_result=True
+        # 1) find supplies for this name (prefer as_result=True, but don't depend on stock_type string)
+
+        # spróbuj kilka wariantów nazwy:
+        name_variants = [name]
+        nv = name.rstrip()
+        if nv != name:
+            name_variants.append(nv)
+        nv2 = name.rstrip(" |")
+        if nv2 != name and nv2 not in name_variants:
+            name_variants.append(nv2)
+        if not name.endswith(" |"):
+            name_variants.append(name + " |")
+
+        # A) prefer supplies that are result of settlements (as_result=True)
         qs = (
             StockSupply.objects
-            .filter(name=name, stock_type__stock_type="product")
+            .filter(name__in=name_variants)
             .filter(stocksupplysettlement__as_result=True)
             .distinct()
             .order_by("date", "id")
@@ -60,19 +73,31 @@ class Command(BaseCommand):
 
         if not supplies:
             self.stdout.write(self.style.WARNING(
-                f"No supplies found with as_result=True for name={name!r}. Fallback to all product supplies by name."
+                f"No supplies found with as_result=True for variants={name_variants}. "
+                f"Fallback to ALL supplies by name variants."
             ))
             supplies = list(
                 StockSupply.objects
-                .filter(name=name, stock_type__stock_type="product")
+                .filter(name__in=name_variants)
                 .order_by("date", "id")
             )
 
         if not supplies:
-            raise ValidationError(f"No product StockSupply found for name={name!r}")
+            # jeszcze jeden super-fallback: startswith (gdy masz np. dodatkowy suffix)
+            base = name.rstrip(" |")
+            self.stdout.write(self.style.WARNING(
+                f"No exact name match. Fallback to startswith base={base!r}."
+            ))
+            supplies = list(
+                StockSupply.objects
+                .filter(name__startswith=base)
+                .order_by("date", "id")
+            )
 
-        # Lock safety: we will lock rows only in APPLY mode
-        # (dry-run uses read only)
+        if not supplies:
+            raise ValidationError(
+                f"No StockSupply found for name={name!r}. Tried variants={name_variants} and startswith={name.rstrip(' |')!r}"
+            )
 
         def supply_info(s):
             return {
