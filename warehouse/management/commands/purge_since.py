@@ -74,7 +74,7 @@ class Command(BaseCommand):
         sssett_qs = StockSupplySettlement.objects.filter(
             Q(settlement__settlement_date__gte=cutoff) | Q(stock_supply__date__gte=cutoff)
         )
-        osp_qs = OrderSettlementProduct.objects.filter(order_settlement__settlement_date__gte=cutoff)
+        osp_qs = OrderSettlementProduct.objects.filter(settlement__settlement_date__gte=cutoff)
         settlements_qs = OrderSettlement.objects.filter(settlement_date__gte=cutoff)
 
         supplies_qs = StockSupply.objects.filter(date__gte=cutoff)
