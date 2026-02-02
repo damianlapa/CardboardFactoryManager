@@ -1,7 +1,7 @@
 import datetime
 import math
 import re
-from django.db.models import F
+from django.db.models import F, Q
 from warehousemanager.models import Buyer
 from django.db.models import Exists, OuterRef
 from django.db.models import Sum
@@ -220,17 +220,26 @@ class Delivery(models.Model):
         ordering = ['-date', 'id']
 
     def add_to_warehouse(self, warehouse=None):
-        items = DeliveryItem.objects.filter(delivery=self)
+        if not warehouse:
+            warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
-        for item in items:
-            if not item.processed:
-                if not warehouse:
-                    warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
-                item.add_to_warehouse()
+        with transaction.atomic():
+            # blokujemy elementy dostawy, żeby nikt nie przetwarzał równolegle
+            items = (
+                DeliveryItem.objects
+                .select_for_update()
+                .filter(delivery=self)
+                .select_related("order", "delivery", "delivery__provider")
+            )
 
-        if self.check_if_processed():
-            self.processed = True
-            self.save()
+            for item in items:
+                if not item.processed:
+                    item.add_to_warehouse(warehouse=warehouse)
+
+            # ustaw processed tylko gdy wszystkie itemy processed
+            if not DeliveryItem.objects.filter(delivery=self, processed=False).exists():
+                self.processed = True
+                self.save(update_fields=["processed"])
 
     def check_if_processed(self):
         items = DeliveryItem.objects.filter(delivery=self)
@@ -279,50 +288,94 @@ class DeliveryItem(models.Model):
         if not warehouse:
             warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
-        superstock = self.resolve_superstock()
-        if not self.stock_id:
-            self.stock = superstock
-            self.save(update_fields=["stock"])
+        quantity_to_add = int(self.quantity if not quantity else quantity)
+        if quantity_to_add <= 0:
+            raise ValidationError("Ilość przyjęcia musi być > 0")
 
-        quantity_to_add = self.quantity if not quantity else quantity
+        with transaction.atomic():
+            # blokujemy item, żeby nie przyjąć drugi raz równolegle
+            item = DeliveryItem.objects.select_for_update().select_related(
+                "delivery", "delivery__provider", "order"
+            ).get(pk=self.pk)
 
-        # Create Stock Supply (partia) NA SUPERSTOCKU
-        stock_supply, created = StockSupply.objects.get_or_create(
-            stock_type=StockType.objects.get(stock_type='material', unit='PIECE'),
-            delivery_item=self,
-            date=self.delivery.date,
-            dimensions=self.order.dimensions,
-            quantity=self.quantity,  # albo quantity_to_add jeśli u Ciebie bywa częściowe przyjęcie
-            name=superstock.name,
-            value=self.calculate_value()
-        )
+            if item.processed:
+                # idempotencja: drugi raz nic nie robi
+                return
 
-        # Warehouse stock też na SUPERSTOCKU
-        warehouse_stock, created = WarehouseStock.objects.get_or_create(
-            warehouse=warehouse,
-            stock=superstock
-        )
+            # blokujemy order (bo aktualizujemy delivered_quantity)
+            order = Order.objects.select_for_update().get(pk=item.order_id)
 
-        history, created = WarehouseStockHistory.objects.get_or_create(
-            warehouse_stock=warehouse_stock,
-            stock_supply=stock_supply,
-            quantity_before=warehouse_stock.quantity,
-            quantity_after=warehouse_stock.quantity + quantity_to_add
-        )
+            if not warehouse:
+                warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
-        warehouse_stock.increase_quantity(quantity_to_add)
+            # 1) superstock
+            superstock = item.resolve_superstock()
+            if not item.stock_id:
+                item.stock = superstock
+                item.save(update_fields=["stock"])
 
-        self.order.delivered_quantity += quantity_to_add
-        self.order.save()
+            # 2) StockSupply (1:1 z DeliveryItem)
+            material_type = StockType.objects.get(stock_type='material', unit='PIECE')
 
-        if self.order.order_quantity:
-            if self.order.delivered_quantity / self.order.order_quantity > 0.92 and not self.order.delivered:
-                self.order.delivered = True
-                self.order.delivery_date = self.delivery.date
-                self.order.save()
+            stock_supply, created = StockSupply.objects.get_or_create(
+                delivery_item=item,
+                defaults=dict(
+                    stock_type=material_type,
+                    date=item.delivery.date,
+                    dimensions=order.dimensions,
+                    quantity=quantity_to_add,
+                    name=superstock.name,
+                    value=item.calculate_value(),
+                    used=False,
+                )
+            )
 
-        self.processed = True
-        self.save()
+            # jeśli supply istnieje, a quantity/value/date odbiegają -> aktualizujemy (spójność)
+            updates = {}
+            if stock_supply.stock_type_id != material_type.id:
+                updates["stock_type"] = material_type
+            if stock_supply.date != item.delivery.date:
+                updates["date"] = item.delivery.date
+            if stock_supply.dimensions != order.dimensions:
+                updates["dimensions"] = order.dimensions
+            if stock_supply.name != superstock.name:
+                updates["name"] = superstock.name
+            if int(stock_supply.quantity) != int(quantity_to_add):
+                updates["quantity"] = quantity_to_add
+            new_value = item.calculate_value()
+            if stock_supply.value != new_value:
+                updates["value"] = new_value
+
+            if updates:
+                for k, v in updates.items():
+                    setattr(stock_supply, k, v)
+                stock_supply.save(update_fields=list(updates.keys()))
+
+            # 3) WarehouseStock (agregat) – blokujemy, potem ruch tylko przez move_ws
+            ws, _ = WarehouseStock.objects.get_or_create(
+                warehouse=warehouse,
+                stock=superstock
+            )
+            ws = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
+
+            # ruch magazynowy (to ma tworzyć historię i aktualizować ilość)
+            move_ws(
+                ws=ws,
+                delta=quantity_to_add,
+                date=item.delivery.date,
+                stock_supply=stock_supply,
+            )
+
+            # 4) order delivered_quantity
+            order.delivered_quantity = int(order.delivered_quantity) + quantity_to_add
+            if order.order_quantity and order.delivered_quantity / order.order_quantity > 0.92 and not order.delivered:
+                order.delivered = True
+                order.delivery_date = item.delivery.date
+            order.save(update_fields=["delivered_quantity", "delivered", "delivery_date"])
+
+            # 5) processed
+            item.processed = True
+            item.save(update_fields=["processed"])
 
     def resolve_superstock(self) -> "Stock":
         material_type = StockType.objects.get(stock_type='material', unit='PIECE')
@@ -344,12 +397,11 @@ class DeliveryItem(models.Model):
         if alias:
             return alias.stock
 
-        # tymczasowy fallback, ale docelowo to zablokujemy żeby nie robić śmieci
-        stock, _ = Stock.objects.get_or_create(
-            name=f'{self.order.name}[{self.order.dimensions}]',
-            stock_type=material_type
+        # ZAMIANA: zamiast tworzyć śmieciowy Stock
+        raise ValidationError(
+            f"Brak StockAlias dla dostawcy={self.delivery.provider} sku='{sku}' dims='{dims}'. "
+            f"Utwórz alias lub przypnij DeliveryItem.stock ręcznie."
         )
-        return stock
 
     def check_settlement(self):
         settlement = OrderSettlement.objects.filter(order=self.order)
@@ -508,6 +560,13 @@ class StockSupply(models.Model):
 
     class Meta:
         ordering = ['-date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=["delivery_item"],
+                condition=Q(delivery_item__isnull=False),
+                name="uniq_supply_per_delivery_item",
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if self.name:
@@ -799,32 +858,11 @@ class WarehouseStock(models.Model):
                 ).values_list("id", flat=True).distinct()[:20]
             )
 
-            # ============================================================
-            # B) FALLBACK: jeśli A nie zwróciło nic, wyciągamy partie z historii magazynu
-            #    (działa, gdy wynik produkcji nie tworzy stocksupplysettlement as_result)
-            # ============================================================
             if not supply_ids:
-                hist_qs = (
-                    WarehouseStockHistory.objects.filter(
-                        warehouse_stock=ws,
-                        order_settlement__order=sell.order,
-                        stock_supply__isnull=False,
-                    )
-                    .order_by("date", "id")
+                raise ValidationError(
+                    "Brak partii wyrobu z tego zlecenia (nie utworzono StockSupplySettlement(as_result=True)). "
+                    "Najpierw rozlicz produkcję poprawnie."
                 )
-
-                tmp = []
-                for h in hist_qs:
-                    delta = int(h.quantity_after) - int(h.quantity_before)
-                    if delta > 0:  # tylko przyjęcia wyrobu
-                        tmp.append(h.stock_supply_id)
-
-                seen = set()
-                supply_ids = []
-                for sid in tmp:
-                    if sid and sid not in seen:
-                        seen.add(sid)
-                        supply_ids.append(sid)
 
             supplies = StockSupply.objects.filter(id__in=supply_ids).order_by("date", "id")
             # ^ show_used() jeśli masz taką metodę managera – jeśli nie masz, usuń .show_used()
