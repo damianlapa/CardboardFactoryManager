@@ -309,10 +309,10 @@ class DeliveryItem(models.Model):
                 warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
             # 1) superstock
-            superstock = item.resolve_superstock()
-            if not item.stock_id:
-                item.stock = superstock
-                item.save(update_fields=["stock"])
+            target_stock = self.resolve_superstock()
+            if not self.stock_id:
+                self.stock = target_stock
+                self.save(update_fields=["stock"])
 
             # 2) StockSupply (1:1 z DeliveryItem)
             material_type = StockType.objects.get(stock_type='material', unit='PIECE')
@@ -324,7 +324,7 @@ class DeliveryItem(models.Model):
                     date=item.delivery.date,
                     dimensions=order.dimensions,
                     quantity=quantity_to_add,
-                    name=superstock.name,
+                    name=target_stock.name,
                     value=item.calculate_value(),
                     used=False,
                 )
@@ -338,8 +338,8 @@ class DeliveryItem(models.Model):
                 updates["date"] = item.delivery.date
             if stock_supply.dimensions != order.dimensions:
                 updates["dimensions"] = order.dimensions
-            if stock_supply.name != superstock.name:
-                updates["name"] = superstock.name
+            if stock_supply.name != target_stock.name:
+                updates["name"] = target_stock.name
             if int(stock_supply.quantity) != int(quantity_to_add):
                 updates["quantity"] = quantity_to_add
             new_value = item.calculate_value()
@@ -354,7 +354,7 @@ class DeliveryItem(models.Model):
             # 3) WarehouseStock (agregat) – blokujemy, potem ruch tylko przez move_ws
             ws, _ = WarehouseStock.objects.get_or_create(
                 warehouse=warehouse,
-                stock=superstock
+                stock=target_stock
             )
             ws = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
 
@@ -397,11 +397,18 @@ class DeliveryItem(models.Model):
         if alias:
             return alias.stock
 
-        # ZAMIANA: zamiast tworzyć śmieciowy Stock
-        raise ValidationError(
-            f"Brak StockAlias dla dostawcy={self.delivery.provider} sku='{sku}' dims='{dims}'. "
-            f"Utwórz alias lub przypnij DeliveryItem.stock ręcznie."
+        # BRAK ALIASU -> TWORZYMY STOCK UNIKALNY (dla 90% przypadków)
+        provider_tag = (self.delivery.provider.shortcut or self.delivery.provider.name or "").strip()
+        base_name = f"{provider_tag} {sku}[{dims}]".strip()
+
+        # Stock.name ma max_length=64 -> przytnij bezpiecznie
+        name = base_name[:64]
+
+        stock, _ = Stock.objects.get_or_create(
+            name=name,
+            stock_type=material_type
         )
+        return stock
 
     def check_settlement(self):
         settlement = OrderSettlement.objects.filter(order=self.order)
