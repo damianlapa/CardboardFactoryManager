@@ -11,6 +11,7 @@ from warehouse.models import (
     StockSupplySettlement,
     StockSupplySell,
     WarehouseStockHistory,
+    WarehouseStock,
 )
 
 
@@ -18,7 +19,6 @@ class Command(BaseCommand):
     help = (
         "Cofa (usuwa) jedną dostawę Delivery po ID razem z jej elementami.\n"
         "Dodatkowo cofa wpływ na WarehouseStock.quantity (zmniejsza stany) na podstawie WarehouseStockHistory.\n"
-        "Jeśli DeliveryItem jest chronione przez StockSupply.delivery_item (PROTECT), usuwa najpierw StockSupply + ich ogon.\n"
         "Domyślnie DRY-RUN."
     )
 
@@ -83,34 +83,21 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
-            # 0) Cofnij stany magazynowe (na podstawie historii)
-            #    Zależności: history ma FK do WarehouseStock (CASCADE), więc musimy to zrobić PRZED kasowaniem historii.
+            # 0) Cofnij stany magazynowe (na podstawie historii) - PRZED usuwaniem historii
             if deltas:
-                # blokujemy WS, żeby nic równolegle nie ruszało
-                ws_map = {
-                    ws.id: ws
-                    for ws in (
-                        WarehouseStockHistory.objects
-                        .filter(warehouse_stock_id__in=list(deltas.keys()))
-                        .select_related("warehouse_stock")
-                        .values_list("warehouse_stock_id", "warehouse_stock")
-                    )
-                }
-                # Powyższe values_list nie zwróci obiektów ws jak chcemy w Django,
-                # więc po prostu pobierzmy WarehouseStock normalnie:
-                from warehouse.models import WarehouseStock
                 locked_ws = (
                     WarehouseStock.objects
                     .select_for_update()
                     .filter(id__in=list(deltas.keys()))
                 )
-                locked_ws_map = {ws.id: ws for ws in locked_ws}
+                locked_map = {ws.id: ws for ws in locked_ws}
 
                 for ws_id, qty in deltas.items():
-                    ws = locked_ws_map.get(ws_id)
+                    ws = locked_map.get(ws_id)
                     if not ws:
-                        raise CommandError(f"WarehouseStock id={ws_id} not found while rolling back delivery id={d.id}")
-
+                        raise CommandError(
+                            f"WarehouseStock id={ws_id} not found while rolling back delivery id={d.id}"
+                        )
                     if qty > ws.quantity:
                         raise CommandError(
                             f"Cannot rollback: WarehouseStock id={ws_id} has qty={ws.quantity}, "
