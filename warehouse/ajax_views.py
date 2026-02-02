@@ -6,6 +6,17 @@ from django.db import transaction
 from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct, WarehouseStock, WarehouseStockHistory, \
     Product, StockType, Stock, Warehouse, StockSupplySettlement
 from warehouse.services.stock_moves import move_ws
+from django.db import IntegrityError
+
+
+def normalize_name(n: str) -> str:
+    n = " ".join((n or "").strip().split())
+    if "|" in n:
+        parts = [p.strip() for p in n.split("|")]
+        while parts and parts[-1] == "":
+            parts.pop()
+        n = " | ".join(parts)
+    return n
 
 
 def settle_order(request, order_id):
@@ -55,11 +66,13 @@ def settle_order(request, order_id):
                     product_type = StockType.objects.get(id=int(product_type))
                     warehouse = Warehouse.objects.get(id=int(warehouse))
 
+                    stock_name = normalize_name(product.name)
+
                     supply = StockSupply.objects.create(
                         stock_type=product_type,
                         date=settlement_date,
                         quantity=int(product_quantity),
-                        name=product.name,
+                        name=stock_name,
                         value=value
                     )
 
@@ -71,10 +84,15 @@ def settle_order(request, order_id):
                         as_result=True
                     )
 
-                    stock, created = Stock.objects.get_or_create(
-                        stock_type=product_type,
-                        name=f'{product.name}'
-                    )
+                    try:
+                        stock, created = Stock.objects.get_or_create(
+                            stock_type=product_type,
+                            name=stock_name,
+                        )
+                    except IntegrityError:
+                        # wyścig / normalizacja -> dociągnij istniejący
+                        stock = Stock.objects.get(stock_type=product_type, name=stock_name)
+                        created = False
 
                     warehouse_stock, created = WarehouseStock.objects.get_or_create(
                         stock=stock,

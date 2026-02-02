@@ -45,6 +45,21 @@ class Product(models.Model):
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
 
+    def save(self, *args, **kwargs):
+        # Normalizacja jak w Stock.save(): trim, collapse whitespace, porządkuj "|" i usuń trailing "|"
+        n = (self.name or "").strip()
+        n = " ".join(n.split())
+
+        if "|" in n:
+            parts = [p.strip() for p in n.split("|")]
+            # usuń puste końcówki (wiszący pipe na końcu)
+            while parts and parts[-1] == "":
+                parts.pop()
+            n = " | ".join(parts)
+
+        self.name = n
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.name}'
 
@@ -1595,7 +1610,7 @@ def attach_origin_orders_to_sell(sell):
     """
     # ✅ czyścimy poprzednie przypisania i liczymy od nowa
     ProductSellOrderPart.objects.filter(sell=sell).delete()
-    
+
     rows = (
         StockSupplySell.objects
         .filter(sell=sell)
