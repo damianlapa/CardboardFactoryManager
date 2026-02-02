@@ -55,7 +55,7 @@ def settle_order(request, order_id):
                     product_type = StockType.objects.get(id=int(product_type))
                     warehouse = Warehouse.objects.get(id=int(warehouse))
 
-                    supply, created = StockSupply.objects.create(
+                    supply = StockSupply.objects.create(
                         stock_type=product_type,
                         date=settlement_date,
                         quantity=int(product_quantity),
