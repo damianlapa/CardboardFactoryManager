@@ -822,6 +822,9 @@ class WarehouseStock(models.Model):
 
             move_ws(ws=ws, delta=-qty, date=sell.date, sell=sell)
 
+            # ✅ zawsze dopinaj zlecenia pochodzenia na podstawie StockSupplySell
+            attach_origin_orders_to_sell(sell)
+
 
     def sell_from_order(self, sell: "ProductSell3"):
         import logging
@@ -1590,6 +1593,9 @@ def attach_origin_orders_to_sell(sell):
     Na podstawie StockSupplySell dopina zlecenia pochodzenia do sprzedaży.
     Zapisuje w ProductSellOrderPart.
     """
+    # ✅ czyścimy poprzednie przypisania i liczymy od nowa
+    ProductSellOrderPart.objects.filter(sell=sell).delete()
+    
     rows = (
         StockSupplySell.objects
         .filter(sell=sell)
