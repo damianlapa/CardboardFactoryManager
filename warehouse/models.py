@@ -575,8 +575,6 @@ class StockSupply(models.Model):
         return (total_value * Decimal(avail) / Decimal(qty)).quantize(Decimal("0.01"))
 
 
-
-
 class Stock(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=0)
@@ -1016,8 +1014,6 @@ class WarehouseStock(models.Model):
         return StockSupply.objects.filter(name=self.stock.name)
 
 
-
-# <-- rozbudowa modeli
 class OrderSettlement(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='settlements')
     material = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, related_name='used_in_settlements')
@@ -1260,37 +1256,6 @@ class MonthResults(models.Model):
 
     def __str__(self):
         return f'{self.year} {self.month}'
-
-
-# class CustomerDelivery(models.Model):
-#     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
-#     date = models.DateField()
-#     description = models.CharField(max_length=256, null=True, blank=True)
-#     palettes = models.ManyToManyField(Palette, through='DeliveryCustomerPalette', blank=True)
-#     items = models.ManyToManyField(ProductSell2, through='DeliverySell', blank=True)
-#
-#     def __str__(self):
-#         return f'{self.customer} {self.date}'
-#
-#     class Meta:
-#         ordering = ['-date']
-#
-#
-# class DeliveryCustomerPalette(models.Model):
-#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
-#     palette = models.ForeignKey(Palette, on_delete=models.PROTECT)
-#     quantity = models.IntegerField(default=0)
-#
-#     def __str__(self):
-#         return f'{self.customer_delivery} :: {self.palette} :: {self.quantity}'
-#
-#
-# class DeliverySell(models.Model):
-#     customer_delivery = models.ForeignKey(CustomerDelivery, on_delete=models.PROTECT)
-#     item = models.ForeignKey(ProductSell2, on_delete=models.PROTECT)
-#
-#     def __str__(self):
-#         return f'{self.customer_delivery} :: {self.item}'
 
 
 class CustomerPalette(models.Model):
