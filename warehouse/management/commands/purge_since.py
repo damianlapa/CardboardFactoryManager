@@ -162,20 +162,15 @@ class Command(BaseCommand):
             self._del("ProductComplexParts", assembly_parts_qs)
             self._del("ProductComplexAssembly", assembly_qs)
 
-            # 6) Deliveries
+            # 6) Deliveries palettes (zależne od delivery) - mogą iść wcześniej
             self._del("DeliveryPalette", deliv_pal_qs)
-            self._del("DeliveryItem", deliv_items_qs)
-            self._del("Delivery", deliv_qs)
 
-            self._del("DeliverySpecialItem", deliv_spec_items_qs)
-            self._del("DeliverySpecial", deliv_spec_qs)
-
-            # 7) StockSupply rows
+            # 7) StockSupply rows (MUSI być przed DeliveryItem, bo delivery_item jest PROTECT)
             self._del("StockSupply", supplies_qs)
 
-            # 8) Shifts & price lists
-            self._del("OrderToOrderShift", shift_qs)
-            self._del("PriceList", pricelist_qs)
+            # 8) Deliveries items + deliveries
+            self._del("DeliveryItem", deliv_items_qs)
+            self._del("Delivery", deliv_qs)
 
             # 9) Orders (optional)
             if not skip_orders:
