@@ -55,25 +55,28 @@ class Command(BaseCommand):
         with open(out_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, delimiter=";")
 
-            # nagłówki
             writer.writerow([
                 "snapshot_date",
                 "warehouse_id",
-                "warehouse_name",
+                "warehouse",
                 "stock_id",
-                "stock_name",
+                "stock",
                 "stock_type",
                 "quantity",
             ])
 
             for ws in qs.order_by("warehouse__id", "stock__name"):
+                stock_type_label = ""
+                if getattr(ws.stock, "stock_type", None):
+                    stock_type_label = str(ws.stock.stock_type)  # <— zamiast .name
+
                 writer.writerow([
                     SNAPSHOT_DATE.isoformat(),
                     ws.warehouse_id,
-                    ws.warehouse.name,
+                    str(ws.warehouse),
                     ws.stock_id,
-                    ws.stock.name,
-                    ws.stock.stock_type.name if ws.stock.stock_type else "",
+                    str(ws.stock),
+                    stock_type_label,
                     ws.quantity,
                 ])
 
