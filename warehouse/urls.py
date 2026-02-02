@@ -93,9 +93,9 @@ urlpatterns += [
     path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
 ]
 
-urlpatterns += [
-    path("orders/<int:order_id>/add-shift/", AddDeliveryItemToWarehouse.as_view(), name="add_shift"),
-]
+# urlpatterns += [
+#     path("orders/<int:order_id>/add-shift/", AddDeliveryItemToWarehouse.as_view(), name="add_shift"),
+# ]
 
 # price list
 urlpatterns += [

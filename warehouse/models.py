@@ -1,6 +1,7 @@
 import datetime
 import math
 import re
+from django.db.models import F
 from warehousemanager.models import Buyer
 from django.db.models import Exists, OuterRef
 from django.db.models import Sum
@@ -261,6 +262,16 @@ class DeliveryItem(models.Model):
     processed = models.BooleanField(default=False)
     updated = models.BooleanField(default=False)
 
+    # NEW (wariant B)
+    provider_sku = models.CharField(max_length=128, null=True, blank=True)  # auto z order.name
+    stock = models.ForeignKey("Stock", null=True, blank=True, on_delete=models.PROTECT)  # superstock snapshot
+
+    def save(self, *args, **kwargs):
+        # automatycznie zapisz kod dostawcy z order.name
+        if self.order_id and not self.provider_sku:
+            self.provider_sku = (self.order.name or "").strip()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.delivery} :: {self.order}'
 
@@ -268,35 +279,38 @@ class DeliveryItem(models.Model):
         if not warehouse:
             warehouse = Warehouse.objects.get(name='MAGAZYN GŁÓWNY')
 
-        # Create Stock Supply
+        superstock = self.resolve_superstock()
+        if not self.stock_id:
+            self.stock = superstock
+            self.save(update_fields=["stock"])
+
+        quantity_to_add = self.quantity if not quantity else quantity
+
+        # Create Stock Supply (partia) NA SUPERSTOCKU
         stock_supply, created = StockSupply.objects.get_or_create(
             stock_type=StockType.objects.get(stock_type='material', unit='PIECE'),
             delivery_item=self,
             date=self.delivery.date,
             dimensions=self.order.dimensions,
-            quantity=self.quantity,
-            name=f'{self.order.name}[{self.order.dimensions}]',
+            quantity=self.quantity,  # albo quantity_to_add jeśli u Ciebie bywa częściowe przyjęcie
+            name=superstock.name,
             value=self.calculate_value()
         )
 
-        # Aktualizacja zapasów w magazynie
-        stock, created = Stock.objects.get_or_create(
-            name=f'{self.order.name}[{self.order.dimensions}]',
-            stock_type=StockType.objects.get(stock_type='material', unit='PIECE')
+        # Warehouse stock też na SUPERSTOCKU
+        warehouse_stock, created = WarehouseStock.objects.get_or_create(
+            warehouse=warehouse,
+            stock=superstock
         )
-        warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
 
         history, created = WarehouseStockHistory.objects.get_or_create(
             warehouse_stock=warehouse_stock,
             stock_supply=stock_supply,
             quantity_before=warehouse_stock.quantity,
-            quantity_after=warehouse_stock.quantity+self.quantity
-
+            quantity_after=warehouse_stock.quantity + quantity_to_add
         )
 
-        warehouse_stock.increase_quantity(self.quantity if not quantity else quantity)
-
-        quantity_to_add = self.quantity if not quantity else quantity
+        warehouse_stock.increase_quantity(quantity_to_add)
 
         self.order.delivered_quantity += quantity_to_add
         self.order.save()
@@ -309,6 +323,33 @@ class DeliveryItem(models.Model):
 
         self.processed = True
         self.save()
+
+    def resolve_superstock(self) -> "Stock":
+        material_type = StockType.objects.get(stock_type='material', unit='PIECE')
+
+        # jeśli już wcześniej przypięte — nie zmieniaj
+        if self.stock_id:
+            return self.stock
+
+        sku = (self.provider_sku or "").strip() or (self.order.name or "").strip()
+        dims = (self.order.dimensions or "").strip()
+
+        alias = StockAlias.objects.filter(
+            provider=self.delivery.provider,
+            provider_sku=sku,
+            dimensions=dims,
+            is_active=True
+        ).select_related("stock").first()
+
+        if alias:
+            return alias.stock
+
+        # tymczasowy fallback, ale docelowo to zablokujemy żeby nie robić śmieci
+        stock, _ = Stock.objects.get_or_create(
+            name=f'{self.order.name}[{self.order.dimensions}]',
+            stock_type=material_type
+        )
+        return stock
 
     def check_settlement(self):
         settlement = OrderSettlement.objects.filter(order=self.order)
@@ -1027,7 +1068,8 @@ class StockSupplySettlement(models.Model):
 class ProductSell3(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, null=True, blank=True)
     customer_alter_name = models.CharField(max_length=32, null=True, blank=True)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+    stock = models.ForeignKey("Stock", on_delete=models.PROTECT, null=True, blank=True)
     warehouse_stock = models.ForeignKey(WarehouseStock, on_delete=models.PROTECT, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.IntegerField(default=1)
@@ -1039,7 +1081,8 @@ class ProductSell3(models.Model):
 
     def __str__(self):
         customer = self.customer if self.customer else self.customer_alter_name
-        return f'{self.date} | {self.product} {self.quantity} -> {customer}'
+        item = self.product if self.product else (self.stock.name if self.stock else "BRAK_TOWARU")
+        return f'{self.date} | {item} {self.quantity} -> {customer}'
 
     def revenue(self) -> Decimal:
         return (Decimal(self.price) * Decimal(self.quantity)).quantize(Decimal("0.01"))
@@ -1155,19 +1198,33 @@ class ProductSell3(models.Model):
         if self.price is not None and self.price < 0:
             raise ValidationError({"price": "Cena nie może być ujemna."})
 
-        # z warehouse_stock wyciągnij produkt i/lub zweryfikuj zgodność
+        # jeśli jest warehouse_stock → zawsze ustaw stock + ewentualnie product (jeśli istnieje)
         if self.warehouse_stock_id:
-            resolved = self._resolve_product_from_ws()
-            if resolved is None:
-                raise ValidationError({"warehouse_stock": "Brak produktu powiązanego z tym stanem magazynowym."})
+            ws = self.warehouse_stock
 
-            if self.product_id is None:
-                # ustaw automatycznie
-                self.product = resolved
+            # ✅ zawsze ustaw stock z WS
+            self.stock = ws.stock
+
+            # product powiązany ze stockiem (może nie istnieć dla materiałów)
+            resolved_prod = getattr(ws.stock, "product", None)
+
+            if resolved_prod:
+                # jeśli product nie podano → ustaw automatycznie
+                if self.product_id is None:
+                    self.product = resolved_prod
+                else:
+                    # jeśli podano product → pilnuj spójności
+                    if self.product_id != resolved_prod.id:
+                        raise ValidationError({"product": "Wybrany produkt nie zgadza się z magazynem."})
             else:
-                # sprawdź spójność, jeśli ktoś spróbuje wcisnąć inny produkt
-                if self.product_id != resolved.id:
-                    raise ValidationError({"product": "Wybrany produkt nie zgadza się z magazynem."})
+                # ✅ materiał: nie wymuszamy product
+                # jeśli ktoś ręcznie poda product mimo braku powiązania w stocku → blokujemy (żeby nie robić śmieci)
+                if self.product_id is not None:
+                    raise ValidationError({"product": "Ten stan magazynowy nie ma powiązanego produktu (materiał)."})
+        else:
+            # jeśli nie ma warehouse_stock, to wymagamy żeby było przynajmniej product lub stock
+            if not self.product_id and not getattr(self, "stock_id", None):
+                raise ValidationError({"warehouse_stock": "Wybierz stan magazynowy lub ustaw produkt/stock."})
 
         return super().clean()
 
@@ -1551,3 +1608,24 @@ def attach_origin_orders_to_sell(sell):
         if not created:
             obj.quantity = obj.quantity + q
             obj.save(update_fields=["quantity"])
+
+
+class StockAlias(models.Model):
+    provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
+    provider_sku = models.CharField(max_length=128)   # np. T30B1TWT0372
+    dimensions = models.CharField(max_length=64)      # np. 1200x800
+    stock = models.ForeignKey("Stock", on_delete=models.PROTECT, related_name="aliases")
+    is_active = models.BooleanField(default=True)
+    notes = models.CharField(max_length=256, null=True, blank=True)
+
+    class Meta:
+        unique_together = ("provider", "provider_sku", "dimensions")
+        indexes = [
+            models.Index(fields=["provider", "provider_sku", "dimensions"]),
+            models.Index(fields=["stock"]),
+        ]
+
+    def __str__(self):
+        p = getattr(self.provider, "shortcut", None) or getattr(self.provider, "name", "provider")
+        return f"{p} :: {self.provider_sku} [{self.dimensions}] -> {self.stock.name}"
+

@@ -1205,6 +1205,7 @@ class WarehouseStockDetailView(DetailView):
         return ctx
 
     def post(self, request, *args, **kwargs):
+        print("[WS_DETAIL] HIT", request.method, request.path)
         """
         Obsługa sprzedaży FIFO bezpośrednio z widoku WarehouseStock.
         """
@@ -1222,24 +1223,21 @@ class WarehouseStockDetailView(DetailView):
             with transaction.atomic():
                 ws_locked = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
 
-                if ws_locked.quantity < cd["quantity"]:
-                    raise ValidationError("Nie ma wystarczającej ilości w magazynie.")
+                qty = int(cd["quantity"])
+                if ws_locked.quantity < qty:
+                    raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
 
-                # ... po ws_locked i walidacji ilości
-                prod = getattr(ws_locked.stock, "product", None)
-                if not prod:
-                    from .models import Product
-                    prod = Product.objects.filter(name=ws_locked.stock.name).first()
-                if not prod:
-                    raise ValidationError("Nie udało się dopasować produktu do tego stanu magazynowego.")
+                # ✅ produkt opcjonalny (dla materiału będzie None)
+                resolved_product = getattr(ws_locked.stock, "product", None)
 
                 sale = ProductSell3.objects.create(
-                    product=prod,
+                    product=resolved_product,  # może być None
+                    stock=ws_locked.stock,  # ✅ zawsze
                     customer=cd.get("customer"),
                     customer_alter_name=(cd.get("customer_alter_name") or None),
                     warehouse_stock=ws_locked,
                     order=None,  # FIFO
-                    quantity=cd["quantity"],
+                    quantity=qty,
                     price=cd["price"],
                     date=cd["date"],
                 )
@@ -1532,16 +1530,22 @@ class AddOrdersManually(LoginRequiredMixin, View):
 
 def add_product_sell3(request):
     if request.method != "POST":
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
     try:
         with transaction.atomic():
-            product = Product.objects.get(id=int(request.POST.get("product")))
-            customer = Buyer.objects.get(id=int(request.POST.get("customer")))
-            customer_alter_name = request.POST.get("customer_alter_name") or None
-            warehouse_stock = WarehouseStock.objects.select_for_update().get(id=int(request.POST.get("warehouse_stock")))
+            warehouse_stock = WarehouseStock.objects.select_for_update().get(
+                id=int(request.POST.get("warehouse_stock"))
+            )
 
-            # order u Ciebie bywa opcjonalny, ale tutaj był wymagany w starym kodzie
+            # klient
+            customer_id = request.POST.get("customer")
+            customer = Buyer.objects.get(id=int(customer_id)) if customer_id else None
+            customer_alter_name = (request.POST.get("customer_alter_name") or "").strip() or None
+            if not customer and not customer_alter_name:
+                raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
+
+            # order opcjonalny
             order_id = request.POST.get("order")
             order = Order.objects.get(id=int(order_id)) if order_id else None
 
@@ -1551,13 +1555,25 @@ def add_product_sell3(request):
 
             if quantity <= 0:
                 raise ValidationError("Ilość musi być większa od zera.")
-
             if warehouse_stock.quantity < quantity:
                 raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
 
-            # 1) Tworzymy sprzedaż
+            # ✅ PRODUKT: jeśli formularz podał product -> bierzemy z POST (OrderDetail)
+            product_id = request.POST.get("product")
+            if product_id:
+                product = Product.objects.get(id=int(product_id))
+            else:
+                # fallback: jeśli Stock ma przypięty Product
+                product = getattr(warehouse_stock.stock, "product", None)
+
+            # opcjonalna spójność: jeśli stock ma przypięty product, a user wybrał inny -> błąd
+            stock_prod = getattr(warehouse_stock.stock, "product", None)
+            if stock_prod and product and stock_prod.id != product.id:
+                raise ValidationError("Wybrany produkt nie zgadza się z produktem powiązanym ze stockiem.")
+
             sale = ProductSell3.objects.create(
-                product=product,
+                product=product,                      # ✅ dla OrderDetail będzie ustawiony
+                stock=warehouse_stock.stock,           # ✅ zawsze
                 customer=customer,
                 customer_alter_name=customer_alter_name,
                 warehouse_stock=warehouse_stock,
@@ -1567,20 +1583,20 @@ def add_product_sell3(request):
                 date=date,
             )
 
-            # 2) Rozchód:
-            # - jeśli sprzedaż przypięta do orderu -> schodzimy z partii wyrobu z tego orderu
-            # - w przeciwnym razie -> FIFO po magazynie ogólnym
+            # rozchód
             if sale.order_id:
                 warehouse_stock.sell_from_order(sale)
+                attach_origin_orders_to_sell(sale)     # ✅ też warto dopiąć po order-sellu
             else:
                 warehouse_stock.fifo_sell(sale)
                 attach_origin_orders_to_sell(sale)
 
-            # 3) Ustaw cenę produktu (tak jak miałeś)
-            product.price = price
-            product.save(update_fields=["price"])
+            # aktualizacja ceny produktu tylko jeśli produkt istnieje
+            if sale.product_id:
+                sale.product.price = price
+                sale.product.save(update_fields=["price"])
 
-        messages.success(request, "Sprzedaż zapisana (FIFO).")
+        messages.success(request, "Sprzedaż zapisana.")
 
     except ValidationError as e:
         messages.error(request, str(e))
@@ -1588,8 +1604,10 @@ def add_product_sell3(request):
         logger.exception("[ADD_SELL] ERROR")
         messages.error(request, f"Błąd zapisu sprzedaży: {e}")
 
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
 
 
 def assign_products_to_orders(year=None, row=None, division=None):
