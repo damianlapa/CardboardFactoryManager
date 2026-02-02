@@ -31,11 +31,11 @@ class Command(BaseCommand):
         apply = bool(opts["apply"])
         target_date = datetime.date.fromisoformat(opts["date"])
 
-        sells = ProductSell3.objects.filter(
+        sells_qs = ProductSell3.objects.filter(
             customer_alter_name="INVENTORY_ADJUSTMENT_RECONCILE"
         )
 
-        count = sells.count()
+        count = sells_qs.count()
 
         self.stdout.write("=== SHIFT INVENTORY ADJUSTMENT DATES ===")
         self.stdout.write(f"target_date = {target_date}")
@@ -47,36 +47,37 @@ class Command(BaseCommand):
             return
 
         # preview
-        for s in sells[:10]:
+        for s in sells_qs.order_by("id")[:10]:
             self.stdout.write(
                 f"SELL id={s.id} old_date={s.date} qty={s.quantity} ws_id={s.warehouse_stock_id}"
             )
         if count > 10:
             self.stdout.write("...")
 
+        # related counts preview
+        hist_cnt = WarehouseStockHistory.objects.filter(sell__in=sells_qs).count()
+        sss_cnt = StockSupplySell.objects.filter(sell__in=sells_qs).count()
+        self.stdout.write(f"related WarehouseStockHistory = {hist_cnt}")
+        self.stdout.write(f"related StockSupplySell       = {sss_cnt}")
+
         if not apply:
             self.stdout.write("\nDRY-RUN only. Re-run with --apply to execute.")
             return
 
         with transaction.atomic():
-            # 1) update ProductSell3
-            updated_sells = sells.update(date=target_date)
+            updated_sells = sells_qs.update(date=target_date)
 
-            # 2) update WarehouseStockHistory linked to those sells
+            # history linked to sells
             hist_updated = WarehouseStockHistory.objects.filter(
-                sell__in=sells
+                sell__in=sells_qs
             ).update(date=target_date)
 
-            # 3) update StockSupplySell via sell relation
-            sss_updated = StockSupplySell.objects.filter(
-                sell__in=sells
-            ).update(
-                sell__date=target_date  # safety, though sell already updated
-            )
+            # StockSupplySell has no date field -> nothing to update here.
+            # It will “follow” sell.date via relation.
 
         self.stdout.write(self.style.SUCCESS(
             f"UPDATED:\n"
-            f"- ProductSell3           : {updated_sells}\n"
-            f"- WarehouseStockHistory  : {hist_updated}\n"
-            f"- StockSupplySell (sell) : {sss_updated}"
+            f"- ProductSell3          : {updated_sells}\n"
+            f"- WarehouseStockHistory : {hist_updated}\n"
+            f"- StockSupplySell       : {sss_cnt} (no direct date field; uses sell.date)\n"
         ))
