@@ -560,19 +560,20 @@ class DeliverySpecialItem(models.Model):
                 elif 'wyprzedażowe' in str(self.delivery.name).lower():
                     warehouse = Warehouse.objects.get(name='MAGAZYN WYPRZEDAŻOWY')
 
-            # 1) superstock
-            target_stock = self.resolve_superstock()
-            if not self.stock_id:
-                self.stock = target_stock
-                self.save(update_fields=["stock"])
-
-            # 2) StockSupply (1:1 z DeliveryItem)
             if 'gotowe' in str(self.delivery.name).lower():
                 material_type = StockType.objects.get(stock_type='product', unit='PIECE')
             elif 'wyprzedażowe' in str(self.delivery.name).lower():
                 material_type = StockType.objects.get(stock_type='product', unit='PIECE')
             else:
                 material_type = StockType.objects.get(stock_type='special', unit='PIECE')
+
+            # 1) superstock
+            target_stock = self.resolve_superstock(material_type)
+            if not self.stock_id:
+                self.stock = target_stock
+                self.save(update_fields=["stock"])
+
+            # 2) StockSupply (1:1 z DeliveryItem)
 
             stock_supply, created = StockSupply.objects.get_or_create(
                 delivery_special_item=item,
@@ -625,7 +626,7 @@ class DeliverySpecialItem(models.Model):
             item.processed = True
             item.save(update_fields=["processed"])
 
-    def resolve_superstock(self) -> "Stock":
+    def resolve_superstock(self, material_type=None) -> "Stock":
         """
         Dla DeliverySpecialItem próbujemy znaleźć 'superstock' przez StockAlias:
           Provider (zmapowany z delivery.provider -> Provider.shortcut/name),
@@ -634,8 +635,10 @@ class DeliverySpecialItem(models.Model):
 
         Jeśli nie znajdziemy aliasu, fallback: Stock(name=self.name, stock_type='special').
         """
-
-        special_type = StockType.objects.get(stock_type="special", unit="PIECE")
+        if not material_type:
+            special_type = StockType.objects.get(stock_type="special", unit="PIECE")
+        else:
+            special_type = material_type
 
         raw = (self.name or "").strip()
         raw_upper = raw.upper()
@@ -697,6 +700,7 @@ class DeliverySpecialItem(models.Model):
         # 4) Fallback: stock "special" po nazwie (nie robimy tu materiałowego superstocka)
         stock, _ = Stock.objects.get_or_create(
             name=raw,
+            stock_type=special_type,
         )
         return stock
 
