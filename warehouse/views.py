@@ -563,7 +563,15 @@ class OrderDetailView(LoginRequiredMixin, View):
         warehouses = Warehouse.objects.all()
         settlements = OrderSettlement.objects.filter(order=order)
         warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
-        sales = ProductSell3.objects.filter(order=order)
+
+        sales = (
+            ProductSell3.objects
+            .filter(Q(order=order) | Q(order_parts__order=order))
+            .distinct()
+            .prefetch_related("order_parts", "order_parts__order")
+        )
+
+        print("VIEW DEBUG sales ids:", list(sales.values_list("id", flat=True))[:50])
 
         # attempt
         shifts_to = OrderToOrderShift.objects.filter(order_to=order)

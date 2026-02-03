@@ -338,6 +338,25 @@
     {% endfor %}
   </tbody>
 </table>
+<hr>
+<h3>DEBUG sales</h3>
+<div>sales type: {{ sales|default:"(brak)" }}</div>
+
+{% for s in sales %}
+  <div style="border:1px solid #ddd; padding:8px; margin:8px 0;">
+    <div><b>sell:</b> id={{ s.id }} qty={{ s.quantity }} date={{ s.date }}</div>
+    <div><b>order_parts count:</b> {{ s.order_parts.count }}</div>
+
+    {% for part in s.order_parts.all %}
+      <div>PART: order_id={{ part.order_id }} qty={{ part.quantity }}</div>
+    {% empty %}
+      <div style="color:#888;">(empty parts)</div>
+    {% endfor %}
+  </div>
+{% empty %}
+  <div>(sales empty)</div>
+{% endfor %}
+<hr>
 
 <h2>Sales</h2>
 <table>
@@ -348,8 +367,10 @@
       <th>Product</th>
       <th>Quantity</th>
       <th>Price</th>
+      <th>Sources (FIFO)</th>
     </tr>
   </thead>
+
   <tbody>
     {% for s in sales %}
     <tr>
@@ -358,6 +379,19 @@
       <td>{{ s.product }}</td>
       <td>{{ s.quantity }}</td>
       <td>{{ s.price }}</td>
+      <td>
+  {% for part in s.order_parts.all %}
+    <div>
+      <a href="{% url 'warehouse:order-detail-view' order_id=part.order_id %}">
+        Order #{{ part.order_id }}
+      </a>
+      — {{ part.quantity }}
+    </div>
+  {% empty %}
+    <span style="color:#888;">brak źródeł</span>
+  {% endfor %}
+</td>
+
     </tr>
     {% empty %}
     <tr>
@@ -366,6 +400,7 @@
     {% endfor %}
   </tbody>
 </table>
+
 <div id="bomModal" class="modal">
   <div class="modal-content">
     <span class="closebom">&times;</span>
