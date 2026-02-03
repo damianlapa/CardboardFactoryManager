@@ -412,6 +412,13 @@ class LoadWZ(LoginRequiredMixin, View):
         for o in orders:
             try:
                 order_num_split, year_num_split = o[0].split('/')
+                if len(year_num_split) != 2:
+                    _ynms = ""
+                    for char in year_num_split:
+                        if char.isnumeric():
+                            _ynms += char
+                    year_num_split = _ynms
+
                 if len(year_num_split) == 2:
                     year_num_split = '20' + year_num_split
                 if year_num_split in year_orders.keys():
