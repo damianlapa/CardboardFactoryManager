@@ -838,6 +838,9 @@ class WarehouseStock(models.Model):
             move_ws(ws=ws, delta=-qty, date=sell.date, sell=sell)
 
             # ✅ zawsze dopinaj zlecenia pochodzenia na podstawie StockSupplySell
+            print("[DEBUG FIFO SELL] created StockSupplySell count for this sell ->",
+                  StockSupplySell.objects.filter(sell=sell).count())
+
             attach_origin_orders_to_sell(sell)
 
 
@@ -1581,18 +1584,40 @@ def resolve_orders_for_supply(stock_supply):
     A: StockSupplySettlement(as_result=True) -> settlement -> order
     B: WarehouseStockHistory delta>0 dla tej stock_supply -> order_settlement.order
     """
+    print("\n[DEBUG resolve_orders_for_supply] supply_id=", stock_supply.id, "name=", stock_supply.name, "date=", stock_supply.date)
+
     # A) po settlementach wynikowych
-    order_ids = list(
+    qs_a = (
         stock_supply.stocksupplysettlement_set
         .filter(as_result=True, settlement__order_id__isnull=False)
         .values_list("settlement__order_id", flat=True)
         .distinct()
     )
-    if order_ids:
-        return order_ids
+    order_ids_a = list(qs_a)
+    print("[DEBUG resolve_orders_for_supply] A) as_result settlements ->", order_ids_a)
+
+    if order_ids_a:
+        return order_ids_a
 
     # B) fallback po historii (przyjęcie delta>0)
-    order_ids = list(
+    hist_qs = (
+        WarehouseStockHistory.objects
+        .filter(stock_supply=stock_supply, order_settlement__order_id__isnull=False)
+        .annotate(delta=F("quantity_after") - F("quantity_before"))
+        .values(
+            "id", "date",
+            "quantity_before", "quantity_after", "delta",
+            "order_settlement_id", "order_settlement__order_id",
+            "warehouse_stock_id",
+        )
+        .order_by("id")
+    )
+    hist_rows = list(hist_qs[:50])
+    print("[DEBUG resolve_orders_for_supply] B) history rows (first 50) count=", len(hist_rows))
+    for r in hist_rows:
+        print("   hist:", r)
+
+    order_ids_b = list(
         WarehouseStockHistory.objects
         .filter(stock_supply=stock_supply, order_settlement__order_id__isnull=False)
         .annotate(delta=F("quantity_after") - F("quantity_before"))
@@ -1600,7 +1625,9 @@ def resolve_orders_for_supply(stock_supply):
         .values_list("order_settlement__order_id", flat=True)
         .distinct()
     )
-    return order_ids
+    print("[DEBUG resolve_orders_for_supply] B) history delta>0 ->", order_ids_b)
+
+    return order_ids_b
 
 
 def attach_origin_orders_to_sell(sell):
@@ -1608,8 +1635,12 @@ def attach_origin_orders_to_sell(sell):
     Na podstawie StockSupplySell dopina zlecenia pochodzenia do sprzedaży.
     Zapisuje w ProductSellOrderPart.
     """
-    # ✅ czyścimy poprzednie przypisania i liczymy od nowa
-    ProductSellOrderPart.objects.filter(sell=sell).delete()
+    print("\n[DEBUG attach_origin_orders_to_sell] sell_id=", sell.id, "date=", sell.date, "qty=", sell.quantity,
+          "ws_id=", sell.warehouse_stock_id, "stock_id=", sell.stock_id)
+
+    # czyścimy poprzednie przypisania i liczymy od nowa
+    deleted = ProductSellOrderPart.objects.filter(sell=sell).delete()
+    print("[DEBUG attach_origin_orders_to_sell] cleared ProductSellOrderPart delete() ->", deleted)
 
     rows = (
         StockSupplySell.objects
@@ -1617,28 +1648,47 @@ def attach_origin_orders_to_sell(sell):
         .select_related("stock_supply")
     )
 
+    print("[DEBUG attach_origin_orders_to_sell] StockSupplySell rows count =", rows.count())
+
     agg = {}  # order_id -> qty
 
     for r in rows:
         ss = r.stock_supply
+        print("  [DEBUG attach] row_id=", r.id, "supply_id=", getattr(ss, "id", None),
+              "supply_name=", getattr(ss, "name", None), "take_qty=", r.quantity)
+
         if not ss:
-            continue
-        order_ids = resolve_orders_for_supply(ss)
-        if not order_ids:
+            print("   [DEBUG attach] NO stock_supply on row -> skip")
             continue
 
-        # zazwyczaj 1 order; jeśli będzie wiele, bierzemy pierwszy (możemy rozbić później)
+        order_ids = resolve_orders_for_supply(ss)
+        print("   [DEBUG attach] resolved order_ids ->", order_ids)
+
+        if not order_ids:
+            print("   [DEBUG attach] !!! NO order_ids for supply -> SKIP (tu ginie źródło)")
+            continue
+
         oid = order_ids[0]
         agg[oid] = agg.get(oid, 0) + int(r.quantity)
 
+    print("[DEBUG attach_origin_orders_to_sell] agg result ->", agg)
+
     for oid, q in agg.items():
         obj, created = ProductSellOrderPart.objects.get_or_create(
-            sell=sell, order_id=oid,
+            sell=sell,
+            order_id=oid,  # FK by id
             defaults={"quantity": q}
         )
+        print("  [DEBUG attach save] oid=", oid, "q=", q, "created=", created)
+
         if not created:
             obj.quantity = obj.quantity + q
             obj.save(update_fields=["quantity"])
+            print("  [DEBUG attach save] updated quantity ->", obj.quantity)
+
+    final_count = ProductSellOrderPart.objects.filter(sell=sell).count()
+    print("[DEBUG attach_origin_orders_to_sell] FINAL ProductSellOrderPart count =", final_count)
+
 
 
 class StockAlias(models.Model):
