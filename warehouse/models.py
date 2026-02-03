@@ -482,18 +482,27 @@ class DeliverySpecial(models.Model):
         ordering = ['-date', 'id']
 
     def add_to_warehouse(self, warehouse=None):
-        items = DeliverySpecialItem.objects.filter(delivery=self)
+        if not warehouse:
+            warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
+            if 'gotowe' in str(self.delivery.name).lower():
+                warehouse = Warehouse.objects.get(name='MAGAZYN WYROBÓW GOTOWYCH')
+            elif 'wyprzedażowe' in str(self.delivery.name).lower():
+                warehouse = Warehouse.objects.get(name='MAGAZYN WYPRZEDAŻOWY')
 
-        for item in items:
-            if not warehouse and not item.warehouse:
-                warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
-            elif item.warehouse:
-                warehouse = item.warehouse
-            item.add_to_warehouse(warehouse=warehouse)
+        with transaction.atomic():
+            items = (
+                DeliverySpecialItem.objects
+                .select_for_update()
+                .filter(delivery=self)
+                .select_related("delivery")  # provider jest CharField, więc bez delivery__provider
+            )
 
-        if self.check_if_processed():
-            self.processed = True
-            self.save()
+            for item in items:
+                item.add_to_warehouse(warehouse=warehouse)
+
+            if self.check_if_processed():
+                self.processed = True
+                self.save(update_fields=["processed"])
 
     def check_if_processed(self):
         items = DeliverySpecialItem.objects.filter(delivery=self)
@@ -513,6 +522,8 @@ class DeliverySpecialItem(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     processed = models.BooleanField(default=False)
+    provider_sku = models.CharField(max_length=128, null=True, blank=True)
+    stock = models.ForeignKey("Stock", null=True, blank=True, on_delete=models.PROTECT)
 
     def __str__(self):
         return f'{self.delivery} :: {self.name} :: {self.quantity}'
@@ -526,41 +537,169 @@ class DeliverySpecialItem(models.Model):
         return money(D(self.price) * D(self.quantity))
 
     def add_to_warehouse(self, warehouse=None, quantity=False):
-        if not warehouse:
-            warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
+
+        # -----------------------------------
+        with transaction.atomic():
+            quantity_to_add = int(self.quantity if not quantity else quantity)
+            if quantity_to_add <= 0:
+                raise ValidationError("Ilość przyjęcia musi być > 0")
+
+            # blokujemy item, żeby nie przyjąć drugi raz równolegle
+            item = DeliverySpecialItem.objects.select_for_update().select_related(
+                "delivery",
+            ).get(pk=self.pk)
+
+            if item.processed:
+                # idempotencja: drugi raz nic nie robi
+                return
+
+            if not warehouse:
+                warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
+                if 'gotowe' in str(self.delivery.name).lower():
+                    warehouse = Warehouse.objects.get(name='MAGAZYN WYROBÓW GOTOWYCH')
+                elif 'wyprzedażowe' in str(self.delivery.name).lower():
+                    warehouse = Warehouse.objects.get(name='MAGAZYN WYPRZEDAŻOWY')
+
+            # 1) superstock
+            target_stock = self.resolve_superstock()
+            if not self.stock_id:
+                self.stock = target_stock
+                self.save(update_fields=["stock"])
+
+            # 2) StockSupply (1:1 z DeliveryItem)
             if 'gotowe' in str(self.delivery.name).lower():
-                warehouse = Warehouse.objects.get(name='MAGAZYN WYROBÓW GOTOWYCH')
+                material_type = StockType.objects.get(stock_type='product', unit='PIECE')
             elif 'wyprzedażowe' in str(self.delivery.name).lower():
-                warehouse = Warehouse.objects.get(name='MAGAZYN WYPRZEDAŻOWY')
+                material_type = StockType.objects.get(stock_type='product', unit='PIECE')
+            else:
+                material_type = StockType.objects.get(stock_type='special', unit='PIECE')
 
-        # Create Stock Supply
-        stock_supply, created = StockSupply.objects.get_or_create(
-            stock_type=StockType.objects.get(stock_type='special', unit='PIECE'),
-            date=self.delivery.date,
-            quantity=self.quantity,
-            name=self.name,
-            value=self.calculate_value()
+            stock_supply, created = StockSupply.objects.get_or_create(
+                delivery_special_item=item,
+                defaults=dict(
+                    stock_type=material_type,
+                    date=item.delivery.date,
+                    dimensions="",
+                    quantity=quantity_to_add,
+                    name=target_stock.name,
+                    value=item.calculate_value(),
+                    used=False,
+                )
+            )
+
+            # jeśli supply istnieje, a quantity/value/date odbiegają -> aktualizujemy (spójność)
+            updates = {}
+            if stock_supply.stock_type_id != material_type.id:
+                updates["stock_type"] = material_type
+            if stock_supply.date != item.delivery.date:
+                updates["date"] = item.delivery.date
+            if stock_supply.name != target_stock.name:
+                updates["name"] = target_stock.name
+            if int(stock_supply.quantity) != int(quantity_to_add):
+                updates["quantity"] = quantity_to_add
+            new_value = item.calculate_value()
+            if stock_supply.value != new_value:
+                updates["value"] = new_value
+
+            if updates:
+                for k, v in updates.items():
+                    setattr(stock_supply, k, v)
+                stock_supply.save(update_fields=list(updates.keys()))
+
+            # 3) WarehouseStock (agregat) – blokujemy, potem ruch tylko przez move_ws
+            ws, _ = WarehouseStock.objects.get_or_create(
+                warehouse=warehouse,
+                stock=target_stock
+            )
+            ws = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
+
+            # ruch magazynowy (to ma tworzyć historię i aktualizować ilość)
+            move_ws(
+                ws=ws,
+                delta=quantity_to_add,
+                date=item.delivery.date,
+                stock_supply=stock_supply,
+            )
+
+            # 5) processed
+            item.processed = True
+            item.save(update_fields=["processed"])
+
+    def resolve_superstock(self) -> "Stock":
+        """
+        Dla DeliverySpecialItem próbujemy znaleźć 'superstock' przez StockAlias:
+          Provider (zmapowany z delivery.provider -> Provider.shortcut/name),
+          provider_sku (wyciągnięty z self.name),
+          dimensions (wyciągnięte z self.name, np. 1200x800)
+
+        Jeśli nie znajdziemy aliasu, fallback: Stock(name=self.name, stock_type='special').
+        """
+
+        special_type = StockType.objects.get(stock_type="special", unit="PIECE")
+
+        raw = (self.name or "").strip()
+        raw_upper = raw.upper()
+
+        # 1) Mapowanie provider-string -> Provider (FK)
+        #    Najpierw dokładne dopasowanie shortcut / name, potem luźniejsze contains.
+        provider_txt = (self.delivery.provider or "").strip()
+
+        provider_obj = (
+                Provider.objects.filter(
+                    Q(shortcut__iexact=provider_txt) | Q(name__iexact=provider_txt)
+                ).first()
+                or Provider.objects.filter(
+            Q(shortcut__icontains=provider_txt) | Q(name__icontains=provider_txt)
+        ).first()
         )
 
-        # Aktualizacja zapasów w magazynie
-        stock, created = Stock.objects.get_or_create(
-            name=self.name,
-            stock_type=StockType.objects.get(stock_type='special', unit='PIECE')
+        # 2) Wyciągnij dimensions (np. 1200x800) z nazwy
+        #    Dopuszczamy "1200x800", "1200X800", "1200 x 800"
+        dims = None
+        m_dims = re.search(r"(\d{2,5})\s*[xX]\s*(\d{2,5})", raw)
+        if m_dims:
+            dims = f"{m_dims.group(1)}x{m_dims.group(2)}"
+
+        # 3) Wyciągnij SKU z nazwy (pierwszy sensowny token)
+        #    Preferujemy tokeny typu T30B1TWT0372, K04, itp.
+        sku = None
+        # podziel po popularnych separatorach
+        tokens = re.split(r"[\s\|\[\]\(\)\{\},;:/\\\-]+", raw_upper)
+        tokens = [t for t in tokens if t]
+
+        # odfiltruj tokeny które są tylko liczbami oraz same wymiary
+        for t in tokens:
+            if t.isdigit():
+                continue
+            if dims and t.replace("X", "x") == dims:
+                continue
+            # preferujemy alfanumeryczne długości >= 3
+            if re.fullmatch(r"[A-Z0-9]{3,}", t):
+                sku = t
+                break
+
+        # Jeśli nie mamy provider_obj / sku / dims -> aliasu nie znajdziemy pewnie,
+        # ale spróbujemy tylko gdy mamy komplet
+        if provider_obj and sku and dims:
+            alias = (
+                StockAlias.objects.filter(
+                    provider=provider_obj,
+                    provider_sku=sku,
+                    dimensions=dims,
+                    is_active=True,
+                )
+                .select_related("stock")
+                .first()
+            )
+            if alias:
+                return alias.stock
+
+        # 4) Fallback: stock "special" po nazwie (nie robimy tu materiałowego superstocka)
+        stock, _ = Stock.objects.get_or_create(
+            name=raw,
+            stock_type=special_type,
         )
-        warehouse_stock, created = WarehouseStock.objects.get_or_create(warehouse=warehouse, stock=stock)
-
-        history, created = WarehouseStockHistory.objects.get_or_create(
-            warehouse_stock=warehouse_stock,
-            stock_supply=stock_supply,
-            quantity_before=warehouse_stock.quantity,
-            quantity_after=warehouse_stock.quantity+self.quantity
-
-        )
-
-        warehouse_stock.increase_quantity(self.quantity if not quantity else quantity)
-
-        self.processed = True
-        self.save()
+        return stock
 
 
 class StockType(models.Model):
@@ -577,6 +716,7 @@ class StockType(models.Model):
 class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
+    delivery_special_item = models.ForeignKey(DeliverySpecialItem, on_delete=models.PROTECT, null=True, blank=True)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
@@ -591,6 +731,11 @@ class StockSupply(models.Model):
                 fields=["delivery_item"],
                 condition=Q(delivery_item__isnull=False),
                 name="uniq_supply_per_delivery_item",
+            ),
+            models.UniqueConstraint(
+                fields=["delivery_special_item"],
+                condition=Q(delivery_special_item__isnull=False),
+                name="uniq_supply_per_delivery_special_item",
             )
         ]
 
