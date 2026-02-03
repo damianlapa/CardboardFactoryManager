@@ -697,7 +697,6 @@ class DeliverySpecialItem(models.Model):
         # 4) Fallback: stock "special" po nazwie (nie robimy tu materiałowego superstocka)
         stock, _ = Stock.objects.get_or_create(
             name=raw,
-            stock_type=special_type,
         )
         return stock
 
