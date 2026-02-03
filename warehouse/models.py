@@ -484,9 +484,9 @@ class DeliverySpecial(models.Model):
     def add_to_warehouse(self, warehouse=None):
         if not warehouse:
             warehouse = Warehouse.objects.get(name='MAGAZYN MATERIAŁÓW POMOCNICZYCH')
-            if 'gotowe' in str(self.delivery.name).lower():
+            if 'gotowe' in str(self.name).lower():
                 warehouse = Warehouse.objects.get(name='MAGAZYN WYROBÓW GOTOWYCH')
-            elif 'wyprzedażowe' in str(self.delivery.name).lower():
+            elif 'wyprzedażowe' in str(self.name).lower():
                 warehouse = Warehouse.objects.get(name='MAGAZYN WYPRZEDAŻOWY')
 
         with transaction.atomic():
