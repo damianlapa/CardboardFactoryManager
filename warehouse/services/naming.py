@@ -13,10 +13,17 @@ def norm_dimensions(dim: str) -> str:
     return d
 
 
+def norm_names(name: str) -> str:
+    parts = name.split('|')
+    parts = list(map(lambda x: x.strip(), parts))
+    parts[2] = parts[2].lower()
+    return " | ".join(parts)
+
+
 def build_product_name(customer: str, flute: str, dimensions: str, extra: str = "") -> str:
     customer = norm_spaces(customer).upper()
     flute = norm_spaces(flute).upper()
-    dimensions = norm_dimensions(dimensions)
+    dimensions = norm_dimensions(dimensions).lower()
     extra = norm_spaces(extra).upper()
 
     parts = [customer, flute, dimensions]

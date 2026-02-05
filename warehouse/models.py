@@ -48,7 +48,7 @@ class Product(models.Model):
 
     def clean(self):
         if self.name:
-            self.name = norm_spaces(self.name).upper()
+            self.name = norm_names(self.name)
         if self.dimensions:
             self.dimensions = norm_dimensions(self.dimensions)
         if self.flute:
@@ -58,7 +58,7 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         # zabezpieczenie nawet jak ktoś nie woła full_clean()
         if self.name:
-            self.name = norm_spaces(self.name).upper()
+            self.name = norm_names(self.name)
         if self.dimensions:
             self.dimensions = norm_dimensions(self.dimensions)
         if self.flute:
@@ -327,11 +327,6 @@ class DeliveryItem(models.Model):
                 return
 
             # blokujemy order (bo aktualizujemy delivered_quantity)
-            ### to delete ---->>>>>>>>>>>>>>>>>>
-            orderx = Order.objects.get(pk=item.order_id)
-            orderx.finished = False
-            orderx.save()
-            ### -<<<<<<<<<<<<<<<<<<
             order = Order.objects.select_for_update().get(pk=item.order_id)
 
             if not warehouse:

@@ -95,11 +95,13 @@ def load_orders(year, row=None, division=None, row_list=None):
                 provider.save()
 
             flute = get_flute(data[19].upper().strip())
-            dimensions = f'{data[12].strip()}x{data[13].strip()}'
+            # dimensions = f'{data[12].strip()}x{data[13].strip()}'
+            dimensions = f'{data[23].strip()}'
             extra = data[24].upper().strip()
             # product_name = build_product_name(customer.name, flute, dimensions, extra)
-
+            print(customer.name, flute, dimensions, extra)
             product = safe_get_or_create_product(customer.name, flute, dimensions, extra)
+            print("product", product)
 
             try:
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
@@ -1672,12 +1674,12 @@ def assign_products_to_orders(year=None, row=None, division=None):
             # Tworzymy dane produktu
             customer = Buyer.objects.get(name=data[18].upper().strip())
             flute = get_flute(data[19].upper().strip())
-            dimensions = f'{data[12].strip()}x{data[13].strip()}'
+            dimensions = f'{data[23].strip()}'
             extra = data[24].upper().strip()
             # product_name = build_product_name(customer.name, flute, dimensions, extra)
 
             product = safe_get_or_create_product(customer.name, flute, dimensions, extra)
-
+            print("dopisywanie")
             # Przypisujemy produkt do zlecenia
             order.product = product
             order.save()
