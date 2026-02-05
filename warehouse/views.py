@@ -1099,16 +1099,15 @@ class StockView(LoginRequiredMixin, View):
 
     def get(self, request, stock_id):
         stock = Stock.objects.get(id=stock_id)
-        try:
-            customer, flute, dimensions, name = list(map(lambda x: x.strip(), stock.name.split('|')))
-            product = Product.objects.get(name=stock.name)
-            orders = Order.objects.filter(product=product)
-            product_supplies = StockSupply.objects.filter(name=stock.name)
-        except ValueError:
-            dimensions = stock.name.split('[')[1].replace(']', '').lower()
-            supplies = StockSupply.objects.filter(dimensions=dimensions)
+
+        product = Product.objects.filter(name=stock.name).first()
+        orders = Order.objects.filter(product=product) if product else Order.objects.none()
+        product_supplies = StockSupply.objects.filter(name=stock.name)
+
         history = WarehouseStockHistory.objects.filter(warehouse_stock__stock=stock)
+
         return render(request, 'warehouse/stock-details.html', locals())
+
 
 
 # toremove
