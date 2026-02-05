@@ -327,6 +327,11 @@ class DeliveryItem(models.Model):
                 return
 
             # blokujemy order (bo aktualizujemy delivered_quantity)
+            ### to delete ---->>>>>>>>>>>>>>>>>>
+            orderx = Order.objects.get(pk=item.order_id)
+            orderx.finished = False
+            orderx.save()
+            ### -<<<<<<<<<<<<<<<<<<
             order = Order.objects.select_for_update().get(pk=item.order_id)
 
             if not warehouse:
