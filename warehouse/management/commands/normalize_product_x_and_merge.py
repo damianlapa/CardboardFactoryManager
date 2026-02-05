@@ -134,11 +134,11 @@ class Command(BaseCommand):
                 for model, field_name in fk_targets:
                     model.objects.filter(**{f"{field_name}_id__in": drop_ids}).update(**{f"{field_name}_id": keep_id})
 
-                # ustaw keep.name = name (już znormalizowane)
-                Product.objects.filter(id=keep_id).update(name=name)
-
-                # usuń dropy
+                # usuń dropy (po przepięciu FK)
                 Product.objects.filter(id__in=drop_ids).delete()
+
+                # dopiero teraz ustaw keep.name = canonical (już bez konfliktu unique)
+                Product.objects.filter(id=keep_id).update(name=name)
 
             merged += 1
             processed += 1
