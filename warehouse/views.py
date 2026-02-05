@@ -431,9 +431,11 @@ class LoadWZ(LoginRequiredMixin, View):
 
         for key in year_orders:
             nums = get_rows_numbers2(year_orders[key], int(key), delivery.provider)
+            print(nums)
             load_orders(key, row_list=nums)
 
             for wrong_order in wrong_orders:
+                print('wrong', wrong_order)
                 orders.remove(wrong_order)
 
         for order in orders:
@@ -451,6 +453,7 @@ class LoadWZ(LoginRequiredMixin, View):
             except Exception as e:
                 errors.append(f'Error with order {order[0]}: {str(e)}')
             try:
+                print('split', order[0])
                 order_id_num, order_id_year = order[0].split('/')
                 if len(order_id_year) > 2:
                     temp_order_id_year = ''
