@@ -1,5 +1,5 @@
 # warehouse/views.py
-
+from warehouse.services.naming import build_product_name
 from warehouse.forms import WarehouseStockFifoSellForm
 from django.shortcuts import HttpResponse
 from django.views import View
@@ -95,24 +95,17 @@ def load_orders(year, row=None, division=None, row_list=None):
 
             flute = get_flute(data[19].upper().strip())
             dimensions = f'{data[12].strip()}x{data[13].strip()}'
-            product_additional_name = data[24].upper().strip()
+            extra = data[24].upper().strip()
+            product_name = build_product_name(customer.name, flute, dimensions, extra)
 
-            if product_additional_name:
-                product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
-            else:
-                product_name = f'{customer.name} | {flute} | {data[23].lower().strip()} |'
-
-            # Pobierz lub utwórz produkt
-            try:
-                product = Product.objects.get(name=product_name)
-            except Product.DoesNotExist:
-                if all((product_name, dimensions, flute)):
-                    product = Product.objects.create(
-                        name=product_name,
-                        dimensions=dimensions,
-                        flute=flute,
-                        gsm=0  # lub odczytaj z danych, jeśli dostępne
-                    )
+            product, _ = Product.objects.get_or_create(
+                name=product_name,
+                defaults={
+                    "dimensions": dimensions,
+                    "flute": flute,
+                    "gsm": 0,
+                }
+            )
 
             try:
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
@@ -1679,27 +1672,18 @@ def assign_products_to_orders(year=None, row=None, division=None):
                 continue
 
             # Tworzymy dane produktu
-            customer_name = data[18].upper().strip()
+            customer = Buyer.objects.get(name=data[18].upper().strip())
             flute = get_flute(data[19].upper().strip())
             dimensions = f'{data[12].strip()}x{data[13].strip()}'
-            product_additional_name = data[24].upper().strip()
+            extra = data[24].upper().strip()
+            product_name = build_product_name(customer.name, flute, dimensions, extra)
 
-            if product_additional_name:
-                product_name = f'{customer_name} | {flute} | {data[23].lower().strip()} | {product_additional_name}'
-            else:
-                product_name = f'{customer_name} | {flute} | {data[23].lower().strip()} |'
-
-            if not all((product_name, dimensions, flute)):
-                result += f'Incomplete product data in row {row}<br>'
-                continue
-
-            # Szukamy lub tworzymy produkt
             product, _ = Product.objects.get_or_create(
                 name=product_name,
                 defaults={
-                    'dimensions': dimensions,
-                    'flute': flute,
-                    'gsm': 0  # możesz podmienić na konkretną wartość jeśli dostępna
+                    "dimensions": dimensions,
+                    "flute": flute,
+                    "gsm": 0,
                 }
             )
 

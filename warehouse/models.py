@@ -13,6 +13,7 @@ from django.db.models.functions import Coalesce
 from warehouse.services.stock_moves import move_ws
 import logging
 logger = logging.getLogger(__name__)
+from warehouse.services.naming import *
 
 
 UNITS = (
@@ -39,25 +40,29 @@ class Provider(models.Model):
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=128, unique=True)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
 
+    def clean(self):
+        if self.name:
+            self.name = norm_spaces(self.name).upper()
+        if self.dimensions:
+            self.dimensions = norm_dimensions(self.dimensions)
+        if self.flute:
+            self.flute = norm_spaces(self.flute).upper()
+        return super().clean()
+
     def save(self, *args, **kwargs):
-        # Normalizacja jak w Stock.save(): trim, collapse whitespace, porządkuj "|" i usuń trailing "|"
-        n = (self.name or "").strip()
-        n = " ".join(n.split())
-
-        if "|" in n:
-            parts = [p.strip() for p in n.split("|")]
-            # usuń puste końcówki (wiszący pipe na końcu)
-            while parts and parts[-1] == "":
-                parts.pop()
-            n = " | ".join(parts)
-
-        self.name = n
+        # zabezpieczenie nawet jak ktoś nie woła full_clean()
+        if self.name:
+            self.name = norm_spaces(self.name).upper()
+        if self.dimensions:
+            self.dimensions = norm_dimensions(self.dimensions)
+        if self.flute:
+            self.flute = norm_spaces(self.flute).upper()
         super().save(*args, **kwargs)
 
     def __str__(self):
