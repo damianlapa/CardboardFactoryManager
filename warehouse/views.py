@@ -479,6 +479,13 @@ class LoadWZ(LoginRequiredMixin, View):
                 )
                 delivery_item.save()
                 result.append(f'Order {order[0]} successfully linked to delivery.')
+
+                #### do usuniecia
+                orderx = Order.objects.get(provider=delivery.provider, order_id=order[0]).finished
+                orderx.finished = False
+                orderx.save()
+                ######################
+
             except Order.DoesNotExist:
                 errors.append(f'Order {order[0]} does not exist for provider {delivery.provider}.')
             except Exception as e:
