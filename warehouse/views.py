@@ -481,7 +481,7 @@ class LoadWZ(LoginRequiredMixin, View):
                 result.append(f'Order {order[0]} successfully linked to delivery.')
 
                 #### do usuniecia
-                orderx = Order.objects.get(provider=delivery.provider, order_id=order[0]).finished
+                orderx = Order.objects.get(provider=delivery.provider, order_id=order[0])
                 orderx.finished = False
                 orderx.save()
                 ######################
