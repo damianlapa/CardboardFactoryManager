@@ -290,7 +290,11 @@ class LoadWZ(LoginRequiredMixin, View):
 
                 if "Bigi" in line:
                     order_num_line = lines[num + 1]
-                    order_num = order_num_line.split(' ')[1]
+                    print(order_num_line)
+                    if len(order_num_line.split(' ')) > 1:
+                        order_num = order_num_line.split(' ')[1]
+                    else:
+                        order_num = order_num_line[2:]
                     if order_data:
                         order_data[0] = order_num
 
