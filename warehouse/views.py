@@ -1,5 +1,6 @@
 # warehouse/views.py
 from warehouse.services.naming import build_product_name
+from warehouse.services.products import safe_get_or_create_product
 from warehouse.forms import WarehouseStockFifoSellForm
 from django.shortcuts import HttpResponse
 from django.views import View
@@ -96,16 +97,9 @@ def load_orders(year, row=None, division=None, row_list=None):
             flute = get_flute(data[19].upper().strip())
             dimensions = f'{data[12].strip()}x{data[13].strip()}'
             extra = data[24].upper().strip()
-            product_name = build_product_name(customer.name, flute, dimensions, extra)
+            # product_name = build_product_name(customer.name, flute, dimensions, extra)
 
-            product, _ = Product.objects.get_or_create(
-                name=product_name,
-                defaults={
-                    "dimensions": dimensions,
-                    "flute": flute,
-                    "gsm": 0,
-                }
-            )
+            product = safe_get_or_create_product(customer.name, flute, dimensions, extra)
 
             try:
                 order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
@@ -1680,16 +1674,9 @@ def assign_products_to_orders(year=None, row=None, division=None):
             flute = get_flute(data[19].upper().strip())
             dimensions = f'{data[12].strip()}x{data[13].strip()}'
             extra = data[24].upper().strip()
-            product_name = build_product_name(customer.name, flute, dimensions, extra)
+            # product_name = build_product_name(customer.name, flute, dimensions, extra)
 
-            product, _ = Product.objects.get_or_create(
-                name=product_name,
-                defaults={
-                    "dimensions": dimensions,
-                    "flute": flute,
-                    "gsm": 0,
-                }
-            )
+            product = safe_get_or_create_product(customer.name, flute, dimensions, extra)
 
             # Przypisujemy produkt do zlecenia
             order.product = product
