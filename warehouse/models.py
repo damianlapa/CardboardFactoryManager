@@ -962,8 +962,8 @@ class WarehouseStock(models.Model):
 
             for supply in supplies:
                 sold = StockSupplySell.objects.filter(stock_supply=supply).aggregate(t=Sum("quantity"))["t"] or 0
-                settled = StockSupplySettlement.objects.filter(stock_supply=supply).aggregate(t=Sum("quantity"))[
-                              "t"] or 0
+                settled = StockSupplySettlement.objects.filter(stock_supply=supply, as_result=False).aggregate(t=Sum("quantity"))["t"] or 0
+
                 print("    breakdown -> sold:", sold, "settled:", settled)
                 if remaining <= 0:
                     break
@@ -1096,13 +1096,7 @@ class WarehouseStock(models.Model):
             if not stock_supplies:
                 raise Exception('No stock supplies for this order')
 
-            # policz dostępność po settlementach
-            total_available = 0
-            for s in stock_supplies:
-                used = \
-                StockSupplySettlement.objects.filter(stock_supply=s, as_result=False).aggregate(t=Sum("quantity"))[
-                    "t"] or 0
-                total_available += int(s.quantity) - int(used)
+            total_available = sum(int(s.available_quantity()) for s in stock_supplies)
 
             if total_available < quantity:
                 raise Exception('There is not enough material')
@@ -1115,12 +1109,8 @@ class WarehouseStock(models.Model):
                 if remaining <= 0:
                     break
 
-                already_used = (
-                        StockSupplySettlement.objects
-                        .filter(stock_supply=s, as_result=False)
-                        .aggregate(t=Sum("quantity"))["t"] or 0
-                )
-                available = int(s.quantity) - int(already_used)
+                available = int(s.available_quantity())
+
                 if available <= 0:
                     s.refresh_used_flag()
                     continue
@@ -1181,14 +1171,8 @@ class WarehouseStock(models.Model):
                 if remaining <= 0:
                     break
 
-                # ile już zeszło z tej partii (rozchody materiałowe -> u Ciebie as_result=False)
-                already_used = (
-                        StockSupplySettlement.objects
-                        .filter(stock_supply=supply, as_result=False)
-                        .aggregate(s=Sum("quantity"))["s"] or 0
-                )
+                available = int(supply.available_quantity())
 
-                available = int(supply.quantity) - int(already_used)
                 if available <= 0:
                     # cache
                     supply.refresh_used_flag()

@@ -31,7 +31,7 @@ def _receipt_finished_good(*, order, product, quantity: int, receipt_date, value
     """
     fg_wh = Warehouse.objects.get(name=FG_WAREHOUSE_NAME)
 
-    st, _ = StockType.objects.get_or_create(stock_type="Box", unit="PIECE")
+    st, _ = StockType.objects.get_or_create(stock_type="product", unit="PIECE")
 
     stock, created = Stock.objects.get_or_create(
         name=product.name,
@@ -91,23 +91,20 @@ def _receipt_finished_good(*, order, product, quantity: int, receipt_date, value
 
 
 
-def _fifo_consume_stock_supply(*, stock_name: str, quantity: int, settlement: OrderSettlement) -> Decimal:
+def _fifo_consume_stock_supply(*, stock_name: str, stock_type: StockType, quantity: int, settlement: OrderSettlement) -> Decimal:
     supplies = list(
         StockSupply.objects
-        .filter(name=stock_name, used=False)
+        .select_for_update()
+        .filter(name=stock_name, stock_type=stock_type)  # ✅ nie mieszamy typów
         .order_by("date", "id")
     )
+
     if not supplies:
         raise ValidationError(f"Brak dostaw (StockSupply) dla: {stock_name}")
 
     def supply_left(s: StockSupply) -> int:
-        used_qty = (
-            StockSupplySettlement.objects
-            .filter(stock_supply=s, as_result=False)
-            .aggregate(total=Sum("quantity"))
-            .get("total") or 0
-        )
-        return max(int(s.quantity) - int(used_qty), 0)
+        # ✅ uwzględnia: settlementy as_result=False + sprzedaże
+        return int(s.available_quantity())
 
     qty_left = int(quantity)
     consumed_value = Decimal("0.00")
@@ -115,9 +112,10 @@ def _fifo_consume_stock_supply(*, stock_name: str, quantity: int, settlement: Or
     for s in supplies:
         left = supply_left(s)
         if left <= 0:
-            s.used = True
-            s.save(update_fields=["used"])
+            s.refresh_used_flag()
             continue
+        ...
+        s.refresh_used_flag()
 
         take = min(left, qty_left)
 
@@ -132,9 +130,7 @@ def _fifo_consume_stock_supply(*, stock_name: str, quantity: int, settlement: Or
 
         qty_left -= take
 
-        if take == left:
-            s.used = True
-            s.save(update_fields=["used"])
+        s.refresh_used_flag()
 
         if qty_left == 0:
             return consumed_value
@@ -242,6 +238,7 @@ def realize_order_bom(
             # FIFO kosztowe po StockSupply (globalnie po nazwie materiału)
             total_material_value += _fifo_consume_stock_supply(
                 stock_name=ws.stock.name,
+                stock_type=ws.stock.stock_type,  # ✅ kluczowe
                 quantity=take,
                 settlement=settlement
             )
