@@ -16,7 +16,7 @@ def norm_dimensions(dim: str) -> str:
 def norm_names(name: str) -> str:
     parts = name.split('|')
     parts = list(map(lambda x: x.strip(), parts))
-    parts[2] = parts[2].lower()
+    parts[2] = parts[2].lower() if not "komplet" in parts[2].lower() else parts[2]
     return " | ".join(parts)
 
 
