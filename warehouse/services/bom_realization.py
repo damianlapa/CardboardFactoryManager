@@ -175,7 +175,7 @@ def realize_order_bom(
         raise ValidationError("To zlecenie jest już rozliczone / zrealizowane (są settlementy).")
 
     if settlement_date is None:
-        settlement_date = datetime.date.today()
+        settlement_date = order.customer_date if order.customer_date else datetime.date.today()
 
     # policz wymagania (Stock, Decimal)
     reqs = bom.requirements(order.order_quantity)
@@ -250,12 +250,12 @@ def realize_order_bom(
             # teoretycznie nie powinno się zdarzyć przez walidację total_available
             raise ValidationError(f"Nie udało się w pełni zrealizować materiału {stock.name} (brakuje {qty_left}).")
 
-        _receipt_finished_good(
-            order=order,
-            product=bom.product,
-            quantity=order.order_quantity,
-            receipt_date=settlement_date,
-            value=total_material_value,
-        )
+    _receipt_finished_good(
+        order=order,
+        product=bom.product,
+        quantity=order.order_quantity,
+        receipt_date=settlement_date,
+        value=total_material_value,
+    )
 
     return created_settlements
