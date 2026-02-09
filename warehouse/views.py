@@ -1796,7 +1796,7 @@ class CreateOrderFromBOMView(View):
         # sensowne podpowiedzi
         initial = {
             "price": int(bom.product.price) if bom.product.price else 0,
-            "name": bom.product.name,
+            "name": data[2].strip(),
             "dimensions": "0x0",
             "provider": provider,
             "customer": customer,
