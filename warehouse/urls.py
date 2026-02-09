@@ -110,3 +110,12 @@ urlpatterns += [
     path("warehouse-stock/<int:pk>/history/", WarehouseStockHistoryDetailView.as_view(), name="warehouse_stock_history"),
     path("warehouse-stock/<int:pk>/", WarehouseStockDetailView.as_view(), name="warehouse_stock_detail"),
 ]
+
+urlpatterns += [
+    path("bom/<int:bom_id>/create-order/", CreateOrderFromBOMView.as_view(), name="bom_create_order"),
+]
+
+urlpatterns += [
+    path("bom/<int:pk>/", BOMDetailView.as_view(), name="bom_detail"),
+    path("boms/", BOMListView.as_view(), name="bom_list"),
+]

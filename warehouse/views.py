@@ -1,5 +1,6 @@
 # warehouse/views.py
-from warehouse.services.naming import build_product_name
+
+from django.views.generic import ListView
 from warehouse.services.products import safe_get_or_create_product
 from warehouse.forms import WarehouseStockFifoSellForm
 from django.shortcuts import HttpResponse
@@ -1762,3 +1763,106 @@ def clear_orders(request):
         o.delivered = False
         o.finished = False
         o.save()
+
+
+# warehouse/views.py
+
+from django.views import View
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db import transaction
+import datetime
+
+from warehouse.models import BOM, Order
+from warehouse.forms import OrderFromBOMForm
+
+
+class CreateOrderFromBOMView(View):
+    """
+    Tworzy Order i automatycznie podpina:
+      - order.bom = BOM
+      - order.product = BOM.product
+    """
+    def get(self, request, bom_id: int):
+
+        from warehouse.services.orders import next_order_id_for_bom
+        bom = get_object_or_404(BOM, pk=bom_id)
+        data = bom.product.name.split("|")
+
+        customer = get_object_or_404(Buyer, name=data[0].strip())
+        provider = get_object_or_404(Provider, name="PAKER")
+        order_id = next_order_id_for_bom(bom=bom, date=datetime.date.today())
+
+        # sensowne podpowiedzi
+        initial = {
+            "price": int(bom.product.price) if bom.product.price else 0,
+            "name": bom.product.name,
+            "dimensions": "0x0",
+            "provider": provider,
+            "customer": customer,
+            "order_id": order_id
+        }
+
+        form = OrderFromBOMForm(initial=initial)
+        return render(request, "warehouse/bom_create_order.html", {"bom": bom, "form": form})
+
+    def post(self, request, bom_id: int):
+        bom = get_object_or_404(BOM, pk=bom_id)
+        form = OrderFromBOMForm(request.POST)
+
+        if not form.is_valid():
+            return render(request, "warehouse/bom_create_order.html", {"bom": bom, "form": form})
+
+        try:
+            with transaction.atomic():
+                order: Order = form.save(commit=False)
+
+                # auto-powiązania
+                order.bom = bom
+                order.product = bom.product
+
+                # pola wymagane / spójność
+                od = order.order_date or datetime.date.today()
+                order.order_year = str(od.year)
+
+                # customer_date jest wymagane w modelu
+                if not order.customer_date:
+                    order.customer_date = od
+
+                order.full_clean()
+                order.save()
+
+            messages.success(request, f"Utworzono zamówienie {order.provider} {order.order_id} z BOM: {bom}.")
+            return redirect("warehouse:order-detail-view", order_id=order.id)
+
+        except Exception as e:
+            messages.error(request, f"Nie udało się utworzyć zamówienia: {e}")
+            return render(request, "warehouse/bom_create_order.html", {"bom": bom, "form": form})
+
+
+class BOMListView(LoginRequiredMixin, ListView):
+    template_name = "warehouse/bom_list.html"
+    model = BOM
+    context_object_name = "boms"
+    paginate_by = 50
+
+    def get_queryset(self):
+        qs = (
+            BOM.objects
+            .select_related("product")
+            .order_by("-id")
+        )
+        return qs
+
+
+class BOMDetailView(LoginRequiredMixin, DetailView):
+    model = BOM
+    template_name = "warehouse/bom_detail.html"
+    context_object_name = "bom"
+
+    def get_queryset(self):
+        return (
+            BOM.objects
+            .select_related("product")
+            .prefetch_related("parts__part", "parts__part__stock_type")
+        )

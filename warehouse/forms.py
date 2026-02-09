@@ -1,7 +1,5 @@
 # warehouse/forms.py
-
 import datetime
-
 from django.forms import ModelForm, Form, FileField, inlineformset_factory, BaseInlineFormSet
 from warehouse.models import (Product, DeliverySpecialItem, DeliveryItem, Delivery, DeliveryPalette,
                               ProductComplexAssembly, ProductComplexParts, WarehouseStock, OrderToOrderShift, PriceList, PriceListItem, Provider)
@@ -9,7 +7,6 @@ from django.core.validators import FileExtensionValidator
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-
 from .models import Buyer, Order
 
 
@@ -247,6 +244,29 @@ class WarehouseStockFifoSellForm(forms.Form):
             raise ValidationError("Wybierz klienta ALBO wpisz nazwę ręcznie.")
 
         return cd
+
+
+class OrderFromBOMForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ["customer", "provider", "order_id", "order_date", "customer_date",
+                  "dimensions", "name", "order_quantity", "price", "default_pieces"]
+
+        widgets = {
+            "order_date": forms.DateInput(attrs={"type": "date"}),
+            "customer_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        today = datetime.date.today()
+        if not self.initial.get("order_date"):
+            self.initial["order_date"] = today
+        if not self.initial.get("customer_date"):
+            self.initial["customer_date"] = today
+        if not self.initial.get("default_pieces"):
+            self.initial["default_pieces"] = 1
+
 
 
 
