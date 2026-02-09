@@ -1431,7 +1431,8 @@ class ProductSell3(models.Model):
                 # ✅ materiał: nie wymuszamy product
                 # jeśli ktoś ręcznie poda product mimo braku powiązania w stocku → blokujemy (żeby nie robić śmieci)
                 if self.product_id is not None:
-                    raise ValidationError({"product": "Ten stan magazynowy nie ma powiązanego produktu (materiał)."})
+                    if self.product_id != resolved_prod.id:
+                        raise ValidationError({"product": "Wybrany produkt nie zgadza się z magazynem."})
         else:
             # jeśli nie ma warehouse_stock, to wymagamy żeby było przynajmniej product lub stock
             if not self.product_id and not getattr(self, "stock_id", None):

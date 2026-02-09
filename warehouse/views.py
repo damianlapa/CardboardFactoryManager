@@ -1800,7 +1800,8 @@ class CreateOrderFromBOMView(View):
             "dimensions": "0x0",
             "provider": provider,
             "customer": customer,
-            "order_id": order_id
+            "order_id": order_id,
+            "delivered": True
         }
 
         form = OrderFromBOMForm(initial=initial)
