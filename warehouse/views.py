@@ -1785,13 +1785,13 @@ class CreateOrderFromBOMView(View):
     """
     def get(self, request, bom_id: int):
 
-        from warehouse.services.orders import next_order_id_for_bom
+        from warehouse.services.orders import next_free_order_id_for_bom
         bom = get_object_or_404(BOM, pk=bom_id)
         data = bom.product.name.split("|")
 
         customer = get_object_or_404(Buyer, name=data[0].strip())
         provider = get_object_or_404(Provider, name="PAKER")
-        order_id = next_order_id_for_bom(bom=bom, date=datetime.date.today())
+        order_id = next_free_order_id_for_bom(bom=bom, date=datetime.date.today())
 
         # sensowne podpowiedzi
         initial = {
