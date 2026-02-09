@@ -47,10 +47,11 @@ def next_free_order_id_for_bom(
 
     final_prefix = prefix if prefix is not None else detected_prefix
     if final_prefix is None:
-        raise ValueError(
-            f"Nie da się ustalić prefixu: brak zamówień BOM w formacie <prefix><num>/{yy}. "
-            f"Podaj prefix jawnie, np. prefix='EUR'."
-        )
+        # raise ValueError(
+        #     f"Nie da się ustalić prefixu: brak zamówień BOM w formacie <prefix><num>/{yy}. "
+        #     f"Podaj prefix jawnie, np. prefix='EUR'."
+        # )
+        return ""
 
     # 2) Startujemy od kolejnego numeru dla BOM
     num = max_num_for_bom + 1
