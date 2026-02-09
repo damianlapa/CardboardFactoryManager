@@ -27,6 +27,7 @@
     {% endfor %}
   ];
 </script>
+
 <div class="order-header-container">
   <div class="left-header">
     <a href="{% url 'warehouse:generate_order_inline' order_id=order.id %}" target="_blank">
@@ -57,133 +58,104 @@
     </h2>
     <div id="results-section" style="display: none;">
     <table>
-  <thead>
-    <tr>
-      <th>Part</th>
-      <th>Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Result</td>
-      <td>{{ result }}</td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>{{ order.material_cost }}</td>
-    </tr>
+      <thead>
+        <tr>
+          <th>Part</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Result</td>
+          <td>{{ result }}</td>
+        </tr>
+        <tr>
+          <td>Materials</td>
+          <td>{{ order.material_cost }}</td>
+        </tr>
 
-    <!-- Koszty produkcji -->
-    <tr>
-      <td colspan="2"><strong>Production Costs</strong></td>
-    </tr>
-    <tr>
-      <td>– Labor</td>
-      <td>{{ cost.0 }}</td>
-    </tr>
-    <tr>
-      <td>– Energy</td>
-      <td>{{ cost.1 }}</td>
-    </tr>
-    <tr>
-      <td>– Equipment Usage</td>
-      <td>{{ cost.2 }}</td>
-    </tr>
+        <tr><td colspan="2"><strong>Production Costs</strong></td></tr>
+        <tr><td>– Labor</td><td>{{ cost.0 }}</td></tr>
+        <tr><td>– Energy</td><td>{{ cost.1 }}</td></tr>
+        <tr><td>– Equipment Usage</td><td>{{ cost.2 }}</td></tr>
 
-    <!-- Pozostałe koszty -->
-    <tr>
-      <td colspan="2"><strong>Other Costs</strong></td>
-    </tr>
-    <tr>
-      <td>– Financial</td>
-      <td>{{ other.0 }}</td>
-    </tr>
-    <tr>
-      <td>– Management</td>
-      <td>{{ other.1 }}</td>
-    </tr>
-    <tr>
-      <td>– Logistics</td>
-      <td>{{ other.2 }}</td>
-    </tr>
-    <tr>
-      <td>– Miscellaneous</td>
-      <td>{{ other.3 }}</td>
-    </tr>
-    <tr>
-      <td><strong>Total</strong></td>
-      <td><strong>{{ total_expenses }}</strong></td>
-    </tr>
-    <tr>
-      <td>Sales</td>
-      <td>{{ earnings }}</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+        <tr><td colspan="2"><strong>Other Costs</strong></td></tr>
+        <tr><td>– Financial</td><td>{{ other.0 }}</td></tr>
+        <tr><td>– Management</td><td>{{ other.1 }}</td></tr>
+        <tr><td>– Logistics</td><td>{{ other.2 }}</td></tr>
+        <tr><td>– Miscellaneous</td><td>{{ other.3 }}</td></tr>
+
+        <tr><td><strong>Total</strong></td><td><strong>{{ total_expenses }}</strong></td></tr>
+        <tr><td>Sales</td><td>{{ earnings }}</td></tr>
+      </tbody>
+    </table>
+    </div>
+
     <button id="openProductSellModal">➕︎ Add Sale</button>
-<div id="productSellModal" class="modal">
-  <div class="modal-content">
-    <span class="closesell">&times;</span>
-    <h2>Nowa sprzedaż</h2>
+    <div id="productSellModal" class="modal">
+      <div class="modal-content">
+        <span class="closesell">&times;</span>
+        <h2>Nowa sprzedaż</h2>
 
-<form method="post" action="{% url 'warehouse:add_product_sell3' %}">
-  {% csrf_token %}
+        <form method="post" action="{% url 'warehouse:add_product_sell3' %}">
+          {% csrf_token %}
 
-  <label>Product:</label>
-  <select name="product" required>
-    {% for product_sell in products_sell %}
-      {% if product_sell.id == default_product.id %}
-        <option value="{{ product_sell.id }}" selected>{{ product_sell.name }}</option>
-      {% else %}
-        <option value="{{ product_sell.id }}">{{ product_sell.name }}</option>
-      {% endif %}
-    {% endfor %}
-  </select><br>
+          <label>Product:</label>
+          <select name="product" required>
+            {% for product_sell in products_sell %}
+              {% if product_sell.id == default_product.id %}
+                <option value="{{ product_sell.id }}" selected>{{ product_sell.name }}</option>
+              {% else %}
+                <option value="{{ product_sell.id }}">{{ product_sell.name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select><br>
 
-  <label>Customer:</label>
-  <select name="customer">
-    {% for customer_sell in customers_sell %}
-      {% if customer_sell.id == default_customer.id %}
-        <option value="{{ customer_sell.id }}" selected>{{ customer_sell }}</option>
-      {% else %}
-        <option value="{{ customer_sell.id }}">{{ customer_sell }}</option>
-      {% endif %}
-    {% endfor %}
-  </select><br>
+          <label>Customer:</label>
+          <select name="customer">
+            {% for customer_sell in customers_sell %}
+              {% if customer_sell.id == default_customer.id %}
+                <option value="{{ customer_sell.id }}" selected>{{ customer_sell }}</option>
+              {% else %}
+                <option value="{{ customer_sell.id }}">{{ customer_sell }}</option>
+              {% endif %}
+            {% endfor %}
+          </select><br>
 
-  <label>Customer Alter Name:</label>
-  <input type="text" name="customer_alter_name"><br>
+          <label>Customer Alter Name:</label>
+          <input type="text" name="customer_alter_name"><br>
 
-  <label>Stock:</label>
-  <select name="warehouse_stock">
-    {% for stock_sell in warehouse_stocks_sell %}
-      {% if stock_sell.id == default_warehouse_stock.id %}
-        <option value="{{ stock_sell.id }}" selected>{{ stock_sell }}</option>
-      {% else %}
-        <option value="{{ stock_sell.id }}">{{ stock_sell }}</option>
-      {% endif %}
-    {% endfor %}
-  </select><br>
+          <label>Stock:</label>
+          <select name="warehouse_stock">
+            {% for stock_sell in warehouse_stocks_sell %}
+              {% if stock_sell.id == default_warehouse_stock.id %}
+                <option value="{{ stock_sell.id }}" selected>{{ stock_sell }}</option>
+              {% else %}
+                <option value="{{ stock_sell.id }}">{{ stock_sell }}</option>
+              {% endif %}
+            {% endfor %}
+          </select><br>
 
-  <input type="hidden" name="order" value="{{ order.id }}">
+          <input type="hidden" name="order" value="{{ order.id }}">
 
-  <label>Quantity:</label>
-  <input type="number" name="quantity_sell" min="1" value="{{ quantity }}" required><br>
+          <label>Quantity:</label>
+          <input type="number" name="quantity_sell" min="1" value="{{ quantity }}" required><br>
 
-  <label>Price:</label>
-  <input type="number" name="price_sell" step="0.01" value="{{ price }}"required><br>
+          <label>Price:</label>
+          <input type="number" name="price_sell" step="0.01" value="{{ price }}" required><br>
 
-  <label>Date:</label>
-  <input type="date" name="date_sell" value="{{ today }}" required><br>
+          <label>Date:</label>
+          <input type="date" name="date_sell" value="{{ today }}" required><br>
 
-  <input type="submit" value="Save">
-</form>
+          <input type="submit" value="Save">
+        </form>
+      </div>
+    </div>
   </div>
 </div>
-  </div>
-</div>
+
 {{ price_item.price }} // {{ order.price }}
+
 {% if not shifts %}
 <h2>Deliveries</h2>
 <table>
@@ -210,9 +182,7 @@
       <td>{{ item.calculate_value }}</td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No deliveries available.</td>
-    </tr>
+    <tr><td colspan="10">No deliveries available.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -236,9 +206,7 @@
       <td>{{ shift.get_value }}</td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No shifts available.</td>
-    </tr>
+    <tr><td colspan="10">No shifts available.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -264,9 +232,7 @@
       <td>{{ shift_f.get_value }}</td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No shifts available.</td>
-    </tr>
+    <tr><td colspan="10">No shifts available.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -304,9 +270,7 @@
       <td>{{ unit.unit_production_cost.2 }}</td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No production units available.</td>
-    </tr>
+    <tr><td colspan="10">No production units available.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -332,9 +296,7 @@
       <td>{{ w_history.date|date:"Y-m-d" }}</td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No history.</td>
-    </tr>
+    <tr><td colspan="10">No history.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -362,23 +324,20 @@
       <td>{{ s.quantity }}</td>
       <td>{{ s.price }}</td>
       <td>
-  {% for part in s.order_parts.all %}
-    <div>
-      <a href="{% url 'warehouse:order-detail-view' order_id=part.order_id %}">
-        Order #{{ part.order_id }}
-      </a>
-      — {{ part.quantity }}
-    </div>
-  {% empty %}
-    <span style="color:#888;">brak źródeł</span>
-  {% endfor %}
-</td>
-
+        {% for part in s.order_parts.all %}
+          <div>
+            <a href="{% url 'warehouse:order-detail-view' order_id=part.order_id %}">
+              Order #{{ part.order_id }}
+            </a>
+            — {{ part.quantity }}
+          </div>
+        {% empty %}
+          <span style="color:#888;">brak źródeł</span>
+        {% endfor %}
+      </td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No history.</td>
-    </tr>
+    <tr><td colspan="10">No history.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -410,10 +369,11 @@
     <form id="settleOrderForm" method="post" action="{% url 'warehouse:settle_order' order.id %}">
       {% csrf_token %}
       <input type="date" name="settlement_date" value="{{ ld|date:'Y-m-d' }}">
+
       <div class="modal-columns">
-        <!-- Kolumna dla materiałów -->
         <div class="column">
           <h3>Materials</h3>
+
           <table id="materials-table">
             <thead>
               <tr>
@@ -444,14 +404,27 @@
               {% endfor %}
             </tbody>
           </table>
+
           <div id="additional-materials-container">
             <h4>Additional Materials</h4>
+
+            <!-- ✅ SEARCH: istnieje, ale jest ukryty i NIE psuje layoutu -->
+            <div id="material-search-wrap" style="display:none; margin: 8px 0;">
+              <label style="display:block; margin-bottom:4px;">Szukaj materiału:</label>
+              <input
+                type="text"
+                id="material-search"
+                placeholder="Wpisz nazwę / wymiar / fragment..."
+                style="width:100%; padding:6px;"
+              >
+            </div>
+
             <div id="additional-materials"></div>
+
             <button type="button" id="add-material-btn">Add Material</button>
           </div>
         </div>
 
-        <!-- Kolumna dla produktów -->
         <div class="column">
           <h3>Products</h3>
           <table id="results-table">
@@ -472,10 +445,9 @@
                   <select name="product_type">
                     {% for stock_type in stock_types %}
                       {% if stock_type.stock_type == 'product' %}
-
-                      <option value="{{ stock_type.id }}" selected>{{ stock_type }}</option>
+                        <option value="{{ stock_type.id }}" selected>{{ stock_type }}</option>
                       {% else %}
-                      <option value="{{ stock_type.id }}">{{ stock_type }}</option>
+                        <option value="{{ stock_type.id }}">{{ stock_type }}</option>
                       {% endif %}
                     {% endfor %}
                   </select>
@@ -488,10 +460,9 @@
                   <select name="product_warehouse">
                     {% for warehouse in warehouses %}
                       {% if warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH' %}
-
-                      <option value="{{ warehouse.id }}" selected>{{ warehouse }}</option>
+                        <option value="{{ warehouse.id }}" selected>{{ warehouse }}</option>
                       {% else %}
-                      <option value="{{ warehouse.id }}">{{ warehouse }}</option>
+                        <option value="{{ warehouse.id }}">{{ warehouse }}</option>
                       {% endif %}
                     {% endfor %}
                   </select>
@@ -501,15 +472,16 @@
               {% endfor %}
             </tbody>
           </table>
+
           <button type="button" id="add-product-btn">Add Product</button>
         </div>
       </div>
+
       <br>
       <button type="submit" id="submit-btn">Submit</button>
     </form>
   </div>
 </div>
-
 
 <div id="shiftModal" class="modal">
   <div class="modal-content">
@@ -532,15 +504,10 @@
       <label>Quantity:</label>
       <input type="number" name="quantity" min="1" required><br>
 
-      <!-- Jeśli w modelu są dodatkowe pola (np. price, note), dodaj je tutaj -->
-
       <input type="submit" value="Save">
     </form>
   </div>
 </div>
-
-
-
 
 {% endblock %}
 {% block scripts %}
@@ -574,7 +541,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   openBtn.onclick = function () {
     modal.style.display = "block";
-    console.log('ok')
   };
 
   closeBtn.onclick = function () {
@@ -588,6 +554,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
+
 <script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
 <script src="{% static 'js/warehouse/order-details.js' %}"></script>
 <script src="{% static 'js/warehouse/bom.js' %}"></script>

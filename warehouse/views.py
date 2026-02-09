@@ -623,8 +623,19 @@ class OrderDetailView(LoginRequiredMixin, View):
 
         stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
         stock_materials = []
-        all_materials_in_warehouse = WarehouseStock.objects.filter(
-            warehouse=Warehouse.objects.get(name="MAGAZYN GŁÓWNY"))
+        main_wh = Warehouse.objects.get(name="MAGAZYN GŁÓWNY")
+
+        all_materials_in_warehouse = (
+            WarehouseStock.objects
+            .select_related("stock", "stock__stock_type", "warehouse")
+            .filter(
+                warehouse=main_wh,
+                quantity__gt=0,
+                stock__stock_type__stock_type="material",
+            )
+            .order_by("stock__name")
+        )
+
         for stock_supply in stock_supplies:
             try:
                 stock = Stock.objects.get(name=stock_supply.name)

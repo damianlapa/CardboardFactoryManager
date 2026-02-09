@@ -1092,9 +1092,26 @@ class WarehouseStock(models.Model):
             ws_material = order_settlement.material  # WarehouseStock
             order = order_settlement.order
 
-            stock_supplies = StockSupply.objects.filter(delivery_item__order=order, used=False).select_for_update()
-            if not stock_supplies:
-                raise Exception('No stock supplies for this order')
+            # 1) preferuj partie przypięte do zlecenia
+            stock_supplies = (
+                StockSupply.objects
+                .select_for_update()
+                .filter(delivery_item__order=order, used=False)
+            )
+
+            # 2) fallback: jeśli zlecenie nie ma swoich dostaw -> bierz partie po stocku z magazynu
+            if not stock_supplies.exists():
+                stock_supplies = (
+                    StockSupply.objects
+                    .select_for_update()
+                    .filter(
+                        stock_type=ws_material.stock.stock_type,
+                        name=ws_material.stock.name,
+                    )
+                )
+
+            if not stock_supplies.exists():
+                raise Exception("No stock supplies for selected warehouse stock")
 
             total_available = sum(int(s.available_quantity()) for s in stock_supplies)
 

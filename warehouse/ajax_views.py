@@ -23,8 +23,8 @@ def settle_order(request, order_id):
     if request.method == "POST":
         settlement_date = request.POST.get('settlement_date') if request.POST.get('settlement_date') else datetime.datetime.today()
         order = get_object_or_404(Order, id=order_id)
-        material_id = request.POST.get("material_id")
-        material_quantity = int(request.POST.get("material_quantity", 0))
+        # material_id = request.POST.get("material_id")
+        # material_quantity = int(request.POST.get("material_quantity", 0))
 
         material_ids = request.POST.getlist('material_id')
         material_quantities = request.POST.getlist('material_quantity')
@@ -36,17 +36,36 @@ def settle_order(request, order_id):
 
         try:
             with transaction.atomic():
-                material = WarehouseStock.objects.get(id=int(material_id))
+                settlements = []
 
-                # Create settlement
-                settlement, created = OrderSettlement.objects.get_or_create(
-                    order=order,
-                    material=material,
-                    material_quantity=material_quantity,
-                    settlement_date=settlement_date
-                )
+                for mid, qty in zip(material_ids, material_quantities):
+                    qty = int(qty or 0)
+                    if qty <= 0:
+                        continue
 
-                result, value = material.use_specified_stock_supply(settlement, material_quantity)
+                    material = WarehouseStock.objects.select_related("stock__stock_type").get(id=int(mid))
+                    if material.quantity <= 0:
+                        raise Exception("Wybrany stock ma 0 ilości.")
+                    if material.stock.stock_type.stock_type != "material":
+                        raise Exception("Wybrany stock nie jest typu material.")
+
+                    settlement = OrderSettlement.objects.create(
+                        order=order,
+                        material=material,
+                        material_quantity=qty,
+                        settlement_date=settlement_date
+                    )
+
+                    settlements.append(settlement)
+
+                total_value = 0
+
+                for settlement in settlements:
+                    _, value = WarehouseStock.use_specified_stock_supply(
+                        settlement,
+                        settlement.material_quantity
+                    )
+                    total_value += value
 
                 # Create products
                 # for stock_supply_id, quantity in zip(stock_supply_ids, stock_quantities):
@@ -73,14 +92,14 @@ def settle_order(request, order_id):
                         date=settlement_date,
                         quantity=int(product_quantity),
                         name=stock_name,
-                        value=value
+                        value=total_value
                     )
 
                     stock_supply_settlement = StockSupplySettlement.objects.create(
                         stock_supply=supply,
                         settlement=settlement,
                         quantity=int(product_quantity),
-                        value=value,
+                        value=total_value,
                         as_result=True
                     )
 
