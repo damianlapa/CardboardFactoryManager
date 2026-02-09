@@ -1221,7 +1221,13 @@ class WarehouseStockDetailView(DetailView):
         ctx["delivery_ids"] = delivery_ids
 
         # formularz FIFO (na górze)
-        ctx["fifo_sell_form"] = WarehouseStockFifoSellForm(initial={"date": datetime.datetime.now().date()})
+        last_date = self.request.session.get("last_fifo_sell_date")
+
+        ctx["fifo_sell_form"] = WarehouseStockFifoSellForm(
+            initial={
+                "date": last_date or datetime.date.today()
+            }
+        )
 
         return ctx
 
@@ -1265,6 +1271,7 @@ class WarehouseStockDetailView(DetailView):
 
                 ws_locked.fifo_sell(sale)
                 attach_origin_orders_to_sell(sale)
+                request.session["last_fifo_sell_date"] = str(cd["date"])
 
             messages.success(request, "Sprzedaż FIFO zapisana.")
         except ValidationError as e:
