@@ -143,27 +143,44 @@
       <div style="margin-top:12px; overflow:auto;">
         <table border="1" cellpadding="6" cellspacing="0" style="min-width:1000px; border-collapse:collapse;">
           <thead>
-            <tr>
-              <th>StockType ID</th>
-              <th>Name</th>
-              <th>Warehouse qty (end)</th>
-              <th>Supplies remaining qty (end)</th>
-              <th>Diff (supplies - warehouse)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in qty_mismatch_rows %}
-              <tr>
-                <td>{{ r.stock_type_id }}</td>
-                <td>{{ r.name }}</td>
-                <td style="text-align:right">{{ r.warehouse_qty_end }}</td>
-                <td style="text-align:right">{{ r.supply_qty_end }}</td>
-                <td style="text-align:right">{{ r.diff }}</td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="5">OK — stany ilościowe (sumarycznie) zgadzają się z partiami na koniec miesiąca.</td></tr>
+  <tr>
+    <th>StockType ID</th>
+    <th>Name</th>
+    <th>WS qty end (ALL)</th>
+    <th>WS qty end (tylko raport)</th>
+    <th>Supplies remaining qty (end)</th>
+    <th>Diff ALL (supplies - ws_all)</th>
+    <th>Diff raport (supplies - ws_raport)</th>
+    <th>Poza raportem (top)</th>
+  </tr>
+</thead>
+<tbody>
+  {% for r in qty_mismatch_rows %}
+    <tr>
+      <td>{{ r.stock_type_id }}</td>
+      <td>{{ r.name }}</td>
+      <td style="text-align:right">{{ r.warehouse_qty_end_all }}</td>
+      <td style="text-align:right">{{ r.warehouse_qty_end_report }}</td>
+      <td style="text-align:right">{{ r.supply_qty_end }}</td>
+      <td style="text-align:right">{{ r.diff_all }}</td>
+      <td style="text-align:right">{{ r.diff_report }}</td>
+      <td>
+        {% if r.outside_top %}
+          <div style="font-size:12px;">
+            {% for o in r.outside_top %}
+              {{ o.warehouse }}: {{ o.qty }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
-          </tbody>
+          </div>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="8">OK — stany ilościowe (ALL) zgadzają się z partiami na koniec miesiąca.</td></tr>
+  {% endfor %}
+</tbody>
+
         </table>
       </div>
       <p style="margin-top:8px;">

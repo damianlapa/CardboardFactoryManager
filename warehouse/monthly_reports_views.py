@@ -415,27 +415,76 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
         missing_dimensions_received_count = len(set(missing_dims_received))
         missing_dimensions_used_count = len(set(missing_dims_used))
 
-        # 4) Zgodność stanów: WarehouseStockHistory(end_qty) vs remaining_qty_from_supplies(end_date)
-        # robimy globalnie po stock (sumujemy wszystkie magazyny objęte raportem)
-        ws_end_by_key: dict[tuple[int, str], int] = {}
-        for ws in ws_qs:
-            key = (ws.stock.stock_type_id, ws.stock.name)
-            ws_end_by_key[key] = ws_end_by_key.get(key, 0) + int(ws.end_qty or 0)
+        # 4) Zgodność stanów: WSZYSTKIE magazyny vs partie (end_date)
+        # Ten test ma sens, bo StockSupply nie ma magazynu -> to jest globalny stan "po partiach".
 
+        # suma stanów na end_date dla WSZYSTKICH magazynów (nie tylko tych 4)
+        all_ws_end = (
+            WarehouseStock.objects
+            .select_related("stock", "stock__stock_type", "warehouse")
+            .annotate(
+                end_qty_all=Coalesce(Subquery(
+                    WarehouseStockHistory.objects
+                    .filter(warehouse_stock=OuterRef("pk"), date__lte=end_date)
+                    .order_by("-date", "-id")
+                    .values("quantity_after")[:1]
+                ), 0, output_field=IntegerField())
+            )
+        )
+
+        # mapy: key -> total qty (all warehouses) oraz key -> qty w magazynach raportu
+        ws_all_end_by_key: dict[tuple[int, str], int] = {}
+        ws_report_end_by_key: dict[tuple[int, str], int] = {}
+
+        # oraz: key -> breakdown magazynów spoza raportu (do podglądu)
+        ws_outside_breakdown: dict[tuple[int, str], list[dict]] = {}
+
+        report_wh_ids = {w.id for w in warehouses}
+
+        for ws in all_ws_end:
+            key = (ws.stock.stock_type_id, ws.stock.name)
+            q = int(ws.end_qty_all or 0)
+            if q == 0:
+                continue
+
+            ws_all_end_by_key[key] = ws_all_end_by_key.get(key, 0) + q
+
+            if ws.warehouse_id in report_wh_ids:
+                ws_report_end_by_key[key] = ws_report_end_by_key.get(key, 0) + q
+            else:
+                ws_outside_breakdown.setdefault(key, []).append({
+                    "warehouse": ws.warehouse.name,
+                    "qty": q,
+                })
+
+        # porównanie: ALL warehouses vs supplies remaining qty
         qty_mismatch_rows = []
-        for key, ws_qty in ws_end_by_key.items():
+        for key, ws_qty_all in ws_all_end_by_key.items():
             supply_qty = int(qty_end_map.get(key, 0))
-            if ws_qty != supply_qty:
+            if ws_qty_all != supply_qty:
+                outside = ws_outside_breakdown.get(key, [])
+                outside_sorted = sorted(outside, key=lambda x: x["qty"], reverse=True)[:10]
+                outside_sum = sum(x["qty"] for x in outside_sorted)
+
                 qty_mismatch_rows.append({
                     "stock_type_id": key[0],
                     "name": key[1],
-                    "warehouse_qty_end": ws_qty,
+
+                    "warehouse_qty_end_all": ws_qty_all,
+                    "warehouse_qty_end_report": int(ws_report_end_by_key.get(key, 0)),
                     "supply_qty_end": supply_qty,
-                    "diff": supply_qty - ws_qty,
+
+                    "diff_all": supply_qty - ws_qty_all,
+                    "diff_report": supply_qty - int(ws_report_end_by_key.get(key, 0)),
+
+                    "outside_top": outside_sorted,
+                    "outside_top_sum": outside_sum,
+                    "outside_count": len(outside),
                 })
 
         # sortowanie: największe rozjazdy na górę
-        qty_mismatch_rows.sort(key=lambda r: abs(r["diff"]), reverse=True)
+        qty_mismatch_rows.sort(key=lambda r: abs(r["diff_all"]), reverse=True)
+
 
         # ---------------------------------------------------------------------
         # DEBUG: tabele źródłowe
