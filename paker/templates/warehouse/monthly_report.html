@@ -35,11 +35,38 @@
 </ul>
 
 <h3>Wartość magazynów (po partiach StockSupply, na datę)</h3>
-<ul>
-  <li><b>MAGAZYN GŁÓWNY</b>: start ({{ open_date_point }}) <b>{{ main_value_start }}</b> → koniec ({{ end_date }}) <b>{{ main_value_end }}</b></li>
-  <li><b>MAGAZYN WYROBÓW GOTOWYCH</b>: start ({{ open_date_point }}) <b>{{ fg_value_start }}</b> → koniec ({{ end_date }}) <b>{{ fg_value_end }}</b></li>
-  <li><b>SUMA</b>: start <b>{{ total_value_start }}</b> → koniec <b>{{ total_value_end }}</b></li>
-</ul>
+
+<table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr>
+      <th>Magazyn</th>
+      <th>Start ({{ open_date_point }})</th>
+      <th>Koniec ({{ end_date }})</th>
+      <th>Zmiana</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w in warehouse_values %}
+      <tr>
+        <td><b>{{ w.name }}</b></td>
+        <td style="text-align:right">{{ w.start }}</td>
+        <td style="text-align:right">{{ w.end }}</td>
+        <td style="text-align:right">{{ w.diff }}</td>
+      </tr>
+    {% endfor %}
+    <tr>
+      <td><b>SUMA</b></td>
+      <td style="text-align:right"><b>{{ total_value_start }}</b></td>
+      <td style="text-align:right"><b>{{ total_value_end }}</b></td>
+      <td style="text-align:right"><b>{{ total_value_diff }}</b></td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="margin-top:10px;">
+  <b>Zmiana wartości zapasów (wzrost/spadek): {{ total_value_diff }}</b>
+</p>
+
 
 <h3>Sprzedaż</h3>
 <ul>

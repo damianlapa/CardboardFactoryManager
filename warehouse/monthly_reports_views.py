@@ -24,6 +24,15 @@ from warehouse.models import (
 
 WAREHOUSE_MAIN = "MAGAZYN GŁÓWNY"
 WAREHOUSE_FG = "MAGAZYN WYROBÓW GOTOWYCH"
+WAREHOUSE_AUX = "MAGAZYN MATERIAŁÓW POMOCNICZYCH"
+WAREHOUSE_CLEARANCE = "MAGAZYN WYPRZEDAŻOWY"
+
+WAREHOUSE_NAMES = [
+    WAREHOUSE_MAIN,
+    WAREHOUSE_FG,
+    WAREHOUSE_AUX,
+    WAREHOUSE_CLEARANCE,
+]
 
 # Jeśli u Ciebie tektura ma inny typ niż "material", zmień tutaj (w jednym miejscu).
 CARDBOARD_STOCKTYPE = "material"
@@ -164,13 +173,20 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
 
         debug = request.GET.get("debug") == "1"
 
-        wh_main = Warehouse.objects.get(name=WAREHOUSE_MAIN)
-        wh_fg = Warehouse.objects.get(name=WAREHOUSE_FG)
+        warehouses = list(Warehouse.objects.filter(name__in=WAREHOUSE_NAMES))
+        wh_by_name = {w.name: w for w in warehouses}
+
+        # jeśli któregoś brakuje w DB, poleci DoesNotExist wcześniej — tutaj masz łagodniej:
+        missing = [n for n in WAREHOUSE_NAMES if n not in wh_by_name]
+        if missing:
+            raise ValueError(f"Brak magazynów w DB: {missing}")
+
+        wh_main = wh_by_name[WAREHOUSE_MAIN]
 
         ws_qs = (
             WarehouseStock.objects
             .select_related("warehouse", "stock", "stock__stock_type")
-            .filter(warehouse__in=[wh_main, wh_fg])
+            .filter(warehouse__in=warehouses)
         )
 
         # --- ilości (start/end) z historii magazynu ---
@@ -308,13 +324,28 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
                 total += mp.get((ws.stock.stock_type_id, ws.stock.name), Decimal("0.00"))
             return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        main_value_start = value_for_warehouse(wh_main, value_start_map)
-        main_value_end = value_for_warehouse(wh_main, value_end_map)
-        fg_value_start = value_for_warehouse(wh_fg, value_start_map)
-        fg_value_end = value_for_warehouse(wh_fg, value_end_map)
+        warehouse_values = []
+        total_value_start = Decimal("0.00")
+        total_value_end = Decimal("0.00")
 
-        total_value_start = (main_value_start + fg_value_start).quantize(Decimal("0.01"))
-        total_value_end = (main_value_end + fg_value_end).quantize(Decimal("0.01"))
+        for w in warehouses:
+            v_start = value_for_warehouse(w, value_start_map)
+            v_end = value_for_warehouse(w, value_end_map)
+            v_diff = (v_end - v_start).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+            warehouse_values.append({
+                "name": w.name,
+                "start": v_start,
+                "end": v_end,
+                "diff": v_diff,
+            })
+
+            total_value_start += v_start
+            total_value_end += v_end
+
+        total_value_start = total_value_start.quantize(Decimal("0.01"))
+        total_value_end = total_value_end.quantize(Decimal("0.01"))
+        total_value_diff = (total_value_end - total_value_start).quantize(Decimal("0.01"))
 
         profit_per_m2 = None
         if processed_material_m2 > 0:
@@ -352,12 +383,10 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             "processed_material_m2": processed_material_m2,
             "processed_material_value": processed_material_value,
 
-            "main_value_start": main_value_start,
-            "main_value_end": main_value_end,
-            "fg_value_start": fg_value_start,
-            "fg_value_end": fg_value_end,
+            "warehouse_values": warehouse_values,
             "total_value_start": total_value_start,
             "total_value_end": total_value_end,
+            "total_value_diff": total_value_diff,
 
             "sales_revenue": sales_revenue,
             "sales_cogs": sales_cogs,
