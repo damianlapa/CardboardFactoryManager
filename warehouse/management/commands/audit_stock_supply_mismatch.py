@@ -91,19 +91,25 @@ class Command(BaseCommand):
         if name_contains:
             ws_qs = ws_qs.filter(stock__name__icontains=name_contains)
 
-        ws_rows = list(ws_qs.only("id", "warehouse_id", "warehouse__name", "stock__name", "stock__stock_type_id", "ws_qty"))
+        ws_rows = list(
+            ws_qs.values(
+                "warehouse__name",
+                "stock__name",
+                "stock__stock_type_id",
+                "ws_qty",
+            )
+        )
 
-        # mapy: key -> qty oraz breakdown key-> list(warehouse, qty)
         ws_all_by_key = defaultdict(int)
         ws_breakdown_by_key = defaultdict(list)
 
-        for ws in ws_rows:
-            qty = int(ws.ws_qty or 0)
+        for row in ws_rows:
+            qty = int(row["ws_qty"] or 0)
             if qty == 0:
                 continue
-            key = (ws.stock.stock_type_id, ws.stock.name)
+            key = (row["stock__stock_type_id"], row["stock__name"])
             ws_all_by_key[key] += qty
-            ws_breakdown_by_key[key].append((ws.warehouse.name, qty))
+            ws_breakdown_by_key[key].append((row["warehouse__name"], qty))
 
         # ------------------------------------------------------------
         # 2) Supplies remaining qty @ date: supply.qty - settled_to_date - sold_to_date
