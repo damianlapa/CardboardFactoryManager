@@ -7,7 +7,10 @@ from warehouse.models import WarehouseStock, WarehouseStockHistory
 
 
 class Command(BaseCommand):
-    help = "Znajduje WarehouseStock, dla których symulacja historii (delta) schodzi poniżej 0 i wypisuje pełną historię."
+    help = (
+        "Znajduje WarehouseStock, dla których symulacja historii (delta) schodzi poniżej 0. "
+        "Symulacja startuje od opening = quantity_before pierwszego wpisu historii (realny opening)."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument("--limit", type=int, default=50, help="Ile WS wypisać (domyślnie 50).")
@@ -17,7 +20,7 @@ class Command(BaseCommand):
         parser.add_argument("--to-date", type=str, default=None, help="Filtruj historię do daty YYYY-MM-DD (opcjonalnie).")
         parser.add_argument("--only-negative", action="store_true", help="Wypisuj tylko wiersze, gdzie calc_after < 0.")
         parser.add_argument("--show-ok-prefix", action="store_true", help="Pokaż też wiersze przed pierwszym zejściem < 0.")
-        parser.add_argument("--verbose", action="store_true", help="Dodatkowe info (min_running, first_negative).")
+        parser.add_argument("--verbose", action="store_true", help="Dodatkowe info (opening, min_running, first_negative).")
 
     def handle(self, *args, **opts):
         limit_ws = opts["limit"]
@@ -41,7 +44,7 @@ class Command(BaseCommand):
         found = 0
         checked = 0
 
-        self.stdout.write("=== AUDIT NEGATIVE WS HISTORY (delta simulation, start=0) ===")
+        self.stdout.write("=== AUDIT NEGATIVE WS HISTORY (delta simulation, start=FIRST.quantity_before) ===")
         if from_date or to_date:
             self.stdout.write(f"Range: {from_date or '-inf'} .. {to_date or '+inf'}")
         self.stdout.write("")
@@ -68,9 +71,11 @@ class Command(BaseCommand):
             if not rows:
                 continue
 
-            # symulacja: running od 0
-            running = 0
-            min_running = 0
+            opening = int(rows[0]["quantity_before"] or 0)
+
+            # symulacja: running startuje od opening
+            running = opening
+            min_running = running
             first_negative_idx: Optional[int] = None
 
             calc = []
@@ -88,7 +93,7 @@ class Command(BaseCommand):
                 calc.append((calc_before, calc_after))
 
             if first_negative_idx is None:
-                continue  # OK, nigdy nie schodzi poniżej 0
+                continue  # OK, nigdy nie schodzi poniżej 0 (przy realnym opening)
 
             found += 1
             if found > limit_ws:
@@ -97,10 +102,11 @@ class Command(BaseCommand):
             # Nagłówek WS
             self.stdout.write("--------------------------------------------------------------------------------")
             self.stdout.write(
-                f"[{found}] WS id={ws.id} | wh='{ws.warehouse.name}' | stock_type_id={ws.stock.stock_type_id} | name='{ws.stock.name}' | ws.quantity(now)={ws.quantity}"
+                f"[{found}] WS id={ws.id} | wh='{ws.warehouse.name}' | stock_type_id={ws.stock.stock_type_id} | "
+                f"name='{ws.stock.name}' | ws.quantity(now)={ws.quantity}"
             )
             if verbose:
-                self.stdout.write(f"    min_running={min_running} | first_negative_row_index={first_negative_idx+1}")
+                self.stdout.write(f"    opening(first DB before)={opening} | min_running={min_running} | first_negative_row_index={first_negative_idx+1}")
 
             self.stdout.write("    HISTORY:")
             self.stdout.write("    # | date       | delta | DB(before->after) | CALC(before->after) | refs")
@@ -143,7 +149,7 @@ class Command(BaseCommand):
 
         self.stdout.write("")
         self.stdout.write(f"Checked WS: {checked}")
-        self.stdout.write(f"Found negative histories: {found}")
+        self.stdout.write(f"Found true negative histories: {found}")
         self.stdout.write("=== END ===")
 
     @staticmethod
