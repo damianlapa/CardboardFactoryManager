@@ -1,3 +1,5 @@
+# warehouse/urls.py
+
 from django.urls import path
 from warehouse.views import *
 from warehouse.ajax_views import *
@@ -7,6 +9,7 @@ from warehouse.create_order_views import GenerateOrderInlineView
 from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
 from warehouse.product_complex_views import *
 from warehouse.price_list_view import PriceListUploadView
+from warehouse.monthly_reports_views import MonthlyWarehouseReportView
 
 
 app_name = 'warehouse'
@@ -118,4 +121,8 @@ urlpatterns += [
 urlpatterns += [
     path("bom/<int:pk>/", BOMDetailView.as_view(), name="bom_detail"),
     path("boms/", BOMListView.as_view(), name="bom_list"),
+]
+
+urlpatterns += [
+    path("monthly-report/", MonthlyWarehouseReportView.as_view(), name="monthly_report"),
 ]

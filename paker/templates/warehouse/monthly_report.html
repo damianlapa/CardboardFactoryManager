@@ -1,0 +1,71 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+
+<h2>Raport miesięczny: {{ year }}-{{ month|stringformat:"02d" }}</h2>
+<p>Okres: {{ start_date }} – {{ end_date }}</p>
+
+<form method="get" style="margin: 12px 0;">
+  <label>Rok: <input type="number" name="year" value="{{ year }}" style="width:90px;"></label>
+  <label>Miesiąc: <input type="number" name="month" value="{{ month }}" min="1" max="12" style="width:70px;"></label>
+  <button type="submit">Pokaż</button>
+</form>
+
+<hr>
+
+<h3>Stany magazynów</h3>
+<ul>
+  <li><b>MAGAZYN GŁÓWNY</b>: start {{ main_start }}, koniec {{ main_end }}, różnica {{ main_diff }}</li>
+  <li><b>MAGAZYN WYROBÓW GOTOWYCH</b>: start {{ fg_start }}, koniec {{ fg_end }}, różnica {{ fg_diff }}</li>
+  <li><b>SUMA</b>: start {{ total_start }}, koniec {{ total_end }}, różnica {{ total_diff }}</li>
+</ul>
+
+<h3>Produkcja (przetworzenie materiału)</h3>
+<ul>
+  <li>Zużyty materiał (qty): <b>{{ processed_material_qty }}</b></li>
+  <li>Wartość zużytego materiału: <b>{{ processed_material_value }}</b></li>
+</ul>
+
+<h3>Sprzedaż</h3>
+<ul>
+  <li>Przychód: <b>{{ sales_revenue }}</b></li>
+  <li>COGS: <b>{{ sales_cogs }}</b></li>
+  <li>Zysk: <b>{{ sales_profit }}</b></li>
+</ul>
+
+<hr>
+
+<h3>Szczegóły (pozycje z ruchem)</h3>
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Magazyn</th>
+      <th>Stock</th>
+      <th>Unit</th>
+      <th>Start</th>
+      <th>Koniec</th>
+      <th>Różnica</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.warehouse }}</td>
+        <td>{{ r.stock }}</td>
+        <td>{{ r.unit }}</td>
+        <td style="text-align:right">{{ r.start_qty }}</td>
+        <td style="text-align:right">{{ r.end_qty }}</td>
+        <td style="text-align:right">{{ r.diff_qty }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Brak danych w tym okresie.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
