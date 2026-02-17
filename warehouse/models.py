@@ -1570,6 +1570,7 @@ class WarehouseStockHistory(models.Model):
     stock_supply = models.ForeignKey(StockSupply, on_delete=models.PROTECT, null=True, blank=True)
     order_settlement = models.ForeignKey(OrderSettlement, on_delete=models.PROTECT, null=True, blank=True)
     assembly = models.ForeignKey(ProductComplexAssembly, on_delete=models.PROTECT, null=True, blank=True)
+    delta = models.IntegerField(default=0)
     quantity_before = models.PositiveIntegerField(default=0)
     quantity_after = models.PositiveIntegerField(default=0)
     date = models.DateField(null=True, blank=True)
