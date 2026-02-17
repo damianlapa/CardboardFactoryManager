@@ -21,6 +21,14 @@ from warehouse.models import (
     ProductSell3,
 )
 
+DEBUG_STOCKS = [
+    ("MERIDA | BC | KÓŁKA", 34),
+    ("TFP T5BC1PWP0749[1600x470]", 1),
+    ("FIBRO | B | 1050x470", 34),
+    ("TFP T30B1TWT0341[1050x470]", 1),
+    ("AQ 3B450A2[1939x612]", 1),
+]
+
 
 WAREHOUSE_MAIN = "MAGAZYN GŁÓWNY"
 WAREHOUSE_FG = "MAGAZYN WYROBÓW GOTOWYCH"
@@ -508,7 +516,103 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             if (ws.start_qty or ws.end_qty or ws.diff_qty)
         ]
 
+        # ---------------------------------------------------------------------
+        # SZCZEGÓŁOWA ANALIZA WYBRANYCH POZYCJI
+        # ---------------------------------------------------------------------
+
+        selected_stock_analysis = []
+
+        for name, stock_type_id in DEBUG_STOCKS:
+
+            # 1️⃣ wszystkie partie do end_date
+            supplies = list(
+                StockSupply.objects
+                .filter(
+                    name=name,
+                    stock_type_id=stock_type_id,
+                    date__lte=end_date
+                )
+            )
+
+            supply_ids = [s.id for s in supplies]
+
+            total_supply_qty = sum(int(s.quantity or 0) for s in supplies)
+            total_supply_value = sum(Decimal(s.value or 0) for s in supplies)
+
+            # 2️⃣ settled
+            settled_map = {
+                row["stock_supply_id"]: int(row["s"] or 0)
+                for row in (
+                    StockSupplySettlement.objects
+                    .filter(stock_supply_id__in=supply_ids)
+                    .values("stock_supply_id")
+                    .annotate(s=Sum("quantity"))
+                )
+            }
+
+            # 3️⃣ sold
+            sold_map = {
+                row["stock_supply_id"]: int(row["s"] or 0)
+                for row in (
+                    StockSupplySell.objects
+                    .filter(stock_supply_id__in=supply_ids)
+                    .values("stock_supply_id")
+                    .annotate(s=Sum("quantity"))
+                )
+            }
+
+            total_settled = sum(settled_map.values())
+            total_sold = sum(sold_map.values())
+
+            total_remaining = total_supply_qty - total_settled - total_sold
+
+            # 4️⃣ WarehouseStock ALL magazyny
+            ws_rows = (
+                WarehouseStock.objects
+                .select_related("warehouse", "stock", "stock__stock_type")
+                .filter(
+                    stock__name=name,
+                    stock__stock_type_id=stock_type_id
+                )
+            )
+
+            ws_total_qty = 0
+            ws_breakdown = []
+
+            for ws in ws_rows:
+                end_qty = (
+                    WarehouseStockHistory.objects
+                    .filter(warehouse_stock=ws, date__lte=end_date)
+                    .order_by("-date", "-id")
+                    .values_list("quantity_after", flat=True)
+                    .first()
+                )
+                end_qty = int(end_qty or 0)
+
+                if end_qty != 0:
+                    ws_total_qty += end_qty
+                    ws_breakdown.append({
+                        "warehouse": ws.warehouse.name,
+                        "qty": end_qty
+                    })
+
+            selected_stock_analysis.append({
+                "name": name,
+                "stock_type_id": stock_type_id,
+
+                "supplies_count": len(supplies),
+                "supply_total_qty": total_supply_qty,
+                "supply_total_value": total_supply_value,
+                "settled_total": total_settled,
+                "sold_total": total_sold,
+                "remaining_from_supplies": total_remaining,
+
+                "warehouse_total_qty": ws_total_qty,
+                "warehouse_breakdown": ws_breakdown,
+            })
+
         context = {
+            "selected_stock_analysis": selected_stock_analysis,
             "year": year,
             "month": month,
             "start_date": start_date,
