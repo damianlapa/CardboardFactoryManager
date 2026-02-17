@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
 <link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
 {% endblock %}
-
 {% block content %}
 
 <h2>Raport miesięczny: {{ year }}-{{ month|stringformat:"02d" }}</h2>
@@ -18,21 +17,27 @@
   <label>Miesiąc:
     <input type="number" name="month" value="{{ month }}" min="1" max="12" style="width:80px;">
   </label>
+
+  <label style="display:flex; align-items:center; gap:6px;">
+    <input type="checkbox" name="debug" value="1" {% if debug %}checked{% endif %}>
+    DEBUG
+  </label>
+
   <button type="submit">Pokaż</button>
 </form>
 
 <hr>
 
-<h3>Tektura (miesiąc)</h3>
+<h3>Tektura (miesiąc) [StockType: {{ cardboard_stocktype }}]</h3>
 <ul>
   <li>Przyjęto: <b>{{ received_material_m2 }}</b> m², wartość: <b>{{ received_material_value }}</b></li>
   <li>Przetworzono (zużycie z MAGAZYN GŁÓWNY): <b>{{ processed_material_m2 }}</b> m², wartość: <b>{{ processed_material_value }}</b></li>
 </ul>
 
-<h3>Wartość magazynów (na daty)</h3>
+<h3>Wartość magazynów (po partiach StockSupply, na datę)</h3>
 <ul>
-  <li><b>MAGAZYN GŁÓWNY</b>: start <b>{{ main_value_start }}</b> → koniec <b>{{ main_value_end }}</b></li>
-  <li><b>MAGAZYN WYROBÓW GOTOWYCH</b>: start <b>{{ fg_value_start }}</b> → koniec <b>{{ fg_value_end }}</b></li>
+  <li><b>MAGAZYN GŁÓWNY</b>: start ({{ open_date_point }}) <b>{{ main_value_start }}</b> → koniec ({{ end_date }}) <b>{{ main_value_end }}</b></li>
+  <li><b>MAGAZYN WYROBÓW GOTOWYCH</b>: start ({{ open_date_point }}) <b>{{ fg_value_start }}</b> → koniec ({{ end_date }}) <b>{{ fg_value_end }}</b></li>
   <li><b>SUMA</b>: start <b>{{ total_value_start }}</b> → koniec <b>{{ total_value_end }}</b></li>
 </ul>
 
@@ -80,4 +85,171 @@
   </div>
 </details>
 
+{% if debug %}
+<hr>
+
+<h2>DEBUG – szczegółowe wyliczenia</h2>
+<p>Włączone: pokazuję rekordy źródłowe oraz wyliczenia cząstkowe (m² i wartości).</p>
+
+<details open>
+  <summary><b>1) Przyjęcia tektury – rekordy StockSupply w miesiącu</b></summary>
+  <div style="margin-top:12px;">
+    <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data</th>
+          <th>Nazwa</th>
+          <th>Qty</th>
+          <th>Value</th>
+          <th>Dimensions</th>
+          <th>m²/szt</th>
+          <th>m² total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in received_debug_rows %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.date }}</td>
+            <td>{{ r.name }}</td>
+            <td style="text-align:right">{{ r.qty }}</td>
+            <td style="text-align:right">{{ r.value }}</td>
+            <td>{{ r.dimensions }}</td>
+            <td style="text-align:right">{{ r.m2_per_unit }}</td>
+            <td style="text-align:right">{{ r.m2_total }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8">Brak rekordów StockSupply w tym miesiącu.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<details>
+  <summary><b>2) Zużycie tektury – rekordy StockSupplySettlement w miesiącu</b></summary>
+  <div style="margin-top:12px;">
+    <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Settlement ID</th>
+          <th>Settlement date</th>
+          <th>Supply ID</th>
+          <th>Supply name</th>
+          <th>Qty used</th>
+          <th>Value used</th>
+          <th>Dimensions</th>
+          <th>m²/szt</th>
+          <th>m² total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in used_debug_rows %}
+          <tr>
+            <td>{{ r.settlement_id }}</td>
+            <td>{{ r.settlement_date }}</td>
+            <td>{{ r.supply_id }}</td>
+            <td>{{ r.supply_name }}</td>
+            <td style="text-align:right">{{ r.qty_used }}</td>
+            <td style="text-align:right">{{ r.value_used }}</td>
+            <td>{{ r.dimensions }}</td>
+            <td style="text-align:right">{{ r.m2_per_unit }}</td>
+            <td style="text-align:right">{{ r.m2_total }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="9">Brak zużyć (StockSupplySettlement) w tym miesiącu.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<details>
+  <summary><b>3) Wycena magazynu na START ({{ open_date_point }}) – per StockSupply</b></summary>
+  <div style="margin-top:12px; overflow:auto;">
+    <table border="1" cellpadding="6" cellspacing="0" style="min-width:1200px; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Supply ID</th>
+          <th>Data</th>
+          <th>Nazwa</th>
+          <th>Qty</th>
+          <th>Value</th>
+          <th>Settled qty</th>
+          <th>Sold qty</th>
+          <th>Remaining qty</th>
+          <th>Remaining value</th>
+          <th>Dimensions</th>
+          <th>m²/szt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in value_start_debug_rows %}
+          <tr>
+            <td>{{ r.supply_id }}</td>
+            <td>{{ r.date }}</td>
+            <td>{{ r.name }}</td>
+            <td style="text-align:right">{{ r.qty }}</td>
+            <td style="text-align:right">{{ r.value }}</td>
+            <td style="text-align:right">{{ r.settled_qty }}</td>
+            <td style="text-align:right">{{ r.sold_qty }}</td>
+            <td style="text-align:right">{{ r.remaining_qty }}</td>
+            <td style="text-align:right">{{ r.remaining_value }}</td>
+            <td>{{ r.dimensions }}</td>
+            <td style="text-align:right">{{ r.m2_per_unit }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="11">Brak danych wyceny na start.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<details>
+  <summary><b>4) Wycena magazynu na KONIEC ({{ end_date }}) – per StockSupply</b></summary>
+  <div style="margin-top:12px; overflow:auto;">
+    <table border="1" cellpadding="6" cellspacing="0" style="min-width:1200px; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Supply ID</th>
+          <th>Data</th>
+          <th>Nazwa</th>
+          <th>Qty</th>
+          <th>Value</th>
+          <th>Settled qty</th>
+          <th>Sold qty</th>
+          <th>Remaining qty</th>
+          <th>Remaining value</th>
+          <th>Dimensions</th>
+          <th>m²/szt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in value_end_debug_rows %}
+          <tr>
+            <td>{{ r.supply_id }}</td>
+            <td>{{ r.date }}</td>
+            <td>{{ r.name }}</td>
+            <td style="text-align:right">{{ r.qty }}</td>
+            <td style="text-align:right">{{ r.value }}</td>
+            <td style="text-align:right">{{ r.settled_qty }}</td>
+            <td style="text-align:right">{{ r.sold_qty }}</td>
+            <td style="text-align:right">{{ r.remaining_qty }}</td>
+            <td style="text-align:right">{{ r.remaining_value }}</td>
+            <td>{{ r.dimensions }}</td>
+            <td style="text-align:right">{{ r.m2_per_unit }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="11">Brak danych wyceny na koniec.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+{% endif %}
+
 {% endblock %}
+
