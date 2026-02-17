@@ -1,10 +1,4 @@
-{% extends "__base3__.html" %}
-{% block style %}
-{% load static %}
-<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
-<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
-<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
-{% endblock %}
+{% extends "base.html" %}
 {% block content %}
 
 <h2>Raport miesięczny: {{ year }}-{{ month|stringformat:"02d" }}</h2>
@@ -25,6 +19,155 @@
 
   <button type="submit">Pokaż</button>
 </form>
+
+<hr>
+
+<h3>Kontrole spójności danych</h3>
+<ul>
+  <li>
+    Sprzedaże z niepełnym FIFO: <b>{{ sales_fifo_issues_count }}</b>
+    {% if sales_fifo_issues_count %}<span style="color:#b00;">(UWAGA)</span>{% endif %}
+  </li>
+  <li>
+    Partie przerochowane (zużycie+sprzedaż > qty partii): <b>{{ overused_supplies_count }}</b>
+    {% if overused_supplies_count %}<span style="color:#b00;">(UWAGA)</span>{% endif %}
+  </li>
+  <li>
+    Brak / nieparsowalne wymiary w przyjęciach tektury (m²=0): <b>{{ missing_dimensions_received_count }}</b>
+    {% if missing_dimensions_received_count %}<span style="color:#b00;">(UWAGA)</span>{% endif %}
+  </li>
+  <li>
+    Brak / nieparsowalne wymiary w zużyciach tektury (m²=0): <b>{{ missing_dimensions_used_count }}</b>
+    {% if missing_dimensions_used_count %}<span style="color:#b00;">(UWAGA)</span>{% endif %}
+  </li>
+  <li>
+    Niezgodność stanów (WarehouseStockHistory vs partie) na koniec miesiąca: <b>{{ qty_mismatch_count }}</b>
+    {% if qty_mismatch_count %}<span style="color:#b00;">(UWAGA)</span>{% endif %}
+  </li>
+</ul>
+
+<details>
+  <summary><b>Szczegóły kontroli</b></summary>
+  <div style="margin-top:12px; display:flex; flex-direction:column; gap:18px;">
+
+    <details>
+      <summary><b>1) Sprzedaże z niepełnym FIFO (expected != fifo)</b></summary>
+      <div style="margin-top:12px; overflow:auto;">
+        <table border="1" cellpadding="6" cellspacing="0" style="min-width:900px; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th>Sell ID</th>
+              <th>Data</th>
+              <th>Klient</th>
+              <th>Produkt</th>
+              <th>Expected qty</th>
+              <th>FIFO qty</th>
+              <th>Różnica</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in sales_fifo_issues %}
+              <tr>
+                <td>{{ r.sell_id }}</td>
+                <td>{{ r.date }}</td>
+                <td>{{ r.customer }}</td>
+                <td>{{ r.product }}</td>
+                <td style="text-align:right">{{ r.expected_qty }}</td>
+                <td style="text-align:right">{{ r.fifo_qty }}</td>
+                <td style="text-align:right">{{ r.diff }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7">OK — wszystkie sprzedaże mają kompletne FIFO.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details>
+      <summary><b>2) Partie przerochowane (used > qty) na koniec miesiąca</b></summary>
+      <div style="margin-top:12px; overflow:auto;">
+        <table border="1" cellpadding="6" cellspacing="0" style="min-width:1100px; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th>Supply ID</th>
+              <th>Data</th>
+              <th>Nazwa</th>
+              <th>Qty</th>
+              <th>Settled</th>
+              <th>Sold</th>
+              <th>Used</th>
+              <th>Remaining raw</th>
+              <th>Value</th>
+              <th>Dimensions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in overused_supplies %}
+              <tr>
+                <td>{{ r.supply_id }}</td>
+                <td>{{ r.date }}</td>
+                <td>{{ r.name }}</td>
+                <td style="text-align:right">{{ r.qty }}</td>
+                <td style="text-align:right">{{ r.settled_qty }}</td>
+                <td style="text-align:right">{{ r.sold_qty }}</td>
+                <td style="text-align:right">{{ r.used_qty }}</td>
+                <td style="text-align:right">{{ r.remaining_qty_raw }}</td>
+                <td style="text-align:right">{{ r.value }}</td>
+                <td>{{ r.dimensions }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="10">OK — brak partii przerochowanych.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details>
+      <summary><b>3) Braki wymiarów (przyjęcia / zużycia tektury)</b></summary>
+      <div style="margin-top:12px;">
+        <p><b>Przyjęcia (StockSupply ID, max 200):</b> {{ missing_dims_received_ids }}</p>
+        <p><b>Zużycia (StockSupply ID, max 200):</b> {{ missing_dims_used_supply_ids }}</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><b>4) Niezgodność stanów na koniec (WarehouseStockHistory vs partie)</b></summary>
+      <div style="margin-top:12px; overflow:auto;">
+        <table border="1" cellpadding="6" cellspacing="0" style="min-width:1000px; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th>StockType ID</th>
+              <th>Name</th>
+              <th>Warehouse qty (end)</th>
+              <th>Supplies remaining qty (end)</th>
+              <th>Diff (supplies - warehouse)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in qty_mismatch_rows %}
+              <tr>
+                <td>{{ r.stock_type_id }}</td>
+                <td>{{ r.name }}</td>
+                <td style="text-align:right">{{ r.warehouse_qty_end }}</td>
+                <td style="text-align:right">{{ r.supply_qty_end }}</td>
+                <td style="text-align:right">{{ r.diff }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">OK — stany ilościowe (sumarycznie) zgadzają się z partiami na koniec miesiąca.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:8px;">
+        Uwaga: to porównanie jest <b>sumaryczne po stock</b> (zlicza wszystkie magazyny z raportu) i porównuje do partii (StockSupply),
+        które nie są przypisane do magazynu. Jeśli robisz ręczne korekty stanów albo masz ruch omijający settlements/sell, tu to wyjdzie.
+      </p>
+    </details>
+
+  </div>
+</details>
 
 <hr>
 
@@ -67,12 +210,11 @@
   <b>Zmiana wartości zapasów (wzrost/spadek): {{ total_value_diff }}</b>
 </p>
 
-
 <h3>Sprzedaż</h3>
 <ul>
   <li>Przychód: <b>{{ sales_revenue }}</b></li>
-  <li>COGS: <b>{{ sales_cogs }}</b></li>
-  <li>Zysk: <b>{{ sales_profit }}</b></li>
+  <li>COGS (koszt sprzedanych): <b>{{ sales_cogs }}</b></li>
+  <li>Zysk brutto: <b>{{ sales_profit }}</b></li>
   {% if profit_per_m2 %}
     <li>Zysk / m² zużytej tektury: <b>{{ profit_per_m2 }}</b></li>
   {% endif %}
@@ -114,9 +256,7 @@
 
 {% if debug %}
 <hr>
-
 <h2>DEBUG – szczegółowe wyliczenia</h2>
-<p>Włączone: pokazuję rekordy źródłowe oraz wyliczenia cząstkowe (m² i wartości).</p>
 
 <details open>
   <summary><b>1) Przyjęcia tektury – rekordy StockSupply w miesiącu</b></summary>
@@ -203,12 +343,12 @@
           <th>Nazwa</th>
           <th>Qty</th>
           <th>Value</th>
-          <th>Settled qty</th>
-          <th>Sold qty</th>
-          <th>Remaining qty</th>
+          <th>Settled</th>
+          <th>Sold</th>
+          <th>Used</th>
+          <th>Remaining raw</th>
+          <th>Remaining</th>
           <th>Remaining value</th>
-          <th>Dimensions</th>
-          <th>m²/szt</th>
         </tr>
       </thead>
       <tbody>
@@ -221,10 +361,10 @@
             <td style="text-align:right">{{ r.value }}</td>
             <td style="text-align:right">{{ r.settled_qty }}</td>
             <td style="text-align:right">{{ r.sold_qty }}</td>
+            <td style="text-align:right">{{ r.used_qty }}</td>
+            <td style="text-align:right">{{ r.remaining_qty_raw }}</td>
             <td style="text-align:right">{{ r.remaining_qty }}</td>
             <td style="text-align:right">{{ r.remaining_value }}</td>
-            <td>{{ r.dimensions }}</td>
-            <td style="text-align:right">{{ r.m2_per_unit }}</td>
           </tr>
         {% empty %}
           <tr><td colspan="11">Brak danych wyceny na start.</td></tr>
@@ -245,12 +385,12 @@
           <th>Nazwa</th>
           <th>Qty</th>
           <th>Value</th>
-          <th>Settled qty</th>
-          <th>Sold qty</th>
-          <th>Remaining qty</th>
+          <th>Settled</th>
+          <th>Sold</th>
+          <th>Used</th>
+          <th>Remaining raw</th>
+          <th>Remaining</th>
           <th>Remaining value</th>
-          <th>Dimensions</th>
-          <th>m²/szt</th>
         </tr>
       </thead>
       <tbody>
@@ -263,10 +403,10 @@
             <td style="text-align:right">{{ r.value }}</td>
             <td style="text-align:right">{{ r.settled_qty }}</td>
             <td style="text-align:right">{{ r.sold_qty }}</td>
+            <td style="text-align:right">{{ r.used_qty }}</td>
+            <td style="text-align:right">{{ r.remaining_qty_raw }}</td>
             <td style="text-align:right">{{ r.remaining_qty }}</td>
             <td style="text-align:right">{{ r.remaining_value }}</td>
-            <td>{{ r.dimensions }}</td>
-            <td style="text-align:right">{{ r.m2_per_unit }}</td>
           </tr>
         {% empty %}
           <tr><td colspan="11">Brak danych wyceny na koniec.</td></tr>
@@ -279,4 +419,3 @@
 {% endif %}
 
 {% endblock %}
-

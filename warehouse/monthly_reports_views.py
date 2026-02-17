@@ -72,15 +72,17 @@ def supply_effective_dimensions(ss: StockSupply) -> str | None:
 def supplies_value_at_date_for_keys(
     keys: set[tuple[int, str]],
     date_point: datetime.date
-) -> tuple[dict[tuple[int, str], Decimal], dict[int, dict]]:
+) -> tuple[dict[tuple[int, str], Decimal], dict[int, dict], dict[tuple[int, str], int]]:
     """
     Wycena stanów na konkretną datę (po partiach StockSupply).
+
     Zwraca:
-      - mapa: (stock_type_id, name) -> remaining_value_at_date
-      - debug mapa per supply_id (żeby pokazać jak wyliczyło remaining qty/value)
+      - value_map: (stock_type_id, name) -> remaining_value_at_date
+      - debug_supply: supply_id -> szczegóły obliczeń
+      - qty_map: (stock_type_id, name) -> remaining_qty_at_date  (sumarycznie po partiach)
     """
     if not keys:
-        return {}, {}
+        return {}, {}, {}
 
     stock_type_ids = sorted({k[0] for k in keys})
     names = sorted({k[1] for k in keys})
@@ -94,7 +96,7 @@ def supplies_value_at_date_for_keys(
 
     supply_ids = [s.id for s in supplies]
     if not supply_ids:
-        return {}, {}
+        return {}, {}, {}
 
     settled_map = {
         row["stock_supply_id"]: int(row["s"] or 0)
@@ -116,7 +118,8 @@ def supplies_value_at_date_for_keys(
         )
     }
 
-    out: dict[tuple[int, str], Decimal] = {}
+    value_map: dict[tuple[int, str], Decimal] = {}
+    qty_map: dict[tuple[int, str], int] = {}
     debug_supply: dict[int, dict] = {}
 
     for s in supplies:
@@ -127,7 +130,10 @@ def supplies_value_at_date_for_keys(
         settled = settled_map.get(s.id, 0)
         sold = sold_map.get(s.id, 0)
         used = settled + sold
-        remaining = max(0, qty - used)
+
+        overused = used > qty
+        remaining_raw = qty - used  # może być ujemne
+        remaining = max(0, remaining_raw)
 
         value = Decimal(s.value or 0)
         rem_value = Decimal("0.00")
@@ -135,8 +141,12 @@ def supplies_value_at_date_for_keys(
             rem_value = (value * Decimal(remaining) / Decimal(qty)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         key = (s.stock_type_id, s.name)
+
         if remaining > 0:
-            out[key] = out.get(key, Decimal("0.00")) + rem_value
+            value_map[key] = value_map.get(key, Decimal("0.00")) + rem_value
+            qty_map[key] = qty_map.get(key, 0) + remaining
+        else:
+            qty_map.setdefault(key, 0)
 
         dim = supply_effective_dimensions(s)
         debug_supply[s.id] = {
@@ -148,13 +158,20 @@ def supplies_value_at_date_for_keys(
             "value": value,
             "settled_qty": settled,
             "sold_qty": sold,
+            "used_qty": used,
+            "remaining_qty_raw": remaining_raw,
             "remaining_qty": remaining,
             "remaining_value": rem_value,
+            "overused": overused,
             "dimensions": dim,
             "m2_per_unit": dims_to_m2(dim),
         }
 
-    return out, debug_supply
+    # zaokrąglij sumaryczne wartości (dla czytelności)
+    for k in list(value_map.keys()):
+        value_map[k] = value_map[k].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    return value_map, debug_supply, qty_map
 
 
 class MonthlyWarehouseReportView(LoginRequiredMixin, View):
@@ -170,13 +187,10 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
     def get(self, request):
         year, month = self._parse_year_month(request)
         start_date, end_date = month_range(year, month)
-
         debug = request.GET.get("debug") == "1"
 
         warehouses = list(Warehouse.objects.filter(name__in=WAREHOUSE_NAMES))
         wh_by_name = {w.name: w for w in warehouses}
-
-        # jeśli któregoś brakuje w DB, poleci DoesNotExist wcześniej — tutaj masz łagodniej:
         missing = [n for n in WAREHOUSE_NAMES if n not in wh_by_name]
         if missing:
             raise ValueError(f"Brak magazynów w DB: {missing}")
@@ -226,18 +240,23 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
 
         received_material_m2 = Decimal("0.000")
         received_debug_rows = []
+        missing_dims_received = []
         for ss in received_supplies:
             dim = supply_effective_dimensions(ss)
             m2_unit = dims_to_m2(dim)
-            m2_total = (Decimal(ss.quantity or 0) * m2_unit).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+            qty = int(ss.quantity or 0)
+            m2_total = (Decimal(qty) * m2_unit).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
             received_material_m2 += m2_total
+
+            if qty > 0 and m2_unit == 0:
+                missing_dims_received.append(ss.id)
 
             if debug:
                 received_debug_rows.append({
                     "id": ss.id,
                     "date": ss.date,
                     "name": ss.name,
-                    "qty": int(ss.quantity or 0),
+                    "qty": qty,
                     "value": Decimal(ss.value or 0),
                     "dimensions": dim,
                     "m2_per_unit": m2_unit,
@@ -273,11 +292,16 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
 
         processed_material_m2 = Decimal("0.000")
         used_debug_rows = []
+        missing_dims_used = []
         for row in used_settlements:
             dim = supply_effective_dimensions(row.stock_supply)
             m2_unit = dims_to_m2(dim)
-            m2_total = (Decimal(row.quantity or 0) * m2_unit).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+            qty_used = int(row.quantity or 0)
+            m2_total = (Decimal(qty_used) * m2_unit).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
             processed_material_m2 += m2_total
+
+            if qty_used > 0 and m2_unit == 0:
+                missing_dims_used.append(row.stock_supply_id)
 
             if debug:
                 used_debug_rows.append({
@@ -285,7 +309,7 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
                     "settlement_date": row.settlement.settlement_date if row.settlement_id else None,
                     "supply_id": row.stock_supply_id,
                     "supply_name": row.stock_supply.name if row.stock_supply_id else None,
-                    "qty_used": int(row.quantity or 0),
+                    "qty_used": qty_used,
                     "value_used": Decimal(row.value or 0),
                     "dimensions": dim,
                     "m2_per_unit": m2_unit,
@@ -309,12 +333,16 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
         sales_cogs = sum((s.cogs() for s in sales), Decimal("0.00")).quantize(Decimal("0.01"))
         sales_profit = (sales_revenue - sales_cogs).quantize(Decimal("0.01"))
 
+        profit_per_m2 = None
+        if processed_material_m2 > 0:
+            profit_per_m2 = (sales_profit / processed_material_m2).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
         # --- wartość magazynów na daty (po partiach) ---
         keys = {(ws.stock.stock_type_id, ws.stock.name) for ws in ws_qs}
         open_date_point = start_date - datetime.timedelta(days=1)
 
-        value_start_map, value_start_debug = supplies_value_at_date_for_keys(keys, open_date_point)
-        value_end_map, value_end_debug = supplies_value_at_date_for_keys(keys, end_date)
+        value_start_map, value_start_debug, qty_start_map = supplies_value_at_date_for_keys(keys, open_date_point)
+        value_end_map, value_end_debug, qty_end_map = supplies_value_at_date_for_keys(keys, end_date)
 
         def value_for_warehouse(warehouse_obj: Warehouse, mp: dict[tuple[int, str], Decimal]) -> Decimal:
             total = Decimal("0.00")
@@ -347,9 +375,76 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
         total_value_end = total_value_end.quantize(Decimal("0.01"))
         total_value_diff = (total_value_end - total_value_start).quantize(Decimal("0.01"))
 
-        profit_per_m2 = None
-        if processed_material_m2 > 0:
-            profit_per_m2 = (sales_profit / processed_material_m2).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+        # ---------------------------------------------------------------------
+        # KONTROLE SPÓJNOŚCI (najważniejsze do zaufania do raportu)
+        # ---------------------------------------------------------------------
+
+        # 1) FIFO kompletność sprzedaży
+        sales_ids = [s.id for s in sales]
+        fifo_map = {
+            row["sell_id"]: int(row["s"] or 0)
+            for row in (
+                StockSupplySell.objects
+                .filter(sell_id__in=sales_ids)
+                .values("sell_id")
+                .annotate(s=Sum("quantity"))
+            )
+        }
+        sales_fifo_issues = []
+        for s in sales:
+            fifo_qty = fifo_map.get(s.id, 0)
+            expected = int(s.quantity or 0)
+            if fifo_qty != expected:
+                sales_fifo_issues.append({
+                    "sell_id": s.id,
+                    "date": s.date,
+                    "customer": getattr(s.customer, "name", str(s.customer)) if getattr(s, "customer", None) else "",
+                    "product": getattr(s, "product", None).name if getattr(s, "product", None) else "",
+                    "expected_qty": expected,
+                    "fifo_qty": fifo_qty,
+                    "diff": fifo_qty - expected,
+                })
+
+        # 2) Partie przerochowane (used > qty) — sprawdzamy na END
+        overused_supplies = [
+            d for d in value_end_debug.values()
+            if d.get("overused")
+        ]
+
+        # 3) Missing/nieparsowalne dimensions (m²=0)
+        missing_dimensions_received_count = len(set(missing_dims_received))
+        missing_dimensions_used_count = len(set(missing_dims_used))
+
+        # 4) Zgodność stanów: WarehouseStockHistory(end_qty) vs remaining_qty_from_supplies(end_date)
+        # robimy globalnie po stock (sumujemy wszystkie magazyny objęte raportem)
+        ws_end_by_key: dict[tuple[int, str], int] = {}
+        for ws in ws_qs:
+            key = (ws.stock.stock_type_id, ws.stock.name)
+            ws_end_by_key[key] = ws_end_by_key.get(key, 0) + int(ws.end_qty or 0)
+
+        qty_mismatch_rows = []
+        for key, ws_qty in ws_end_by_key.items():
+            supply_qty = int(qty_end_map.get(key, 0))
+            if ws_qty != supply_qty:
+                qty_mismatch_rows.append({
+                    "stock_type_id": key[0],
+                    "name": key[1],
+                    "warehouse_qty_end": ws_qty,
+                    "supply_qty_end": supply_qty,
+                    "diff": supply_qty - ws_qty,
+                })
+
+        # sortowanie: największe rozjazdy na górę
+        qty_mismatch_rows.sort(key=lambda r: abs(r["diff"]), reverse=True)
+
+        # ---------------------------------------------------------------------
+        # DEBUG: tabele źródłowe
+        # ---------------------------------------------------------------------
+        value_start_debug_rows = []
+        value_end_debug_rows = []
+        if debug:
+            value_start_debug_rows = sorted(value_start_debug.values(), key=lambda d: (str(d["date"]), d["name"], d["supply_id"]))
+            value_end_debug_rows = sorted(value_end_debug.values(), key=lambda d: (str(d["date"]), d["name"], d["supply_id"]))
 
         rows = [
             {
@@ -364,45 +459,56 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             if (ws.start_qty or ws.end_qty or ws.diff_qty)
         ]
 
-        # --- DEBUG: magazyn value w rozbiciu na supply (start/end) ---
-        value_start_debug_rows = []
-        value_end_debug_rows = []
-        if debug:
-            # sortujemy, żeby łatwo kontrolować
-            value_start_debug_rows = sorted(value_start_debug.values(), key=lambda d: (str(d["date"]), d["name"], d["supply_id"]))
-            value_end_debug_rows = sorted(value_end_debug.values(), key=lambda d: (str(d["date"]), d["name"], d["supply_id"]))
-
         context = {
             "year": year,
             "month": month,
             "start_date": start_date,
             "end_date": end_date,
+            "open_date_point": open_date_point,
 
+            # tektura
+            "cardboard_stocktype": CARDBOARD_STOCKTYPE,
             "received_material_m2": received_material_m2,
             "received_material_value": received_material_value,
             "processed_material_m2": processed_material_m2,
             "processed_material_value": processed_material_value,
 
+            # magazyny wartości
             "warehouse_values": warehouse_values,
             "total_value_start": total_value_start,
             "total_value_end": total_value_end,
             "total_value_diff": total_value_diff,
 
+            # sprzedaż
             "sales_revenue": sales_revenue,
             "sales_cogs": sales_cogs,
             "sales_profit": sales_profit,
             "profit_per_m2": profit_per_m2,
 
+            # tabela ilości
             "rows": rows,
 
-            # debug
+            # --- kontrole spójności ---
+            "sales_fifo_issues": sales_fifo_issues,
+            "sales_fifo_issues_count": len(sales_fifo_issues),
+
+            "overused_supplies": sorted(overused_supplies, key=lambda d: (d["name"], d["supply_id"])),
+            "overused_supplies_count": len(overused_supplies),
+
+            "missing_dimensions_received_count": missing_dimensions_received_count,
+            "missing_dimensions_used_count": missing_dimensions_used_count,
+            "missing_dims_received_ids": sorted(set(missing_dims_received))[:200],
+            "missing_dims_used_supply_ids": sorted(set(missing_dims_used))[:200],
+
+            "qty_mismatch_rows": qty_mismatch_rows[:200],
+            "qty_mismatch_count": len(qty_mismatch_rows),
+
+            # debug flag + tabele debug
             "debug": debug,
             "received_debug_rows": received_debug_rows,
             "used_debug_rows": used_debug_rows,
             "value_start_debug_rows": value_start_debug_rows,
             "value_end_debug_rows": value_end_debug_rows,
-            "open_date_point": open_date_point,
-            "cardboard_stocktype": CARDBOARD_STOCKTYPE,
         }
 
         return render(request, self.template_name, context)
