@@ -463,6 +463,15 @@
       </ul>
 
       <h4>Magazyny (WarehouseStock ALL)</h4>
+      <h4>Historia magazynu (sumy do {{ end_date }})</h4>
+<ul>
+  <li>IN: <b>{{ s.ws_hist_in }}</b></li>
+  <li>OUT (sell): <b>{{ s.ws_hist_out_sell }}</b></li>
+  <li>OUT (settlement): <b>{{ s.ws_hist_out_settle }}</b></li>
+  <li>OUT (inne): <b>{{ s.ws_hist_out_other }}</b></li>
+  <li>IN bez stock_supply (przybyło bez partii): <b style="color:#b00;">{{ s.ws_hist_in_without_supply }}</b></li>
+</ul>
+
       <ul>
         <li>Suma qty w magazynach: <b>{{ s.warehouse_total_qty }}</b></li>
       </ul>

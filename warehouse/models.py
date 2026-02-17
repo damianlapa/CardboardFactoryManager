@@ -1207,12 +1207,22 @@ class WarehouseStock(models.Model):
                 part_value = (Decimal(str(take)) / Decimal(str(supply.quantity))) * Decimal(str(supply.value or 0))
                 part_value = part_value.quantize(Decimal("0.01"))
 
+                ws_material = settlement.material
+
                 StockSupplySettlement.objects.create(
                     settlement=settlement,
                     stock_supply=supply,
                     quantity=take,
                     as_result=False,  # to jest rozchód materiału
                     value=part_value,  # optional: u Ciebie i tak nadpisze save() -> ok
+                )
+
+                move_ws(
+                    ws=ws_material,
+                    delta=-take,
+                    date=settlement.settlement_date,
+                    stock_supply=supply,
+                    order_settlement=settlement,
                 )
 
                 # odśwież cache "used"

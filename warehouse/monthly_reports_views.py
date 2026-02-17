@@ -588,6 +588,42 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             ws_total_qty = 0
             ws_breakdown = []
 
+            # 5️⃣ Analiza historii magazynu (co naprawdę działo się w WS)
+            hist = (
+                WarehouseStockHistory.objects
+                .select_related("sell", "order_settlement", "stock_supply", "assembly")
+                .filter(
+                    warehouse_stock__stock__name=name,
+                    warehouse_stock__stock__stock_type_id=stock_type_id,
+                    date__lte=end_date,
+                )
+                .only("quantity_before", "quantity_after", "sell_id", "order_settlement_id", "stock_supply_id",
+                      "assembly_id", "date")
+            )
+
+            sum_in = 0
+            sum_out_sell = 0
+            sum_out_settle = 0
+            sum_out_other = 0
+            in_without_supply = 0
+
+            for h in hist:
+                delta = int(h.quantity_after) - int(h.quantity_before)
+                if delta > 0:
+                    sum_in += delta
+                    if not h.stock_supply_id:
+                        in_without_supply += delta
+                elif delta < 0:
+                    out = -delta
+                    if h.sell_id:
+                        sum_out_sell += out
+                    elif h.order_settlement_id:
+                        sum_out_settle += out
+                    else:
+                        sum_out_other += out
+
+
+
             for ws in ws_rows:
                 end_qty = (
                     WarehouseStockHistory.objects
@@ -606,6 +642,11 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
                     })
 
             selected_stock_analysis.append({
+                "ws_hist_in": sum_in,
+                "ws_hist_out_sell": sum_out_sell,
+                "ws_hist_out_settle": sum_out_settle,
+                "ws_hist_out_other": sum_out_other,
+                "ws_hist_in_without_supply": in_without_supply,
                 "name": name,
                 "stock_type_id": stock_type_id,
                 "remaining_raw": remaining_raw,
