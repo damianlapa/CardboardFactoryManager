@@ -457,6 +457,9 @@
         <li>Suma settled: <b>{{ s.settled_total }}</b></li>
         <li>Suma sold: <b>{{ s.sold_total }}</b></li>
         <li>Remaining z partii: <b>{{ s.remaining_from_supplies }}</b></li>
+        <li>Remaining raw (qty - settled - sold): <b>{{ s.remaining_raw }}</b>
+        {% if s.overused %}<span style="color:#b00;">(OVERUSED)</span>{% endif %}
+        </li>
       </ul>
 
       <h4>Magazyny (WarehouseStock ALL)</h4>

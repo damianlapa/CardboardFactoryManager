@@ -539,23 +539,30 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             total_supply_qty = sum(int(s.quantity or 0) for s in supplies)
             total_supply_value = sum(Decimal(s.value or 0) for s in supplies)
 
-            # 2️⃣ settled
+            # 2️⃣ settled (TYLKO rozchód) do end_date
             settled_map = {
                 row["stock_supply_id"]: int(row["s"] or 0)
                 for row in (
                     StockSupplySettlement.objects
-                    .filter(stock_supply_id__in=supply_ids)
+                    .filter(
+                        stock_supply_id__in=supply_ids,
+                        as_result=False,
+                        settlement__settlement_date__lte=end_date,
+                    )
                     .values("stock_supply_id")
                     .annotate(s=Sum("quantity"))
                 )
             }
 
-            # 3️⃣ sold
+            # 3️⃣ sold do end_date
             sold_map = {
                 row["stock_supply_id"]: int(row["s"] or 0)
                 for row in (
                     StockSupplySell.objects
-                    .filter(stock_supply_id__in=supply_ids)
+                    .filter(
+                        stock_supply_id__in=supply_ids,
+                        sell__date__lte=end_date,
+                    )
                     .values("stock_supply_id")
                     .annotate(s=Sum("quantity"))
                 )
@@ -564,7 +571,9 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             total_settled = sum(settled_map.values())
             total_sold = sum(sold_map.values())
 
-            total_remaining = total_supply_qty - total_settled - total_sold
+            # remaining nie może być ujemne w sensie "co leży" -> ale ujemne to sygnał błędu danych
+            remaining_raw = total_supply_qty - total_settled - total_sold
+            total_remaining = max(0, remaining_raw)
 
             # 4️⃣ WarehouseStock ALL magazyny
             ws_rows = (
@@ -599,6 +608,8 @@ class MonthlyWarehouseReportView(LoginRequiredMixin, View):
             selected_stock_analysis.append({
                 "name": name,
                 "stock_type_id": stock_type_id,
+                "remaining_raw": remaining_raw,
+                "overused": remaining_raw < 0,
 
                 "supplies_count": len(supplies),
                 "supply_total_qty": total_supply_qty,
