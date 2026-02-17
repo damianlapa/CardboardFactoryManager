@@ -912,6 +912,11 @@ class WarehouseStock(models.Model):
 
         return total
 
+    def count_piece_value(self):
+        value = self.count_value()
+        return money(value/int(self.quantity)) if self.quantity else Decimal("0.00")
+
+
     def fifo_sell(self, sell: "ProductSell3"):
         """
         FIFO sprzedaż z magazynu dla danego WarehouseStock:

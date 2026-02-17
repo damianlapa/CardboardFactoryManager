@@ -24,7 +24,7 @@
         <td><a href="{% url 'warehouse:warehouse_stock_detail' stock.id %}">{{ stock.stock.name }}</a></td>
         <td>{{ stock.quantity }}</td>
         {% if warehouse.name == 'MAGAZYN WYPRZEDAŻOWY' %}
-          <td>{{ stock.piece_value }}</td>
+          <td>{{ stock.count_piece_value }}</td>
         {% endif %}
       </tr>
     {% empty %}
