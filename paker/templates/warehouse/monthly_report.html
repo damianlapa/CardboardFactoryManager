@@ -1,4 +1,10 @@
-{% extends "base.html" %}
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
 {% block content %}
 
 <h2>Raport miesięczny: {{ year }}-{{ month|stringformat:"02d" }}</h2>
