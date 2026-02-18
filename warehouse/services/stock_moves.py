@@ -80,7 +80,6 @@ def rebuild_ws_history_from_date(*, ws, from_date=None) -> None:
     ws_locked.save(update_fields=["quantity"])
 
 
-
 @transaction.atomic
 def move_ws(
     *,
@@ -93,14 +92,13 @@ def move_ws(
     sell=None,
 ) -> MoveResult:
     """
-    Jedyny legalny sposób zmiany ws.quantity.
-    Zawsze:
-    - blokuje rekord (select_for_update)
-    - aktualizuje WarehouseStock.quantity
-    - dopisuje WarehouseStockHistory (z delta!)
-    - jeśli dopisujemy "wstecz" datą -> rebuild historii od tej daty
+    Jedyny legalny sposób zmiany WS.
+
+    Zabezpieczenie:
+    - po każdym backdate (date <= ostatnia data w historii) robimy rebuild od tej daty
+    - rebuild nie może zejść poniżej 0; jeśli zejdzie -> ValueError -> rollback
     """
-    from warehouse.models import WarehouseStock, WarehouseStockHistory  # import lokalny = brak circular
+    from warehouse.models import WarehouseStock, WarehouseStockHistory  # local import
 
     if delta == 0:
         return MoveResult(before=int(ws.quantity), after=int(ws.quantity))
@@ -109,39 +107,61 @@ def move_ws(
 
     ws_locked = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
 
-    # sprawdź czy dopisujemy "wstecz"
+    # Ostatni wpis historii (po dacie)
     last = (
         WarehouseStockHistory.objects
         .filter(warehouse_stock=ws_locked)
         .order_by("-date", "-id")
         .first()
     )
-    max_date = last.date if last else None
+    last_date = last.date if last else None
 
-    before = int(ws_locked.quantity)
-    after = before + int(delta)
-    if after < 0:
-        raise ValueError(f"WarehouseStock id={ws_locked.id} would go negative: {before} + ({delta}) = {after}")
+    # Wylicz "stan na tę datę" jako ostatni quantity_after przed ruchem:
+    # (nie jako ws.quantity "teraz")
+    prev = (
+        WarehouseStockHistory.objects
+        .filter(warehouse_stock=ws_locked, date__lte=date)
+        .order_by("-date", "-id")
+        .first()
+    )
+    before_at_date = int(prev.quantity_after) if prev else 0
 
-    # aktualizuj agregat (na chwilę). Jeśli robimy rebuild, to i tak zsynchronizujemy końcówkę.
-    ws_locked.quantity = after
-    ws_locked.save(update_fields=["quantity"])
+    # Szybki check (lokalnie na tej dacie)
+    after_at_date = before_at_date + int(delta)
+    if after_at_date < 0:
+        raise ValueError(
+            f"Brak stanu na dzień {date}: before={before_at_date} + delta={delta} -> {after_at_date} (WS id={ws_locked.id})"
+        )
 
-    # zapis historii z delta
+    # Zapis historii – before/after ustawiamy "tymczasowo" wg stanu na dacie
     h = WarehouseStockHistory.objects.create(
         warehouse_stock=ws_locked,
         stock_supply=stock_supply,
         order_settlement=order_settlement,
         assembly=assembly,
         delta=int(delta),
-        quantity_before=before,   # wstępnie (może zostać przeliczone)
-        quantity_after=after,     # wstępnie (może zostać przeliczone)
+        quantity_before=before_at_date,
+        quantity_after=after_at_date,
         date=date,
         sell=sell,
     )
 
-    # jeśli data jest wcześniejsza niż max_date, trzeba przeliczyć łańcuch od tej daty
-    if max_date is not None and date < max_date:
+    # Jeśli wpisaliśmy w przeszłość albo w ten sam dzień co ostatnia historia:
+    # MUSIMY przebudować historię od tej daty, aby zachować spójność (date,id)
+    must_rebuild = (last_date is not None and date <= last_date)
+
+    if must_rebuild:
+        # To jest kluczowe zabezpieczenie: rebuild wykryje minus w przyszłych wpisach
         rebuild_ws_history_from_date(ws=ws_locked, from_date=date)
 
-    return MoveResult(before=before, after=after)
+        # Po rebuildzie "before/after" mogły się zmienić, więc odczytaj z DB
+        h.refresh_from_db(fields=["quantity_before", "quantity_after"])
+        return MoveResult(before=int(h.quantity_before), after=int(h.quantity_after))
+
+    # Jeśli to dopisanie na końcu osi czasu, możemy tylko zsynchronizować ws.quantity "teraz"
+    # (nie jest to krytyczne dla walidacji historycznej, ale trzyma spójność)
+    ws_locked.quantity = int(after_at_date)
+    ws_locked.save(update_fields=["quantity"])
+
+    return MoveResult(before=int(before_at_date), after=int(after_at_date))
+
