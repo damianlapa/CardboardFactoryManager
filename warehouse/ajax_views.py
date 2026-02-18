@@ -21,7 +21,8 @@ def normalize_name(n: str) -> str:
 
 def settle_order(request, order_id):
     if request.method == "POST":
-        settlement_date = request.POST.get('settlement_date') if request.POST.get('settlement_date') else datetime.datetime.today()
+        settlement_date = request.POST.get('settlement_date')
+        settlement_date = datetime.date.fromisoformat(settlement_date) if settlement_date else datetime.datetime.today()
         order = get_object_or_404(Order, id=order_id)
         # material_id = request.POST.get("material_id")
         # material_quantity = int(request.POST.get("material_quantity", 0))
