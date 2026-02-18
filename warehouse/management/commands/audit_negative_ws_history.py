@@ -4,6 +4,7 @@ from typing import Optional
 from django.core.management.base import BaseCommand
 
 from warehouse.models import WarehouseStock, WarehouseStockHistory
+from warehouse.models import ProductSell3, OrderSettlement, StockSupply
 
 
 class Command(BaseCommand):
@@ -126,15 +127,20 @@ class Command(BaseCommand):
 
                 refs = []
                 if r["sell_id"]:
-                    refs.append(f"sell={r['sell_id']}")
+                    s = ProductSell3.objects.filter(id=r["sell_id"]).values("id", "date").first()
+                    refs.append(f"sell={r['sell_id']}({s['date'] if s else '??'})")
                 if r["order_settlement_id"]:
-                    refs.append(f"settle={r['order_settlement_id']}")
+                    os = OrderSettlement.objects.filter(id=r["order_settlement_id"]).values("id",
+                                                                                            "settlement_date").first()
+                    refs.append(f"settle={r['order_settlement_id']}({os['settlement_date'] if os else '??'})")
                 if r["stock_supply_id"]:
-                    refs.append(f"supply={r['stock_supply_id']}")
+                    ss = StockSupply.objects.filter(id=r["stock_supply_id"]).values("id", "date").first()
+                    refs.append(f"supply={r['stock_supply_id']}({ss['date'] if ss else '??'})")
                 if r["assembly_id"]:
                     refs.append(f"assembly={r['assembly_id']}")
                 refs_s = ", ".join(refs) if refs else "-"
 
+                flag = "  !!!" if calc_after < 0 else ""
                 flag = "  !!!" if calc_after < 0 else ""
                 self.stdout.write(
                     f"    {i+1:>2} | {r['date']} | {int(r['delta'] or 0):>5} | "
