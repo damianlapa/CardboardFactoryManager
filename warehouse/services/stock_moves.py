@@ -20,21 +20,28 @@ def rebuild_ws_history_from_date(*, ws, from_date=None) -> None:
     Przelicza quantity_before/after dla WS historii od from_date do końca,
     używając pola delta.
 
-    Działa poprawnie nawet gdy wpisy były dopisywane "wstecz" datą.
+    Przy pełnym rebuildzie (from_date=None) startuje od
+    quantity_before pierwszego wpisu historii (realny opening).
     """
     from warehouse.models import WarehouseStock, WarehouseStockHistory  # local import
 
     ws_locked = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
 
     if from_date is None:
-        # pełny rebuild od początku
-        prev_running = 0
-        qs = (
+        # pełny rebuild od początku – respektuj realny opening
+        rows = list(
             WarehouseStockHistory.objects
             .select_for_update()
             .filter(warehouse_stock=ws_locked)
             .order_by("date", "id")
         )
+
+        if not rows:
+            return
+
+        # 🔥 kluczowa zmiana:
+        running = int(rows[0].quantity_before or 0)
+
     else:
         # stan wejściowy = ostatni quantity_after przed from_date
         prev = (
@@ -43,26 +50,25 @@ def rebuild_ws_history_from_date(*, ws, from_date=None) -> None:
             .order_by("-date", "-id")
             .first()
         )
-        prev_running = int(prev.quantity_after) if prev else 0
+        running = int(prev.quantity_after) if prev else 0
 
-        qs = (
+        rows = list(
             WarehouseStockHistory.objects
             .select_for_update()
             .filter(warehouse_stock=ws_locked, date__gte=from_date)
             .order_by("date", "id")
         )
 
-    rows = list(qs)
-    running = prev_running
-
     for h in rows:
         h.quantity_before = running
         after = running + int(h.delta)
+
         if after < 0:
             raise ValueError(
                 f"History rebuild would go negative: WS id={ws_locked.id}, "
                 f"date={h.date}, running={running}, delta={h.delta}"
             )
+
         h.quantity_after = after
         running = after
 
@@ -70,8 +76,9 @@ def rebuild_ws_history_from_date(*, ws, from_date=None) -> None:
         WarehouseStockHistory.objects.bulk_update(rows, ["quantity_before", "quantity_after"])
 
     # zsynchronizuj agregat WS.quantity z końcem historii
-    ws_locked.quantity = max(0, int(running))
+    ws_locked.quantity = int(running)
     ws_locked.save(update_fields=["quantity"])
+
 
 
 @transaction.atomic
