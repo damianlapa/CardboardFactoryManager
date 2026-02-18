@@ -1167,7 +1167,6 @@ class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
                 "order_settlement__order",
                 "assembly",
             )
-            .annotate(delta=F("quantity_after") - F("quantity_before"))
             .order_by("-date", "-id")
         )
 
@@ -1197,7 +1196,6 @@ class WarehouseStockDetailView(DetailView):
                 "sell",
                 "sell__customer",
             )
-            .annotate(delta=F("quantity_after") - F("quantity_before"))
             .order_by("-date", "-id")
         )
 
