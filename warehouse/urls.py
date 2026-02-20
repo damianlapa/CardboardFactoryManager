@@ -126,3 +126,8 @@ urlpatterns += [
 urlpatterns += [
     path("monthly-report/", MonthlyWarehouseReportView.as_view(), name="monthly_report"),
 ]
+
+urlpatterns += [
+    path("products/packaging/", ProductPackagingListView.as_view(), name="product_packaging_list"),
+    path("products/packaging/upsert/", ProductPackagingUpsertAjaxView.as_view(), name="product_packaging_upsert_ajax"),
+]

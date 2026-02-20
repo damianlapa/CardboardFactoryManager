@@ -1853,3 +1853,60 @@ class StockAlias(models.Model):
         p = getattr(self.provider, "shortcut", None) or getattr(self.provider, "name", "provider")
         return f"{p} :: {self.provider_sku} [{self.dimensions}] -> {self.stock.name}"
 
+
+from django.db import models
+from django.core.exceptions import ValidationError
+
+
+class ProductPackaging(models.Model):
+    product = models.OneToOneField(
+        "Product",
+        on_delete=models.PROTECT,
+        related_name="packaging",
+    )
+    palette = models.ForeignKey(
+        "Palette",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="product_packagings",
+    )
+
+    columns = models.PositiveIntegerField(default=0, help_text="Słupki")
+    layers = models.PositiveIntegerField(default=0, help_text="Warstwy")
+    qty_per_pack = models.PositiveIntegerField(default=0, help_text="Ilość w paczce")
+
+    qty_per_pallet = models.PositiveIntegerField(
+        default=0,
+        editable=False,
+        help_text="Auto: columns * layers * qty_per_pack",
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Product packaging"
+        verbose_name_plural = "Product packagings"
+
+    def clean(self):
+        # jeśli jest paleta, to wypada mieć komplet parametrów > 0
+        if self.palette_id:
+            if self.columns <= 0 or self.layers <= 0 or self.qty_per_pack <= 0:
+                raise ValidationError(
+                    "Jeśli wybrano paletę, to columns, layers i qty_per_pack muszą być > 0."
+                )
+        return super().clean()
+
+    def recalc(self):
+        if self.columns > 0 and self.layers > 0 and self.qty_per_pack > 0:
+            self.qty_per_pallet = self.columns * self.layers * self.qty_per_pack
+        else:
+            self.qty_per_pallet = 0
+
+    def save(self, *args, **kwargs):
+        self.recalc()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Packaging: {self.product}"
+

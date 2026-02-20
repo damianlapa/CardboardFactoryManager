@@ -1872,3 +1872,81 @@ class BOMDetailView(LoginRequiredMixin, DetailView):
             .select_related("product")
             .prefetch_related("parts__part", "parts__part__stock_type")
         )
+
+
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
+
+
+class ProductPackagingListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def get(self, request):
+        q = (request.GET.get("q") or "").strip()
+
+        products = Product.objects.all().order_by("name")
+        if q:
+            products = products.filter(name__icontains=q)
+
+        # ważne: OneToOne related_name="packaging"
+        products = products.select_related("packaging")
+
+        palettes = Palette.objects.all().order_by("name")
+        default_palette = Palette.objects.filter(name="EPAL 1200x800").first()
+        print(default_palette)
+
+        return render(request, "warehouse/product_packaging_list.html", {
+            "products": products,
+            "palettes": palettes,
+            "q": q,
+            "csrf_token": get_token(request),
+            "default_palette_id": default_palette.id if default_palette else None,
+        })
+
+
+@method_decorator(require_POST, name="dispatch")
+class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def post(self, request):
+        try:
+            product_id = int(request.POST.get("product_id"))
+            palette_id_raw = request.POST.get("palette_id")  # może być puste
+            columns = int(request.POST.get("columns") or 0)
+            layers = int(request.POST.get("layers") or 0)
+            qty_per_pack = int(request.POST.get("qty_per_pack") or 0)
+        except (TypeError, ValueError):
+            return JsonResponse({"success": False, "error": "Nieprawidłowe dane wejściowe."}, status=400)
+
+        product = get_object_or_404(Product, id=product_id)
+
+        palette = None
+        if palette_id_raw:
+            try:
+                palette = Palette.objects.get(id=int(palette_id_raw))
+            except (Palette.DoesNotExist, ValueError):
+                return JsonResponse({"success": False, "error": "Nieprawidłowa paleta."}, status=400)
+
+        packaging, _created = ProductPackaging.objects.get_or_create(product=product)
+
+        packaging.palette = palette
+        packaging.columns = columns
+        packaging.layers = layers
+        packaging.qty_per_pack = qty_per_pack
+
+        try:
+            packaging.full_clean()
+            packaging.save()  # qty_per_pallet policzy się w save()
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+        return JsonResponse({
+            "success": True,
+            "product_id": product.id,
+            "qty_per_pallet": packaging.qty_per_pallet,
+            "palette": str(packaging.palette) if packaging.palette else "",
+            "columns": packaging.columns,
+            "layers": packaging.layers,
+            "qty_per_pack": packaging.qty_per_pack,
+        })

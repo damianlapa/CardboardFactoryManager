@@ -1,0 +1,324 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+<style>
+.modal { z-index: 1060 !important; }
+.modal-backdrop { z-index: 1050 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Produkty – Packaging</h3>
+
+    <form method="get" class="d-flex gap-2" style="max-width: 520px; width: 100%;">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Szukaj produktu..." />
+      <button class="btn btn-primary" type="submit">Szukaj</button>
+      {% if q %}
+        <a class="btn btn-outline-secondary" href="{% url 'warehouse:product_packaging_list' %}">Wyczyść</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead>
+        <tr>
+          <th style="width: 80px;">ID</th>
+          <th>Produkt</th>
+          <th style="width: 160px;">Packaging</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+          <tr id="product-row-{{ p.id }}">
+            <td>{{ p.id }}</td>
+            <td>{{ p.name }}</td>
+            <td id="packaging-cell-{{ p.id }}">
+              {% if p.packaging %}
+                <button
+                  type="button"
+                  class="btn btn-success btn-sm packaging-open"
+                  title="Kliknij aby edytować"
+                  data-product-id="{{ p.id }}"
+                  data-palette-id="{% if p.packaging.palette %}{{ p.packaging.palette.id }}{% endif %}"
+                  data-columns="{{ p.packaging.columns }}"
+                  data-layers="{{ p.packaging.layers }}"
+                  data-qty-per-pack="{{ p.packaging.qty_per_pack }}"
+                  data-product-name="{{ p.name }}"
+                >
+                  ✅ <span class="ms-1">{{ p.packaging.qty_per_pallet }}</span>
+                </button>
+              {% else %}
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm packaging-open"
+                  title="Dodaj packaging"
+                  data-product-id="{{ p.id }}"
+                  data-palette-id=""
+                  data-columns="0"
+                  data-layers="0"
+                  data-qty-per-pack="0"
+                  data-product-name="{{ p.name }}"
+                >
+                  ➕ utwórz
+                </button>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+
+<!-- MODAL -->
+<div class="modal fade" id="packagingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Packaging produktu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Informacja o produkcie -->
+        <div class="mb-3 p-3 rounded border bg-light">
+          <div class="small text-muted mb-1">Produkt</div>
+          <div class="fw-semibold" id="modalProductName">—</div>
+        </div>
+
+        <div class="alert alert-danger d-none" id="packagingError"></div>
+
+        <form id="packagingForm">
+          <input type="hidden" id="product_id" name="product_id">
+
+          <div class="mb-3">
+            <label class="form-label">Paleta</label>
+            <select class="form-select" id="palette_id" name="palette_id">
+              <option value="">— brak —</option>
+              {% for pal in palettes %}
+                <option value="{{ pal.id }}">{{ pal.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label">Słupki</label>
+              <input class="form-control" type="number" min="0" id="columns" name="columns">
+            </div>
+            <div class="col-4">
+              <label class="form-label">Warstwy</label>
+              <input class="form-control" type="number" min="0" id="layers" name="layers">
+            </div>
+            <div class="col-4">
+              <label class="form-label">W paczce</label>
+              <input class="form-control" type="number" min="0" id="qty_per_pack" name="qty_per_pack">
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <small class="text-muted">
+              Ilość na palecie policzy się automatycznie: słupki × warstwy × ilość w paczce.
+            </small>
+          </div>
+        </form>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">
+          Anuluj
+        </button>
+        <button class="btn btn-primary" type="button" id="packagingSaveBtn">
+          Zapisz
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+  const DEFAULT_PALETTE_ID = {{ default_palette_id|default:"null" }};
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const csrftoken = getCookie('csrftoken');
+
+  function detectFluteFromProductName(name) {
+  // oczekiwany format: "... | C | ..." albo "... | BC | ..."
+  // bierzemy token pomiędzy pionowymi kreskami
+  const m = (name || "").match(/\|\s*([A-Z]{1,2})\s*\|/);
+  return m ? m[1] : null;
+}
+
+function defaultQtyPerPackForFlute(flute) {
+  const map = {
+    "BC": 10,
+    "EB": 15,
+    "C": 15,
+    "B": 20,
+  };
+  return map[flute] || null;
+}
+
+  const modalEl = document.getElementById('packagingModal');
+  let bs5Modal = null;
+
+  // BS5
+  if (typeof bootstrap !== "undefined" && bootstrap.Modal) {
+    bs5Modal = new bootstrap.Modal(modalEl);
+  }
+
+  const errBox = document.getElementById('packagingError');
+
+  function showError(msg) {
+    errBox.textContent = msg;
+    errBox.classList.remove('d-none');
+  }
+  function hideError() {
+    errBox.textContent = "";
+    errBox.classList.add('d-none');
+  }
+
+function openModalWithButton(btn) {
+  hideError();
+
+  const productName = btn.dataset.productName || "";
+  document.getElementById("modalProductName").textContent = productName || "—";
+
+  document.getElementById('product_id').value = btn.dataset.productId;
+  document.getElementById('palette_id').value = btn.dataset.paletteId || "";
+  document.getElementById('columns').value = btn.dataset.columns || 0;
+  document.getElementById('layers').value = btn.dataset.layers || 0;
+
+  const paletteSelect = document.getElementById('palette_id');
+
+// jeśli produkt ma już paletę w danych → użyj jej
+if (btn.dataset.paletteId) {
+  paletteSelect.value = btn.dataset.paletteId;
+}
+// jeśli nie ma, a mamy domyślną → ustaw domyślną
+else if (DEFAULT_PALETTE_ID) {
+  paletteSelect.value = String(DEFAULT_PALETTE_ID);
+}
+// inaczej pusto
+else {
+  paletteSelect.value = "";
+}
+
+  // qty_per_pack: najpierw wartość z danych (jeśli istnieje), potem ewentualny auto-default
+  const qtyInput = document.getElementById('qty_per_pack');
+  const currentQty = parseInt(btn.dataset.qtyPerPack || "0", 10) || 0;
+
+  if (currentQty > 0) {
+    qtyInput.value = currentQty; // nie nadpisujemy istniejącego
+  } else {
+    // ustaw domyślnie wg fali, ale tylko jeśli rozpoznana i w mapie
+    const flute = detectFluteFromProductName(productName);
+    const autoQty = defaultQtyPerPackForFlute(flute);
+    qtyInput.value = autoQty !== null ? autoQty : 0; // jeśli nie znaleziono, zostaje 0
+  }
+
+  // otwieranie modala (jak masz)
+  if (bs5Modal) {
+    bs5Modal.show();
+  } else if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+    window.jQuery(modalEl).modal('show');
+  } else {
+    alert("Brak Bootstrap JS (modal nie może się otworzyć).");
+  }
+}
+
+  function bindPackagingButtons(root=document) {
+    root.querySelectorAll('.packaging-open').forEach(btn => {
+      btn.addEventListener('click', () => openModalWithButton(btn));
+    });
+  }
+
+  bindPackagingButtons();
+
+  document.getElementById('packagingSaveBtn').addEventListener('click', async () => {
+    hideError();
+
+    const form = document.getElementById('packagingForm');
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch("{% url 'warehouse:product_packaging_upsert_ajax' %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        showError(data.error || "Błąd zapisu.");
+        return;
+      }
+
+      const cell = document.getElementById(`packaging-cell-${data.product_id}`);
+      const oldBtn = document.querySelector(`#product-row-${data.product_id} .packaging-open`);
+const productName = oldBtn ? (oldBtn.dataset.productName || "") : "";
+
+cell.innerHTML = `
+  <button
+    type="button"
+    class="btn btn-success btn-sm packaging-open"
+    title="Kliknij aby edytować"
+    data-product-id="${data.product_id}"
+    data-product-name="${productName.replace(/"/g, '&quot;')}"
+    data-palette-id="${document.getElementById('palette_id').value || ''}"
+    data-columns="${data.columns}"
+    data-layers="${data.layers}"
+    data-qty-per-pack="${data.qty_per_pack}"
+  >
+    ✅ <span class="ms-1">${data.qty_per_pallet}</span>
+  </button>
+`;
+
+      // podepnij event do nowego przycisku
+      bindPackagingButtons(cell);
+
+      // zamknij modal
+      if (bs5Modal) {
+        bs5Modal.hide();
+      } else if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+        window.jQuery(modalEl).modal('hide');
+      }
+
+    } catch (e) {
+      showError("Błąd połączenia / AJAX.");
+    }
+  });
+
+});
+</script>
+
+{% endblock %}
