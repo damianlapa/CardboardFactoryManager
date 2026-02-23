@@ -68,6 +68,7 @@ def _receipt_finished_good(*, order, product, quantity: int, receipt_date, value
         quantity_before=before,
         quantity_after=after,
         date=receipt_date,
+        delta=after-before,
     )
 
     # Settlement "wynikowy" (żeby mieć do czego podpiąć StockSupplySettlement as_result=True)
@@ -233,6 +234,7 @@ def realize_order_bom(
                 quantity_before=before,
                 quantity_after=after,
                 date=settlement_date,
+                delta=after-before,
             )
 
             # FIFO kosztowe po StockSupply (globalnie po nazwie materiału)
