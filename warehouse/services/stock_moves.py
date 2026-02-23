@@ -28,7 +28,7 @@ def rebuild_ws_history_from_date(*, ws, from_date=None) -> None:
     ws_locked = WarehouseStock.objects.select_for_update().get(pk=ws.pk)
 
     if from_date is None:
-        # pełny rebuild od początku – respektuj realny opening
+        # pełny rebuild od początku – pierwszy wpis ZAWSZE startuje od 0
         rows = list(
             WarehouseStockHistory.objects
             .select_for_update()
@@ -39,8 +39,7 @@ def rebuild_ws_history_from_date(*, ws, from_date=None) -> None:
         if not rows:
             return
 
-        # 🔥 kluczowa zmiana:
-        running = int(rows[0].quantity_before or 0)
+        running = 0  # ✅ zawsze 0 (nie ufamy historycznemu quantity_before)
 
     else:
         # stan wejściowy = ostatni quantity_after przed from_date
