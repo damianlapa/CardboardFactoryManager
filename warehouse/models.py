@@ -1766,7 +1766,7 @@ def resolve_orders_for_supply(stock_supply):
     hist_qs = (
         WarehouseStockHistory.objects
         .filter(stock_supply=stock_supply, order_settlement__order_id__isnull=False)
-        .annotate(delta=F("quantity_after") - F("quantity_before"))
+        .annotate(delta_qty=F("quantity_after") - F("quantity_before"))
         .values(
             "id", "date",
             "quantity_before", "quantity_after", "delta",
@@ -1779,8 +1779,8 @@ def resolve_orders_for_supply(stock_supply):
     order_ids_b = list(
         WarehouseStockHistory.objects
         .filter(stock_supply=stock_supply, order_settlement__order_id__isnull=False)
-        .annotate(delta=F("quantity_after") - F("quantity_before"))
-        .filter(delta__gt=0)
+        .annotate(delta_qty=F("quantity_after") - F("quantity_before"))
+        .filter(delta_qty__gt=0)
         .values_list("order_settlement__order_id", flat=True)
         .distinct()
     )
