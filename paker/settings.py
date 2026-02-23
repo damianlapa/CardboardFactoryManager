@@ -91,12 +91,14 @@ WSGI_APPLICATION = 'paker.wsgi.application'
 DATABASES = {
     'default': {
         'HOST': '127.0.0.1',
-        # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'pakerdatabase',
         'USER': os.environ['POSTGRES_USER'],
         'PASSWORD': os.environ['POSTGRES_PASS'],
-        'NAME': 'pakerdatabase2',
+        ## heroku
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pakerdatabase',
+        ## local
+        # 'NAME': 'pakerdatabase2',
+        # 'ENGINE': 'django.db.backends.postgresql',
     }
 }
 
