@@ -35,6 +35,9 @@ from warehouse.services.bom_realization import realize_order_bom
 from django.db.models import F
 from warehouse.models import attach_origin_orders_to_sell
 
+from django.utils.dateparse import parse_date
+import datetime
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1576,7 +1579,20 @@ def add_product_sell3(request):
             order = Order.objects.get(id=int(order_id)) if order_id else None
 
             quantity = int(request.POST.get("quantity_sell"))
-            date = request.POST.get("date_sell")
+
+            # ...
+            date_raw = request.POST.get("date_sell")  # string z inputa
+            date = parse_date(date_raw)  # obsługuje 'YYYY-MM-DD'
+
+            # jeśli czasem wysyłasz 'dd-mm-YYYY' (bo tak masz w UI), dodaj fallback:
+            if date is None and date_raw:
+                try:
+                    date = datetime.datetime.strptime(date_raw, "%d-%m-%Y").date()
+                except ValueError:
+                    date = None
+
+            if date is None:
+                raise ValidationError(f"Niepoprawna data sprzedaży: {date_raw}")
             price = request.POST.get("price_sell")
 
             if quantity <= 0:
