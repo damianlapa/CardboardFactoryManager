@@ -347,6 +347,9 @@ class LoadWZ(LoginRequiredMixin, View):
                     palletes_list.append(palettes)
                 if "nr zam.:" in line.lower():
                     number = line.lower().split("nr zam.:")[1].replace('jass', '').strip()
+                    if len(number.split('/')[1]) > 2:
+                        _num, _year = number.split('/')
+                        number = _num + '/' + _year[:2]
                     if number not in order_numbers:
                         order_numbers.append(number)
                 if "ark" in line and 'm2' in line and not "RAZEM" in line and not 'Ilość wysłana' in line:
