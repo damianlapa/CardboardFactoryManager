@@ -34,7 +34,7 @@ from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
 from django.db.models import F
 from warehouse.models import attach_origin_orders_to_sell
-
+from warehousemanager.functions import  visit_counter
 from django.utils.dateparse import parse_date
 import datetime
 
@@ -502,6 +502,7 @@ class OrderListView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
+        visit_counter(request.user, 'warehouse:orders')
         sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
         manual = request.GET.get('manual')
@@ -759,6 +760,7 @@ class DeliveriesView(LoginRequiredMixin, View):
         return qs
 
     def get(self, request):
+        visit_counter(request.user, 'deliveries')
         special = request.GET.get("special")
         provider = request.GET.get("provider")
 
@@ -913,6 +915,7 @@ class WarehouseView(LoginRequiredMixin, View):
     def get(self, request, warehouse_id):
         all_stocks = request.GET.get('all_stocks')
         warehouse = Warehouse.objects.get(id=warehouse_id)
+        visit_counter(request.user, f'warehouse:{warehouse.name}')
         if not all_stocks:
             stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
         else:
@@ -924,6 +927,7 @@ class WarehouseListView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
+        visit_counter(request.user, 'warehouse:warehouses')
         warehouses = Warehouse.objects.all()
         return render(request, 'warehouse/warehouse_list.html', locals())
 
@@ -990,6 +994,8 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         return keys
 
     def get(self, request):
+        visit_counter(request.user, 'deliveries-statistics')
+        print(request.user)
         # 1) Parametry
         today = now().date()
         year_start = datetime.date(today.year, 1, 1)

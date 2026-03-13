@@ -36,7 +36,7 @@ def visit_counter(user, page):
             visit.save()
         except ObjectDoesNotExist:
             new_visit = UserVisitCounter.objects.create(user=user, page=page, first_visit=timezone.now(),
-                                                        last_visit=timezone.now())
+                                                        last_visit=timezone.now(), counter=1)
             new_visit.save()
 
 
