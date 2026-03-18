@@ -571,7 +571,13 @@ class OrderDetailView(LoginRequiredMixin, View):
         ).order_by("stock_type", "unit")
         order = Order.objects.get(id=order_id)
         warehouses = Warehouse.objects.all()
-        settlements = OrderSettlement.objects.filter(order=order)
+        settlements = (
+            OrderSettlement.objects
+            .filter(order=order)
+            .select_related("material", "material__stock", "material__warehouse")
+            .prefetch_related("stocksupplysettlement_set__stock_supply")
+            .order_by("-settlement_date", "-id")
+        )
         warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
 
         sales = (
@@ -1984,3 +1990,161 @@ class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
             "layers": packaging.layers,
             "qty_per_pack": packaging.qty_per_pack,
         })
+
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from warehouse.services.stock_moves import move_ws
+
+
+from django.db.models import Sum
+from django.core.exceptions import ValidationError
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from django.db import transaction
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def undo_order_settlement(request, settlement_id):
+    if request.method != "POST":
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    settlement = get_object_or_404(
+        OrderSettlement.objects.select_related(
+            "order",
+            "material",
+            "material__stock",
+            "material__warehouse"
+        ),
+        id=settlement_id
+    )
+
+    try:
+        with transaction.atomic():
+            settlement = (
+                OrderSettlement.objects
+                .select_for_update()
+                .select_related("order", "material", "material__stock", "material__warehouse")
+                .get(pk=settlement.pk)
+            )
+
+            # -----------------------------------
+            # 1. Cofnięcie wyrobów wynikowych
+            # -----------------------------------
+            result_rows = list(
+                StockSupplySettlement.objects
+                .select_for_update()
+                .filter(settlement=settlement, as_result=True)
+                .select_related("stock_supply")
+                .order_by("id")
+            )
+
+            for row in result_rows:
+                supply = row.stock_supply
+                qty = int(row.quantity)
+
+                sold_qty = (
+                    StockSupplySell.objects
+                    .filter(stock_supply=supply)
+                    .aggregate(s=Sum("quantity"))["s"] or 0
+                )
+                if sold_qty > 0:
+                    raise ValidationError(
+                        f"Nie można cofnąć rozliczenia. Partia '{supply.name}' została już sprzedana ({sold_qty})."
+                    )
+
+                fg_history = (
+                    WarehouseStockHistory.objects
+                    .select_for_update()
+                    .filter(
+                        stock_supply=supply,
+                        order_settlement=settlement,
+                    )
+                    .order_by("id")
+                    .first()
+                )
+
+                if not fg_history:
+                    raise ValidationError(
+                        f"Brak historii magazynowej dla partii wynikowej: {supply.name}"
+                    )
+
+                fg_ws = WarehouseStock.objects.select_for_update().get(pk=fg_history.warehouse_stock_id)
+
+                if fg_ws.quantity < qty:
+                    raise ValidationError(
+                        f"Nie można cofnąć rozliczenia. Na magazynie jest mniej sztuk niż wyprodukowano dla '{supply.name}'."
+                    )
+
+                # cofnięcie stanu magazynowego
+                move_ws(
+                    ws=fg_ws,
+                    delta=-qty,
+                    date=settlement.settlement_date,
+                    stock_supply=supply,
+                    order_settlement=settlement,
+                )
+
+            # -----------------------------------
+            # 2. Cofnięcie zużycia materiału
+            # -----------------------------------
+            material_rows = list(
+                StockSupplySettlement.objects
+                .select_for_update()
+                .filter(settlement=settlement, as_result=False)
+                .select_related("stock_supply")
+                .order_by("-id")
+            )
+
+            ws_material = WarehouseStock.objects.select_for_update().get(pk=settlement.material_id)
+
+            for row in material_rows:
+                supply = row.stock_supply
+                qty = int(row.quantity)
+
+                move_ws(
+                    ws=ws_material,
+                    delta=qty,
+                    date=settlement.settlement_date,
+                    stock_supply=supply,
+                    order_settlement=settlement,
+                )
+
+            # -----------------------------------
+            # 3. Usuń historię tego settlementu
+            #    (oryginalną + cofającą)
+            # -----------------------------------
+            WarehouseStockHistory.objects.filter(
+                order_settlement=settlement
+            ).delete()
+
+            # -----------------------------------
+            # 4. Usuń wpisy partii settlementu
+            # -----------------------------------
+            for row in result_rows:
+                supply = row.stock_supply
+                row.delete()
+                supply.delete()
+
+            for row in material_rows:
+                supply = row.stock_supply
+                row.delete()
+                supply.refresh_used_flag()
+
+            # -----------------------------------
+            # 5. Usuń settlement
+            # -----------------------------------
+            settlement.delete()
+
+        messages.success(request, "Rozliczenie zostało cofnięte.")
+    except ValidationError as e:
+        messages.error(request, str(e))
+    except Exception as e:
+        logger.exception("[UNDO_SETTLEMENT] ERROR")
+        messages.error(request, f"Błąd cofania rozliczenia: {e}")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))

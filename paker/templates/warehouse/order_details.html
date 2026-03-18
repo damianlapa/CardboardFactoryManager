@@ -33,7 +33,7 @@
     <a href="{% url 'warehouse:generate_order_inline' order_id=order.id %}" target="_blank">
     🧾 Wygeneruj zlecenie (podgląd)
     </a>
-    <h1>{{ order }} // {{ order.customer }} // {{ order.product }}</h1>
+    <h1>{{ order }} // {{ order.dimensions }} // {{ order.customer }} // {{ order.product }}</h1>
     <button id="settleOrderBtn">Settle Order</button>
     {% if order.bom %}
     <button id="openBomModal">BOM</button>
@@ -156,7 +156,6 @@
 
 {{ price_item.price }} // {{ order.price }}
 
-{% if not shifts %}
 <h2>Deliveries</h2>
 <table>
   <thead>
@@ -183,56 +182,6 @@
     </tr>
     {% empty %}
     <tr><td colspan="10">No deliveries available.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<h2>Shifts</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Shift date</th>
-      <th>Order from</th>
-      <th>Quantity</th>
-      <th>Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for shift in shifts %}
-    <tr>
-      <td>{{ shift.date|date:"Y-m-d" }}</td>
-      <td><a href="{% url 'warehouse:order-detail-view' order_id=shift.order_from.id %}">{{ shift.order_from }}</a></td>
-      <td>{{ shift.quantity }}</td>
-      <td>{{ shift.get_value }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="10">No shifts available.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-
-<h2>Shifts</h2>
-<button id="openShiftModal">➕︎ Add Shift</button>
-<table>
-  <thead>
-    <tr>
-      <th>Shift date</th>
-      <th>Order to</th>
-      <th>Quantity</th>
-      <th>Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for shift_f in shifts_from %}
-    <tr>
-      <td>{{ shift_f.date|date:"Y-m-d" }}</td>
-      <td><a href="{% url 'warehouse:order-detail-view' order_id=shift_f.order_to.id %}">{{ shift_f.order_to }}</a></td>
-      <td>{{ shift_f.quantity }}</td>
-      <td>{{ shift_f.get_value }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="10">No shifts available.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -271,6 +220,65 @@
     </tr>
     {% empty %}
     <tr><td colspan="10">No production units available.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Settlements</h2>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Date</th>
+      <th>Material</th>
+      <th>Material quantity</th>
+      <th>Used supplies</th>
+      <th>Result supplies</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for settlement in settlements %}
+    <tr>
+      <td>{{ settlement.id }}</td>
+      <td>{{ settlement.settlement_date|date:"Y-m-d" }}</td>
+      <td>{{ settlement.material }}</td>
+      <td>{{ settlement.material_quantity }}</td>
+      <td>
+        {% for row in settlement.stocksupplysettlement_set.all %}
+          {% if not row.as_result %}
+            <div>
+              {{ row.stock_supply.name }} — {{ row.quantity }}
+            </div>
+          {% endif %}
+        {% empty %}
+          <span style="color:#888;">brak</span>
+        {% endfor %}
+      </td>
+      <td>
+        {% for row in settlement.stocksupplysettlement_set.all %}
+          {% if row.as_result %}
+            <div>
+              {{ row.stock_supply.name }} — {{ row.quantity }}
+            </div>
+          {% endif %}
+        {% empty %}
+          <span style="color:#888;">brak</span>
+        {% endfor %}
+      </td>
+      <td>
+        <form method="post"
+              action="{% url 'warehouse:undo_order_settlement' settlement.id %}"
+              onsubmit="return confirm('Na pewno cofnąć to rozliczenie?');">
+          {% csrf_token %}
+          <button type="submit" class="remove-btn">Cofnij</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No settlements.</td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
