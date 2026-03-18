@@ -1886,6 +1886,8 @@ class BOMListView(LoginRequiredMixin, ListView):
         return qs
 
 
+from django.db.models import Prefetch
+
 class BOMDetailView(LoginRequiredMixin, DetailView):
     model = BOM
     template_name = "warehouse/bom_detail.html"
@@ -1895,7 +1897,14 @@ class BOMDetailView(LoginRequiredMixin, DetailView):
         return (
             BOM.objects
             .select_related("product")
-            .prefetch_related("parts__part", "parts__part__stock_type")
+            .prefetch_related(
+                "parts__part",
+                "parts__part__stock_type",
+                Prefetch(
+                    "orders",
+                    queryset=Order.objects.select_related("customer", "provider", "product").order_by("-order_date", "-id")
+                )
+            )
         )
 
 

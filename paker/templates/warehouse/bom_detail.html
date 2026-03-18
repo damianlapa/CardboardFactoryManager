@@ -49,5 +49,51 @@
     {% endfor %}
   </tbody>
 </table>
+<h3 style="margin-top:30px;">Orders przypisane do tego BOM</h3>
+
+<table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Provider</th>
+      <th>Order ID</th>
+      <th>Klient</th>
+      <th>Produkt</th>
+      <th>Ilość</th>
+      <th>Data zamówienia</th>
+      <th>Status</th>
+      <th>Szczegóły</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in bom.orders.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ order.provider }}</td>
+        <td>{{ order.order_id }}</td>
+        <td>{{ order.customer }}</td>
+        <td>{{ order.product }}</td>
+        <td>{{ order.order_quantity }}</td>
+        <td>{{ order.order_date }}</td>
+        <td>
+          {% if order.finished %}
+            Zakończone
+          {% elif order.delivered %}
+            Dostarczone
+          {% else %}
+            W realizacji
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'warehouse:order-detail-view' order.id %}">Podgląd</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="9">Brak orderów przypisanych do tego BOM.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 {% endblock %}
