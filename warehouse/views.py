@@ -32,6 +32,7 @@ from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
+from warehouse.services.stock_moves import rebuild_ws_history_from_date
 from django.db.models import F
 from warehouse.models import attach_origin_orders_to_sell
 from warehousemanager.functions import  visit_counter
@@ -2146,5 +2147,70 @@ def undo_order_settlement(request, settlement_id):
     except Exception as e:
         logger.exception("[UNDO_SETTLEMENT] ERROR")
         messages.error(request, f"Błąd cofania rozliczenia: {e}")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+from django.contrib import messages
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+
+
+def undo_product_sell(request, sell_id):
+    if request.method != "POST":
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    try:
+        with transaction.atomic():
+            # 1. blokuj tylko samą sprzedaż, bez select_related
+            sell = ProductSell3.objects.select_for_update().get(pk=sell_id)
+
+            if not sell.warehouse_stock_id:
+                raise ValueError("Sprzedaż nie ma przypisanego warehouse_stock.")
+
+            qty = int(sell.quantity or 0)
+            if qty <= 0:
+                raise ValueError("Sprzedaż ma nieprawidłową ilość.")
+
+            sell_date = sell.date
+
+            # 2. blokuj agregat magazynowy osobno
+            ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
+
+            # 3. usuń historię ruchu tej sprzedaży
+            WarehouseStockHistory.objects.filter(sell=sell).delete()
+
+            # 4. usuń rozpisanie FIFO i odśwież flagi used
+            supply_rows = list(
+                StockSupplySell.objects
+                .select_for_update()
+                .filter(sell=sell)
+                .select_related("stock_supply")
+            )
+
+            touched_supplies = []
+            for row in supply_rows:
+                if row.stock_supply_id:
+                    touched_supplies.append(row.stock_supply)
+                row.delete()
+
+            seen_ids = set()
+            for supply in touched_supplies:
+                if supply.id in seen_ids:
+                    continue
+                seen_ids.add(supply.id)
+                supply.refresh_used_flag()
+
+            # 5. usuń powiązania źródłowych orderów
+            sell.order_parts.all().delete()
+
+            # 6. usuń samą sprzedaż
+            sell.delete()
+
+            # 7. przebuduj historię od daty sprzedaży
+            rebuild_ws_history_from_date(ws=ws, from_date=sell_date)
+
+        messages.success(request, "Sprzedaż została cofnięta.")
+    except Exception as e:
+        messages.error(request, f"Błąd cofania sprzedaży: {e}")
 
     return redirect(request.META.get("HTTP_REFERER", "/"))

@@ -58,6 +58,7 @@
       <th>Ilość</th>
       <th>Cena</th>
       <th>Wartość</th>
+      <th>Action</th>
     </tr>
   </thead>
   <tbody>
@@ -76,6 +77,14 @@
       <td>{{ sell.quantity }}</td>
       <td>{{ sell.price|floatformat:2 }} zł</td>
       <td>{{ sell.calculate_value|floatformat:2 }} zł</td>
+      <td>
+        <form method="post"
+              action="{% url 'warehouse:undo_product_sell' sell.id %}"
+              onsubmit="return confirm('Na pewno cofnąć tę sprzedaż?');">
+          {% csrf_token %}
+          <button type="submit" class="remove-btn">Cofnij</button>
+        </form>
+      </td>
     </tr>
     {% empty %}
     <tr><td colspan="7">Brak transakcji sprzedaży.</td></tr>
