@@ -178,5 +178,6 @@ LOGGING = {
     },
 }
 
+UNDO_OPERATIONS_PASSWORD = os.environ.get("UNDO_OPERATIONS_PASSWORD", "")
 
 django_heroku.settings(locals())

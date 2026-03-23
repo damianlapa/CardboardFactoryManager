@@ -267,12 +267,14 @@
         {% endfor %}
       </td>
       <td>
-        <form method="post"
-              action="{% url 'warehouse:undo_order_settlement' settlement.id %}"
-              onsubmit="return confirm('Na pewno cofnąć to rozliczenie?');">
-          {% csrf_token %}
-          <button type="submit" class="remove-btn">Cofnij</button>
-        </form>
+        <button
+          type="button"
+          class="remove-btn open-undo-modal"
+          data-url="{% url 'warehouse:undo_order_settlement' settlement.id %}"
+          data-label="rozliczenie #{{ settlement.id }} z dnia {{ settlement.settlement_date|date:'Y-m-d' }}"
+        >
+          Cofnij
+        </button>
       </td>
     </tr>
     {% empty %}
@@ -517,6 +519,26 @@
   </div>
 </div>
 
+<div id="undoModal" class="modal">
+  <div class="modal-content" style="max-width: 420px;">
+    <span class="closeundo">&times;</span>
+    <h2>Potwierdź cofnięcie</h2>
+    <p id="undoModalText">Czy na pewno chcesz cofnąć operację?</p>
+
+    <form id="undoForm" method="post" action="">
+      {% csrf_token %}
+      <input
+        type="password"
+        name="confirm_password"
+        id="undoPasswordInput"
+        placeholder="Hasło do cofania"
+        required
+        style="width:100%; padding:8px; margin:10px 0;"
+      >
+      <button type="submit" class="remove-btn">Potwierdź cofnięcie</button>
+    </form>
+  </div>
+
 {% endblock %}
 {% block scripts %}
 <script>
@@ -566,4 +588,5 @@ document.addEventListener("DOMContentLoaded", function () {
 <script src="{% static 'js/warehouse/order-settle-order.js' %}"></script>
 <script src="{% static 'js/warehouse/order-details.js' %}"></script>
 <script src="{% static 'js/warehouse/bom.js' %}"></script>
+<script src="{% static 'js/warehouse/undo_modal.js' %}"></script>
 {% endblock %}

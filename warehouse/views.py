@@ -38,10 +38,22 @@ from warehouse.models import attach_origin_orders_to_sell
 from warehousemanager.functions import  visit_counter
 from django.utils.dateparse import parse_date
 import datetime
+import secrets
+from django.conf import settings
+from django.contrib import messages
 
 import logging
 logger = logging.getLogger(__name__)
 
+
+def _check_undo_password(request):
+    password = request.POST.get("confirm_password", "") or ""
+    expected = settings.UNDO_OPERATIONS_PASSWORD or ""
+
+    if not expected:
+        raise ValueError("Brak konfiguracji UNDO_OPERATIONS_PASSWORD.")
+
+    return secrets.compare_digest(password, expected)
 
 
 def load_orders(year, row=None, division=None, row_list=None):
@@ -2022,28 +2034,17 @@ def undo_order_settlement(request, settlement_id):
     if request.method != "POST":
         return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    settlement = get_object_or_404(
-        OrderSettlement.objects.select_related(
-            "order",
-            "material",
-            "material__stock",
-            "material__warehouse"
-        ),
-        id=settlement_id
-    )
+    if not _check_undo_password(request):
+        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
     try:
         with transaction.atomic():
-            settlement = (
-                OrderSettlement.objects
-                .select_for_update()
-                .select_related("order", "material", "material__stock", "material__warehouse")
-                .get(pk=settlement.pk)
-            )
+            settlement = OrderSettlement.objects.select_for_update().get(pk=settlement_id)
 
-            # -----------------------------------
-            # 1. Cofnięcie wyrobów wynikowych
-            # -----------------------------------
+            touched_ws_ids = set()
+            settlement_date = settlement.settlement_date
+
             result_rows = list(
                 StockSupplySettlement.objects
                 .select_for_update()
@@ -2054,7 +2055,6 @@ def undo_order_settlement(request, settlement_id):
 
             for row in result_rows:
                 supply = row.stock_supply
-                qty = int(row.quantity)
 
                 sold_qty = (
                     StockSupplySell.objects
@@ -2066,94 +2066,47 @@ def undo_order_settlement(request, settlement_id):
                         f"Nie można cofnąć rozliczenia. Partia '{supply.name}' została już sprzedana ({sold_qty})."
                     )
 
-                fg_history = (
-                    WarehouseStockHistory.objects
-                    .select_for_update()
-                    .filter(
-                        stock_supply=supply,
-                        order_settlement=settlement,
-                    )
-                    .order_by("id")
-                    .first()
-                )
-
-                if not fg_history:
-                    raise ValidationError(
-                        f"Brak historii magazynowej dla partii wynikowej: {supply.name}"
-                    )
-
-                fg_ws = WarehouseStock.objects.select_for_update().get(pk=fg_history.warehouse_stock_id)
-
-                if fg_ws.quantity < qty:
-                    raise ValidationError(
-                        f"Nie można cofnąć rozliczenia. Na magazynie jest mniej sztuk niż wyprodukowano dla '{supply.name}'."
-                    )
-
-                # cofnięcie stanu magazynowego
-                move_ws(
-                    ws=fg_ws,
-                    delta=-qty,
-                    date=settlement.settlement_date,
-                    stock_supply=supply,
-                    order_settlement=settlement,
-                )
-
-            # -----------------------------------
-            # 2. Cofnięcie zużycia materiału
-            # -----------------------------------
-            material_rows = list(
-                StockSupplySettlement.objects
+            hist_rows = list(
+                WarehouseStockHistory.objects
                 .select_for_update()
-                .filter(settlement=settlement, as_result=False)
-                .select_related("stock_supply")
-                .order_by("-id")
+                .filter(order_settlement=settlement)
+                .order_by("date", "id")
             )
 
-            ws_material = WarehouseStock.objects.select_for_update().get(pk=settlement.material_id)
+            for h in hist_rows:
+                touched_ws_ids.add(h.warehouse_stock_id)
 
-            for row in material_rows:
-                supply = row.stock_supply
-                qty = int(row.quantity)
+            WarehouseStockHistory.objects.filter(order_settlement=settlement).delete()
 
-                move_ws(
-                    ws=ws_material,
-                    delta=qty,
-                    date=settlement.settlement_date,
-                    stock_supply=supply,
-                    order_settlement=settlement,
-                )
-
-            # -----------------------------------
-            # 3. Usuń historię tego settlementu
-            #    (oryginalną + cofającą)
-            # -----------------------------------
-            WarehouseStockHistory.objects.filter(
-                order_settlement=settlement
-            ).delete()
-
-            # -----------------------------------
-            # 4. Usuń wpisy partii settlementu
-            # -----------------------------------
             for row in result_rows:
                 supply = row.stock_supply
                 row.delete()
                 supply.delete()
 
+            material_rows = list(
+                StockSupplySettlement.objects
+                .select_for_update()
+                .filter(settlement=settlement, as_result=False)
+                .select_related("stock_supply")
+            )
+
+            touched_supplies = []
             for row in material_rows:
-                supply = row.stock_supply
+                if row.stock_supply_id:
+                    touched_supplies.append(row.stock_supply)
                 row.delete()
+
+            for supply in touched_supplies:
                 supply.refresh_used_flag()
 
-            # -----------------------------------
-            # 5. Usuń settlement
-            # -----------------------------------
             settlement.delete()
 
+            for ws_id in touched_ws_ids:
+                ws = WarehouseStock.objects.select_for_update().get(pk=ws_id)
+                rebuild_ws_history_from_date(ws=ws, from_date=settlement_date)
+
         messages.success(request, "Rozliczenie zostało cofnięte.")
-    except ValidationError as e:
-        messages.error(request, str(e))
     except Exception as e:
-        logger.exception("[UNDO_SETTLEMENT] ERROR")
         messages.error(request, f"Błąd cofania rozliczenia: {e}")
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
@@ -2167,9 +2120,12 @@ def undo_product_sell(request, sell_id):
     if request.method != "POST":
         return redirect(request.META.get("HTTP_REFERER", "/"))
 
+    if not _check_undo_password(request):
+        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
     try:
         with transaction.atomic():
-            # 1. blokuj tylko samą sprzedaż, bez select_related
             sell = ProductSell3.objects.select_for_update().get(pk=sell_id)
 
             if not sell.warehouse_stock_id:
@@ -2180,14 +2136,10 @@ def undo_product_sell(request, sell_id):
                 raise ValueError("Sprzedaż ma nieprawidłową ilość.")
 
             sell_date = sell.date
-
-            # 2. blokuj agregat magazynowy osobno
             ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
 
-            # 3. usuń historię ruchu tej sprzedaży
             WarehouseStockHistory.objects.filter(sell=sell).delete()
 
-            # 4. usuń rozpisanie FIFO i odśwież flagi used
             supply_rows = list(
                 StockSupplySell.objects
                 .select_for_update()
@@ -2208,13 +2160,9 @@ def undo_product_sell(request, sell_id):
                 seen_ids.add(supply.id)
                 supply.refresh_used_flag()
 
-            # 5. usuń powiązania źródłowych orderów
             sell.order_parts.all().delete()
-
-            # 6. usuń samą sprzedaż
             sell.delete()
 
-            # 7. przebuduj historię od daty sprzedaży
             rebuild_ws_history_from_date(ws=ws, from_date=sell_date)
 
         messages.success(request, "Sprzedaż została cofnięta.")
