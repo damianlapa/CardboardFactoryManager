@@ -921,12 +921,20 @@ class WarehouseView(LoginRequiredMixin, View):
 
     def get(self, request, warehouse_id):
         all_stocks = request.GET.get('all_stocks')
+        q = (request.GET.get('q') or '').strip()
+
         warehouse = Warehouse.objects.get(id=warehouse_id)
-        visit_counter(request.user, f'warehouse:{warehouse.name}')
+
+        stocks = WarehouseStock.objects.filter(warehouse=warehouse).select_related('stock')
+
         if not all_stocks:
-            stocks = WarehouseStock.objects.filter(warehouse=warehouse, quantity__gt=0)
-        else:
-            stocks = WarehouseStock.objects.filter(warehouse=warehouse)
+            stocks = stocks.filter(quantity__gt=0)
+
+        if q:
+            stocks = stocks.filter(stock__name__icontains=q)
+
+        stocks = stocks.order_by('stock__name')
+
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
