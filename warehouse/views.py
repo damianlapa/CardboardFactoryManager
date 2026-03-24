@@ -56,110 +56,205 @@ def _check_undo_password(request):
     return secrets.compare_digest(password, expected)
 
 
-def load_orders(year, row=None, division=None, row_list=None):
-    def get_flute(text):
-        waves = 0
-        for letter in text:
-            if letter == '3':
-                waves = 3
-                break
-            elif letter == '5':
-                waves = 5
-                break
-        if waves == 3:
-            if 'E' in text.upper():
-                return 'E'
-            if 'B' in text.upper():
-                return 'B'
-            if 'C' in text.upper():
-                return 'C'
-        elif waves == 5:
-            if 'EB' in text.upper():
-                return 'EB'
-            if 'BC' in text.upper():
-                return 'BC'
-        return None
+def get_flute(text):
+    text = (text or "").upper()
+    waves = 0
 
+    for letter in text:
+        if letter == '3':
+            waves = 3
+            break
+        elif letter == '5':
+            waves = 5
+            break
+
+    if waves == 3:
+        if 'E' in text:
+            return 'E'
+        if 'B' in text:
+            return 'B'
+        if 'C' in text:
+            return 'C'
+    elif waves == 5:
+        if 'EB' in text:
+            return 'EB'
+        if 'BC' in text:
+            return 'BC'
+
+    return None
+
+
+def build_product_name(customer_name, flute, sheet_name, extra):
+    sheet_name = (sheet_name or "").lower().strip()
+    extra = (extra or "").upper().strip()
+
+    if extra:
+        return f"{customer_name} | {flute} | {sheet_name} | {extra}"
+    return f"{customer_name} | {flute} | {sheet_name} |"
+
+
+def find_existing_product(product_name, dimensions=None, flute=None):
+    qs = Product.objects.filter(name=product_name)
+
+    if dimensions:
+        qs = qs.filter(dimensions=dimensions)
+    if flute:
+        qs = qs.filter(flute=flute)
+
+    return qs.first()
+
+
+def load_orders(year, row=None, division=None, row_list=None, preview_only=False):
     year = year if year else datetime.datetime.today().year
     data_all = get_all(year) if year else get_all(str(datetime.datetime.today().year))
-    result = ''
-    row = row if row else None
+    result = ""
+
+    row = row if row is not None else None
     division = division if division else None
 
     if division:
-        start, end = division.split(',')
+        start, end = division.split(",")
         rows = [r for r in range(int(start), int(end) + 1)]
-    elif row:
+    elif row is not None:
         rows = [row]
     else:
         rows = []
 
     if row_list:
         rows = row_list
+
+    new_products = []
+    seen_new_products = set()
+
     for row in rows:
         try:
             data = data_all[row]
+
+            customer_name = data[18].upper().strip()
+            provider_shortcut = data[0].upper().strip()
+            order_name = data[19].upper().strip()
+            flute = get_flute(order_name)
+            product_dimensions = f"{data[12].strip()}x{data[13].strip()}"
+            sheet_name = (data[23] or "").strip()
+            extra = data[24].upper().strip() if data[24] else ""
+            order_id = f"{data[1].upper().strip()}/{data[2].upper().strip()}"
+
+            product_name = build_product_name(
+                customer_name=customer_name,
+                flute=flute,
+                sheet_name=sheet_name,
+                extra=extra
+            )
+
             try:
-                customer = Buyer.objects.get(name=data[18].upper().strip())
+                customer = Buyer.objects.get(name=customer_name)
             except Buyer.DoesNotExist:
-                customer = Buyer(name=data[18].upper().strip(), shortcut=data[18].upper().strip()[:5])
-                customer.save()
+                if preview_only:
+                    customer = None
+                else:
+                    customer = Buyer(
+                        name=customer_name,
+                        shortcut=customer_name[:5]
+                    )
+                    customer.save()
 
             try:
-                provider = Provider.objects.get(shortcut=data[0].upper().strip())
+                provider = Provider.objects.get(shortcut=provider_shortcut)
             except Provider.DoesNotExist:
-                provider = Provider(name=data[0], shortcut=data[0])
-                provider.save()
+                if preview_only:
+                    provider = None
+                else:
+                    provider = Provider(
+                        name=data[0],
+                        shortcut=data[0]
+                    )
+                    provider.save()
 
-            flute = get_flute(data[19].upper().strip())
-            # dimensions = f'{data[12].strip()}x{data[13].strip()}'
-            dimensions = f'{data[23].strip()}'
-            extra = data[24].upper().strip()
-            # product_name = build_product_name(customer.name, flute, dimensions, extra)
-            print(customer.name, flute, dimensions, extra)
-            product = safe_get_or_create_product(customer.name, flute, dimensions, extra)
-            print("product", product)
+            product = find_existing_product(
+                product_name=product_name,
+                dimensions=product_dimensions,
+                flute=flute
+            )
+
+            if not product:
+                product_key = (product_name, product_dimensions, flute)
+
+                if preview_only:
+                    if product_key not in seen_new_products:
+                        seen_new_products.add(product_key)
+                        new_products.append({
+                            "customer_name": customer_name,
+                            "product_name": product_name,
+                            "flute": flute,
+                            "dimensions": product_dimensions,
+                            "extra": extra,
+                            "row": row + 1,
+                            "order_id": order_id,
+                            "order_name": order_name,
+                        })
+
+                    result += (
+                        f"NOWY PRODUKT: {product_name} | "
+                        f"{product_dimensions} | {flute}<br>\n"
+                    )
+                    continue
+                else:
+                    product = safe_get_or_create_product(
+                        customer_name,
+                        flute,
+                        sheet_name,
+                        extra
+                    )
 
             try:
-                order = Order.objects.get(order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
-                                          provider=Provider.objects.get(shortcut=data[0].upper().strip()))
-                result += f'{order} already exists<br>\n'
+                order = Order.objects.get(
+                    order_id=order_id,
+                    provider__shortcut=provider_shortcut
+                )
+                result += f"{order} already exists<br>\n"
 
             except Order.DoesNotExist:
-                price = int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.'))) if data[
-                    22] else 0
+                price = (
+                    int(float(data[22].upper().strip().replace('\xa0', '').replace(',', '.')))
+                    if data[22] else 0
+                )
                 order_date = data[6].upper().strip() if data[6].upper().strip() else None
+
                 order = Order(
                     customer=customer,
                     provider=provider,
-                    order_id=f'{data[1].upper().strip()}/{data[2].upper().strip()}',
+                    order_id=order_id,
                     customer_date=data[5].upper().strip() if data[5].upper().strip() else data[6].upper().strip(),
                     order_date=order_date,
                     order_year=data[5][:4] if data[5] else data[6][:4],
                     delivery_date=None,
                     production_date=None,
-                    dimensions=f'{data[12].upper().strip()}x{data[13].upper().strip()}',
-                    name=data[19].upper().strip(),
+                    dimensions=product_dimensions,
+                    name=order_name,
                     weight=0,
                     order_quantity=data[14].upper().strip(),
                     delivered_quantity=data[15].upper().strip() if data[15].upper().strip() else 0,
                     price=price,
-                    product=product
+                    product=product,
                 )
+
                 if price and order_date:
                     order.save()
-                    result += f'{order} saved<br>'
-                elif provider.name == "PAKER":
+                    result += f"{order} saved<br>"
+                elif provider and provider.name == "PAKER":
                     order.price = 0
                     order.save()
-                    result += f'{order} saved<br>'
+                    result += f"{order} saved<br>"
                 else:
-                    result += f'{data[1].upper().strip()}/{data[2].upper().strip()} no cardboard price or order date\n'
+                    result += f"{order_id} no cardboard price or order date<br>\n"
 
         except Exception as e:
-            result += f'{e}<br>\n'
-    print(result)
-    return result
+            result += f"{e}<br>\n"
+
+    return {
+        "result": result,
+        "new_products": new_products,
+    }
 
 
 def delete_delivery_ajax(request, delivery_id):
@@ -1524,6 +1619,7 @@ class PaletteView(LoginRequiredMixin, View):
 
 class AddOrdersManually(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
+    template_name = "warehouse/add_orders.html"
 
     def get_context_data(self, form=None):
         if form is None:
@@ -1547,50 +1643,94 @@ class AddOrdersManually(LoginRequiredMixin, View):
     def post(self, request):
         form = ManuallyOrdersForm(request.POST)
 
-        if form.is_valid():
-            source = form.cleaned_data['source']
+        if not form.is_valid():
+            messages.error(request, 'Formularz zawiera błędy. Popraw je i spróbuj ponownie.')
+            context = self.get_context_data(form=form)
+            return render(request, 'warehouse/add_orders.html', context=context)
 
-            try:
-                if source == 'sheet':
-                    row = form.cleaned_data['sheet_row']
-                    year = form.cleaned_data['year']
-                    result = load_orders(int(year), row=int(row) - 1, division=None, row_list=None)
-                    messages.success(
-                        request,
-                        f'Pomyślnie załadowano zamówienia z wiersza {row}.'
-                        f'{result}'
+        source = (form.cleaned_data.get('source') or '').strip().lower()
+        confirm_new_products = request.POST.get("confirm_new_products") == "1"
+
+        try:
+            if source == 'sheet':
+                row = form.cleaned_data['sheet_row']
+                year = form.cleaned_data['year']
+
+                if not confirm_new_products:
+                    preview = load_orders(
+                        int(year),
+                        row=int(row) - 1,
+                        preview_only=True
                     )
 
-                elif source == 'provider':
-                    provider = form.cleaned_data['provider']
-                    order_no = form.cleaned_data['provider_order_number']
-                    year = form.cleaned_data['year']
-                    # tutaj Twoja funkcja np.:
-                    # count = import_from_provider(provider, order_no)
-                    print(provider, order_no)
-                    messages.success(
-                        request,
-                        f'Pomyślnie załadowano zamówienie {order_no} od dostawcy {provider}.'
-                    )
-                    z = get_rows_numbers2([int(order_no)], int(year), provider)
-                    load_orders(int(year), row_list=z)
+                    if preview["new_products"]:
+                        return render(request, 'warehouse/confirm_new_products.html', {
+                            'form': form,
+                            'new_products': preview["new_products"],
+                            'source': 'sheet',
+                            'sheet_row': row,
+                            'year': year,
+                        })
 
-                # po sukcesie: redirect, żeby uniknąć ponownego POSTa po F5
-                return redirect('warehouse:add-orders')  # podmień na swoją nazwę URL
-
-            except Exception as e:
-                # Błąd w trakcie importu (np. problem z API, bazą itd.)
-                messages.error(
-                    request,
-                    f'Wystąpił błąd podczas importu zamówień: {e}'
+                final_result = load_orders(
+                    int(year),
+                    row=int(row) - 1,
+                    preview_only=False
                 )
-                context = self.get_context_data(form=form)
-                return render(request, 'warehouse/add_orders.html', context=context)
 
-        # jeśli formularz jest niepoprawny
-        messages.error(request, 'Formularz zawiera błędy. Popraw je i spróbuj ponownie.')
-        context = self.get_context_data(form=form)
-        return render(request, 'warehouse/add_orders.html', context=context)
+                messages.success(
+                    request,
+                    f'Pomyślnie załadowano zamówienia z wiersza {row}. {final_result["result"]}'
+                )
+                return redirect('warehouse:add-orders')
+
+            elif source == 'provider':
+                provider = form.cleaned_data['provider']
+                order_no = form.cleaned_data['provider_order_number']
+                year = form.cleaned_data['year']
+
+                rows = get_rows_numbers2([int(order_no)], int(year), provider)
+
+                if not confirm_new_products:
+                    preview = load_orders(
+                        int(year),
+                        row_list=rows,
+                        preview_only=True
+                    )
+
+                    if preview["new_products"]:
+                        return render(request, 'warehouse/confirm_new_products.html', {
+                            'form': form,
+                            'new_products': preview["new_products"],
+                            'source': 'provider',
+                            'provider_id': provider.id,
+                            'provider_order_number': order_no,
+                            'year': year,
+                        })
+
+                final_result = load_orders(
+                    int(year),
+                    row_list=rows,
+                    preview_only=False
+                )
+
+                messages.success(
+                    request,
+                    f'Pomyślnie załadowano zamówienie {order_no} od dostawcy {provider}. {final_result["result"]}'
+                )
+                return redirect('warehouse:add-orders')
+
+            messages.error(request, f'Nieobsługiwane źródło importu: {source}')
+            context = self.get_context_data(form=form)
+            return render(request, 'warehouse/add_orders.html', context=context)
+
+        except Exception as e:
+            messages.error(
+                request,
+                f'Wystąpił błąd podczas importu zamówień: {e}'
+            )
+            context = self.get_context_data(form=form)
+            return render(request, 'warehouse/add_orders.html', context=context)
 
 
 def add_product_sell3(request):
