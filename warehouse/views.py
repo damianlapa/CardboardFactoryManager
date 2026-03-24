@@ -881,90 +881,157 @@ class OrderDetailView(LoginRequiredMixin, View):
 
         return JsonResponse({"ok": False, "error": "Nieznana akcja."}, status=400)
 
+    # def get(self, request, order_id):
+    #     stock_types = StockType.objects.filter(
+    #         stock_type__in=["material", "product", "special"]
+    #     ).order_by("stock_type", "unit")
+    #     order = Order.objects.get(id=order_id)
+    #     warehouses = Warehouse.objects.all()
+    #     settlements = (
+    #         OrderSettlement.objects
+    #         .filter(order=order)
+    #         .select_related("material", "material__stock", "material__warehouse")
+    #         .prefetch_related("stocksupplysettlement_set__stock_supply")
+    #         .order_by("-settlement_date", "-id")
+    #     )
+    #     warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
+    #
+    #     sales = (
+    #         ProductSell3.objects
+    #         .filter(Q(order=order) | Q(order_parts__order=order))
+    #         .distinct()
+    #         .prefetch_related("order_parts", "order_parts__order")
+    #     )
+    #
+    #     products = [order.product]
+    #
+    #     warehouse_products = None
+    #     for p in products:
+    #         stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
+    #         delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
+    #         dimensions = models.CharField(max_length=32, null=True, blank=True)
+    #         date = models.DateField(null=True, blank=True)
+    #         quantity = models.PositiveIntegerField(default=0)
+    #         name = models.CharField(max_length=64)
+    #         price = p.price
+    #         try:
+    #             warehouse_product_stock = Stock.objects.get(name=name)
+    #             warehouse_products.append(warehouse_product_stock)
+    #         except Stock.DoesNotExist:
+    #             pass
+    #
+    #     # attempt
+    #     items = DeliveryItem.objects.filter(order=order)
+    #     items = list(items)
+    #
+    #     stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
+    #     stock_materials = []
+    #     main_wh = Warehouse.objects.get(name="MAGAZYN GŁÓWNY")
+    #
+    #     all_materials_in_warehouse = (
+    #         WarehouseStock.objects
+    #         .select_related("stock", "stock__stock_type", "warehouse")
+    #         .filter(
+    #             warehouse=main_wh,
+    #             quantity__gt=0,
+    #             stock__stock_type__stock_type="material",
+    #         )
+    #         .order_by("stock__name")
+    #     )
+    #
+    #     for stock_supply in stock_supplies:
+    #         try:
+    #             stock = Stock.objects.get(name=stock_supply.name)
+    #             warehouse_stock = WarehouseStock.objects.get(stock=stock)
+    #             if warehouse_stock not in stock_materials:
+    #                 stock_materials.append(warehouse_stock)
+    #
+    #         except Exception as e:
+    #             pass
+    #
+    #     stocks = StockSupply.objects.all()
+    #
+    #     ld = None
+    #
+    #     try:
+    #         production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
+    #         production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
+    #         cost = order.production_cost()
+    #         other = order.other_costs()
+    #         total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
+    #         earnings = order.total_sales()
+    #         result = round(earnings - total_expenses, 2)
+    #         if production_units:
+    #             last_unit = list(production_units)[-1]
+    #             lq = last_unit.quantity_end
+    #             ld = last_unit.end.date()
+    #     except ProductionOrder.DoesNotExist:
+    #         cost = order.production_cost()
+    #         other = order.other_costs()
+    #         total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
+    #         earnings = order.total_sales()
+    #         result = round(earnings - total_expenses, 2)
+    #         production_units = []
+    #
+    #     # product sell 3
+    #     products_sell = Product.objects.all()
+    #     default_product = order.product
+    #
+    #     customers_sell = Buyer.objects.all()
+    #     default_customer = order.customer
+    #
+    #     warehouse_stocks_sell = WarehouseStock.objects.all()
+    #     if settlements:
+    #         history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
+    #
+    #         for h in history:
+    #             if h.warehouse_stock.warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH':
+    #                 default_warehouse_stock = h.warehouse_stock
+    #                 quantity = h.warehouse_stock.quantity
+    #
+    #     today = datetime.date.today().isoformat()
+    #
+    #     if not ld:
+    #         if items:
+    #             for i in items:
+    #                 if ld:
+    #                     if ld < i.delivery.date:
+    #                         ld = i.delivery.date
+    #                 else:
+    #                     ld = i.delivery.date
+    #
+    #     return render(request, 'warehouse/order_details.html', locals())
+
     def get(self, request, order_id):
         stock_types = StockType.objects.filter(
             stock_type__in=["material", "product", "special"]
         ).order_by("stock_type", "unit")
-        order = Order.objects.get(id=order_id)
+
+        order = (
+            Order.objects
+            .select_related("customer", "provider", "product", "bom")
+            .get(id=order_id)
+        )
+
         warehouses = Warehouse.objects.all()
-        settlements = (
-            OrderSettlement.objects
-            .filter(order=order)
-            .select_related("material", "material__stock", "material__warehouse")
-            .prefetch_related("stocksupplysettlement_set__stock_supply")
-            .order_by("-settlement_date", "-id")
-        )
-        warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
 
-        sales = (
-            ProductSell3.objects
-            .filter(Q(order=order) | Q(order_parts__order=order))
-            .distinct()
-            .prefetch_related("order_parts", "order_parts__order")
+        settlements = OrderSettlement.objects.filter(order=order)
+
+        warehouse_stocks_history = (
+            WarehouseStockHistory.objects
+            .filter(order_settlement__in=settlements)
+            .select_related("warehouse_stock", "order_settlement")
         )
 
-        print("VIEW DEBUG sales ids:", list(sales.values_list("id", flat=True))[:50])
+        sales = ProductSell3.objects.filter(order=order)
 
-        # attempt
         shifts_to = OrderToOrderShift.objects.filter(order_to=order)
-        shifts_from = OrderToOrderShift.objects.filter(order_from=order)
         shifts = shifts_to
-        products = [order.product]
 
-        warehouse_products = None
-        for p in products:
-            stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
-            delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
-            dimensions = models.CharField(max_length=32, null=True, blank=True)
-            date = models.DateField(null=True, blank=True)
-            quantity = models.PositiveIntegerField(default=0)
-            name = models.CharField(max_length=64)
-            price = p.price
-            try:
-                warehouse_product_stock = Stock.objects.get(name=name)
-                warehouse_products.append(warehouse_product_stock)
-            except Stock.DoesNotExist:
-                pass
-
-        # attempt
-        items = DeliveryItem.objects.filter(order=order)
-        items = list(items)
-
-        # price list
-        # price_list_date = order.order_date
-        # price_list_provider = order.provider
-        # price_item_name = order.name
-        #
-        # price_list = PriceList.objects.filter(
-        #     provider=price_list_provider,
-        #     # date_start__lte=price_list_date,
-        #     # date_end__gte=price_list_date
-        # )
-        # print(price_list)
-        # if price_list:
-        #     price_item = PriceListItem.objects.filter(price_list=price_list[0], name=price_item_name)[0]
-        #     print(price_item)
-
-        # for s in shifts_to:
-        #     print(s.get_value())
-        #     s_items = DeliveryItem.objects.filter(order=s.order_from)
-        #     if s_items:
-        #         items.append(s_items[0])
+        items = list(DeliveryItem.objects.filter(order=order))
 
         stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
         stock_materials = []
-        main_wh = Warehouse.objects.get(name="MAGAZYN GŁÓWNY")
-
-        all_materials_in_warehouse = (
-            WarehouseStock.objects
-            .select_related("stock", "stock__stock_type", "warehouse")
-            .filter(
-                warehouse=main_wh,
-                quantity__gt=0,
-                stock__stock_type__stock_type="material",
-            )
-            .order_by("stock__name")
-        )
 
         for stock_supply in stock_supplies:
             try:
@@ -972,8 +1039,7 @@ class OrderDetailView(LoginRequiredMixin, View):
                 warehouse_stock = WarehouseStock.objects.get(stock=stock)
                 if warehouse_stock not in stock_materials:
                     stock_materials.append(warehouse_stock)
-
-            except Exception as e:
+            except Exception:
                 pass
 
         if shifts_to:
@@ -982,61 +1048,71 @@ class OrderDetailView(LoginRequiredMixin, View):
             for s in shifts_to:
                 shift_quantity += s.quantity
 
+        # zostawiamy - potrzebne przy settle
         stocks = StockSupply.objects.all()
 
         ld = None
+        lq = None
 
         try:
-            production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
-            production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
+            production_order = ProductionOrder.objects.get(
+                id_number=f"{order.provider} {order.order_id}"
+            )
+            production_units = ProductionUnit.objects.filter(
+                production_order=production_order
+            ).order_by("sequence")
+
             cost = order.production_cost()
             other = order.other_costs()
-            total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
+            material_cost = order.material_cost()
+            total_expenses = round(sum((material_cost, sum(cost), sum(other))), 2)
             earnings = order.total_sales()
             result = round(earnings - total_expenses, 2)
-            if production_units:
-                last_unit = list(production_units)[-1]
+
+            last_unit = production_units.order_by("-sequence").first()
+            if last_unit:
                 lq = last_unit.quantity_end
                 ld = last_unit.end.date()
+
         except ProductionOrder.DoesNotExist:
             cost = order.production_cost()
             other = order.other_costs()
-            total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
+            material_cost = order.material_cost()
+            total_expenses = round(sum((material_cost, sum(cost), sum(other))), 2)
             earnings = order.total_sales()
             result = round(earnings - total_expenses, 2)
             production_units = []
 
-        # product sell 3
-        products_sell = Product.objects.all()
-        default_product = order.product
+
+        products = [order.product]
 
         customers_sell = Buyer.objects.all()
         default_customer = order.customer
 
         warehouse_stocks_sell = WarehouseStock.objects.all()
+        default_warehouse_stock = None
+        quantity = None
+
         if settlements:
             history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
 
             for h in history:
-                if h.warehouse_stock.warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH':
+                if h.warehouse_stock and h.warehouse_stock.warehouse.name == "MAGAZYN WYROBÓW GOTOWYCH":
                     default_warehouse_stock = h.warehouse_stock
                     quantity = h.warehouse_stock.quantity
+                    break
 
         today = datetime.date.today().isoformat()
 
-        if not ld:
-            if items:
-                for i in items:
-                    if ld:
-                        if ld < i.delivery.date:
-                            ld = i.delivery.date
-                    else:
+        if not ld and items:
+            for i in items:
+                if ld:
+                    if ld < i.delivery.date:
                         ld = i.delivery.date
+                else:
+                    ld = i.delivery.date
 
-        # w OrderDetailView.get(...)
-        orders_other = Order.objects.exclude(id=order.id).order_by("-id")  # [:100]  # do selecta w modalu
-
-        return render(request, 'warehouse/order_details.html', locals())
+        return render(request, "warehouse/order_details.html", locals())
 
 
 class AddShiftView(LoginRequiredMixin, View):
