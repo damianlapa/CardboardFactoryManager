@@ -5,18 +5,20 @@
 <link rel="stylesheet" href="{% static 'css/warehouse/load_wz.css' %}">
 {% endblock %}
 {% block content %}
-<h2>Wykryto nowe produkty</h2>
+<h2>Wykryto nowe produkty w WZ</h2>
 
-<p>Te produkty nie istnieją jeszcze w bazie i zostaną utworzone dopiero po potwierdzeniu.</p>
+<p>
+    Te produkty nie istnieją jeszcze w bazie i zostaną utworzone dopiero po potwierdzeniu.
+</p>
 
 <table class="table">
     <thead>
         <tr>
             <th>Klient</th>
-            <th>Nazwa</th>
+            <th>Produkt</th>
             <th>Fala</th>
             <th>Wymiary</th>
-            <th>Dodatkowe</th>
+            <th>Extra</th>
             <th>Wiersz</th>
             <th>Zamówienie</th>
         </tr>
@@ -36,24 +38,17 @@
     </tbody>
 </table>
 
+<hr>
+
 <form method="post">
     {% csrf_token %}
-    <input type="hidden" name="source" value="{{ source }}">
-    <input type="hidden" name="year" value="{{ year }}">
     <input type="hidden" name="confirm_new_products" value="1">
 
-    {% if source == "sheet" %}
-        <input type="hidden" name="sheet_row" value="{{ sheet_row }}">
-    {% elif source == "provider" %}
-        <input type="hidden" name="provider" value="{{ provider_id }}">
-        <input type="hidden" name="provider_order_number" value="{{ provider_order_number }}">
-    {% endif %}
-
     <button type="submit" class="btn btn-success">
-        Tak, utwórz nowe produkty i importuj
+        Tak, utwórz nowe produkty i importuj WZ
     </button>
 
-    <a href="{% url 'warehouse:add-orders' %}" class="btn btn-secondary">
+    <a href="{% url 'warehouse:load-transport-document' %}" class="btn btn-secondary">
         Anuluj
     </a>
 </form>

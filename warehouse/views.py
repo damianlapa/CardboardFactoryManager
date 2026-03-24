@@ -96,8 +96,6 @@ def build_product_name(customer_name, flute, sheet_name, extra):
 def find_existing_product(product_name, dimensions=None, flute=None):
     qs = Product.objects.filter(name=product_name)
 
-    if dimensions:
-        qs = qs.filter(dimensions=dimensions)
     if flute:
         qs = qs.filter(flute=flute)
 
@@ -274,209 +272,361 @@ def delete_delivery_ajax(request, delivery_id):
     return JsonResponse({"success": False, "message": "Invalid request method."})
 
 
+def parse_wz_pdf(pdf_file):
+    print('here')
+    errors = []
+    provider = ''
+    wz_number = ''
+    car_number = ''
+    date = ''
+    phone = ''
+    palettes = ''
+    orders = []
+    p_quantity = ''
+    order_num = 1
+    number = ''
+
+    order_data = []
+
+    cardboard = ''
+    dimensions = ''
+    quantity = ''
+    order_numbers = []
+
+    palletes_list = []
+
+    with pdfplumber.open(pdf_file) as pdf:
+        all_text = ""
+        for page in pdf.pages:
+            print(type(page.extract_text()))
+            text = page.extract_text() or ""
+            all_text += text + "\n"
+
+    lines = all_text.splitlines()
+
+    if 'tfp' in all_text or 'TFP' in all_text:
+
+        for num in range(len(lines)):
+            line = lines[num]
+            if 'TFP Sp. z o.o.' in line:
+                provider = "TFP"
+            if "Data..." in line:
+                date = line.split('.:')[1].strip()
+            if "( " in line and " )" in line:
+                phone = line.replace("( ", "").replace(" )", "").strip()
+            if "Kopia WZ Nr." in line and not wz_number:
+                wz_number = line.split('.:')[1].strip()
+            if "Nr rej./Nazwisko" in line and not car_number:
+                car_number = line.split('.:')[1].split('/')[0].strip()
+            if "Powierzone" in line:
+                p_line = line.split(' ')
+                palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
+                palletes_list.append(palettes)
+            if "Nr zam. klienta:" in line:
+                number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                orders.append([number, cardboard, dimensions, quantity])
+            if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
+                line_split = line.split(' ')
+                if line_split[0][0].isdigit() and line_split[1][-1] == '\xad' and 'x' in line_split[2]:
+                    cardboard = line_split[1][:-1]
+                    dimensions = line_split[2]
+                    quantity = (
+                        line_split[3].split(',')[0]
+                        if len(line_split) == 5
+                        else f'{line_split[3]}{line_split[4]}'.split(',')[0]
+                    )
+
+            if "Ilość na palecie: " in line:
+                if order_num == len(orders):
+                    p_quantity += f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+                else:
+                    orders[-2].append(p_quantity)
+                    order_num += 1
+                    p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
+
+        if orders:
+            orders[-1].append(p_quantity)
+
+        date = date.replace('­', '.').split('.')
+        if int(date[0]) > 31:
+            date = (date[2], date[1], date[0])
+
+    elif 'AQUILA' in all_text or 'aquila' in all_text:
+
+        for num in range(len(lines)):
+            line = lines[num]
+
+            if not provider and 'aquila' in line.lower():
+                provider = 'AQ'
+
+            if not wz_number and "PAKER SPÓŁKA Z OGRANICZONĄ" in line:
+                s_line = line.split(' ')
+                wz_number = s_line[-2]
+                date = s_line[-1].split('/')
+
+            if not phone and "Nr tel./rejestracyjny" in line:
+                phone = line.split(' ')[-1]
+
+            if "Tektura falista Jakość " in line:
+                if order_data:
+                    orders.append(order_data)
+                    order_data = []
+
+                line = line.replace('Tektura falista Jakość ', '')
+                line = line.split(' ')
+                cardboard = line[0]
+                dimensions = ''.join((line[1], line[2], line[3]))
+                quantity = line[6]
+
+                order_data.extend((None, cardboard, dimensions, quantity, None))
+
+            if "Bigi" in line:
+                order_num_line = lines[num + 1]
+                if len(order_num_line.split(' ')) > 1:
+                    order_num = order_num_line.split(' ')[1]
+                else:
+                    order_num = order_num_line[2:]
+                if order_data:
+                    order_data[0] = order_num
+
+            if "STOS" in line:
+                line = line.split(' ')
+                if order_data:
+                    if not order_data[4]:
+                        order_data[4] = f'{line[0]}x{line[3].replace(".", "")}'
+                    else:
+                        order_data[4] += f';{line[0]}x{line[3].replace(".", "")}'
+
+            if "Paleta" in line:
+                palletes_item = ''
+                if "Euro" in line:
+                    palletes_item += 'EPAL;'
+                else:
+                    palletes_item += 'Paleta;'
+                line = line.replace('..', '')
+                line = line.strip().split(' ')
+                palletes_item += f'{line[-3]}x{line[-5]};{line[-1]}'
+                palletes_list.append(palletes_item)
+
+        if order_data:
+            orders.append(order_data)
+
+    else:
+        for num in range(len(lines)):
+            line = lines[num]
+            if 'JASSBOARD SP. Z O.O.' in line:
+                provider = "JASS"
+            if "Data wystawienia: " in line:
+                date = line.split('wystawienia: ')[1].strip().replace('-', '.').split('.')
+                date = (date[2], date[1], date[0])
+            if "Nr rejestracyjny: " in line:
+                try:
+                    phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
+                except ValueError:
+                    car_number = 'None'
+                    phone = 'None'
+            if "Numer WZ" in line and not wz_number:
+                wz_number = lines[num + 1].strip()
+            if "PALETA" in line:
+                p_line = line.split(' ')
+                palette = p_line[0].split('_')
+                palette_type = 'Paleta'
+                if palette[1] == 'EURO':
+                    palette_type = 'EPAL'
+                palette_dimensions = palette[2].lower().split('x')
+                palette_dimensions = f'{palette_dimensions[1]}x{palette_dimensions[0]}'
+                palettes = f'{palette_type};{palette_dimensions};{p_line[1]}'
+                palletes_list.append(palettes)
+            if "nr zam.:" in line.lower():
+                number = line.lower().split("nr zam.:")[1].replace('jass', '').strip()
+                if len(number.split('/')[1]) > 2:
+                    _num, _year = number.split('/')
+                    number = _num + '/' + _year[:2]
+                if number not in order_numbers:
+                    order_numbers.append(number)
+            if "ark" in line and 'm2' in line and "RAZEM" not in line and 'Ilość wysłana' not in line:
+                cardboard_line = line.split(' ')
+                cardboard = cardboard_line[1][:-9] if cardboard_line[1][2].isdigit() else cardboard_line[1][:-8]
+                dimensions = cardboard_line[1][-9:] if cardboard_line[1][2].isdigit() else cardboard_line[1][-8:]
+                p_quantity += (
+                    f'{cardboard_line[3]};'
+                    if len(cardboard_line) == 7
+                    else f'{cardboard_line[3]}{cardboard_line[4]};'
+                )
+                p_quantity.replace(',', '')
+            if cardboard in line and "RAZEM" in line:
+                quantity_line = line.split(" ")
+                quantity = quantity_line[3].replace(',', '')
+                if len(dimensions) == 9:
+                    dimensions_data = dimensions.split('*')
+                else:
+                    dimensions_data = dimensions[:-4], dimensions[4:]
+                dimensions = f'{str(int(dimensions_data[1]))}x{str(int(dimensions_data[0]))}'
+                orders.append([number, cardboard, dimensions, quantity, p_quantity])
+                p_quantity = ''
+
+    if not provider:
+        errors.append("Nie udało się rozpoznać dostawcy z pliku WZ.")
+
+    return {
+        "provider": provider,
+        "wz_number": wz_number,
+        "car_number": car_number,
+        "date": date,
+        "phone": phone,
+        "orders": orders,
+        "palletes_list": palletes_list,
+        "errors": errors,
+    }
+
+
+def collect_new_products_for_wz(parsed):
+    errors = []
+    all_new_products = []
+
+    provider_shortcut = parsed["provider"]
+    orders = parsed["orders"]
+
+    if not provider_shortcut:
+        errors.append("Nie udało się rozpoznać dostawcy z pliku WZ.")
+        return {
+            "new_products": [],
+            "errors": errors,
+        }
+
+    try:
+        provider_obj = Provider.objects.get(shortcut=provider_shortcut)
+    except Provider.DoesNotExist:
+        errors.append(f"Provider {provider_shortcut} does not exist.")
+        return {
+            "new_products": [],
+            "errors": errors,
+        }
+
+    wrong_orders = []
+    year_orders = {}
+    seen = set()
+
+    for o in orders:
+        try:
+            order_num_split, year_num_split = o[0].split('/')
+
+            if len(year_num_split) != 2:
+                cleaned_year = ""
+                for char in year_num_split:
+                    if char.isnumeric():
+                        cleaned_year += char
+                year_num_split = cleaned_year
+
+            if len(year_num_split) == 2:
+                year_num_split = '20' + year_num_split
+
+            year_orders.setdefault(year_num_split, []).append(int(order_num_split))
+
+        except Exception:
+            errors.append(f'Error creating item: {o}')
+            wrong_orders.append(o)
+
+    for key in year_orders:
+        nums = get_rows_numbers2(year_orders[key], int(key), provider_obj)
+        preview = load_orders(int(key), row_list=nums, preview_only=True)
+
+        for p in preview["new_products"]:
+            unique_key = (p["product_name"], p["dimensions"], p["flute"])
+            if unique_key not in seen:
+                seen.add(unique_key)
+                all_new_products.append(p)
+
+    return {
+        "new_products": all_new_products,
+        "errors": errors,
+    }
+
+
 class LoadWZ(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
-
+        print('#1')
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
-        if "wz_file" not in request.FILES:
+        confirm_new_products = request.POST.get("confirm_new_products") == "1"
+
+        try:
+            # ETAP 2 — po potwierdzeniu bierzemy dane z session
+            if confirm_new_products:
+                parsed = request.session.get("pending_wz_parsed")
+
+                if not parsed:
+                    return render(request, "warehouse/load_wz_result.html", {
+                        "errors": ["Brak danych oczekującego WZ. Wgraj plik ponownie."]
+                    })
+
+                response = self._save_wz(request, parsed)
+
+                try:
+                    del request.session["pending_wz_parsed"]
+                except KeyError:
+                    pass
+
+                return response
+
+            # ETAP 1 — pierwszy upload i preview
+            if "wz_file" not in request.FILES:
+                return render(request, "warehouse/load_wz_result.html", {
+                    "errors": ["No file was uploaded. Please select a file and try again."]
+                })
+
+            pdf_file = request.FILES["wz_file"]
+            parsed = parse_wz_pdf(pdf_file)
+
+            if parsed["errors"]:
+                return render(request, "warehouse/load_wz_result.html", {
+                    "errors": parsed["errors"]
+                })
+
+            preview = collect_new_products_for_wz(parsed)
+
+            if preview["errors"]:
+                return render(request, "warehouse/load_wz_result.html", {
+                    "errors": preview["errors"]
+                })
+
+            # zapisujemy sparsowane dane do session
+            request.session["pending_wz_parsed"] = parsed
+            request.session.modified = True
+
+            if preview["new_products"]:
+                return render(request, "warehouse/confirm_new_products_wz.html", {
+                    "new_products": preview["new_products"],
+                })
+
+            response = self._save_wz(request, parsed)
+
+            try:
+                del request.session["pending_wz_parsed"]
+            except KeyError:
+                pass
+
+            return response
+
+        except Exception as e:
             return render(request, "warehouse/load_wz_result.html", {
-                "errors": ["No file was uploaded. Please select a file and try again."]
+                "errors": [f"Wystąpił błąd podczas przetwarzania WZ: {e}"]
             })
+
+    def _save_wz(self, request, parsed):
         result = []
-        pdf_file = request.FILES["wz_file"]
         errors = []
 
-        with pdfplumber.open(pdf_file) as pdf:
-            all_text = ""
-            for page in pdf.pages:
-                all_text += page.extract_text() + "\n"
-
-        lines = all_text.splitlines()
-
-        provider = ''
-        wz_number = ''
-        car_number = ''
-        date = ''
-        phone = ''
-        palettes = ''
-        orders = []
-        p_quantity = ''
-        order_num = 1
-        number = ''
-
-        order_data = []
-
-        cardboard = ''
-        dimensions = ''
-        quantity = ''
-        order_numbers = []
-
-        palletes_list = []
-
-        if 'tfp' in all_text or 'TFP' in all_text:
-
-            for num in range(len(lines)):
-                line = lines[num]
-                if 'TFP Sp. z o.o.' in line:
-                    provider = "TFP"
-                if "Data..." in line:
-                    date = line.split('.:')[1].strip()
-                if "( " in line and " )" in line:
-                    phone = line.replace("( ", "").replace(" )", "").strip()
-                if "Kopia WZ Nr." in line and not wz_number:
-                    wz_number = line.split('.:')[1].strip()
-                if "Nr rej./Nazwisko" in line and not car_number:
-                    car_number = line.split('.:')[1].split('/')[0].strip()
-                if "Powierzone" in line:
-                    p_line = line
-                    p_line = p_line.split(' ')
-                    palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
-                    palletes_list.append(palettes)
-                if "Nr zam. klienta:" in line:
-                    number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
-                    # try:
-                    #     if len(number.split('/')[1]) > 2:
-                    #         number = f'{number.split('/')[0]}/{number.split('/')[1][2:4]}'
-                    # except Exception as e:
-                    #     pass
-                    orders.append([number, cardboard, dimensions, quantity])
-                if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
-                    line = line.split(' ')
-                    if line[0][0].isdigit() and line[1][-1] == '\xad' and 'x' in line[2]:
-                        cardboard = line[1][:-1]
-                        dimensions = line[2]
-                        quantity = line[3].split(',')[0] if len(line) == 5 else f'{line[3]}{line[4]}'.split(',')[0]
-
-                if "Ilość na palecie: " in line:
-                    if order_num == len(orders):
-                        p_quantity += f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
-                    else:
-                        orders[-2].append(p_quantity)
-                        order_num += 1
-                        p_quantity = f'{line.split("palecie:")[1].split(",")[0].strip().replace(" ", "")};'
-
-            orders[-1].append(p_quantity)
-
-            date = date.replace('­', '.').split('.')
-            if int(date[0]) > 31:
-                date = (date[2], date[1], date[0])
-
-        elif 'AQUILA' in all_text or 'aquila' in all_text:
-
-            for num in range(len(lines)):
-                line = lines[num]
-
-                if not provider:
-                    if 'aquila' in line.lower():
-                        provider = 'AQ'
-
-                if not wz_number:
-                    if "PAKER SPÓŁKA Z OGRANICZONĄ" in line:
-                        s_line = line.split(' ')
-                        wz_number = s_line[-2]
-                        date = s_line[-1].split('/')
-
-                if not phone:
-                    if "Nr tel./rejestracyjny" in line:
-                        phone = line.split(' ')[-1]
-
-                if "Tektura falista Jakość " in line:
-                    if order_data:
-                        orders.append(order_data)
-                        order_data = []
-                    line = line.replace('Tektura falista Jakość ', '')
-                    line = line.split(' ')
-                    cardboard = line[0]
-                    dimensions = ''.join((line[1], line[2], line[3]))
-                    quantity = line[6]
-
-                    order_data.extend((None, cardboard, dimensions, quantity, None))
-
-                if "Bigi" in line:
-                    order_num_line = lines[num + 1]
-                    print(order_num_line)
-                    if len(order_num_line.split(' ')) > 1:
-                        order_num = order_num_line.split(' ')[1]
-                    else:
-                        order_num = order_num_line[2:]
-                    if order_data:
-                        order_data[0] = order_num
-
-                if "STOS" in line:
-                    line = line.split(' ')
-                    if order_data:
-                        if not order_data[4]:
-                            order_data[4] = f'{line[0]}x{line[3].replace(".", "")}'
-                        else:
-                            order_data[4] += f';{line[0]}x{line[3].replace(".", "")}'
-
-                if "Paleta" in line:
-                    palletes_item = ''
-                    if "Euro" in line:
-                        palletes_item += 'EPAL;'
-                    else:
-                        palletes_item += 'Paleta;'
-                    line = line.replace('..', '')
-                    line = line.strip().split(' ')
-                    palletes_item += f'{line[-3]}x{line[-5]};{line[-1]}'
-                    palletes_list.append(palletes_item)
-
-            orders.append(order_data)
-
-        else:
-            for num in range(len(lines)):
-                line = lines[num]
-                if 'JASSBOARD SP. Z O.O.' in line:
-                    provider = "JASS"
-                if "Data wystawienia: " in line:
-                    date = line.split('wystawienia: ')[1].strip().replace('-', '.').split('.')
-                    date = date[2], date[1], date[0]
-                if "Nr rejestracyjny: " in line:
-                    try:
-                        phone, car_number = line.split("Nr rejestracyjny: ")[1].split(' ')
-                    except ValueError:
-                        car_number = 'None'
-                        phone = 'None'
-                if "Numer WZ" in line and not wz_number:
-                    wz_number = lines[num + 1].strip()
-                if "PALETA" in line:
-                    p_line = line.split(' ')
-                    palette = p_line[0].split('_')
-                    palette_type = 'Paleta'
-                    if palette[1] == 'EURO':
-                        palette_type = 'EPAL'
-                    palette_dimensions = palette[2].lower().split('x')
-                    palette_dimensions = f'{palette_dimensions[1]}x{palette_dimensions[0]}'
-                    palettes = f'{palette_type};{palette_dimensions};{p_line[1]}'
-                    palletes_list.append(palettes)
-                if "nr zam.:" in line.lower():
-                    number = line.lower().split("nr zam.:")[1].replace('jass', '').strip()
-                    if len(number.split('/')[1]) > 2:
-                        _num, _year = number.split('/')
-                        number = _num + '/' + _year[:2]
-                    if number not in order_numbers:
-                        order_numbers.append(number)
-                if "ark" in line and 'm2' in line and not "RAZEM" in line and not 'Ilość wysłana' in line:
-                    cardboard_line = line.split(' ')
-                    cardboard = cardboard_line[1][:-9] if cardboard_line[1][2].isdigit() else cardboard_line[1][:-8]
-                    dimensions = cardboard_line[1][-9:] if cardboard_line[1][2].isdigit() else cardboard_line[1][-8:]
-                    p_quantity += f'{cardboard_line[3]};' if len(
-                        cardboard_line) == 7 else f'{cardboard_line[3]}{cardboard_line[4]};'
-                    p_quantity.replace(',', '')
-                if cardboard in line and "RAZEM" in line:
-                    quantity_line = line.split(" ")
-                    quantity = quantity_line[3].replace(',', '')
-                    if len(dimensions) == 9:
-                        dimensions_data = dimensions.split('*')
-                    else:
-                        dimensions_data = dimensions[:-4], dimensions[4:]
-                    dimensions = f'{str(int(dimensions_data[1]))}x{str(int(dimensions_data[0]))}'
-                    orders.append([number, cardboard, dimensions, quantity, p_quantity])
-                    p_quantity = ''
+        provider = parsed["provider"]
+        wz_number = parsed["wz_number"]
+        car_number = parsed["car_number"]
+        date = parsed["date"]
+        phone = parsed["phone"]
+        orders = parsed["orders"]
+        palletes_list = parsed["palletes_list"]
 
         try:
             delivery, created = Delivery.objects.get_or_create(
@@ -484,126 +634,91 @@ class LoadWZ(LoginRequiredMixin, View):
                 defaults={
                     'provider': Provider.objects.get(shortcut=provider),
                     'date': datetime.date(int(date[2]), int(date[1]), int(date[0])),
-                    'car_number': car_number[:16],
-                    'telephone': phone.replace(' ', ''),
+                    'car_number': car_number[:16] if car_number else '',
+                    'telephone': phone.replace(' ', '') if phone else '',
                 }
             )
+
             if not created:
                 errors.append(f'Delivery with number {wz_number} already exists.<br>')
                 return render(request, "warehouse/load_wz_result.html", {
-                    "errors": errors
+                    "results": result,
+                    "errors": errors,
+                    "delivery": delivery
                 })
 
             for p in palletes_list:
-                palettes = p
-
                 try:
-                    palette = Palette.objects.get(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
+                    palette = Palette.objects.get(name=f'{p.split(";")[0]} {p.split(";")[1]}')
                 except Palette.DoesNotExist:
-                    palette = Palette.objects.create(name=f'{palettes.split(";")[0]} {palettes.split(";")[1]}')
-                    palette.save()
+                    palette = Palette.objects.create(name=f'{p.split(";")[0]} {p.split(";")[1]}')
 
-                delivery_palette = DeliveryPalette.objects.create(
+                DeliveryPalette.objects.create(
                     delivery=delivery,
                     palette=palette,
-                    quantity=int(palettes.split(';')[2])
+                    quantity=int(p.split(';')[2])
                 )
-                delivery_palette.save()
 
         except Provider.DoesNotExist:
             errors.append(f'Provider {provider} does not exist.')
+            return render(request, "warehouse/load_wz_result.html", {
+                "results": result,
+                "errors": errors,
+                "delivery": None
+            })
         except Exception as e:
             errors.append(f'Error creating delivery: {str(e)}')
+            return render(request, "warehouse/load_wz_result.html", {
+                "results": result,
+                "errors": errors,
+                "delivery": None
+            })
+
         wrong_orders = []
-        numbers = []
-        year_orders = {} # new
+        year_orders = {}
+
         for o in orders:
             try:
                 order_num_split, year_num_split = o[0].split('/')
-                if len(year_num_split) != 2:
-                    _ynms = ""
-                    for char in year_num_split:
-                        if char.isnumeric():
-                            _ynms += char
-                    year_num_split = _ynms
-
                 if len(year_num_split) == 2:
                     year_num_split = '20' + year_num_split
-                if year_num_split in year_orders.keys():
-                    year_orders[year_num_split].append(int(order_num_split))
-                else:
-                    year_orders[year_num_split] = [int(order_num_split)]
-            except ValueError:
+
+                year_orders.setdefault(year_num_split, []).append(int(order_num_split))
+            except Exception:
                 errors.append(f'Error creating item: {o}')
                 wrong_orders.append(o)
 
         for key in year_orders:
             nums = get_rows_numbers2(year_orders[key], int(key), delivery.provider)
-            load_orders(key, row_list=nums)
+            load_orders(int(key), row_list=nums, preview_only=False)
 
-            for wrong_order in wrong_orders:
+        for wrong_order in wrong_orders:
+            if wrong_order in orders:
                 orders.remove(wrong_order)
 
-        for order in orders:
-            try:
-                p_quantity_counted = 0
-                for p in order[4].split(';'):
-                    if p:
-                        if 'x' in p:
-                            p = p.split('x')
-                            p = int(p[0]) * int(p[1])
-                        p_quantity_counted += int(p)
-                if p_quantity_counted != int(order[3]):
-                    order[3] = p_quantity_counted
-                    result.append(f'Order {order[0]}: Quantity corrected to {p_quantity_counted}')
-            except Exception as e:
-                errors.append(f'Error with order {order[0]}: {str(e)}')
-            try:
-                print('split', order[0])
-                order_id_num, order_id_year = order[0].split('/')
-                if len(order_id_year) > 2:
-                    temp_order_id_year = ''
-                    for char in order_id_year:
-                        if str(char).isdigit() and str(char) in '0123456789':
-                            print(char)
-                            temp_order_id_year += str(char)
-                    order_id_year = temp_order_id_year
-                    if len(order_id_year) > 2:
-                        order_id_year = str(int(order_id_year) - 2000)
-                    print(order_id_year, 'point3')
-                    Order.objects.get(provider=delivery.provider, order_id=f'{order_id_num}/{order_id_year}')
-                else:
-                    Order.objects.get(provider=delivery.provider, order_id=order[0])
-            except Order.DoesNotExist:
-                print('none')
-                pass
-            try:
-                if '/' in order[0] and len(order[0].split('/')[1]) > 2:
-                    order_split = order[0].split('/')
-                    temp = ''
-                    for char in order_split[1]:
-                        if str(char).isdigit() and str(char) in '0123456789':
-                            temp += str(char)
-                    if len(temp) > 2:
-                        order[0] = str(order_split[0]) + '/' + temp[2:4]
-                    else:
-                        order[0] = str(order_split[0]) + '/' + temp
-                delivery_item = DeliveryItem.objects.create(
-                    delivery=delivery,
-                    order=Order.objects.get(provider=delivery.provider, order_id=order[0]),
-                    quantity=order[3],
-                    palettes_quantity=order[4]
-                )
-                delivery_item.save()
-                result.append(f'Order {order[0]} successfully linked to delivery.')
+        try:
+            for item in orders:
+                try:
+                    order = Order.objects.get(order_id=item[0], provider=delivery.provider)
+                    delivery_item = DeliveryItem.objects.create(
+                        delivery=delivery,
+                        order=order,
+                        quantity=int(str(item[3]).replace(' ', '').replace(',', '')),
+                        palettes_quantity=item[4] if len(item) > 4 else ''
+                    )
+                    result.append(f'{delivery_item} created')
+                except Order.DoesNotExist:
+                    errors.append(f'Order {item[0]} does not exist.')
+                except Exception as e:
+                    errors.append(f'Error creating delivery item {item}: {e}')
+        except Exception as e:
+            errors.append(f'General item creation error: {e}')
 
-            except Order.DoesNotExist:
-                errors.append(f'Order {order[0]} does not exist for provider {delivery.provider}.')
-            except Exception as e:
-                errors.append(f'Error with delivery item for order {order[0]}: {str(e)}')
-
-        return render(request, "warehouse/load_wz_result.html",
-                      {"results": result, "errors": errors, "delivery": delivery})
+        return render(request, "warehouse/load_wz_result.html", {
+            "results": result,
+            "errors": errors,
+            "delivery": delivery
+        })
 
 
 class OrderListView(LoginRequiredMixin, View):
