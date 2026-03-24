@@ -181,7 +181,7 @@ def build_product_name(customer_name, flute, sheet_name, extra):
 
     if extra:
         return f"{customer_name} | {flute} | {sheet_name} | {extra}"
-    return f"{customer_name} | {flute} | {sheet_name} |"
+    return f"{customer_name} | {flute} | {sheet_name}"
 
 
 def find_existing_product(product_name, dimensions=None, flute=None):
