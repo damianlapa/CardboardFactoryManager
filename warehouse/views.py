@@ -171,6 +171,8 @@ def get_flute(text):
             return 'EB'
         if 'BC' in text:
             return 'BC'
+        if 'EE' in text:
+            return 'EE'
 
     return None
 
