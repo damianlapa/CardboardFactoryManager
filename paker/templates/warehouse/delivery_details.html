@@ -38,6 +38,7 @@
         <th>Quantity</th>
         <th>Palettes quantity</th>
         <th>Processed</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody>
@@ -56,6 +57,20 @@
           </a>
           {% endif %}
         </td>
+       <td>
+  {% if item.processed %}
+    <button
+      type="button"
+      class="process-button open-undo-modal"
+      data-url="{% url 'warehouse:undo_delivery_item_process' item.id %}"
+      data-label="przyjęcie pozycji {{ item.order }} / ilość {{ item.quantity }}"
+    >
+      Cofnij
+    </button>
+  {% else %}
+    <span style="color:#888;">—</span>
+  {% endif %}
+</td>
       </tr>
       {% empty %}
       <tr>
@@ -102,15 +117,76 @@
     </form>
   </div>
 </div>
+<div id="undoModal" class="modal">
+  <div class="modal-content" style="max-width: 430px;">
+    <span class="closeundo">&times;</span>
+    <h2>Potwierdź cofnięcie</h2>
+    <p id="undoModalText">Czy na pewno chcesz cofnąć operację?</p>
 
+    <form id="undoForm" method="post" action="">
+      {% csrf_token %}
+      <input
+        type="password"
+        name="confirm_password"
+        id="undoPasswordInput"
+        placeholder="Hasło do cofania"
+        required
+        style="width:100%; padding:10px; margin:12px 0;"
+      >
+      <button type="submit" class="process-button">Potwierdź</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{% static 'js/warehouse/delivery-add-item.js' %}"></script>
 <script>
-  document.getElementById("update-button").addEventListener("click", function (event) {
-    this.disabled = true;
-    this.innerText = "Processing...";
+  const updateBtn = document.getElementById("update-button");
+
+  if (updateBtn) {
+    updateBtn.addEventListener("click", function () {
+      this.disabled = true;
+      this.innerText = "Processing...";
+    });
+  }
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const undoModal = document.getElementById("undoModal");
+  const undoForm = document.getElementById("undoForm");
+  const undoText = document.getElementById("undoModalText");
+  const undoPasswordInput = document.getElementById("undoPasswordInput");
+  const closeUndoBtn = undoModal ? undoModal.querySelector(".closeundo") : null;
+
+  document.querySelectorAll(".open-undo-modal").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const url = this.dataset.url;
+      const label = this.dataset.label || "wybraną operację";
+
+      if (!undoModal || !undoForm || !undoText || !undoPasswordInput) return;
+
+      undoForm.action = url;
+      undoText.textContent = `Czy na pewno chcesz cofnąć: ${label}?`;
+      undoPasswordInput.value = "";
+      undoModal.style.display = "block";
+      undoPasswordInput.focus();
+    });
   });
+
+  if (closeUndoBtn) {
+    closeUndoBtn.addEventListener("click", function () {
+      undoModal.style.display = "none";
+    });
+  }
+
+  if (undoModal) {
+    undoModal.addEventListener("click", function (event) {
+      if (event.target === undoModal) {
+        undoModal.style.display = "none";
+      }
+    });
+  }
+});
 </script>
 {% endblock %}

@@ -56,6 +56,97 @@ def _check_undo_password(request):
     return secrets.compare_digest(password, expected)
 
 
+def undo_delivery_item_process(request, item_id):
+    if request.method != "POST":
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    if not _check_undo_password(request):
+        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    try:
+        with transaction.atomic():
+            item = DeliveryItem.objects.select_for_update().get(pk=item_id)
+
+            if not item.processed:
+                raise ValidationError("Ta pozycja dostawy nie jest jeszcze przyjęta na magazyn.")
+
+            supply = (
+                StockSupply.objects
+                .select_for_update()
+                .filter(delivery_item=item)
+                .first()
+            )
+
+            if not supply:
+                raise ValidationError("Brak StockSupply dla tej pozycji dostawy.")
+
+            settled_qty = (
+                StockSupplySettlement.objects
+                .filter(stock_supply=supply, as_result=False)
+                .aggregate(s=Sum("quantity"))["s"] or 0
+            )
+            sold_qty = (
+                StockSupplySell.objects
+                .filter(stock_supply=supply)
+                .aggregate(s=Sum("quantity"))["s"] or 0
+            )
+
+            if settled_qty > 0 or sold_qty > 0:
+                raise ValidationError(
+                    f"Nie można cofnąć przyjęcia. Partia była już użyta "
+                    f"(rozliczono: {settled_qty}, sprzedano: {sold_qty})."
+                )
+
+            hist_rows = list(
+                WarehouseStockHistory.objects
+                .select_for_update()
+                .filter(stock_supply=supply)
+                .order_by("date", "id")
+            )
+
+            touched_ws_ids = {h.warehouse_stock_id for h in hist_rows}
+            delivery_date = item.delivery.date
+
+            WarehouseStockHistory.objects.filter(stock_supply=supply).delete()
+            supply.delete()
+
+            for ws_id in touched_ws_ids:
+                ws = WarehouseStock.objects.select_for_update().get(pk=ws_id)
+                rebuild_ws_history_from_date(ws=ws, from_date=delivery_date)
+
+            order = Order.objects.select_for_update().get(pk=item.order_id)
+            qty = int(item.quantity or 0)
+
+            order.delivered_quantity = max(0, int(order.delivered_quantity or 0) - qty)
+            order.delivered = bool(order.order_quantity and (order.delivered_quantity / order.order_quantity) > 0.92)
+
+            last_processed_item = (
+                DeliveryItem.objects
+                .filter(order=order, processed=True)
+                .exclude(pk=item.pk)
+                .select_related("delivery")
+                .order_by("-delivery__date", "-id")
+                .first()
+            )
+            order.delivery_date = last_processed_item.delivery.date if last_processed_item else None
+            order.save(update_fields=["delivered_quantity", "delivered", "delivery_date"])
+
+            item.processed = False
+            item.save(update_fields=["processed"])
+
+            delivery = Delivery.objects.select_for_update().get(pk=item.delivery_id)
+            if not DeliveryItem.objects.filter(delivery=delivery, processed=True).exists():
+                delivery.processed = False
+                delivery.save(update_fields=["processed"])
+
+        messages.success(request, "Przyjęcie na magazyn zostało cofnięte.")
+    except Exception as e:
+        messages.error(request, f"Błąd cofania przyjęcia: {e}")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
 def get_flute(text):
     text = (text or "").upper()
     waves = 0

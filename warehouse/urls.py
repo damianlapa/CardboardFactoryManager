@@ -136,4 +136,5 @@ urlpatterns += [
 urlpatterns += [
     path('settlement/<int:settlement_id>/undo/', undo_order_settlement, name='undo_order_settlement'),
     path("sell/<int:sell_id>/undo/", undo_product_sell, name="undo_product_sell"),
+    path("delivery-item/<int:item_id>/undo-process/", undo_delivery_item_process, name="undo_delivery_item_process"),
 ]
