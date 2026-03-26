@@ -1,0 +1,258 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .maintenance-detail-page {
+        padding: 16px;
+    }
+
+    .maintenance-title {
+        margin-bottom: 16px;
+    }
+
+    .maintenance-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr 420px;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .panel h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        font-size: 18px;
+    }
+
+    .info-row {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .data-table th {
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .contact-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fcfcfc;
+    }
+
+    .contact-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .small-muted {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .main-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-missing {
+        background: #ffe3e3;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1c2;
+        color: #8a6300;
+    }
+
+    .status-ok {
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .empty-box {
+        padding: 16px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        color: #666;
+        text-align: center;
+    }
+
+    @media (max-width: 1400px) {
+        .maintenance-layout {
+            grid-template-columns: 280px 1fr 360px;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .maintenance-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-detail-page">
+    <div class="maintenance-title">
+        <h2>{{ supplier.name }}</h2>
+    </div>
+
+    <div class="maintenance-layout">
+        <div class="panel">
+            <h3>Dane dostawcy</h3>
+
+            <div class="info-row"><b>Nazwa:</b> {{ supplier.name }}</div>
+            <div class="info-row"><b>Skrót:</b> {{ supplier.shortcut|default:"-" }}</div>
+            <div class="info-row"><b>Miasto:</b> {{ supplier.city|default:"-" }}</div>
+            <div class="info-row"><b>Adres:</b> {{ supplier.address|default:"-" }}</div>
+            <div class="info-row">
+                <b>WWW:</b>
+                {% if supplier.website %}
+                    <a href="{{ supplier.website }}" target="_blank" rel="noopener noreferrer">
+                        {{ supplier.website }}
+                    </a>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="info-row"><b>Notatki:</b><br>{{ supplier.notes|default:"-" }}</div>
+
+            <div class="info-row" style="margin-top:16px;">
+                <b>Główny kontakt:</b><br>
+                {% if main_contact %}
+                    {{ main_contact.name }}<br>
+                    <span class="small-muted">{{ main_contact.role|default:"-" }}</span><br>
+                    <span class="small-muted">{{ main_contact.phone|default:"-" }}</span><br>
+                    <span class="small-muted">{{ main_contact.email|default:"-" }}</span>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Części dostawcy</h3>
+
+            {% if parts %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Część</th>
+                            <th>Kategoria</th>
+                            <th>Stan</th>
+                            <th>Minimum</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for part in parts %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:part-detail' part.id %}">
+                                        <b>{{ part.name }}</b>
+                                    </a>
+                                    <div class="small-muted">{{ part.code }}</div>
+                                    {% if part.supplier_code %}
+                                        <div class="small-muted">Kod dostawcy: {{ part.supplier_code }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ part.category|default:"-" }}</td>
+                                <td>{{ part.current_qty }} {{ part.unit }}</td>
+                                <td>{{ part.min_quantity }} {{ part.unit }}</td>
+                                <td>
+                                    {% if part.current_qty <= 0 %}
+                                        <span class="status-badge status-missing">BRAK</span>
+                                    {% elif part.below_minimum %}
+                                        <span class="status-badge status-low">NISKI STAN</span>
+                                    {% else %}
+                                        <span class="status-badge status-ok">OK</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Brak części przypisanych do tego dostawcy.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h3>Kontakty</h3>
+
+            {% if contacts %}
+                {% for contact in contacts %}
+                    <div class="contact-card">
+                        <div class="contact-head">
+                            <span>{{ contact.name }}</span>
+                            {% if contact.is_main %}
+                                <span class="main-badge">GŁÓWNY</span>
+                            {% endif %}
+                        </div>
+
+                        <div><b>Typ:</b> {{ contact.get_contact_type_display }}</div>
+                        <div><b>Rola:</b> {{ contact.role|default:"-" }}</div>
+                        <div><b>Telefon:</b> {{ contact.phone|default:"-" }}</div>
+                        <div><b>Email:</b> {{ contact.email|default:"-" }}</div>
+
+                        {% if contact.notes %}
+                            <div class="small-muted" style="margin-top:8px;">{{ contact.notes }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-box">
+                    Brak kontaktów dla tego dostawcy.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

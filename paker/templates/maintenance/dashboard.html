@@ -1,0 +1,198 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<style>
+    .maintenance-dashboard {
+        padding: 20px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 20px;
+    }
+
+    .dashboard-header h2 {
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .nav-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .nav-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: 0.2s ease;
+    }
+
+    .nav-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .nav-card a {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .nav-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .nav-desc {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .panel h3 {
+        margin-top: 0;
+        margin-bottom: 12px;
+    }
+
+    .list-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+    }
+
+    .list-item:last-child {
+        border-bottom: none;
+    }
+
+    .status-red { color: #b42318; font-weight: 700; }
+    .status-yellow { color: #8a6300; font-weight: 700; }
+
+    @media (max-width: 1000px) {
+        .stats-grid,
+        .nav-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-dashboard">
+    <div class="dashboard-header">
+        <h2>Utrzymanie ruchu</h2>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ machines_count }}</div>
+            <div class="stat-label">Maszyny</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value">{{ parts_count }}</div>
+            <div class="stat-label">Części</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value status-red">{{ missing_parts|length }}</div>
+            <div class="stat-label">Braki</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value status-yellow">{{ low_parts|length }}</div>
+            <div class="stat-label">Niski stan</div>
+        </div>
+    </div>
+
+    <div class="nav-grid">
+        <div class="nav-card">
+            <a href="{% url 'maintenance:machine-list' %}">
+                <div class="nav-title">Maszyny</div>
+                <div class="nav-desc">Lista urządzeń</div>
+            </a>
+        </div>
+
+        <div class="nav-card">
+            <a href="{% url 'maintenance:part-list' %}">
+                <div class="nav-title">Części</div>
+                <div class="nav-desc">Magazyn części</div>
+            </a>
+        </div>
+
+        <div class="nav-card">
+            <a href="{% url 'maintenance:supplier-list' %}">
+                <div class="nav-title">Dostawcy</div>
+                <div class="nav-desc">Kontakty i dostawcy UR</div>
+            </a>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Brakujące części</h3>
+
+        {% if missing_parts %}
+            {% for part in missing_parts|slice:":10" %}
+                <div class="list-item status-red">
+                    {{ part.name }} ({{ part.code }})
+                </div>
+            {% endfor %}
+        {% else %}
+            <div>Brak braków 🎉</div>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h3>Ostatnie zdarzenia</h3>
+
+        {% if recent_events %}
+            {% for event in recent_events %}
+                <div class="list-item">
+                    {{ event.date }} — {{ event.machine }} — {{ event.get_event_type_display }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div>Brak zdarzeń</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

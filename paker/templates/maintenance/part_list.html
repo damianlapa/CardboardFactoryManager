@@ -1,0 +1,263 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .maintenance-page {
+        padding: 16px;
+    }
+
+    .page-header {
+        margin-bottom: 16px;
+    }
+
+    .page-header h2 {
+        margin: 0;
+    }
+
+    .filters-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .filters-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto auto;
+        gap: 10px;
+        align-items: end;
+    }
+
+    .filters-form label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .filters-form input,
+    .filters-form select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .checkbox-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        color: #222;
+        font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+
+    .table-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .parts-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .parts-table th,
+    .parts-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .parts-table th {
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .small-muted {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-missing {
+        background: #ffe3e3;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1c2;
+        color: #8a6300;
+    }
+
+    .status-ok {
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .empty-box {
+        padding: 24px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        text-align: center;
+        color: #666;
+    }
+
+    @media (max-width: 1200px) {
+        .filters-form {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .filters-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-page">
+    <div class="page-header">
+        <h2>Części zamienne</h2>
+    </div>
+
+    <div class="filters-panel">
+        <form method="get" class="filters-form">
+            <div>
+                <label for="id_q">Szukaj</label>
+                <input type="text" id="id_q" name="q" value="{{ request.GET.q }}" placeholder="Nazwa, kod, producent...">
+            </div>
+
+            <div>
+                <label for="id_supplier">Dostawca</label>
+                <select name="supplier" id="id_supplier">
+                    <option value="">Wszyscy</option>
+                    {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if request.GET.supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="id_category">Kategoria</label>
+                <select name="category" id="id_category">
+                    <option value="">Wszystkie</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="checkbox-wrap">
+                <input type="checkbox" id="id_low" name="low" value="1" {% if request.GET.low %}checked{% endif %}>
+                <label for="id_low" style="margin:0;">Tylko niski stan</label>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn">Filtruj</button>
+                <a href="{% url 'maintenance:part-list' %}" class="btn">Wyczyść</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-panel">
+        {% if parts %}
+            <table class="parts-table">
+                <thead>
+                    <tr>
+                        <th>Część</th>
+                        <th>Kategoria</th>
+                        <th>Dostawca</th>
+                        <th>Producent</th>
+                        <th>Stan</th>
+                        <th>Minimum</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for part in parts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'maintenance:part-detail' part.id %}">
+                                    <b>{{ part.name }}</b>
+                                </a>
+                                <div class="small-muted">{{ part.code }}</div>
+                                {% if part.supplier_code %}
+                                    <div class="small-muted">Kod dostawcy: {{ part.supplier_code }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ part.category|default:"-" }}</td>
+                            <td>
+                                {% if part.supplier %}
+                                    <a href="{% url 'maintenance:supplier-detail' part.supplier.id %}">
+                                        {{ part.supplier }}
+                                    </a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ part.producer|default:"-" }}</td>
+                            <td>{{ part.current_qty }} {{ part.unit }}</td>
+                            <td>{{ part.min_quantity }} {{ part.unit }}</td>
+                            <td>
+                                {% if part.current_qty <= 0 %}
+                                    <span class="status-badge status-missing">BRAK</span>
+                                {% elif part.below_minimum %}
+                                    <span class="status-badge status-low">NISKI STAN</span>
+                                {% else %}
+                                    <span class="status-badge status-ok">OK</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-box">
+                Brak części spełniających kryteria.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

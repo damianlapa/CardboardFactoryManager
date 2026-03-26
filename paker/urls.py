@@ -10,6 +10,7 @@ urlpatterns = [
     path('deliveries/', include('deliveries.urls')),
     path('whm/', include('warehousemanager.urls')),
     path('warehouse/', include('warehouse.urls', namespace='warehouse')),
+    path("maintenance/", include("maintenance.urls")),
 
     path('admin/', admin.site.urls, name='admin'),
 

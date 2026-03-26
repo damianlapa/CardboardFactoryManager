@@ -1,0 +1,305 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .maintenance-detail-page {
+        padding: 16px;
+    }
+
+    .maintenance-title {
+        margin-bottom: 16px;
+    }
+
+    .maintenance-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr 420px;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .panel h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        font-size: 18px;
+    }
+
+    .info-row {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .summary-boxes {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .summary-box {
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .summary-box.red {
+        background: #ffe9e9;
+        border: 1px solid #f1b5b5;
+        color: #9d1c1c;
+    }
+
+    .summary-box.yellow {
+        background: #fff8dd;
+        border: 1px solid #ead37a;
+        color: #8a6b00;
+    }
+
+    .summary-box.green {
+        background: #eaf8ea;
+        border: 1px solid #b6dfb6;
+        color: #1d6b1d;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .data-table th {
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .small-muted {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-missing {
+        background: #ffe3e3;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1c2;
+        color: #8a6300;
+    }
+
+    .status-ok {
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .event-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fcfcfc;
+    }
+
+    .event-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .event-meta {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    .empty-box {
+        padding: 16px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        color: #666;
+        text-align: center;
+    }
+
+    @media (max-width: 1400px) {
+        .maintenance-layout {
+            grid-template-columns: 280px 1fr 360px;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .maintenance-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-detail-page">
+    <div class="maintenance-title">
+        <h2>{{ part.code }} - {{ part.name }}</h2>
+    </div>
+
+    <div class="maintenance-layout">
+        <div class="panel">
+            <h3>Dane części</h3>
+
+            <div class="info-row"><b>Kod:</b> {{ part.code }}</div>
+            <div class="info-row"><b>Nazwa:</b> {{ part.name }}</div>
+            <div class="info-row"><b>Kategoria:</b> {{ part.category|default:"-" }}</div>
+            <div class="info-row"><b>Producent:</b> {{ part.producer|default:"-" }}</div>
+            <div class="info-row">
+                <b>Dostawca:</b>
+                {% if part.supplier %}
+                    <a href="{% url 'maintenance:supplier-detail' part.supplier.id %}">
+                        {{ part.supplier }}
+                    </a>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="info-row"><b>Kod u dostawcy:</b> {{ part.supplier_code|default:"-" }}</div>
+            <div class="info-row"><b>Jednostka:</b> {{ part.unit }}</div>
+            <div class="info-row"><b>Opis:</b><br>{{ part.description|default:"-" }}</div>
+
+            <div class="summary-boxes">
+                <div class="summary-box green">
+                    Stan całkowity: {{ current_qty }} {{ part.unit }}
+                </div>
+                <div class="summary-box yellow">
+                    Minimum: {{ part.min_quantity }} {{ part.unit }}
+                </div>
+                <div class="summary-box {% if current_qty <= 0 %}red{% elif below_minimum %}yellow{% else %}green{% endif %}">
+                    Status:
+                    {% if current_qty <= 0 %}
+                        BRAK
+                    {% elif below_minimum %}
+                        NISKI STAN
+                    {% else %}
+                        OK
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Stany magazynowe i użycie</h3>
+
+            <h4>Magazyny</h4>
+            {% if warehouse_stocks %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Magazyn</th>
+                            <th>Ilość</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ws in warehouse_stocks %}
+                            <tr>
+                                <td>{{ ws.warehouse.name }}</td>
+                                <td>{{ ws.quantity }} {{ part.unit }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box" style="margin-bottom:16px;">
+                    Brak stanów magazynowych.
+                </div>
+            {% endif %}
+
+            <h4 style="margin-top:18px;">Przypisana do maszyn</h4>
+            {% if machines %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Maszyna</th>
+                            <th>Wymagane</th>
+                            <th>Krytyczna</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in machines %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:machine-detail' assignment.machine.id %}">
+                                        {{ assignment.machine }}
+                                    </a>
+                                </td>
+                                <td>{{ assignment.quantity_needed }} {{ part.unit }}</td>
+                                <td>{% if assignment.is_critical %}Tak{% else %}Nie{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Część nie jest przypisana do żadnej maszyny.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h3>Historia użycia</h3>
+
+            {% if usages %}
+                {% for usage in usages %}
+                    <div class="event-card">
+                        <div class="event-head">
+                            <span>{{ usage.event.get_event_type_display }}</span>
+                            <span>{{ usage.event.date|date:"Y-m-d" }}</span>
+                        </div>
+
+                        <div class="event-meta">
+                            Maszyna:
+                            <a href="{% url 'maintenance:machine-detail' usage.event.machine.id %}">
+                                {{ usage.event.machine }}
+                            </a><br>
+                            Zużyto: {{ usage.quantity }} {{ part.unit }}<br>
+                            Magazyn: {{ usage.warehouse_stock.warehouse.name|default:"-" }}
+                        </div>
+
+                        {% if usage.event.description %}
+                            <div>{{ usage.event.description }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-box">
+                    Brak historii użycia tej części.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

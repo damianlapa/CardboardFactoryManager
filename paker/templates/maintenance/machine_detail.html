@@ -1,0 +1,320 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .maintenance-detail-page {
+        padding: 16px;
+    }
+
+    .maintenance-title {
+        margin-bottom: 16px;
+    }
+
+    .maintenance-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr 420px;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .panel h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        font-size: 18px;
+    }
+
+    .machine-info-row {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .summary-boxes {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .summary-box {
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .summary-box.red {
+        background: #ffe9e9;
+        border: 1px solid #f1b5b5;
+        color: #9d1c1c;
+    }
+
+    .summary-box.yellow {
+        background: #fff8dd;
+        border: 1px solid #ead37a;
+        color: #8a6b00;
+    }
+
+    .summary-box.green {
+        background: #eaf8ea;
+        border: 1px solid #b6dfb6;
+        color: #1d6b1d;
+    }
+
+    .parts-table,
+    .events-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .parts-table th,
+    .parts-table td,
+    .events-table th,
+    .events-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .parts-table th,
+    .events-table th {
+        text-align: left;
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-missing {
+        background: #ffe3e3;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1c2;
+        color: #8a6300;
+    }
+
+    .status-ok {
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .critical-mark {
+        display: inline-block;
+        margin-left: 6px;
+        color: #b42318;
+        font-weight: 700;
+    }
+
+    .small-muted {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .event-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fcfcfc;
+    }
+
+    .event-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .event-meta {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    .event-parts {
+        margin-top: 8px;
+        padding-left: 18px;
+        font-size: 13px;
+    }
+
+    .empty-box {
+        padding: 16px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        color: #666;
+        text-align: center;
+    }
+
+    @media (max-width: 1400px) {
+        .maintenance-layout {
+            grid-template-columns: 280px 1fr 360px;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .maintenance-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-detail-page">
+    <div class="maintenance-title">
+        <h2>{{ machine.code }} - {{ machine.name }}</h2>
+    </div>
+
+    <div class="maintenance-layout">
+        <div class="panel">
+            <h3>Dane maszyny</h3>
+
+            <div class="machine-info-row"><b>Kod:</b> {{ machine.code }}</div>
+            <div class="machine-info-row"><b>Nazwa:</b> {{ machine.name }}</div>
+            <div class="machine-info-row"><b>Producent:</b> {{ machine.manufacturer|default:"-" }}</div>
+            <div class="machine-info-row"><b>Nr seryjny:</b> {{ machine.serial_number|default:"-" }}</div>
+            <div class="machine-info-row"><b>Lokalizacja:</b> {{ machine.location|default:"-" }}</div>
+            <div class="machine-info-row"><b>Opis:</b><br>{{ machine.description|default:"-" }}</div>
+
+            <div class="summary-boxes">
+                <div class="summary-box red">
+                    Brakujące części: {{ missing_parts|length }}
+                </div>
+                <div class="summary-box yellow">
+                    Poniżej minimum: {{ low_parts|length }}
+                </div>
+                <div class="summary-box green">
+                    Części krytyczne: {{ critical_parts|length }}
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Przypisane części</h3>
+
+            {% if assignments %}
+                <table class="parts-table">
+                    <thead>
+                        <tr>
+                            <th>Część</th>
+                            <th>Dostawca</th>
+                            <th>Wymagane</th>
+                            <th>Stan</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in assignments %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:part-detail' assignment.part.id %}">
+                                        <b>{{ assignment.part.name }}</b>
+                                    </a>
+                                    <div class="small-muted">
+                                        {{ assignment.part.code }}
+                                        {% if assignment.is_critical %}
+                                            <span class="critical-mark">KRYTYCZNA</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if assignment.notes %}
+                                        <div class="small-muted">{{ assignment.notes }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ assignment.part.supplier|default:"-" }}
+                                </td>
+                                <td>
+                                    {{ assignment.quantity_needed }} {{ assignment.part.unit }}
+                                </td>
+                                <td>
+                                    {{ assignment.current_qty }} {{ assignment.part.unit }}
+                                    <div class="small-muted">
+                                        min: {{ assignment.part.min_quantity }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if assignment.current_qty <= 0 %}
+                                        <span class="status-badge status-missing">BRAK</span>
+                                    {% elif assignment.current_qty < assignment.part.min_quantity %}
+                                        <span class="status-badge status-low">NISKI STAN</span>
+                                    {% else %}
+                                        <span class="status-badge status-ok">OK</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Brak przypisanych części do tej maszyny.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h3>Historia zdarzeń</h3>
+
+            {% if events %}
+                {% for event in events %}
+                    <div class="event-card">
+                        <div class="event-head">
+                            <span>{{ event.get_event_type_display }}</span>
+                            <span>{{ event.date|date:"Y-m-d" }}</span>
+                        </div>
+
+                        <div class="event-meta">
+                            Maszyna: {{ event.machine }}<br>
+                            Przestój: {{ event.downtime_hours }} h<br>
+                            Dodał: {{ event.created_by|default:"-" }}
+                        </div>
+
+                        {% if event.description %}
+                            <div>{{ event.description }}</div>
+                        {% endif %}
+
+                        {% if event.parts_used.all %}
+                            <ul class="event-parts">
+                                {% for usage in event.parts_used.all %}
+                                    <li>
+                                        {{ usage.part.name }} ({{ usage.quantity }} {{ usage.part.unit }})
+                                        {% if usage.warehouse_stock.warehouse %}
+                                            - {{ usage.warehouse_stock.warehouse.name }}
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-box">
+                    Brak historii zdarzeń dla tej maszyny.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
