@@ -21,8 +21,121 @@ from warehousemanager.functions import visit_counter
 
 from warehousemanager.models import Absence, ExtraHour, Punch, Photopolymer
 
+from django.http import StreamingHttpResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-class ToolsUsage(View):
+from django.urls import reverse_lazy
+
+import csv
+from django.http import HttpResponse
+from .models import ProductionUnit, WorkStation
+
+
+class Echo:
+    def write(self, value):
+        return value
+
+
+def export_person_performance_with_quantities(request):
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer)
+
+    def generate_rows():
+        yield writer.writerow([
+            'Person', 'Unit ID', 'Production Order', 'Work Station',
+            'Start', 'End', 'Real Duration (min)', 'Group Size',
+            'Quantity Start', 'Quantity End'
+        ])
+
+        queryset = ProductionUnit.objects.prefetch_related('persons') \
+                                         .select_related('production_order', 'work_station')
+
+        for unit in queryset:
+            try:
+                real_duration = unit.unit_duration_minutes()
+            except Exception:
+                real_duration = None
+
+            group_size = unit.persons.count()
+            quantity_start = unit.quantity_start if unit.quantity_start else 0
+            quantity_end = unit.quantity_end if unit.quantity_end else 0
+
+            for person in unit.persons.all():
+                yield writer.writerow([
+                    str(person),
+                    unit.id,
+                    str(unit.production_order),
+                    str(unit.work_station),
+                    unit.start.strftime('%Y-%m-%d %H:%M:%S') if unit.start else '',
+                    unit.end.strftime('%Y-%m-%d %H:%M:%S') if unit.end else '',
+                    real_duration,
+                    group_size,
+                    quantity_start,
+                    quantity_end
+                ])
+
+    response = StreamingHttpResponse(generate_rows(), content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="person_performance_with_quantities.csv"'
+    return response
+
+
+def export_production_units_csv_streaming(request):
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer)
+
+    # generator CSV
+    def generate_rows():
+        header = [
+            'ID', 'Production Order', 'Sequence', 'Work Station', 'Status',
+            'Start', 'End', 'Estimated Time (min)', 'Estimated Duration (hh:mm)',
+            'Suggested Time (min)', 'Planned Start', 'Planned End',
+            'Real Duration (min)', 'Persons Count', 'Total Person Time (min)',
+            'Worker Cost (PLN)', 'Energy Cost (PLN)', 'Machine Usage'
+        ]
+        yield writer.writerow(header)
+
+        for unit in ProductionUnit.objects.all().iterator():  # ważne: .iterator() oszczędza RAM!
+            try:
+                suggested = unit.suggested_time()
+            except Exception:
+                suggested = None
+            try:
+                worker_cost, energy_cost, machine_usage = unit.unit_production_cost()
+            except Exception:
+                worker_cost = energy_cost = machine_usage = None
+
+            persons_count, total_person_minutes = unit.duration_person()
+
+            row = [
+                unit.id,
+                str(unit.production_order),
+                unit.sequence,
+                str(unit.work_station),
+                unit.status,
+                unit.start,
+                unit.end,
+                unit.estimated_time,
+                unit.estimated_duration(),
+                suggested,
+                unit.planned_start(),
+                unit.planned_end(),
+                unit.unit_duration_minutes(),
+                persons_count,
+                total_person_minutes,
+                worker_cost,
+                energy_cost,
+                machine_usage
+            ]
+            yield writer.writerow(row)
+
+    response = StreamingHttpResponse(generate_rows(), content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="production_units_streamed.csv"'
+    return response
+
+
+class ToolsUsage(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         punches = Punch.objects.all()
         photo_polymers = Photopolymer.objects.all()
@@ -73,12 +186,16 @@ class GetProductionById(View):
             return HttpResponse(json.dumps(False))
 
 
-class ProductionMenu(View):
+class ProductionMenu(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         return render(request, 'production/production-menu.html', locals())
 
 
-class AllProductionOrders(View):
+class AllProductionOrders(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         visit_counter(request.user, 'All Production Orders')
         title = 'Production Orders'
@@ -87,7 +204,9 @@ class AllProductionOrders(View):
         return render(request, 'production/production-all.html', locals())
 
 
-class AddMoreProductionOrders(View):
+class AddMoreProductionOrders(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         pass
         query = request.GET.get('query', '')
@@ -103,10 +222,7 @@ class AddMoreProductionOrders(View):
             orders_number = orders.filter(id_number__icontains=query)
 
             orders = list(orders_customer) + list(orders_dimensions) + list(orders_cardboard_dimensions) + list(orders_number)
-        #
-        # if status_filter:
-        #     orders = orders.filter(status=status_filter)
-        #
+
         data = [{
             "id": order.id,
             "id_number": order.id_number,
@@ -121,7 +237,9 @@ class AddMoreProductionOrders(View):
         return JsonResponse({"orders": data})
 
 
-class ProductionDetails(View):
+class ProductionDetails(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, production_order_id):
         production_order_statuses = PRODUCTION_ORDER_STATUSES
         production_order = ProductionOrder.objects.get(id=production_order_id)
@@ -129,7 +247,9 @@ class ProductionDetails(View):
         return render(request, 'production/production-details.html', locals())
 
 
-class ChangeProductionStatus(View):
+class ChangeProductionStatus(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         production_order_id = int(request.GET.get('production-order-id'))
         status = request.GET.get('status')
@@ -140,7 +260,9 @@ class ChangeProductionStatus(View):
         return redirect('production-details', production_order_id=production_order.id)
 
 
-class AddProductionOrder(View):
+class AddProductionOrder(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         form = ProductionOrderForm()
         return render(request, 'production/production-order-add.html', locals())
@@ -172,7 +294,9 @@ class AddProductionOrder(View):
         return redirect('all-production-orders')
 
 
-class WorkStations(View):
+class WorkStations(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         visit_counter(request.user, 'Production Workstations')
         workers_data = []
@@ -184,7 +308,9 @@ class WorkStations(View):
         return render(request, 'production/workstations.html', locals())
 
 
-class WorkStationDetails(View):
+class WorkStationDetails(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, workstation_id):
         def get_date_str(some_date):
             date = some_date
@@ -210,99 +336,64 @@ class WorkStationDetails(View):
         return render(request, 'production/workstation-details.html', locals())
 
 
-class ProductionUnitDetails(View):
+class ProductionUnitDetails(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
-        return render(request, 'production/production-unit-details.html', locals())
+        return render(request, 'production/production-unit-details.html', context={"unit": unit})
 
 
-class EditProductionUnit(View):
+class EditProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         source = request.GET.get('source')
         edit = True
-        form = ProductionUnitForm(instance=ProductionUnit.objects.get(id=unit_id), day=None)
-        return render(request, 'production/production-unit-add.html', locals())
+        form = ProductionUnitForm(None, instance=ProductionUnit.objects.get(id=unit_id))
+
+        context = {
+            "source": source,
+            "edit": edit,
+            "form": form
+        }
+        return render(request, 'production/production-unit-add.html', context=context)
 
     def post(self, request, unit_id):
-        form = ProductionUnitForm(None, request.POST)
+        unit = ProductionUnit.objects.get(id=unit_id)
+        form = ProductionUnitForm(None, request.POST, instance=unit)
+
         if form.is_valid():
-            data = form.cleaned_data
-            sequence = data['sequence']
-            production_order = data['production_order']
-            work_station = data['work_station']
-            punch = data['punch']
-            polymer = data['polymer']
-            order = data['order']
-            status = data['status']
-            estimated_time = data['estimated_time']
-            start = data['start']
-            end = data['end']
-            quantity_start = data['quantity_start']
-            quantity_end = data['quantity_end']
-            notes = data['notes']
-            persons = data['persons']
-            source = None
-            try:
-                source = form.data.get('source')
-            except KeyError:
-                pass
+            obj = form.save(commit=False)
+            obj.production_order = unit.production_order
+            obj.save()
+            form.save_m2m()
 
-            unit = ProductionUnit.objects.get(id=unit_id)
+            source = request.POST.get('source')
+            if source:
+                try:
+                    return redirect('workstation-details', workstation_id=int(source))
+                except ValueError:
+                    pass
 
-            unit.production_order = production_order
-            unit.work_station = work_station
-            unit.punch = punch
-            unit.polymer = polymer
-            unit.status = status
-            unit.sequence = sequence
-            unit.order = order
-            unit.estimated_time = estimated_time
-            unit.start = start
-            unit.end = end
-            unit.quantity_end = quantity_end
-            unit.quantity_start = quantity_start
-            unit.notes = notes
+            return redirect('unit-details', unit_id=unit.id)
 
-            if persons:
-                unit.persons.clear()
-                for p in persons:
-                    unit.persons.add(p)
-            else:
-                unit.persons.clear()
-
-            unit.save()
-
-            '''all_production_order_units = ProductionUnit.objects.filter(production_order=unit.production_order)
-
-            all_finished = True
-            all_planned = True
-            for u in all_production_order_units:
-                if u.status not in ('FINISHED', 'PLANNED'):
-                    all_planned = False
-                if u.status != 'FINISHED':
-                    all_finished = False
-
-            if all_finished:
-                unit.production_order.status = 'FINISHED'
-                unit.production_order.save()
-
-            if all_planned:
-                unit.production_order.status = 'PLANNED'
-                unit.production_order.save()'''
-
-            try:
-                return redirect('workstation-details', workstation_id=int(source))
-            except ValueError:
-                return redirect('unit-details', unit_id=unit.id)
+        return render(request, 'production/production-unit-add.html', {
+            "form": form,
+            "source": request.POST.get('source'),
+            "edit": True,
+        })
 
 
-class AddProductionUnit(View):
+class AddProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, order_id):
         production_order = ProductionOrder.objects.get(id=order_id)
         order_units = ProductionUnit.objects.filter(production_order=production_order)
         today = datetime.datetime.today().date()
         form = ProductionUnitForm(
-            initial={'production_order': production_order, 'sequence': order_units.count() + 1, 'status': 'FINISHED'},
+            initial={'sequence': order_units.count() + 1, 'status': 'FINISHED'},
             day=today)
         return render(request, 'production/production-unit-add.html', locals())
 
@@ -310,37 +401,18 @@ class AddProductionUnit(View):
         today = datetime.datetime.today().date()
         form = ProductionUnitForm(today, request.POST)
         if form.is_valid():
-            data = form.cleaned_data
-            sequence = data['sequence']
-            production_order = data['production_order']
-            work_station = data['work_station']
-            punch = data['punch']
-            polymer = data['polymer']
-            order = data['order']
-            status = data['status']
-            estimated_time = data['estimated_time']
-            start = data['start']
-            end = data['end']
-            quantity_start = data['quantity_start']
-            quantity_end = data['quantity_end']
-            notes = data['notes']
-            persons = data['persons']
-
-            new_unit = ProductionUnit.objects.create(production_order=production_order, work_station=work_station,
-                                                     punch=punch, polymer=polymer,
-                                                     status=status,
-                                                     sequence=sequence, order=order, estimated_time=estimated_time,
-                                                     start=start,
-                                                     end=end, quantity_end=quantity_end, quantity_start=quantity_start,
-                                                     notes=notes)
-
-            for p in persons:
-                new_unit.persons.add(p)
+            production_order = ProductionOrder.objects.get(id=order_id)
+            obj = form.save(commit=False)
+            obj.production_order = production_order
+            obj.save()
+            form.save_m2m()
 
             return redirect('production-details', production_order_id=production_order.id)
 
 
-class DeleteProductionUnit(View):
+class DeleteProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         order_id = unit.production_order.id
@@ -348,7 +420,9 @@ class DeleteProductionUnit(View):
         return redirect('production-details', production_order_id=order_id)
 
 
-class StartProductionUnit(View):
+class StartProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'IN PROGRESS'
@@ -358,7 +432,9 @@ class StartProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class FinishProductionUnit(View):
+class FinishProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'FINISHED'
@@ -386,7 +462,9 @@ class FinishProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class PlanProductionUnit(View):
+class PlanProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'PLANNED'
@@ -396,7 +474,9 @@ class PlanProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class RemoveProductionUnit(View):
+class RemoveProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.status = 'NOT STARTED'
@@ -408,7 +488,9 @@ class RemoveProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class UpProductionUnit(View):
+class UpProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.move_up_unit()
@@ -417,7 +499,9 @@ class UpProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class DownProductionUnit(View):
+class DownProductionUnit(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
         unit.move_down_unit()
@@ -426,7 +510,9 @@ class DownProductionUnit(View):
         return redirect('workstation-details', workstation_id=unit.work_station.id)
 
 
-class WorkersByMonth(View):
+class WorkersByMonth(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month):
         month_date = datetime.datetime.strptime(f'{year}-{month}', '%Y-%m').strftime("%B")
         month_date = f'{month_date} {year}'
@@ -434,7 +520,9 @@ class WorkersByMonth(View):
         return render(request, 'production/workers-by-month.html', locals())
 
 
-class WorkerEfficiency(View):
+class WorkerEfficiency(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month, worker_id):
         worker = Person.objects.get(id=worker_id)
         if month == 2:
@@ -530,7 +618,9 @@ class WorkerEfficiency(View):
         return render(request, 'production/worker-efficiency.html', locals())
 
 
-class WorkerEfficiencyPrintPDF(View):
+class WorkerEfficiencyPrintPDF(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month, worker_id):
         date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
                                                '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
@@ -794,7 +884,9 @@ class WorkerEfficiencyPrintPDF(View):
         return response
 
 
-class WorkStationEfficiency(View):
+class WorkStationEfficiency(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month, station_id):
         station = WorkStation.objects.get(id=station_id)
 
@@ -822,7 +914,9 @@ class WorkStationEfficiency(View):
         return render(request, 'production/station-efficiency.html', locals())
 
 
-class StationEfficiencyPrintPDF(View):
+class StationEfficiencyPrintPDF(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month, station_id):
         date_from = datetime.datetime.strptime(f"{request.GET.get('from')} 00:00:00",
                                                '%Y-%m-%d %H:%M:%S') if request.GET.get('from') else None
@@ -917,9 +1011,13 @@ class StationEfficiencyPrintPDF(View):
         return response
 
 
-class CustomReport(View):
+class CustomReport(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
-        workers = Person.objects.all()
+        today = datetime.datetime.today()
+
+        workers = Person.objects.filter(job_end__isnull=True)
         worker = None
         stations = WorkStation.objects.all()
         station = None
@@ -942,7 +1040,9 @@ class CustomReport(View):
         return render(request, 'production/custom-report.html', locals())
 
 
-class MachinesOccupancy(View):
+class MachinesOccupancy(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         date_from = None if not request.GET.get("date_from") else request.GET.get("date_from")
         date_to = None if not request.GET.get("date_to") else request.GET.get("date_to")
@@ -963,7 +1063,9 @@ class MachinesOccupancy(View):
         return render(request, 'production/workstations-occupancy.html', locals())
 
 
-class ChangeAllOrders(View):
+class ChangeAllOrders(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         all_orders = ProductionOrder.objects.all()
         for a in all_orders:
@@ -974,7 +1076,9 @@ class ChangeAllOrders(View):
         return HttpResponse('Done!')
 
 
-class ChangeOrderQuantity(View):
+class ChangeOrderQuantity(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         order_id = request.GET.get('order_id')
         value = request.GET.get('value')
@@ -987,7 +1091,9 @@ class ChangeOrderQuantity(View):
         return HttpResponse('OK')
 
 
-class ChangeAllOrdersCustom(View):
+class ChangeAllOrdersCustom(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         prefix = request.GET.get('prefix')
         suffix = request.GET.get('suffix')
@@ -1038,7 +1144,9 @@ class ChangeAllOrdersCustom(View):
         return HttpResponse(result)
 
 
-class ChangeManyOrdersStatus(View):
+class ChangeManyOrdersStatus(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         all_orders = ProductionOrder.objects.all()
         result = ''
@@ -1052,7 +1160,9 @@ class ChangeManyOrdersStatus(View):
         return HttpResponse(result)
 
 
-class SetEstimatedTimeView(View):
+class SetEstimatedTimeView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         correct = request.GET.get('correct')
         start = request.GET.get('start')
@@ -1092,7 +1202,9 @@ class SetEstimatedTimeView(View):
         return render(request, 'production/set-estimated-time.html', locals())
 
 
-class UpdateEstimatedTime(View):
+class UpdateEstimatedTime(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def post(self, request):
         if request:
             import json
@@ -1113,7 +1225,9 @@ class UpdateEstimatedTime(View):
             return JsonResponse({'success': False, 'error': 'Invalid request method or not AJAX'})
 
 
-class WrongDateUnits(View):
+class WrongDateUnits(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         units = ProductionUnit.objects.all()
         wrong_units = []
@@ -1127,7 +1241,9 @@ class WrongDateUnits(View):
         return render(request, 'production/wrong-date-units.html', locals())
 
 
-class PrepareOrders(View):
+class PrepareOrders(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
 
         def get_data(row_number, year='2024'):
@@ -1228,21 +1344,6 @@ class PrepareOrders(View):
         return redirect('production-menu')
 
 
-class UnitTest(View):
-    def get(self, request):
-        units = ProductionUnit.objects.all()
-        for u in units:
-            print(u.unit_duration2())
-
-        return HttpResponse('ok')
-
-
-import csv
-from datetime import timedelta
-from django.http import HttpResponse
-from .models import ProductionUnit, WorkStation
-
-
 def generate_production_csv(request):
     # Get workstation ID from GET parameter (optional)
     workstation_name = request.GET.get('work_station')
@@ -1274,3 +1375,18 @@ def generate_production_csv(request):
 
     return response
 
+
+class OrderDetailsRedirect(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request, order_id):
+        from warehouse.models import Order, Provider
+        try:
+            production_order = ProductionOrder.objects.get(id=order_id)
+            provider, number = production_order.id_number.split(' ')
+            provider = Provider.objects.get(name=provider)
+            number, year = number.split('/')
+            order = Order.objects.get(provider=provider, order_id=f'{number}/{year}', order_year=f'20{year}')
+            return redirect('warehouse:order-detail-view', order_id=order.id)
+        except ObjectDoesNotExist:
+            return HttpResponse('notok')

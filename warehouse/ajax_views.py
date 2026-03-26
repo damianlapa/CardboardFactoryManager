@@ -1,18 +1,31 @@
 import datetime
-
+from django.shortcuts import render, HttpResponse, redirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .models import Order, StockSupply, OrderSettlement, OrderSettlementProduct, WarehouseStock, WarehouseStockHistory, \
-    Product, StockType, Stock, Warehouse
+    Product, StockType, Stock, Warehouse, StockSupplySettlement
+from warehouse.services.stock_moves import move_ws
+from django.db import IntegrityError
+
+
+def normalize_name(n: str) -> str:
+    n = " ".join((n or "").strip().split())
+    if "|" in n:
+        parts = [p.strip() for p in n.split("|")]
+        while parts and parts[-1] == "":
+            parts.pop()
+        n = " | ".join(parts)
+    return n
 
 
 def settle_order(request, order_id):
     if request.method == "POST":
-        settlement_date = request.POST.get('settlement_date') if request.POST.get('settlement_date') else datetime.datetime.today()
+        settlement_date = request.POST.get('settlement_date')
+        settlement_date = datetime.date.fromisoformat(settlement_date) if settlement_date else datetime.datetime.today()
         order = get_object_or_404(Order, id=order_id)
-        material_id = request.POST.get("material_id")
-        material_quantity = int(request.POST.get("material_quantity", 0))
+        # material_id = request.POST.get("material_id")
+        # material_quantity = int(request.POST.get("material_quantity", 0))
 
         material_ids = request.POST.getlist('material_id')
         material_quantities = request.POST.getlist('material_quantity')
@@ -24,25 +37,36 @@ def settle_order(request, order_id):
 
         try:
             with transaction.atomic():
-                material = WarehouseStock.objects.get(id=int(material_id))
+                settlements = []
 
-                # Create settlement
-                settlement, created = OrderSettlement.objects.get_or_create(
-                    order=order,
-                    material=material,
-                    material_quantity=material_quantity,
-                    settlement_date=settlement_date
-                )
+                for mid, qty in zip(material_ids, material_quantities):
+                    qty = int(qty or 0)
+                    if qty <= 0:
+                        continue
 
-                history, created = WarehouseStockHistory.objects.get_or_create(
-                    warehouse_stock=material,
-                    order_settlement=settlement,
-                    quantity_before=material.quantity,
-                    quantity_after=material.quantity - int(material_quantity)
-                )
+                    material = WarehouseStock.objects.select_related("stock__stock_type").get(id=int(mid))
+                    if material.quantity <= 0:
+                        raise Exception("Wybrany stock ma 0 ilości.")
+                    if material.stock.stock_type.stock_type != "material":
+                        raise Exception("Wybrany stock nie jest typu material.")
 
-                material.quantity -= int(material_quantity)
-                material.save()
+                    settlement = OrderSettlement.objects.create(
+                        order=order,
+                        material=material,
+                        material_quantity=qty,
+                        settlement_date=settlement_date
+                    )
+
+                    settlements.append(settlement)
+
+                total_value = 0
+
+                for settlement in settlements:
+                    _, value = WarehouseStock.use_specified_stock_supply(
+                        settlement,
+                        settlement.material_quantity
+                    )
+                    total_value += value
 
                 # Create products
                 # for stock_supply_id, quantity in zip(stock_supply_ids, stock_quantities):
@@ -62,40 +86,54 @@ def settle_order(request, order_id):
                     product_type = StockType.objects.get(id=int(product_type))
                     warehouse = Warehouse.objects.get(id=int(warehouse))
 
-                    supply, created = StockSupply.objects.get_or_create(
+                    stock_name = normalize_name(product.name)
+
+                    supply = StockSupply.objects.create(
                         stock_type=product_type,
                         date=settlement_date,
                         quantity=int(product_quantity),
-                        name=product.name,
+                        name=stock_name,
+                        value=total_value
                     )
 
-                    stock, created = Stock.objects.get_or_create(
-                        stock_type=product_type,
-                        name=f'{product_type} | {dimensions}'
+                    stock_supply_settlement = StockSupplySettlement.objects.create(
+                        stock_supply=supply,
+                        settlement=settlement,
+                        quantity=int(product_quantity),
+                        value=total_value,
+                        as_result=True
                     )
+
+                    try:
+                        stock, created = Stock.objects.get_or_create(
+                            stock_type=product_type,
+                            name=stock_name,
+                        )
+                    except IntegrityError:
+                        # wyścig / normalizacja -> dociągnij istniejący
+                        stock = Stock.objects.get(stock_type=product_type, name=stock_name)
+                        created = False
 
                     warehouse_stock, created = WarehouseStock.objects.get_or_create(
                         stock=stock,
                         warehouse=warehouse
                     )
 
-                    warehouse_stock_history = WarehouseStockHistory.objects.create(
-                        warehouse_stock=warehouse_stock,
-                        order_settlement=settlement,
+                    move_ws(
+                        ws=warehouse_stock,
+                        delta=int(product_quantity),
+                        date=settlement_date,
                         stock_supply=supply,
-                        quantity_before=warehouse_stock.quantity,
-                        quantity_after=warehouse_stock.quantity + int(product_quantity),
-                        date=settlement_date
+                        order_settlement=settlement,
                     )
 
-                    warehouse_stock.quantity = warehouse_stock.quantity + int(product_quantity)
-                    warehouse_stock.save()
-
-            return JsonResponse({"success": True})
+            return redirect(request.META.get('HTTP_REFERER', '/'))
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
 
-    return JsonResponse({"success": False, "error": "Invalid request"})
+    # return JsonResponse({"success": False, "error": "Invalid request"})
+
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def order_status(request):

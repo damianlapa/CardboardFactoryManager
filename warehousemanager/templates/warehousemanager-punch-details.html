@@ -51,43 +51,7 @@
         {% endfor %}
 
     </div>
-
-    <div>
-
-        <h2>ZUŻYCIE</h2>
-
-        <h3>Suma odbitych wykrojów: {{ wear }}</h3>
-
-        <a href="{% url 'punch-production-add' %}?punch_id={{ p.id }}"><button class="production-add-btn">Add</button></a>
-
-        <br />
-
-        <table>
-            {% if production %}
-            <tr>
-                <th>Ilość</th>
-                <th>Start</th>
-                <th>Koniec</th>
-                <th>Pracownik</th>
-                <th>Uwagi</th>
-            </tr>
-            {% endif %}
-            {% for pp in production %}
-            <tr>
-                <td>{{ pp.quantity }}</td>
-                <td>{{ pp.date_start }}</td>
-                <td>{{ pp.date_end }}</td>
-
-                <td>{{ pp.worker }}</td>
-                <td>{{ pp.comments }}</td>
-            </tr>
-            {% empty %}
-            <h4>Brak historii produkcji dla tego wykrojnika</h4>
-            {% endfor %}
-
-        </table>
-
-    </div>
 </div>
-{% endblock %}
+
+   {% endblock %}
 {% block footer %}{% endblock %}

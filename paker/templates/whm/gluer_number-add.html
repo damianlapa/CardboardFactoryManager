@@ -1,0 +1,14 @@
+{% extends '__base2__.html' %}
+{% block style %}
+{% load static %}
+{% endblock %}
+{% block title %}New Gluer Number{% endblock %}
+{% block content %}
+<div style="color: white;">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="ADD">
+    </form>
+</div>
+{% endblock %}

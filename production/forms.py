@@ -11,25 +11,25 @@ class ProductionOrderForm(ModelForm):
 
 
 class ProductionUnitForm(ModelForm):
-    workers_num = 0
-
     def __init__(self, day=None, *args, **kwargs):
         super(ProductionUnitForm, self).__init__(*args, **kwargs)
-        all_workers = Person.objects.all()
-        if day:
-            c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True)
+        day = datetime.datetime.today() if not day else day
+        c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC"))
 
-            all_workers = c_workers
-
-        self.fields['persons'].queryset = all_workers
-        workers_num = len(all_workers)
+        self.fields['persons'].widget.attrs['size'] = str(c_workers.count())
+        self.fields['persons'].queryset = c_workers
 
     class Meta:
-        size = len(Person.objects.filter(job_start__lte=datetime.datetime.today(), job_end__isnull=True))
         model = ProductionUnit
-        fields = '__all__'
+        exclude = ['production_order']
         widgets = {
             'start': DateTimeInput(attrs={'type': 'datetime'}),
             'end': DateTimeInput(attrs={'type': 'datetime'}),
-            'persons': SelectMultiple(attrs={'size': f'{size}'})
+            'persons': SelectMultiple()
         }
+
+
+class QuickProductionUnitForm(ModelForm):
+    class Meta:
+        model = ProductionUnit
+        fields = ['work_station', 'estimated_time', 'required_operators', 'required_helpers']

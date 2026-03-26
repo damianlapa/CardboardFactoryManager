@@ -6,20 +6,42 @@
 
 {% block content %}
 <h1>Warehouse: {{ warehouse.name }}</h1>
+<form method="get" style="margin-bottom: 16px;">
+    <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Szukaj po nazwie..."
+        style="padding: 8px; width: 280px;"
+    >
+
+    <label>
+        <input type="checkbox" name="all_stocks" value="1" {% if all_stocks %}checked{% endif %}>
+        pokaż wszystkie stany
+    </label>
+
+    <button type="submit">Filtruj</button>
+</form>
 <table>
   <thead>
     <tr>
       <th>Stock Type</th>
       <th>Stock Name</th>
       <th>Quantity</th>
+      {% if warehouse.name == 'MAGAZYN WYPRZEDAŻOWY' %}
+      <th>Price</th>
+      {% endif %}
     </tr>
   </thead>
   <tbody>
     {% for stock in stocks %}
       <tr>
         <td>{{ stock.stock.stock_type.get_stock_type }}</td>
-        <td><a href="{% url 'warehouse:stock-details' stock.stock.id %}">{{ stock.stock.name }}</a></td>
+        <td><a href="{% url 'warehouse:warehouse_stock_detail' stock.id %}">{{ stock.stock.name }}</a></td>
         <td>{{ stock.quantity }}</td>
+        {% if warehouse.name == 'MAGAZYN WYPRZEDAŻOWY' %}
+          <td>{{ stock.count_piece_value }}</td>
+        {% endif %}
       </tr>
     {% empty %}
       <tr>

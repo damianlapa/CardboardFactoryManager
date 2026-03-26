@@ -22,41 +22,11 @@
         <th>Delete</th>
       </tr>
     </thead>
-    <tbody>
-      {% for delivery in deliveries %}
-      <tr {% if delivery.all_settle %}style="font-weight: bold; font-style: italic; color: #6f7e96" {% endif %} >
-        <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
-        <td>{{ delivery.provider }}</td>
-        <td>{{ delivery.date|date:"Y-m-d" }}</td>
-        <td>{{ delivery.car_number }}</td>
-        <td>{{ delivery.telephone }}</td>
-        <td>
-          {% if delivery.processed %}
-            <span style="color: green; font-weight: bold;">PROCESSED</span>
-          {% else %}
-            <span style="color: red; font-weight: bold;">NOT PROCESSED</span>
-          {% endif %}
-        </td>
-        <td>
-          <ul>
-            {% for delivery_palette in delivery.deliverypalette_set.all %}
-              <li>{{ delivery_palette.palette }}: {{ delivery_palette.quantity }}</li>
-            {% empty %}
-              <li>No palettes in this delivery.</li>
-            {% endfor %}
-          </ul>
-        </td>
-        <td>
-          <button class="btn btn-danger delete-btn" data-id="{{ delivery.id }}" data-number="{{ delivery.number }}">Delete</button>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="7" class="no-data">No deliveries available.</td>
-      </tr>
-      {% endfor %}
+    <tbody id="deliveries-tbody">
+      {% include "warehouse/_delivery_rows.html" with deliveries=deliveries %}
     </tbody>
   </table>
+  <div id="sentinel" style="height: 1px;"></div>
 
 <div id="deleteModal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -65,29 +35,57 @@
         <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
     </div>
 </div>
-
-  <!-- Pagination Controls -->
-  <div class="pagination">
-    {% if is_paginated %}
-      <span class="step-links">
-        {% if page_obj.has_previous %}
-          <a href="?page=1">&laquo; First</a>
-          <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
-        {% endif %}
-
-        <span class="current">
-          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-        </span>
-
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}">Next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
-        {% endif %}
-      </span>
-    {% endif %}
-  </div>
 {% endblock %}
 {% block scripts %}
+<script>
+    console.log("INFINITE SCROLL SCRIPT LOADED");
+  let page = {{ page_obj.number|default:1 }};
+  let loading = false;
+  let hasNext = {{ page_obj.has_next|yesno:"true,false" }};
+
+  const sentinel = document.querySelector("#sentinel");
+  const tbody = document.querySelector("#deliveries-tbody");
+
+  async function loadMore() {
+    console.log("loadMore fired", page);
+
+    if (!hasNext || loading) return;
+    loading = true;
+    observer.unobserve(sentinel); // ✅ blokuje lawinę wywołań
+
+    page += 1;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", page);
+
+    try {
+      const res = await fetch(url.toString(), {
+        headers: {"X-Requested-With": "XMLHttpRequest"}
+      });
+
+      const data = await res.json();
+      tbody.insertAdjacentHTML("beforeend", data.html);
+
+      hasNext = data.has_next;
+
+      if (hasNext) {
+        observer.observe(sentinel); // ✅ podepnij z powrotem tylko jeśli jest kolejna strona
+      }
+    } catch (e) {
+      console.error(e);
+      // jeśli błąd, pozwól spróbować ponownie:
+      observer.observe(sentinel);
+    } finally {
+      loading = false;
+    }
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: "400px" });
+
+  observer.observe(sentinel);
+</script>
 <script src="{% static 'js/warehouse/delivery-delete.js' %}"></script>
 {% endblock %}
 

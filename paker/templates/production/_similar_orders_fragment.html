@@ -1,0 +1,32 @@
+<h3>Podobne zamówienia</h3>
+{% if similar_orders %}
+    <ul class="similar-order-list">
+    {% for o in similar_orders %}
+        <li>
+            <strong>{{ o.id_number }}</strong><br>
+            Wymiary: {{ o.dimensions }}<br>
+            Ilość: {{ o.quantity }}<br>
+            Fala: {{ o.cardboard }}<br>
+            Status: {{ o.status }}
+            <table>
+                <tr>
+                    <th>station</th>
+                    <th>duration</th>
+                    <th>workers</th>
+                    <th>total</th>
+                </tr>
+                {% for u in o.order_units %}
+                    <tr>
+                        <td>{{ u.work_station }}</td>
+                        <td>{{ u.unit_duration_minutes }}</td>
+                        <td>{{ u.duration_person.0 }}</td>
+                        <td>{{ u.duration_person.1 }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Brak podobnych zamówień.</p>
+{% endif %}

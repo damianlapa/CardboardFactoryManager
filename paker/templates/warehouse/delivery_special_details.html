@@ -1,0 +1,92 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+  <h1>
+    Delivery # {{ delivery.id }} {{ delivery }}
+    {% if delivery.processed %}
+      <span class="processed-label">PROCESSED</span>
+    {% else %}
+      <form action="{% url 'warehouse:process-delivery-special' delivery_id=delivery.id %}" method="post" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="process-button">Mark as Processed</button>
+      </form>
+    {% endif %}
+  </h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Delivery date</th>
+        <th>Name</th>
+        <th>Quantity</th>
+        <th>Processed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ delivery.date|date:"Y-m-d" }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{% if item.processed %}✅{% else %}
+          <a href="{% url 'warehouse:process-delivery-special-item' delivery_id=delivery.id item_id=item.id %}">
+          ⬇️
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No items available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+<button id="addDeliveryItemBtn">Add Item</button>
+
+  <!-- Pagination Controls -->
+  <div class="pagination">
+    {% if is_paginated %}
+      <span class="step-links">
+        {% if page_obj.has_previous %}
+          <a href="?page=1">&laquo; first</a>
+          <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}">next</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+      </span>
+    {% endif %}
+  </div>
+
+<div id="addDeliveryItemModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Add item to: {{ delivery }}</h2>
+    <form id="addDeliveryItemForm" method="post" action="{% url 'warehouse:add-delivery-special-item' %}">
+      {% csrf_token %}
+      <div class="modal-column">
+        {{ form.as_p }}
+      </div>
+      <br>
+      <button type="submit" id="submit-btn">Submit</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/warehouse/delivery-special-add-item.js' %}"></script>
+{% endblock %}

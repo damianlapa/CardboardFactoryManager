@@ -1,0 +1,42 @@
+{% for delivery in deliveries %}
+
+  {% if delivery.number %}
+  <tr {% if delivery.all_settle %}style="font-weight: bold; font-style: italic; color: #6f7e96"{% endif %}>
+    <td><a href="{% url 'warehouse:delivery-detail-view' delivery_id=delivery.id %}">{{ delivery.number }}</a></td>
+  {% else %}
+  <tr style="font-weight: bold; font-style: italic; color: #6f7e96">
+    <td><a href="{% url 'warehouse:delivery-special-detail-view' delivery_id=delivery.id %}">{{ delivery.id }}</a></td>
+  {% endif %}
+
+    <td>{{ delivery.provider }}</td>
+    <td>{{ delivery.date|date:"Y-m-d" }}</td>
+    <td>{{ delivery.car_number }}</td>
+    <td>{{ delivery.telephone }}</td>
+    <td>
+      {% if delivery.processed %}
+        <span style="color: green; font-weight: bold;">PROCESSED</span>
+      {% else %}
+        <span style="color: red; font-weight: bold;">NOT PROCESSED</span>
+      {% endif %}
+    </td>
+    <td>
+      <ul>
+        {% for delivery_palette in delivery.deliverypalette_set.all %}
+          <li>{{ delivery_palette.palette }}: {{ delivery_palette.quantity }}</li>
+        {% empty %}
+          <li>No palettes in this delivery.</li>
+        {% endfor %}
+      </ul>
+    </td>
+    <td>
+      {% if delivery.number %}
+        <button class="btn btn-danger delete-btn" data-id="{{ delivery.id }}" data-number="{{ delivery.number }}">Delete</button>
+      {% endif %}
+    </td>
+  </tr>
+
+{% empty %}
+  <tr>
+    <td colspan="8" class="no-data">No deliveries available.</td>
+  </tr>
+{% endfor %}

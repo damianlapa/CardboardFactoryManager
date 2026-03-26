@@ -21,6 +21,7 @@
 </form>
 
 <h3 class="red">DETAILS</h3>
+<a href="{% url 'order-redirect' order_id=production_order.id %}"><button>WAREHOUSE ORDER</button></a>
 <table style="border: 1px solid pink" class="center bg-white">
     <tr style="display: none">
         <td id="order_id">{{ production_order.id }}</td>

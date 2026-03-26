@@ -25,8 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-# DEBUG = False
+try:
+    DEBUG = os.environ['DEBUG'] == "True"
+except KeyError:
+    DEBUG = "False"
 
 ALLOWED_HOSTS = []
 
@@ -42,14 +44,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'warehousemanager',
     'production',
     'orders',
     'deliveries',
-    'finances',
-    'customers',
-    'warehouse'
-
+    'warehouse',
 ]
 
 MIDDLEWARE = [
@@ -85,20 +85,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'paker.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'HOST': '127.0.0.1',
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'pakerdatabase',
         'USER': os.environ['POSTGRES_USER'],
         'PASSWORD': os.environ['POSTGRES_PASS'],
+        ## heroku
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pakerdatabase',
+        ## local
+        # 'NAME': 'pakerdatabase2',
+        # 'ENGINE': 'django.db.backends.postgresql',
     }
 }
 
+LOGIN_REDIRECT_URL = '/login'
+LOGIN_URL = '/login/'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -156,5 +161,23 @@ EMAIL_HOST_USER = os.environ.get('PPAPP')
 EMAIL_HOST_PASSWORD = os.environ.get('PPPASS')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        # Twoje appki – dopasuj nazwę modułu jeśli inna
+        "warehouse": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
+
+UNDO_OPERATIONS_PASSWORD = os.environ.get("UNDO_OPERATIONS_PASSWORD", "")
 
 django_heroku.settings(locals())

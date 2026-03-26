@@ -1,0 +1,94 @@
+{% extends '__base3__.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div style="padding: 20px; max-width: 1200px; margin: auto;">
+
+    <hr>
+
+    <h2>Aktualny stan palet od dostawców <br>
+        <small style="font-weight: normal;">(stan bazowy + dostawy od {{ sync_date|date:"Y-m-d" }})</small>
+    </h2>
+
+    {% for provider_name, inventory in provider_inventory.items %}
+        <h3>{{ provider_name }}</h3>
+        <table border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-bottom: 30px;">
+            <thead>
+                <tr>
+                    <th>Paleta</th>
+                    <th>Ilość</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for palette_name, qty in inventory.items %}
+                    <tr>
+                        <td>{{ palette_name }}</td>
+                        <td>{{ qty|intcomma }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2">Brak stanu magazynowego</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <hr>
+
+    <h2>Dostawy od {{ sync_date|date:"Y-m-d" }}</h2>
+
+    {% for provider_name, deliveries in provider_deliveries.items %}
+        <h3>{{ provider_name }}</h3>
+        <table border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-bottom: 30px;">
+            <thead>
+                <tr>
+                    <th>Paleta</th>
+                    <th>Dostarczona ilość</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for palette_name, qty in deliveries.items %}
+                    <tr>
+                        <td>{{ palette_name }}</td>
+                        <td>{{ qty|intcomma }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2">Brak dostaw</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <hr>
+
+    <h2>Powiązania klientów z paletami</h2>
+
+    <table border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; width: 100%;">
+        <thead>
+            <tr>
+                {% for col in header %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in result %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}

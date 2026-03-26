@@ -70,7 +70,7 @@ a.polymerlink:hover {
         <tbody>
             {% for p in polymers %}
                 <tr class="polymer-row" data-polymerid="{{ p.id }}">
-                    <td>{{ p.identification_number }}</td>
+                    <td>{{ p.identification_number }} {% if p.identification_letter %}{{ p.identification_letter }}{% endif %}</td>
                     <td>{{ p.producer }}</td>
                     <td>{{ p.customer }}</td>
                     <td>{{ p.name }}</td>

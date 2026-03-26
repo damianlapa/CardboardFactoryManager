@@ -1,0 +1,60 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/load_wz.css' %}">
+{% endblock %}
+{% block content %}
+<h2>Wykryto nowe produkty</h2>
+
+<p>Te produkty nie istnieją jeszcze w bazie i zostaną utworzone dopiero po potwierdzeniu.</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Klient</th>
+            <th>Nazwa</th>
+            <th>Fala</th>
+            <th>Wymiary</th>
+            <th>Dodatkowe</th>
+            <th>Wiersz</th>
+            <th>Zamówienie</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in new_products %}
+        <tr>
+            <td>{{ p.customer_name }}</td>
+            <td>{{ p.product_name }}</td>
+            <td>{{ p.flute }}</td>
+            <td>{{ p.dimensions }}</td>
+            <td>{{ p.extra }}</td>
+            <td>{{ p.row }}</td>
+            <td>{{ p.order_id }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="{{ source }}">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="confirm_new_products" value="1">
+
+    {% if source == "sheet" %}
+        <input type="hidden" name="sheet_row" value="{{ sheet_row }}">
+    {% elif source == "provider" %}
+        <input type="hidden" name="provider" value="{{ provider_id }}">
+        <input type="hidden" name="provider_order_number" value="{{ provider_order_number }}">
+    {% endif %}
+
+    <button type="submit" class="btn btn-success">
+        Tak, utwórz nowe produkty i importuj
+    </button>
+
+    <a href="{% url 'warehouse:add-orders' %}" class="btn btn-secondary">
+        Anuluj
+    </a>
+</form>
+{% endblock %}

@@ -2,108 +2,383 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 20px;
+    }
+    .dashboard-box {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    h1 span { font-weight: bold; font-size: 1.4em; }
+    h2 { margin-bottom: 15px; text-align: center; }
+    canvas { width: 100% !important; height: auto !important; }
+    .stats-header { text-align: center; margin-top: 10px; }
+    .stats-header h1 { margin: 10px 0; }
+    .toolbar {
+        display: flex; gap: 10px; align-items: center; justify-content: center;
+        margin: 10px 0 0;
+    }
+    .toolbar .pill {
+        border: 1px solid #ddd; border-radius: 999px; padding: 6px;
+        display: inline-flex; gap: 4px; background: #f8f8f8;
+    }
+    .toolbar button {
+        border: none; background: transparent; padding: 8px 14px; border-radius: 999px;
+        cursor: pointer; font-weight: 600;
+    }
+    .toolbar button.active { background: #111; color: #fff; }
+</style>
 {% endblock %}
+
 {% block content %}
-<h1>DO 2.400.000 METRÓW POZOSTAŁO: <span style="color:red" id="counter">{{ ile }}</span></h1>
-<h1>W 2025 DOSTARCZONO: <span style="color:green" id="counter2">{{ total_amount }}</span></h1>
-<h1>DO KOŃCA ROKU POZOSTAŁO: <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
-<canvas id="weeksChart" width="400" height="200"></canvas>
-<canvas id="weeksChartSingle" width="400" height="200"></canvas>
+
+<div class="stats-header">
+    <div class="toolbar">
+        <div class="pill">
+            <button id="btnWeek" class="{% if group == 'week' %}active{% endif %}">Tygodnie</button>
+            <button id="btnMonth" class="{% if group == 'month' %}active{% endif %}">Miesiące</button>
+        </div>
+    </div>
+
+    <h1>DO {{ cel }} m² POZOSTAŁO:
+        <span style="color:red" id="counter">{{ ile }} m²</span></h1>
+    <h1>W {{ start|date:"Y" }} DOSTARCZONO:
+        <span style="color:green" id="counter2">{{ total_amount }} m²</span></h1>
+    <h1>DO KOŃCA ROKU POZOSTAŁO:
+        <span style="color:blue" id="counter3">{{ days_left }}</span> DNI</h1>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-box">
+        <h2>Postęp {% if group == 'week' %}tygodniowy{% else %}miesięczny{% endif %} (narastająco)</h2>
+        <canvas id="weeksChart"></canvas>
+    </div>
+
+    <div class="dashboard-box">
+        <h2>Dostawy {% if group == 'week' %}tygodniowe{% else %}miesięczne{% endif %}</h2>
+        <canvas id="weeksChartSingle"></canvas>
+    </div>
+
+    <div class="dashboard-box">
+        <h2>Zamówienia m² wg klienta</h2>
+        <canvas id="customerChart"></canvas>
+    </div>
+
+    <div class="dashboard-box">
+        <h2>Zamówienia wg dostawcy</h2>
+        <canvas id="providerChart"></canvas>
+    </div>
+
+    <div class="dashboard-box">
+        <h2>Zamówienia wg klienta z filtrem m²</h2>
+        <label for="threshold_min">Pokaż klientów z udziałem powierzchni ≥</label>
+        <select id="threshold_min">
+            <option value="0">0%</option>
+            <option value="1">1%</option>
+            <option value="2">2%</option>
+            <option value="3">3%</option>
+            <option value="5" selected>5%</option>
+            <option value="10">10%</option>
+            <option value="15">15%</option>
+        </select>
+
+        <label for="threshold_max">... i ≤</label>
+        <select id="threshold_max">
+            <option value="100">100%</option>
+            <option value="50">50%</option>
+            <option value="25">25%</option>
+            <option value="15" selected>15%</option>
+            <option value="10">10%</option>
+            <option value="5">5%</option>
+            <option value="3">3%</option>
+            <option value="1">1%</option>
+        </select>
+        <canvas id="customer2Chart"></canvas>
+    </div>
+
+    <div class="dashboard-box">
+        <h2>Dni od ostatniej dostawy (klienci)</h2>
+        <label for="days_threshold_min">≥</label>
+        <select id="days_threshold_min">
+            <option value="0">0</option>
+            <option value="7">7</option>
+            <option value="14">14</option>
+            <option value="30" selected>30</option>
+        </select>
+
+        <label for="days_threshold_max">i ≤</label>
+        <select id="days_threshold_max">
+            <option value="365">365</option>
+            <option value="180">180</option>
+            <option value="90" selected>90</option>
+            <option value="60">60</option>
+            <option value="30">30</option>
+            <option value="14">14</option>
+        </select>
+
+        <canvas id="lastDeliveryChart" width="800" height="400"></canvas>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // --- helpers: querystring update preserving start/end ---
+    function setQueryParam(url, key, value) {
+        const u = new URL(url, window.location.origin);
+        if (value === null || value === undefined || value === '') {
+            u.searchParams.delete(key);
+        } else {
+            u.searchParams.set(key, value);
+        }
+        return u.toString();
+    }
+    function goWithGroup(group) {
+        const url = new URL(window.location.href);
+        const start = "{{ start|date:'d-m-Y' }}";
+        const end   = "{{ end|date:'d-m-Y' }}";
+        url.searchParams.set('group', group);
+        if (start) url.searchParams.set('start', start);
+        if (end)   url.searchParams.set('end', end);
+        window.location.href = url.toString();
+    }
+    document.getElementById('btnWeek').addEventListener('click', () => goWithGroup('week'));
+    document.getElementById('btnMonth').addEventListener('click', () => goWithGroup('month'));
+
+    // --- Chart 1: linia narastająca ---
     const ctx = document.getElementById('weeksChart').getContext('2d');
-    const chartData = {
-        labels: [
-            {% for d in dates %}
-                "{{ d }}",
-            {% endfor %}
-        ],
-        datasets: [{
-            label: 'Increasing Amounts',
-            data: [
-                {% for a in values %}
-                    {{ a }},
-                {% endfor %}
-            ],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-        }]
-    };
-    const transactionChart = new Chart(ctx, {
-        type: 'line', // Możesz użyć 'bar', 'pie', itp.
-        data: chartData,
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{% for d in dates %}"{{ d|date:'Y-m-d' }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Suma narastająco',
+                data: [{% for a in values %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
         options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
-</script>
-<script>
+
+    // --- Chart 2: per okres (tydzień/miesiąc) ---
     const ctx2 = document.getElementById('weeksChartSingle').getContext('2d');
-    const chartData2 = {
-        labels: [
-            {% for w in weeks %}
-                "{{ w }}",
-            {% endfor %}
-        ],
-        datasets: [{
-            label: 'Week Amounts',
-            data: [
-                {% for a in values_by_week %}
-                    {{ a }},
-                {% endfor %}
-            ],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-        }]
-    };
-    const transactionChart2 = new Chart(ctx2, {
-        type: 'bar', // Możesz użyć 'bar', 'pie', itp.
-        data: chartData2,
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: [{% for lbl in period_labels %}"{{ lbl }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Dostawy {% if group == "week" %}tygodniowe{% else %}miesięczne{% endif %}',
+                data: [{% for a in values_by_period %}{{ a }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(255, 159, 64, 0.3)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
     });
-</script>
-<script>
-        function animateCounter(startValue, endValue, duration, counter) {
 
-            const startTime = performance.now();
+    // --- Chart 3: klienci (doughnut) ---
+    const ctx3 = document.getElementById('customerChart').getContext('2d');
+    new Chart(ctx3, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for label in customer_labels %}"{{ label }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Dostawy na klienta',
+                data: [{% for val in customer_values %}{{ val }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.4)',
+                    'rgba(54, 162, 235, 0.4)',
+                    'rgba(255, 206, 86, 0.4)',
+                    'rgba(75, 192, 192, 0.4)',
+                    'rgba(153, 102, 255, 0.4)',
+                    'rgba(255, 159, 64, 0.4)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
 
-            function updateCounter(currentTime) {
-                const elapsedTime = currentTime - startTime;
-                const progress = Math.min(elapsedTime / duration, 1); // Zapewnia, że progress nie przekroczy 1
-                const currentValue = Math.floor(startValue - (startValue - endValue) * progress);
+    // --- Chart 4: dostawcy (doughnut) ---
+    const ctx4 = document.getElementById('providerChart').getContext('2d');
+    new Chart(ctx4, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for label in provider_labels %}"{{ label }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Dostawy na dostawcę',
+                data: [{% for val in provider_values %}{{ val }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.4)',
+                    'rgba(54, 162, 235, 0.4)',
+                    'rgba(255, 206, 86, 0.4)',
+                    'rgba(75, 192, 192, 0.4)',
+                    'rgba(153, 102, 255, 0.4)',
+                    'rgba(255, 159, 64, 0.4)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
 
-                counter.textContent = currentValue.toLocaleString(); // Formatowanie liczby z separatorami
+    // --- Chart 5: klienci z progiem % (z zakresem & group) ---
+    const ctx5 = document.getElementById('customer2Chart').getContext('2d');
+    let chart;
+    function loadChart(min, max) {
+        const baseUrl = `{% url 'warehouse:customer-distribution' %}`;
+        const url = new URL(baseUrl, window.location.origin);
+        url.searchParams.set('min', min);
+        url.searchParams.set('max', max);
+        url.searchParams.set('group', '{{ group }}');
+        url.searchParams.set('start', '{{ start|date:"d-m-Y" }}');
+        url.searchParams.set('end', '{{ end|date:"d-m-Y" }}');
+        fetch(url.toString())
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(item => item.customer);
+                const percentages = data.map(item => item.percentage);
+                if (chart) chart.destroy();
+                chart = new Chart(ctx5, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Udział % powierzchni',
+                            data: percentages,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: v => v + '%' }
+                            }
+                        }
+                    }
+                });
+            });
+    }
+    const selectMin = document.getElementById('threshold_min');
+    const selectMax = document.getElementById('threshold_max');
+    function updateChart() {
+        const min = parseFloat(selectMin.value);
+        const max = parseFloat(selectMax.value);
+        loadChart(min, max);
+    }
+    selectMin.addEventListener('change', updateChart);
+    selectMax.addEventListener('change', updateChart);
+    loadChart(selectMin.value, selectMax.value);
 
-                if (progress < 1) {
-                    requestAnimationFrame(updateCounter);
-                }
-            }
+    // --- Chart 6: dni od ostatniej dostawy (z zakresem & group) ---
+    const ctxLastDelivery = document.getElementById('lastDeliveryChart').getContext('2d');
+    let lastDeliveryChart;
+    function loadLastDeliveryChart(min, max) {
+        const baseUrl = `{% url 'warehouse:customer-orders-statistic' %}`;
+        const url = new URL(baseUrl, window.location.origin);
+        url.searchParams.set('min', min);
+        url.searchParams.set('max', max);
+        url.searchParams.set('group', '{{ group }}');
+        url.searchParams.set('start', '{{ start|date:"d-m-Y" }}');
+        url.searchParams.set('end', '{{ end|date:"d-m-Y" }}');
+        fetch(url.toString())
+            .then(r => r.json())
+            .then(data => {
+                const filtered = data.filter(item =>
+                    item.days_since_last >= min && item.days_since_last <= max
+                );
+                const labels = filtered.map(item => item.customer);
+                const days = filtered.map(item => item.days_since_last);
+                if (lastDeliveryChart) lastDeliveryChart.destroy();
+                lastDeliveryChart = new Chart(ctxLastDelivery, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Dni od ostatniej dostawy',
+                            data: days,
+                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        scales: {
+                            x: { beginAtZero: true, title: { display: true, text: 'Dni' } },
+                            y: { title: { display: true, text: 'Klient' } }
+                        }
+                    }
+                });
+            });
+    }
+    const selectMinDays = document.getElementById('days_threshold_min');
+    const selectMaxDays = document.getElementById('days_threshold_max');
+    function updateLastDeliveryChart() {
+        const min = parseInt(selectMinDays.value);
+        const max = parseInt(selectMaxDays.value);
+        loadLastDeliveryChart(min, max);
+    }
+    selectMinDays.addEventListener('change', updateLastDeliveryChart);
+    selectMaxDays.addEventListener('change', updateLastDeliveryChart);
+    loadLastDeliveryChart(parseInt(selectMinDays.value), parseInt(selectMaxDays.value));
 
-            requestAnimationFrame(updateCounter);
+    // --- animowane liczniki ---
+    function animateCounter(startValue, endValue, duration, el) {
+        const startTime = performance.now();
+        function step(t) {
+            const p = Math.min((t - startTime) / duration, 1);
+            const val = Math.floor(startValue + (endValue - startValue) * p);
+            el.textContent = val.toLocaleString();
+            if (p < 1) requestAnimationFrame(step);
         }
-
-        // Uruchomienie animacji: od 2 400 000 do 1 200 000 w 5 sekund
-        const counter = document.getElementById('counter');
-        const counter2 = document.getElementById('counter2');
-        const counter3 = document.getElementById('counter3');
-        animateCounter(2400000, {{ ile }}, 2000, counter);
-        animateCounter(0, {{ total_amount }}, 2000, counter2);
-        animateCounter({{ year_days }}, {{ days_left }}, 2000, counter3);
-    </script>
-
+        requestAnimationFrame(step);
+    }
+    // 1) cel -> ile (malejąco)
+    animateCounter({{ cel }}, {{ ile }}, 1000, document.getElementById('counter'));
+    // 2) 0 -> total_amount
+    animateCounter(0, {{ total_amount }}, 1000, document.getElementById('counter2'));
+    // 3) year_days -> days_left (oblicz year_days po stronie JS)
+    (function(){
+        const y = new Date().getFullYear();
+        const start = new Date(y, 0, 1);
+        const end   = new Date(y, 11, 31);
+        const msPerDay = 24*60*60*1000;
+        const year_days = Math.round((end - start) / msPerDay) + 1; // 365/366
+        animateCounter(year_days, {{ days_left }}, 1000, document.getElementById('counter3'));
+    })();
+</script>
 {% endblock %}
 
-{% block scripts %}
-{% endblock %}
+{% block scripts %}{% endblock %}

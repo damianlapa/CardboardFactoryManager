@@ -1,0 +1,71 @@
+/* Główne ułożenie formularzy */
+.delivery-edit-container {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+/* Formularz główny */
+.delivery-form {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+}
+
+/* Formularz palet */
+.palettes-formset {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+/* Pojedynczy wpis palety */
+.palette-entry {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+    background-color: #ffffff;
+}
+
+/* Przyciski */
+.submit-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #3578e5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background-color: #2a62bb;
+}
+
+/* Pola formularza */
+input[type="text"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 6px 10px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Etykiety */
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
