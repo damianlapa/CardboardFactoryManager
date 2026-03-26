@@ -155,6 +155,9 @@ class WorkStation(models.Model):
     lifetime = models.PositiveIntegerField(default=0)
     setup_time = models.CharField(max_length=128, null=True, blank=True)
 
+    class Meta:
+        ordering = ['name']
+
     def __str__(self):
         return self.name
 
