@@ -1,329 +1,24 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
 from django.http import HttpResponse, JsonResponse
 from django.views import View
-from django.contrib import messages
-from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import permission_required
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
 from django.core.paginator import Paginator
-from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy
-from django.core.mail import send_mail
-import io
 import calendar
-import os
-import sys
-import shutil
-from django.conf import settings
-# import docx
 import json
-import datetime
-
 import qrcode
 from io import BytesIO
 import base64
-
 from PIL import Image, ImageDraw, ImageFont
-
 from warehousemanager.functions import *
-
-import subprocess
-from warehousemanager.models import *
 from warehousemanager.forms import *
-
-# exporting content to pdf
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-
-# coworking with google sheets
-from django.contrib.staticfiles import finders
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-
-def index(request):
-    return HttpResponse('first view')
-
-
-def render_pdf_view(request):
-    template_path = 'user_printer.html'
-    context = {'myvar': 'this is your template context'}
-    # Create a Django response object, and specify content_type as pdf
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
-    # find the template and render it.
-    template = get_template(template_path)
-    html = template.render(context)
-
-    # create a pdf
-    pisa_status = pisa.CreatePDF(
-        html, dest=response)
-    # if error then show some funy view
-    if pisa_status.err:
-        return HttpResponse('We had some errors <pre>' + html + '</pre>')
-    return response
-
-
-class NewOrder(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_order'
-
-    def get(self, request):
-        providers = CardboardProvider.objects.all()
-        form = NewOrderForm()
-
-        # deleting orders without items
-        orders = Order.objects.all()
-        for order in orders:
-            if not OrderItem.objects.all().filter(order=order):
-                order.delete()
-
-        not_completed_orders = Order.objects.all()
-
-        for n_c_order in not_completed_orders:
-            if not n_c_order.is_completed:
-                messages.info(request, 'Masz niezakończone zamówienia')
-
-        return render(request, 'warehousemanager-new-order.html', locals())
-
-    def post(self, request):
-        form = NewOrderForm(request.POST)
-        if form.is_valid():
-            provider = form.cleaned_data['provider']
-            order_provider_number = form.cleaned_data['order_provider_number']
-            date_of_order = form.cleaned_data['date_of_order']
-
-            provider_object = CardboardProvider.objects.get(name=provider)
-
-            new_order = Order.objects.create(provider=provider_object, order_provider_number=int(order_provider_number),
-                                             date_of_order=date_of_order)
-
-            new_order.save()
-
-            orders = Order.objects.all()
-            if orders:
-                order_id = orders.order_by('id').reverse()[0].id
-            else:
-                order_id = 1
-            return redirect('/add-items/{}'.format(order_id))
-
-
-class DeleteOrder(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.delete_order'
-
-    def get(self, request):
-        order_id = int(request.GET.get('order_id'))
-        Order.objects.get(id=order_id).delete()
-
-        return redirect('uncompleted-orders')
-
-
-class NewItemAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_orderitem'
-
-    def get(self, request, order_id):
-        form = NewOrderItemForm()
-        order = Order.objects.get(id=order_id)
-        items = OrderItem.objects.all().filter(order=order)
-        last_items = OrderItem.objects.all().reverse()[:5]
-        all_items = OrderItem.objects.all()
-
-        if order.is_completed:
-            return HttpResponse('Zamówienie zostało już skompletowane')
-
-        return render(request, 'add-item.html', locals())
-
-    def post(self, request, order_id):
-        form = NewOrderItemForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('/add-items/{}'.format(order_id))
-        else:
-            return HttpResponse(form.errors)
-
-
-class OrderItemDelete(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.delete_orderitem'
-
-    def get(self, request, order_id, item_id):
-        item_object = OrderItem.objects.get(id=int(item_id))
-        item_object.delete()
-
-        return redirect('/add-items/{}'.format(order_id))
-
-
-class NextOrderNumber(View):
-    def get(self, request):
-        provider_num = request.GET.get('provider_num')
-        provider = CardboardProvider.objects.get(id=int(provider_num))
-        all_orders = Order.objects.all().filter(provider=provider).order_by('order_provider_number').reverse()
-        if all_orders:
-            num = all_orders[0].order_provider_number + 1
-        else:
-            num = 1
-
-        z = json.dumps(num)
-
-        return HttpResponse(z)
-
-
-class ProviderForm(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_cardboardprovider'
-
-    def get(self, request):
-        form = CardboardProviderForm()
-        return render(request, 'new_provider.html', locals())
-
-    def post(self, request):
-        form = CardboardProviderForm(request.POST)
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            CardboardProvider.objects.create(name=name)
-
-            return redirect('main-page')
-
-
-class NextItemNumber(View):
-    def get(self, request):
-        order_num = request.GET.get('order_num')
-        order = Order.objects.get(id=int(order_num))
-        all_items = OrderItem.objects.all().filter(order=order)
-
-        num = len(all_items)
-
-        return HttpResponse(json.dumps(num + 1))
-
-
-class CompleteOrder(View):
-    def get(self, request):
-        order_id = int(request.GET.get('order_id'))
-        state = request.GET.get('state')
-        order = Order.objects.get(id=order_id)
-        order.is_completed = True if state == 'c' else False
-        order.save()
-
-        return redirect('all-orders-details')
-
-
-class GetItemDetails(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_orderitem'
-
-    def get(self, request):
-        item_id = int(request.GET.get('item_id'))
-        item = OrderItem.objects.get(id=item_id)
-
-        if item.buyer.all():
-            buyer = item.buyer.all()[0].name
-        else:
-            buyer = ''
-
-        data = {
-            'height': item.format_height,
-            'width': item.format_width,
-            'dimension_one': item.dimension_one,
-            'dimension_two': item.dimension_two,
-            'dimension_three': item.dimension_three,
-            'sort': item.sort,
-            'buyer': buyer,
-            'weight': item.cardboard_weight,
-            'cardboard_type': item.cardboard_type,
-            'name': item.name,
-            'scores': item.scores
-        }
-
-        return HttpResponse(json.dumps(data))
-
-
-class PrintTest(View):
-    def get(self, request):
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer)
-        p.drawString(100, 100, 'Hello World.')
-        p.showPage()
-        p.save()
-        lpr = subprocess.Popen("/usr/bin/lpr", stdin=subprocess.PIPE)
-        lpr.stdin.write(b'ok')
-        buffer.seek(0)
-
-        return FileResponse(buffer, as_attachment=True, filename='hello.pdf')
-
-
-class OpenFile(View):
-    def get(self, request, order_item_id):
-        order_item = OrderItem.objects.get(id=order_item_id)
-
-        os.chdir('/home/damian/PycharmProjects/PakerProject/media/paker')
-
-        src = 'zp.docx'
-        dst = 'zp{}'.format(order_item.id)
-
-        os.rename(src, 'oko.docx')
-
-        '''document = docx.Document('zp{}'.format(order_item.id))
-        print(len(document.sections))
-
-        text = ''
-
-        for p in document.paragraphs:
-            if p.text == 'TERMIN REALIZACJI':
-                p.text = 'nowy termin'
-            text += ' $'
-            text += '<br />'
-            text += p.text
-
-        text += '<br />'
-        text += 'Tabele <br />'
-
-        for t in document.tables:
-            text2 = ''
-            for i, row in enumerate(t.rows):
-                for c in row.cells:
-                    if c.text == 'TYP MASZYNY':
-                        if order_item.sort in ('201', '202', '203'):
-                            c.text = 'f. ' + order_item.sort
-
-                    text2 += c.text
-
-            text += text2
-
-        document.save('zp.docx')'''
-
-        return HttpResponse('')
-
-
-class NewAllOrders(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order'
-
-    def get(self, request):
-        customer = request.GET.get('customer')
-        all_customers = Buyer.objects.all()
-        orders = Order.objects.all()
-        items = OrderItem.objects.all()
-        only_uncompleted = False if not request.GET.get('only_u') else True
-        provider = request.GET.get('provider')
-        if provider:
-            orders = orders.filter(provider=CardboardProvider.objects.get(name=provider))
-        if customer:
-            orders = []
-            orders_ = OrderItem.objects.filter(buyer__name=customer)
-            for o in orders_:
-                if o.order not in orders:
-                    orders.append(o.order)
-        orders_num = len(orders) if request.GET.get('all-orders') else 10
-
-        paginator = Paginator(orders, orders_num)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        providers = CardboardProvider.objects.all()
-        quantities = OrderItemQuantity.objects.all()
-        return render(request, 'new-all-orders.html', locals())
 
 
 class StartPage(View):
@@ -344,6 +39,29 @@ class StartPage(View):
         return redirect('start-page')
 
 
+class LoginView(View):
+    def get(self, request):
+        print('here')
+        user = request.user
+        visit_counter(user, 'index')
+        next_url = request.GET.get('next')
+        print(next_url)
+        return render(request, 'start-page.html', locals())
+
+    def post(self, request):
+        name = request.POST.get('login')
+        password = request.POST.get('password')
+        next_url = request.POST.get('next')
+
+        user = authenticate(username=name, password=password)
+
+        if user is not None:
+            login(request, user)
+        if next_url:
+            return redirect(next_url)
+        return redirect('start-page')
+
+
 class LogoutView(View):
     def get(self, request):
         logout(request)
@@ -352,7 +70,7 @@ class LogoutView(View):
 
 
 class MainPageView(LoginRequiredMixin, View):
-    login_url = '/'
+    login_url = reverse_lazy('login')
 
     def get(self, request):
         title = 'MAIN PAGE'
@@ -369,155 +87,6 @@ class MainPageView(LoginRequiredMixin, View):
 
         return render(request, 'warehousemanager-main-page.html', locals())
         # return redirect('punches')
-
-
-# wszyscy dostawcy
-class AllProvidersView(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_cardboard_provider'
-
-    def get(self, request):
-        providers = CardboardProvider.objects.all()
-        return render(request, 'warehousemanager-all-providers.html', locals())
-
-
-# przelicznik formatów
-class FormatConverter(LoginRequiredMixin, View):
-    login_url = '/'
-
-    def get(self, request):
-        return render(request, 'warehousemanager-format-converter.html', locals())
-
-
-# zarządzanie dostawami
-class DeliveriesManagement(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_delivery'
-
-    def get(self, request):
-        title = 'DELIVERIES'
-        all_deliveries = Delivery.objects.all()
-
-        year_deliveries = Delivery.deliveries_during_period(2021)
-
-        return render(request, 'warehousemanager-all-deliveries.html', locals())
-
-
-# szczegóły dostawy
-class DeliveryDetails(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_delivery'
-
-    def get(self, request, delivery_id):
-        delivery = Delivery.objects.get(id=delivery_id)
-        quantities = OrderItemQuantity.objects.filter(delivery=delivery)
-        palettes = PaletteQuantity.objects.filter(delivery=delivery)
-
-        order_item_q_form = OrderItemQuantityForm(initial={'delivery': delivery}, provider=delivery.provider)
-        palette_q_form = PaletteQuantityForm(initial={'delivery': delivery})
-
-        return render(request, 'warehousemanager-delivery-details.html', locals())
-
-    def post(self, request, delivery_id):
-        delivery = Delivery.objects.get(id=delivery_id)
-        order_item_q_form = OrderItemQuantityForm(delivery.provider, request.POST)
-        palette_q_form = PaletteQuantityForm(request.POST)
-
-        if palette_q_form.is_valid():
-            delivery = Delivery.objects.get(id=int(request.POST.get('delivery')))
-            palette = Palette.objects.get(id=int(request.POST.get('palette')))
-            quantity = int(request.POST.get('quantity'))
-            status = request.POST.get('status')
-
-            new_palette_quantity = PaletteQuantity.objects.create(delivery=delivery, palette=palette, quantity=quantity,
-                                                                  status=status)
-
-            new_palette_quantity.save()
-
-            return redirect('/delivery/{}/'.format(delivery_id))
-
-        if order_item_q_form.is_valid():
-            delivery = request.POST.get('delivery')
-            order_item = request.POST.get('order_item')
-            quantity = request.POST.get('quantity')
-
-            new_oiq = OrderItemQuantity.objects.create(delivery=Delivery.objects.get(id=int(delivery)),
-                                                       order_item=OrderItem.objects.get(id=int(order_item)),
-                                                       quantity=int(quantity))
-
-            new_oiq.save()
-
-            return redirect('/delivery/{}/'.format(delivery_id))
-
-
-# dodawanie dostawy
-class DeliveryAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_delivery'
-
-    def get(self, request):
-        delivery_form = DeliveryForm()
-
-        return render(request, 'warehousemanager-delivery-add.html', locals())
-
-    def post(self, request):
-        delivery_form = DeliveryForm(request.POST)
-        if delivery_form.is_valid():
-            provider = delivery_form.cleaned_data['provider']
-            date_of_delivery = delivery_form.cleaned_data['date_of_delivery']
-
-            new_delivery = Delivery.objects.create(provider=provider, date_of_delivery=date_of_delivery)
-
-            new_delivery.save()
-
-            return redirect('/delivery/{}/'.format(new_delivery.id))
-
-        else:
-            return HttpResponse('fail')
-
-
-# dodawanie notatek
-class NoteAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_note'
-
-    def get(self, request):
-        note_form = NoteForm()
-
-        return render(request, 'warehousemanager-add-note.html', locals())
-
-    def post(self, request):
-        note_form = NoteForm(request.POST)
-        if note_form.is_valid():
-            genre = note_form.cleaned_data['genre']
-            title = note_form.cleaned_data['title']
-            content = note_form.cleaned_data['content']
-            new_note = Note.objects.create(genre=genre, title=title, content=content)
-
-            new_note.save()
-
-            return redirect('deliveries-calendar')
-
-
-# wszystkie notatki
-class AllNotes(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_note'
-
-    def get(self, request):
-        all_notes = Note.objects.all()
-        return render(request, 'warehousemanager-all-notes.html', locals())
-
-
-class NoteDetailsView(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_note'
-
-    def get(self, request, note_id):
-        note = Note.objects.get(id=note_id)
-        return render(request, 'note-details.html', locals())
-
-
-class NoteDeleteView(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_note'
-
-    def get(self, request, note_id):
-        note = Note.objects.get(id=note_id)
-        note.delete()
-        return redirect('deliveries-calendar')
 
 
 class AbsencesList(PermissionRequiredMixin, View):
@@ -695,7 +264,9 @@ class AbsencesList(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-absenceslist.html', locals())
 
 
-class AbsencesAndHolidays(View):
+class AbsencesAndHolidays(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
 
     def get(self, request):
         def days_without_work(worker, mm_yyyy_str):
@@ -1183,711 +754,7 @@ class BuyersList(PermissionRequiredMixin, View):
         return render(request, 'warehousemanager-buyers-list.html', locals())
 
 
-class PunchProductions(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punchproduction'
-
-    def get(self, request):
-        production = PunchProduction.objects.all()
-
-        return render(request, 'warehousemanager-punch-production.html', locals())
-
-
-class PunchProductionAdd(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_punchproduction'
-
-    def get(self, request):
-        punch_id = request.GET.get('punch_id')
-        if punch_id:
-            punch = Punch.objects.get(id=int(punch_id))
-            form = PunchProductionForm(initial={'punch': punch})
-
-        else:
-            form = PunchProductionForm()
-
-        return render(request, 'warehousemanager-punch-production-add.html', locals())
-
-    def post(self, request):
-        form = PunchProductionForm(request.POST)
-
-        if form.is_valid():
-            punch = form.cleaned_data['punch']
-            worker = form.cleaned_data['worker']
-            date_start = form.cleaned_data['date_start']
-            date_end = form.cleaned_data['date_end']
-            quantity = form.cleaned_data['quantity']
-            comments = form.cleaned_data['comments']
-
-            production = PunchProduction.objects.create(punch=punch, worker=worker, date_start=date_start,
-                                                        date_end=date_end, quantity=quantity, comments=comments)
-            production.save()
-
-            return redirect('punches')
-
-
-class CardboardUsed(View):
-    def get(self, request, cardboard_stock_id):
-        cardboard = OrderItemQuantity.objects.get(id=cardboard_stock_id)
-        if cardboard.is_used:
-            return HttpResponse(json.dumps(True))
-        else:
-            return HttpResponse(json.dumps(False))
-
-
-# to-do
-class StockManagement(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_punchproduction'
-
-    def get(self, request):
-        stocks = OrderItemQuantity.objects.filter(is_used=False)
-        history_stocks = OrderItemQuantity.objects.filter(is_used=True)
-
-        return render(request, 'warehousemanager-stock-management.html', locals())
-
-
-# to-do
-class Announcement(View):
-    def get(self, request):
-        return render(request, 'warehousemanager-announcement.html')
-
-
-class ChangeOrderState(View):
-    def get(self, request):
-        order_item_id = request.GET.get('order_item_id')
-        order_item = OrderItem.objects.get(id=int(order_item_id))
-        if order_item.is_completed:
-            order_item.is_completed = False
-        else:
-            order_item.is_completed = True
-
-        order_item.save()
-
-        return HttpResponse(json.dumps(order_item.is_completed))
-
-
-# to-do
-class ProductionView(View):
-    def get(self, request):
-        items_to_do = OrderItem.objects.filter(is_completed=True)
-        return render(request, 'warehousemanager-production-status.html', locals())
-
-
-class OrderItemDetails(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_order_item'
-
-    def get(self, request, order_item_id):
-        order_item = OrderItem.objects.get(id=order_item_id)
-        productions = ProductionProcess.objects.filter(order_item=order_item)
-        quantity_delivered = 0
-        for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
-            quantity_delivered += oiq.quantity
-        return render(request, 'warehousemanager-order-item-details.html', locals())
-
-
-# printing tests
-class OrderItemPrint(View):
-    def get(self, request, order_item_id):
-        order_item = OrderItem.objects.get(id=order_item_id)
-        productions = ProductionProcess.objects.filter(order_item=order_item)
-
-        productions_cutting = productions.filter(Q(type='WY') | Q(type='WY+DR') | Q(type='DR') | Q(type='SZ'))
-
-        quantity_delivered = 0
-
-        for oiq in OrderItemQuantity.objects.filter(order_item=order_item):
-            quantity_delivered += oiq.quantity
-
-        logo_url = os.environ['PAKER_MAIN'] + 'static/images/paker-logo.png'
-
-        delta_date = order_item.order.date_of_order + datetime.timedelta(days=14)
-
-        date_end = delta_date.strftime('%d.%m.%Y')
-
-        now = datetime.date.today().strftime('%d.%m.%Y')
-
-        buyer_list = order_item.buyer.all()
-
-        buyer = ''
-
-        for b in buyer_list:
-            if buyer != '':
-                buyer += ', '
-            buyer += str(b)
-
-        machine = ''
-
-        if order_item.sort in ('201', '202', '203'):
-            machine = 'SLO'
-        elif order_item.sort == 'SZTANCA':
-            machine = 'TYG'
-        elif order_item.sort == 'PRZEKLADKA':
-            machine = 'MAG'
-            if order_item.dimension_one != order_item.format_width:
-                machine = 'KRA'
-            elif order_item.dimension_two != order_item.format_height:
-                machine = 'KRA'
-
-        punch_id = '.'
-
-        if order_item.sort == 'SZTANCA':
-            punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
-                dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
-            if punches.count() > 0:
-                punch_id = ''
-                for p in punches:
-                    if punch_id != '':
-                        punch_id += ', '
-                    punch_id += p.punch_name()
-
-        # return render(request, 'warehousemanager-printtest.html', locals())
-
-        template_path = 'warehousemanager-printtest.html'
-        context = locals()
-        # Create a Django response object, and specify content_type as pdf
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'filename="report.pdf"'
-        # find the template and render it.
-        template = get_template(template_path)
-        html = template.render(context)
-
-        # create a pdf
-        pisa_status = pisa.CreatePDF(
-            html, dest=response)
-        # if error then show some funy view
-        if pisa_status.err:
-            return HttpResponse('We had some errors <pre>' + html + '</pre>')
-        return response
-
-
-# connecting with google sheets
-class GoogleSheetTest(View):
-    def get(self, request):
-        order_item_id = request.GET.get('orderitemid')
-
-        order_item = OrderItem.objects.get(id=int(order_item_id))
-
-        delta_date = order_item.order.date_of_order + datetime.timedelta(days=14)
-
-        date_end = delta_date.strftime('%d.%m.%Y')
-
-        now = datetime.date.today().strftime('%d.%m.%Y')
-
-        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-
-        creds_dict = {
-            "type": "service_account",
-            "project_id": os.environ['PROJECT_ID'],
-            "private_key_id": os.environ['PRIVATE_KEY_ID'],
-            "private_key": google_key(),
-            "client_email": os.environ['CLIENT_EMAIL'],
-            "client_id": os.environ['CLIENT_ID'],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
-        }
-
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
-        client = gspread.authorize(creds)
-
-        sheet_zam = client.open('zlecenie produkcyjne')
-
-        sheet = sheet_zam.sheet1
-
-        all_sheets = SpreadsheetCopy.objects.all()
-
-        for s in all_sheets:
-            if timezone.now() > s.created + datetime.timedelta(minutes=30):
-                client.del_spreadsheet(s.gs_id)
-                s.delete()
-
-        new_title = f'{order_item}'
-
-        new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
-                             copy_permissions=True)
-
-        SpreadsheetCopy.objects.create(gs_id=new_gs.id)
-
-        sheet.update_cell(18, 21, order_item.ordered_quantity)
-
-        sheet.update_cell(12, 16, date_end)
-
-        sheet.update_cell(15, 9, now)
-
-        if order_item.name:
-            sheet.update_cell(12, 28, order_item.name)
-        else:
-            sheet.update_cell(12, 28, '')
-
-        sheet.update_cell(18, 16,
-                          f'{order_item.cardboard_type}{order_item.cardboard_weight}{order_item.cardboard_additional_info}')
-
-        buyer_list = order_item.buyer.all()
-
-        buyer = ''
-
-        for b in buyer_list:
-            if buyer != '':
-                buyer += ', '
-            buyer += str(b.shortcut)
-
-        machine = ''
-
-        if order_item.sort in ('201', '202', '203'):
-            machine = 'SLO'
-        elif order_item.sort == 'SZTANCA':
-            machine = 'TYG'
-        elif order_item.sort == 'PRZEKLADKA':
-            machine = 'MAG'
-            if order_item.dimension_one != order_item.format_width:
-                machine = 'KRA'
-            elif order_item.dimension_two != order_item.format_height:
-                machine = 'KRA'
-
-        punch_id = ''
-
-        if order_item.sort == 'SZTANCA':
-            punches = Punch.objects.filter(dimension_one=order_item.dimension_one).filter(
-                dimension_two=order_item.dimension_two).filter(dimension_three=order_item.dimension_three)
-            if punches.count() > 0:
-                punch_id = ''
-                for p in punches:
-                    if punch_id != '':
-                        punch_id += ', '
-                    punch_id += p.punch_name()
-
-        sheet.update_cell(12, 21, machine)
-
-        sheet.update_cell(20, 6, punch_id)
-
-        sheet.update_cell(18, 24, f'{order_item.format_width}x{order_item.format_height}')
-
-        sheet.update_cell(17, 1, order_item.dimension_one)
-
-        sheet.update_cell(17, 6, order_item.dimension_two)
-
-        if order_item.dimension_three:
-            sheet.update_cell(17, 11, order_item.dimension_three)
-        else:
-            sheet.update_cell(17, 11, '')
-
-        provider_lower = str(order_item.order.provider).lower()
-
-        if provider_lower == 'convert':
-            prov_shortcut = 'CN'
-        elif provider_lower == 'aquila':
-            prov_shortcut = 'AQ'
-        elif provider_lower == 'werner':
-            prov_shortcut = 'WER'
-        else:
-            prov_shortcut = 'NN'
-
-        sheet.update_cell(6, 11,
-                          f'{prov_shortcut} {order_item.order.order_provider_number}/{order_item.item_number} {buyer}')
-
-        return redirect(
-            'https://docs.google.com/spreadsheets/d/1VLDQa9HAdvWeHqX6QEpsTUPpyJz5fDcS4x2qTTjkEWA/edit#gid=1727884471')
-
-
-class ImportOrderItems(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.add_order_item'
-
-    def get(self, request):
-
-        if request.GET.get('record') or request.GET.get('final_record'):
-            val_1 = int(request.GET.get('record')) if request.GET.get('record') else None
-            val_2 = int(request.GET.get('final_record')) if request.GET.get('final_record') else None
-
-            if val_2 and val_1 and (val_2 < val_1):
-                statement = 'Value LAST ROW cannot be lower than FIRST ROW '
-                return render(request, 'warehousemanager-import-records.html', locals())
-
-            if not val_1:
-                val_1 = 4
-
-            # connecting to spreadsheet
-            scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-
-            creds_dict = {
-                "type": "service_account",
-                "project_id": os.environ['PROJECT_ID'],
-                "private_key_id": os.environ['PRIVATE_KEY_ID'],
-                "private_key": google_key(),
-                "client_email": os.environ['CLIENT_EMAIL'],
-                "client_id": os.environ['CLIENT_ID'],
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
-            }
-
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
-            client = gspread.authorize(creds)
-
-            sheet = client.open('tz2021').sheet1
-
-            if not val_2:
-                val_2 = len(sheet.get_all_values())
-
-            if val_2 - val_1 > 15:
-                if request.GET.get('record') and request.GET.get('final_record'):
-                    statement = 'Max 15 records during one request'
-                elif request.GET.get('record') and not request.GET.get('_final_record'):
-                    statement = f'Max 15 records during one request(there is {len(sheet.get_all_values())} records in sheet)'
-                return render(request, 'warehousemanager-import-records.html', locals())
-
-            record = 4 if not request.GET.get('record') else int(request.GET.get('record'))
-
-            final_record = len(sheet.get_all_values()) + 1 if not request.GET.get('final_record') else int(
-                request.GET.get('final_record'))
-
-            new_rows = []
-
-            result = []
-
-            # collecting data
-
-            for x in range(record, final_record):
-                new_rows.append((sheet.row_values(x), x))
-
-            for row, row_num in new_rows:
-                break_condition = False
-                provider_object = None
-
-                # provider
-                provider_shortcut = row[0]
-                if provider_shortcut == 'AQ':
-                    provider = 'AQUILA'
-                elif provider_shortcut == 'CV' or provider_shortcut == 'CN':
-                    provider = 'CONVERT'
-                elif provider_shortcut == 'WER':
-                    provider = 'WERNER'
-                else:
-                    provider = 'OTHER'
-
-                try:
-                    provider_object = CardboardProvider.objects.get(name=provider)
-                except ObjectDoesNotExist:
-                    result.append('!# PROVIDER DOES NOT EXISTS !!! ERROR ###')
-                    break_condition = True
-
-                if not break_condition:
-                    break_condition2 = False
-                    order_num = None
-
-                    # collecting data from rows
-
-                    try:
-                        order_num = int(row[1])
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER NUMBER)')
-                        break_condition2 = True
-
-                    try:
-                        order_item_num = int(row[2])
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG ORDER ITEM NUMBER)')
-                        break_condition2 = True
-
-                    try:
-                        width = int(row[8])
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT WIDTH)')
-                        break_condition2 = True
-
-                    try:
-                        height = int(row[9])
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG FORMAT HEIGHT)')
-                        break_condition2 = True
-
-                    # sort
-                    sheet_value = row[6]
-                    if sheet_value in ('ROT F201', 'SLO F201'):
-                        sort = '201'
-                    elif sheet_value in ('ROT F200', 'SLO F200'):
-                        sort = '200'
-                    elif sheet_value in ('ROT F203', 'SLO F203'):
-                        sort = '203'
-                    elif sheet_value in ('SLO 301 WIEKO', 'SLO 301 DNO'):
-                        sort = '301'
-                    elif sheet_value in ('ROT F409', 'SLO F409'):
-                        sort = '409'
-                    elif sheet_value == 'TYGIEL':
-                        sort = 'SZTANCA'
-                    elif sheet_value == 'ROT/TYG':
-                        sort = 'ROT/TYG'
-                    elif sheet_value == 'MAG':
-                        sort = 'MAG'
-                    elif sheet_value == 'KRA':
-                        sort = 'PRZEKLADKA'
-                    else:
-                        sort = 'PRZEKLADKA'
-
-                    # quantity handling
-
-                    try:
-                        quantity_cell = row[10]
-                        if quantity_cell == '':
-                            quantity_cell = 0
-                        quantity = int(quantity_cell)
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG QUANTITY)')
-                        break_condition2 = True
-
-                    # order_dimensions
-                    dimensions = ''
-                    dim1 = 0
-                    dim2 = 0
-                    dim3 = 0
-                    name = ''
-                    try:
-                        dimensions = row[18]
-
-                    except IndexError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(NO DIMENSIONS)')
-                        break_condition2 = True
-
-                    dimensions_split = dimensions.split('x')
-
-                    if len(dimensions_split) == 0:
-                        result.append(f'NO DIMENSIONS ERROR IN ROW: {row_num}')
-                    elif len(dimensions_split) == 1:
-                        try:
-                            if dimensions_split[0] != '':
-                                punch = Punch.objects.get(name=dimensions_split[0])
-                                dim1 = punch.dimension_one
-                                dim2 = punch.dimension_two
-                                dim3 = punch.dimension_three
-                                name = punch.name
-                            else:
-                                result.append(f'NO DIMENSIONS ERROR IN ROW: {row_num}')
-                        except ObjectDoesNotExist:
-                            name = dimensions_split[0]
-                            result.append(f'DIMENSIONS ERROR {dimensions_split[0]}')
-                    elif len(dimensions_split) == 2:
-                        dim1 = dimensions_split[0]
-                        dim2 = dimensions_split[1].split()[0]
-                    else:
-                        dim1 = dimensions_split[0]
-                        dim2 = dimensions_split[1]
-                        dim3 = dimensions_split[2].split()[0]
-
-                    try:
-                        name = row[19]
-                    except IndexError:
-                        name = ''
-
-                    try:
-                        dim1 = int(dim1) if dim1 else 0
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG FIRST DIMENSION)')
-                        break_condition2 = True
-
-                    try:
-                        dim2 = int(dim2) if dim2 else 0
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG SECOND DIMENSION)')
-                        break_condition2 = True
-
-                    try:
-                        if dim3 != '':
-                            dim3 = int(dim3) if dim3 else None
-                        else:
-                            dim3 = None
-                    except ValueError:
-                        result.append(f'VALUE ERROR IN ROW: {row_num}(WRONG THIRD DIMENSION)')
-                        break_condition2 = True
-
-                    # scores
-                    scores = row[13]
-                    if scores == '':
-                        scores = '-'
-
-                    # cardboard
-                    cardboard_type = row[15]
-                    if len(cardboard_type) > 6:
-                        cardboard_type = 'BB'
-                    cardboard_weight = row[16]
-                    if cardboard_weight == '':
-                        cardboard_weight = 0
-                    cardboard_extra = row[17]
-
-                    # customer
-                    customer = row[14]
-                    customer_object = None
-                    if customer != '':
-                        customer = customer.upper()
-
-                        try:
-                            customer_object = Buyer.objects.get(name=customer)
-                        except ObjectDoesNotExist:
-                            customer_object = Buyer.objects.create(name=customer, shortcut=customer[:7])
-
-                    # delivery date
-                    delivery_date = ''
-                    if row[5] != '':
-                        delivery_date = row[5]
-
-                    if sort == 'PRZEKLADKA':
-                        dim1 = width
-                        dim2 = height
-
-                    if not break_condition2:
-                        if len(name) > 15:
-                            name = 'too long'
-
-                        def add_order_item_object(function_order):
-                            statement = ''
-                            try:
-                                order_item = OrderItem.objects.get(order=function_order, item_number=order_item_num)
-
-                                if delivery_date != '':
-                                    order_item.planned_delivery = datetime.datetime.strptime(delivery_date, '%Y-%m-%d')
-                                    order_item.save()
-
-                                statement += f'{order_item} || {width}x{height} :: {dimensions}({name}) ALREADY EXISTS'
-                            except ObjectDoesNotExist:
-                                new_order_item = OrderItem.objects.create(order=function_order,
-                                                                          item_number=order_item_num,
-                                                                          sort=sort,
-                                                                          dimension_one=dim1, dimension_two=dim2,
-                                                                          dimension_three=dim3, scores=scores,
-                                                                          format_width=width,
-                                                                          format_height=height,
-                                                                          ordered_quantity=quantity,
-                                                                          cardboard_type=cardboard_type,
-                                                                          cardboard_weight=cardboard_weight,
-                                                                          cardboard_additional_info=cardboard_extra,
-                                                                          name=name)
-                                if delivery_date != '':
-                                    new_order_item.planned_delivery = datetime.datetime.strptime(delivery_date,
-                                                                                                 '%Y-%m-%d')
-                                    new_order_item.save()
-                                statement += f'{new_order_item} || {width}x{height} :: {dimensions}({name}) CREATED'
-                                if customer_object:
-                                    new_order_item.buyer.add(customer_object)
-
-                            return statement
-
-                        try:
-                            order = Order.objects.get(provider=provider_object, order_provider_number=order_num)
-                            result.append(add_order_item_object(order))
-                        except ObjectDoesNotExist:
-                            # order date
-                            order_date = row[4]
-
-                            new_order = Order.objects.create(provider=provider_object, order_provider_number=order_num,
-                                                             date_of_order=datetime.datetime.strptime(order_date,
-                                                                                                      '%Y-%m-%d'),
-                                                             is_completed=True)
-
-                            new_order.save()
-                            result.append(f'ORDER {new_order} CREATED')
-
-                            result.append(add_order_item_object(new_order))
-
-        return render(request, 'warehousemanager-import-records.html', locals())
-
-
-class PrepareManySpreadsheetsForm(View):
-
-    def get(self, request):
-        all_orders = Order.objects.all()
-        all_items = OrderItem.objects.all()
-
-        return render(request, 'warehousemanager-prepare-gs.html', locals())
-
-    def post(self, request):
-        order_items = request.POST.get('order_items')
-
-        '''scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-
-        creds_dict = {
-            "type": "service_account",
-            "project_id": os.environ['PROJECT_ID'],
-            "private_key_id": os.environ['PRIVATE_KEY_ID'],
-            "private_key": google_key(),
-            "client_email": os.environ['CLIENT_EMAIL'],
-            "client_id": os.environ['CLIENT_ID'],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
-        }
-
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
-        client = gspread.authorize(creds)'''
-
-        '''for o in order_items:
-            new_title = f'{o}'
-
-            new_gs = client.copy(file_id='1II0BeYj-FuJtWFSkU8mUmU6lMRPqXvWTQw-DXqfzmio', title=new_title,
-                                 copy_permissions=True)
-
-            SpreadsheetCopy.objects.create(gs_id=new_gs.id)'''
-
-        return HttpResponse('CREATED', order_items)
-
-
-class PrepareManySpreadsheets(View):
-
-    def get(self, request):
-        nums = []
-        prepared_gs = []
-        items_nums = request.GET.get('items_nums')
-        split_nums = items_nums.split('*')
-        for s in split_nums:
-            if s != '':
-                nums.append(int(s))
-        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-
-        creds_dict = {
-            "type": "service_account",
-            "project_id": os.environ['PROJECT_ID'],
-            "private_key_id": os.environ['PRIVATE_KEY_ID'],
-            "private_key": google_key(),
-            "client_email": os.environ['CLIENT_EMAIL'],
-            "client_id": os.environ['CLIENT_ID'],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": os.environ['CLIENT_CERT_URL']
-        }
-
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
-        client = gspread.authorize(creds)
-
-        for n in nums:
-            order_name = f'{OrderItem.objects.get(id=n)}'
-            prepared_gs.append((order_name, create_spreadsheet_copy(n)))
-
-        return HttpResponse(json.dumps(prepared_gs))
-
-
-class ScheduledDelivery(View, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.view_delivery'
-
-    def get(self, request):
-        date = request.GET.get('date')
-        date_range = request.GET.get('date_range')
-
-        items = None
-
-        if date and not date_range:
-            items = OrderItem.objects.filter(planned_delivery=datetime.datetime.strptime(date, '%Y-%m-%d'))
-        elif date and date_range:
-            items = OrderItem.objects.filter(planned_delivery__gte=datetime.datetime.strptime(date, '%Y-%m-%d'))
-            items = items.filter(planned_delivery__lte=datetime.datetime.strptime(date_range, '%Y-%m-%d')).order_by(
-                'planned_delivery')
-
-        return render(request, 'warehousemanager-scheduled-delivery.html', locals())
-
-
-class PhotoPolymers(View, PermissionRequiredMixin):
+class PhotoPolymers(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_photopolymer'
 
     def get(self, request):
@@ -1908,8 +775,8 @@ class PhotoPolymers(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-photopolymers.html', locals())
 
 
-class PhotoPolymerDetail(View, PermissionRequiredMixin):
-    permission_required('warehousemanager.view_photopolymer')
+class PhotoPolymerDetail(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_photopolymer'
 
     def get(self, request, polymer_id):
         polymer = Photopolymer.objects.get(id=polymer_id)
@@ -1919,7 +786,8 @@ class PhotoPolymerDetail(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-polymer-detail.html', locals())
 
 
-class PolymerCreate(CreateView):
+class PolymerCreate(PermissionRequiredMixin, CreateView):
+    permission_required = 'warehousemanager.change_photopolymer'
     model = Photopolymer
     fields = ['producer', 'identification_number', 'customer', 'name', 'delivery_date', 'project']
 
@@ -1967,13 +835,13 @@ class ServiceDelete(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy('photopolymers')
 
 
-class ColorListView(ListView, PermissionRequiredMixin):
+class ColorListView(PermissionRequiredMixin, ListView):
     permission_required = 'warehousemanager.view_color'
-    # add_random_color(15)
     model = Color
 
 
-class ColorRefresh(View):
+class ColorRefresh(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_color'
     def get(self, request):
         for color in Color.objects.all():
             weight = 0
@@ -1985,7 +853,7 @@ class ColorRefresh(View):
         return redirect('colors')
 
 
-class ColorDetail(View, PermissionRequiredMixin):
+class ColorDetail(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_color'
 
     def get(self, request, color_id):
@@ -2139,18 +1007,6 @@ class BucketQRCode(View):
         return response
 
 
-class ProductionProcessListView(ListView, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.view_productionprocess'
-    model = ProductionProcess
-
-
-class ProductionProcessCreate(CreateView, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.add_productionprocess'
-    model = ProductionProcess
-    fields = ['order_item', 'production', 'stock', 'type', 'worker', 'machine', 'quantity_start', 'quantity_end',
-              'date_start', 'date_end', 'punch', 'polymer']
-
-
 class AvailableVacation(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_absence'
 
@@ -2213,7 +1069,7 @@ class PersonAbsences(PermissionRequiredMixin, View):
 
 
 # person view
-class PersonListView(View, PermissionRequiredMixin):
+class PersonListView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_person'
 
     def get(self, request):
@@ -2228,7 +1084,7 @@ class PersonListView(View, PermissionRequiredMixin):
 
 
 # person view
-class PersonDetailView(View, PermissionRequiredMixin):
+class PersonDetailView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_person'
 
     def get(self, request, person_id):
@@ -2239,14 +1095,14 @@ class PersonDetailView(View, PermissionRequiredMixin):
 
 
 # contract view
-class ContractCreate(CreateView, PermissionRequiredMixin):
+class ContractCreate(PermissionRequiredMixin, CreateView):
     permission_required = 'warehousemanager.add_contract'
     model = Contract
     fields = ['worker', 'type', 'date_start', 'date_end', 'salary', 'extra_info']
 
 
 # reminder view
-class ReminderListView(View, PermissionRequiredMixin):
+class ReminderListView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_reminder'
 
     def get(self, request):
@@ -2254,7 +1110,7 @@ class ReminderListView(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-reminders-list.html', locals())
 
 
-class ReminderDetailsView(View, PermissionRequiredMixin):
+class ReminderDetailsView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_reminder'
 
     def get(self, request, reminder_id):
@@ -2267,7 +1123,7 @@ class ReminderDetailsView(View, PermissionRequiredMixin):
         return render(request, 'warehousemanager-reminder-details.html', locals())
 
 
-class ReminderDeleteView(View, PermissionRequiredMixin):
+class ReminderDeleteView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.delete_reminder'
 
     def get(self, request, reminder_id):
@@ -2277,7 +1133,7 @@ class ReminderDeleteView(View, PermissionRequiredMixin):
         return redirect('reminders')
 
 
-class PaletteQuantitiesView(View, PermissionRequiredMixin):
+class PaletteQuantitiesView(PermissionRequiredMixin, View):
     permission_required = 'warehousemanager.view_palette'
 
     def get(self, request):
@@ -2341,8 +1197,8 @@ class PaletteQuantitiesView(View, PermissionRequiredMixin):
 
 
 # profile-view
-class ProfileView(View, LoginRequiredMixin):
-    login_url = '/'
+class ProfileView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
     def get(self, request):
         user = request.user
@@ -2378,176 +1234,9 @@ class ProfileView(View, LoginRequiredMixin):
             return render(request, 'warehousemanager-profile.html', locals())
 
 
-class PaletteCustomerView(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_palette'
+class MonthlyCardPresence(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
-    def get(self, request):
-        customers = Buyer.objects.all()
-        palettes = Palette.objects.all()
-        palette_quantities = []
-        for c in customers:
-            result = [c]
-            for p in palettes:
-                result.append(PaletteCustomer.customer_palette_number(c, p))
-            palette_quantities.append(result)
-
-        return render(request, 'warehousemanager-customer-palette-list.html', locals())
-
-
-class PaletteCustomerDetailView(PermissionRequiredMixin, View):
-    permission_required = 'warehousemanager.view_palette'
-
-    def get(self, request, customer_id):
-        customer = Buyer.objects.get(id=int(customer_id))
-        customer_palettes = PaletteCustomer.objects.filter(customer=customer).order_by('date', 'status')
-        palettes = []
-        for c in customer_palettes:
-            if c.palette not in palettes:
-                palettes.append(c.palette)
-
-        rows = []
-
-        for c in customer_palettes:
-            row = []
-            row_data = (c.date, c.status)
-            row_values = ['-' for _ in range(len(palettes))]
-            row_values[palettes.index(c.palette)] = c.quantity if c.status == 'DEL' else 0 - c.quantity
-            row.append(row_data)
-            row.append(row_values)
-            rows.append(row)
-            if c.exchange:
-                new_row = [(c.date, 'RET')]
-                row_values = ['-' for _ in range(len(palettes))]
-                row_values[palettes.index(c.palette)] = 0 - c.quantity
-                new_row.append(row_values)
-                rows.append(new_row)
-            palettes_result = []
-            for p in palettes:
-                palettes_result.append(PaletteCustomer.customer_palette_number(customer, p))
-
-        return render(request, 'warehousemanager-customer-palette-detail.html', locals())
-
-
-class MessageView(View, LoginRequiredMixin):
-    login_url = '/'
-
-    def get(self, request):
-        initial_message = None
-        if request.GET.get('message_id'):
-            initial_message = Message.objects.get(id=int(request.GET.get('message_id')))
-        user = request.user if not request.user.is_anonymous else None
-        users = User.objects.all()
-        if user:
-            sent_messages = Message.objects.filter(sender=user).exclude(date_sent__isnull=True).order_by('-date_sent')
-            drafts = Message.objects.filter(sender=user, date_sent__isnull=True)
-            received_messages = Message.objects.filter(recipient=user).exclude(date_sent__isnull=True).order_by(
-                '-date_sent')
-            form = MessageForm() if not initial_message else MessageForm(instance=initial_message)
-        else:
-            user = 'AnonymousUser'
-        return render(request, 'warehousemanager-messages.html', locals())
-
-    def post(self, request):
-        initial_message = None
-        if request.GET.get('message_id'):
-            initial_message = Message.objects.get(id=int(request.GET.get('message_id')))
-        form = MessageForm(request.POST)
-        action = request.POST['s-btn']
-
-        if form.is_valid():
-            message_to = form.cleaned_data['recipient']
-            message_title = form.cleaned_data['title']
-            message_content = form.cleaned_data['content']
-
-            if not initial_message:
-                new_message = Message.objects.create(sender=request.user, recipient=message_to, title=message_title,
-                                                     content=message_content)
-            else:
-                new_message = initial_message
-                new_message.sender = request.user
-                new_message.recipient = message_to
-                new_message.title = message_title
-                new_message.content = message_content
-                new_message.save()
-
-            if action == 'Send':
-                new_message.date_sent = datetime.datetime.now()
-                new_message.save()
-
-        return redirect('messages')
-
-
-class MessageContent(View):
-
-    def get(self, request, message_id):
-        message = Message.objects.get(id=message_id)
-
-        data = {
-            'sender': str(message.sender),
-            'recipient': str(message.recipient),
-            'content': str(message.content),
-        }
-
-        return HttpResponse(json.dumps(data))
-
-
-class MessageRead(View):
-
-    def get(self, request, message_id):
-        message = Message.objects.get(id=message_id)
-        message.date_read = datetime.datetime.now()
-        message.save()
-
-        return HttpResponse('')
-
-
-class ClothesView(View, PermissionRequiredMixin):
-    permission_required = 'warehousemanager.view_cloth'
-
-    def get(self, request):
-        visit_counter(request.user, 'clothes')
-        clothes = Cloth.objects.all().order_by('name')
-        workwear = WorkerWorkWear.objects.all()
-        workers = Person.objects.all().order_by('last_name')
-
-        return render(request, 'whm-clothes.html', locals())
-
-
-class StatsView(View):
-
-    def get(self, request, year):
-        workers_list = []
-        workers = Person.objects.all()
-        for w in workers:
-            if w.days_at_work(year=year) > 0:
-                if not w.job_end:
-                    workers_list.append(w)
-                else:
-                    if w.job_end.year >= int(year):
-                        workers_list.append(w)
-
-        workers = workers_list
-        workers_data = [(w.last_name, w.days_at_work(year=year),
-                         (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))) for w in workers]
-        workers_data = sorted(workers_data, key=lambda x: x[1], reverse=True)
-
-        # personal absences types
-        personal_absences = [[w.absences_types(year=year), w] for w in workers if len(w.absences_types(year=year)) > 0]
-        for p in personal_absences:
-            p[0] = sorted(p[0], key=lambda x: x[0])
-            p[0].insert(0, ('OB', p[1].days_at_work(year=year)))
-
-        personal_absences = sorted(personal_absences, key=lambda x: x[0][0][1], reverse=True)
-
-        # employment during period
-        employment_data = []
-        for week in year_weeks(year):
-            employment_data.append((week, Person.active_workers_at_day(week)))
-
-        return render(request, 'whm-stats.html', locals())
-
-
-class MonthlyCardPresence(View):
     def get(self, request, year, month, worker_id):
 
         def get_weekday_name(day_num):
@@ -2863,7 +1552,9 @@ class MonthlyCardPresence(View):
         return response
 
 
-class MonthlyCardPresenceAll(View):
+class MonthlyCardPresenceAll(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request, year, month):
 
         def get_weekday_name(day_num):
@@ -3212,7 +1903,9 @@ class MonthlyCardPresenceAll(View):
         return response
 
 
-class WorkRemindersView(View):
+class WorkRemindersView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         if request.GET.get('all') == '+':
             reminders = WorkReminder.objects.all()
@@ -3222,7 +1915,9 @@ class WorkRemindersView(View):
         return render(request, 'whm/workreminders.html', locals())
 
 
-class WorkReminderAdd(View):
+class WorkReminderAdd(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         form = WorkReminderForm()
         return render(request, 'whm/workreminder-add.html', locals())
@@ -3239,7 +1934,9 @@ class WorkReminderAdd(View):
             pass
 
 
-class GluerNumberView(View):
+class GluerNumberView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         gluer_numbers = GluerNumber.objects.all().order_by('number')
         return render(request, 'whm/gluernumbers.html', locals())
@@ -3340,34 +2037,9 @@ class PunchNumberGet(View):
         return JsonResponse(data)
 
 
-class PunchNumberGetTest(View):
-    def get(self, request):
-        result = ''
-        name = request.GET.get('name')
-        dimensions = request.GET.get('dimensions')
-        result += f'name: {name}</br>'
-        result += f'dimensions: {dimensions}</br><hr>'
-        punches = Punch.objects.all()
-        punches2 = Punch.objects.filter(name=name)
-        for p in punches2:
-            result += f'{p}<hr>'
-        result += '<hr>'
+class PrintPolymers(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
 
-        if name and dimensions:
-            punch = Punch.objects.filter(name=name, dimensions=dimensions)
-        elif name:
-            punch = Punch.objects.filter(name=name)
-        elif dimensions:
-            punch = Punch.objects.filter(dimensions=dimensions)
-        else:
-            punch = None
-
-        result += f'{punch[0]}'
-
-        return HttpResponse(result)
-
-
-class PrintPolymers(View):
     def get(self, request):
         polymers = Photopolymer.objects.filter(active=True)
 
@@ -3397,8 +2069,9 @@ class PrintPolymers(View):
         return response
 
 
-class ActiveHours(View):
-    import calendar
+class ActiveHours(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
     def get(self, request):
         d = request.GET.get('d')
         m = request.GET.get('m')
@@ -3496,3 +2169,50 @@ class WorkersVacationsTest(View):
 
 
         return HttpResponse(result)
+
+
+class NoteAdd(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.add_note'
+
+    def get(self, request):
+        note_form = NoteForm()
+
+        return render(request, 'warehousemanager-add-note.html', locals())
+
+    def post(self, request):
+        note_form = NoteForm(request.POST)
+        if note_form.is_valid():
+            genre = note_form.cleaned_data['genre']
+            title = note_form.cleaned_data['title']
+            content = note_form.cleaned_data['content']
+            new_note = Note.objects.create(genre=genre, title=title, content=content)
+
+            new_note.save()
+
+            return redirect('deliveries-calendar')
+
+
+# wszystkie notatki
+class AllNotes(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_note'
+
+    def get(self, request):
+        all_notes = Note.objects.all()
+        return render(request, 'warehousemanager-all-notes.html', locals())
+
+
+class NoteDetailsView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_note'
+
+    def get(self, request, note_id):
+        note = Note.objects.get(id=note_id)
+        return render(request, 'note-details.html', locals())
+
+
+class NoteDeleteView(PermissionRequiredMixin, View):
+    permission_required = 'warehousemanager.view_note'
+
+    def get(self, request, note_id):
+        note = Note.objects.get(id=note_id)
+        note.delete()
+        return redirect('deliveries-calendar')

@@ -13,33 +13,38 @@
   <div class="modal-content">
     <span class="close" id="closeModal">&times;</span>
     <h2>Dodaj sprzedaż produktu</h2>
-    <form method="post" action="{% url 'warehouse:productsell-create' %}">
-      {% csrf_token %}
-      <label>Magazyn:</label>
-      <select name="warehouse_stock">
-        {% for ws in warehouse_stocks %}
-          <option value="{{ ws.id }}">{{ ws.stock.name }} ({{ ws.quantity }})</option>
-        {% endfor %}
-      </select><br>
+    <form method="post" action="{% url 'warehouse:productsell3-create' %}">
+  {% csrf_token %}
 
-      <label>Ilość:</label>
-      <input type="number" name="quantity" min="1"><br>
+  <label>Towar:</label>
+  <select name="warehouse_stock" required>
+    {% for ws in warehouse_stocks %}
+      <option value="{{ ws.id }}">{{ ws.stock.name }} — {{ ws.warehouse.name }} ({{ ws.quantity }})</option>
+    {% endfor %}
+  </select><br>
 
-      <label>Klient:</label>
-      <select name="customer">
-        {% for buyer in customers %}
-          <option value="{{ buyer.id }}">{{ buyer.name }}</option>
-        {% endfor %}
-      </select><br>
+  <label>Ilość:</label>
+  <input type="number" name="quantity" min="1" required><br>
 
-      <label>Cena:</label>
-      <input type="number" name="price" step="0.01"><br>
+  <label>Klient:</label>
+  <select name="customer">
+    {% for buyer in customers %}
+      <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+    {% endfor %}
+  </select><br>
 
-      <label>Data:</label>
-      <input type="date" name="date"><br><br>
+  <label>Klient zastępczy:</label>
+  <input type="text" name="customer_alter_name"><br>
 
-      <button type="submit">Zapisz</button>
-    </form>
+  <label>Cena:</label>
+  <input type="number" name="price" step="0.01" required><br>
+
+  <label>Data:</label>
+  <input type="date" name="date" required><br><br>
+
+  <button type="submit">Zapisz</button>
+</form>
+
   </div>
 </div>
 <h2>Lista sprzedaży produktów</h2>
@@ -47,32 +52,70 @@
   <thead>
     <tr>
       <th>Data</th>
+      <th>Klient</th>
       <th>Produkt</th>
       <th>Magazyn</th>
       <th>Ilość</th>
       <th>Cena</th>
       <th>Wartość</th>
-      <th>Klient</th>
+      <th>Action</th>
     </tr>
   </thead>
   <tbody>
     {% for sell in sells %}
     <tr>
       <td>{{ sell.date }}</td>
+      <td>
+        {% if not sell.customer_alter_name %}
+          {{ sell.customer }}
+        {% else %}
+          {{ sell.customer_alter_name }}
+        {% endif %}
+      </td>
       <td>{{ sell.warehouse_stock.stock.name }}</td>
       <td>{{ sell.warehouse_stock.warehouse.name }}</td>
       <td>{{ sell.quantity }}</td>
       <td>{{ sell.price|floatformat:2 }} zł</td>
-      <td>{{ sell.total_value|floatformat:2 }} zł</td>
-      <td>{{ sell.customer }}</td>
+      <td>{{ sell.calculate_value|floatformat:2 }} zł</td>
+      <td>
+        <button
+          type="button"
+          class="remove-btn open-undo-modal"
+          data-url="{% url 'warehouse:undo_product_sell' sell.id %}"
+          data-label="sprzedaż z dnia {{ sell.date }} / {{ sell.product }} / ilość {{ sell.quantity }}"
+        >
+          Cofnij
+        </button>
+      </td>
     </tr>
     {% empty %}
     <tr><td colspan="7">Brak transakcji sprzedaży.</td></tr>
     {% endfor %}
   </tbody>
 </table>
+<div id="undoModal" class="modal">
+  <div class="modal-content" style="max-width: 420px;">
+    <span class="closeundo">&times;</span>
+    <h2>Potwierdź cofnięcie</h2>
+    <p id="undoModalText">Czy na pewno chcesz cofnąć operację?</p>
+
+    <form id="undoForm" method="post" action="">
+      {% csrf_token %}
+      <input
+        type="password"
+        name="confirm_password"
+        id="undoPasswordInput"
+        placeholder="Hasło do cofania"
+        required
+        style="width:100%; padding:8px; margin:10px 0;"
+      >
+      <button type="submit" class="remove-btn">Potwierdź cofnięcie</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{% static 'js/warehouse/productsell.js' %}"></script>
+<script src="{% static 'js/warehouse/undo_modal.js' %}"></script>
 {% endblock %}

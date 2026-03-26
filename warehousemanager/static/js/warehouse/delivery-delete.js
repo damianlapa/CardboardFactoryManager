@@ -1,62 +1,79 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const deleteModal = document.getElementById('deleteModal');
-    const confirmDeleteBtn = document.getElementById('confirmDelete');
-    const cancelDeleteBtn = document.getElementById('cancelDelete');
-    let deliveryId = null;
+  console.log("[delivery-delete] loaded");
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+  const deleteModal = document.getElementById('deleteModal');
+  const confirmDeleteBtn = document.getElementById('confirmDelete');
+  const cancelDeleteBtn = document.getElementById('cancelDelete');
+
+  if (!deleteModal || !confirmDeleteBtn || !cancelDeleteBtn) {
+    console.error("[delivery-delete] Missing modal elements:", {
+      deleteModal, confirmDeleteBtn, cancelDeleteBtn
+    });
+    return; // <- bez tego skrypt może się wysypać dalej
+  }
+
+  let deliveryId = null;
+  let rowToDelete = null;
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
-        return cookieValue;
+      }
     }
+    return cookieValue;
+  }
 
-    // Otwieranie modala
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            deliveryId = button.getAttribute('data-id');
-            const deliveryNumber = button.getAttribute('data-number');
-            document.getElementById('deliveryNumber').textContent = deliveryNumber;
-            deleteModal.style.display = 'block';
-        });
-    });
+  // ✅ Delegacja – działa dla doładowanych wierszy
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.delete-btn');
+    if (!btn) return;
 
-    // Anulowanie usuwania
-    cancelDeleteBtn.addEventListener('click', () => {
+    console.log("[delivery-delete] delete clicked", btn);
+
+    deliveryId = btn.getAttribute('data-id');
+    const deliveryNumber = btn.getAttribute('data-number') || '';
+    document.getElementById('deliveryNumber').textContent = deliveryNumber;
+
+    rowToDelete = btn.closest('tr');
+    deleteModal.style.display = 'block';
+  });
+
+  cancelDeleteBtn.addEventListener('click', () => {
+    deleteModal.style.display = 'none';
+    deliveryId = null;
+    rowToDelete = null;
+  });
+
+  confirmDeleteBtn.addEventListener('click', () => {
+    if (!deliveryId) return;
+
+    fetch(`delivery/${deliveryId}/delete/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          if (rowToDelete) rowToDelete.remove();
+        } else {
+          alert(data.message || "Delete failed");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("An error occurred");
+      })
+      .finally(() => {
         deleteModal.style.display = 'none';
-    });
-
-    // Potwierdzenie usuwania
-    confirmDeleteBtn.addEventListener('click', () => {
-        fetch(`delivery/${deliveryId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                window.location.reload(); // Przeładuj stronę, aby odświeżyć listę
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred.');
-        })
-        .finally(() => {
-            deleteModal.style.display = 'none';
-        });
-    });
+        deliveryId = null;
+        rowToDelete = null;
+      });
+  });
 });

@@ -1,0 +1,100 @@
+{% extends '__base2__.html' %}
+{% block content %}
+<h1 class="white">MONTH REPORT</h1>
+<hr style="border: solid 2px pink">
+<h2 class="white">{{ dateS.0 }} - {{ dateS.1 }}</h2>
+<hr style="border: solid 2px pink">
+<hr style="border: solid 2px pink">
+
+<h2 class="white">Units</h2>
+<h2 class="white">Efficiency:</h2>
+<h1 class="red">{{ efficiency }}%</h1>
+<table class="bg-white center">
+    <tr>
+        <th rowspan="2">
+            Num
+        </th>
+        <th colspan="2">
+            Date
+        </th>
+        <th rowspan="2">
+            Station
+        </th>
+        <th rowspan="2">
+            Order
+        </th>
+        <th rowspan="2">
+            Quantity
+        </th>
+        <th rowspan="2">
+            Coworkers
+        </th>
+        <th colspan="2">
+            Time
+        </th>
+        <th colspan="2">
+            Speed
+        </th>
+    </tr>
+    <tr>
+        <th>
+            Start
+        </th>
+        <th>
+            End
+        </th>
+        <th>
+            Estimated
+        </th>
+        <th>
+            Real
+        </th>
+        <th>
+            Estimated
+        </th>
+        <th>
+            Real
+        </th>
+    </tr>
+    {% for u in units %}
+    <tr>
+        <td>
+            {{ forloop.counter }}
+        </td>
+        <td>
+            {{ u.start|date:"d M Y, H:i:s" }}
+        </td>
+        <td>
+            {{ u.end|date:"d M Y, H:i:s" }}
+        </td>
+        <td>
+            {{ u.work_station }}
+        </td>
+        <td>
+            {{ u.production_order }}
+        </td>
+        <td>
+            {{ u.production_order.quantity }}
+        </td>
+        <td>
+            {% for p in u.persons.all %}
+                    {{ p }}<br>
+            {% endfor %}
+        </td>
+        <td>
+            {{ u.estimated_duration }}
+        </td>
+        <td>
+            {{ u.unit_duration }}
+        </td>
+        <td>
+            {{ u.pieces_per_hour.1 }}
+        </td>
+        <td>
+            {{ u.pieces_per_hour.0 }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

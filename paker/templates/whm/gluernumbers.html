@@ -3,10 +3,12 @@
 {% block style %}
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/gluernumbers.css' %}">
+<link rel="stylesheet" href="{% static 'css/whm/gluer_number-add.css' %}">
 {% endblock %}
 {% block content %}
 <h1>Gluer Numbers List</h1>
 <hr>
+<a href="{% url 'gluernumber-add' %}" id="gluernumber-add"><button>Add</button></a>
 <hr>
 <table class="gluer-table">
     <tr class="table-header">

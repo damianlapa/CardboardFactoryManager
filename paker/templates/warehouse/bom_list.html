@@ -1,0 +1,74 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+<h2>Lista BOM</h2>
+
+<div style="margin: 10px 0;">
+  <input id="bomSearch" placeholder="Szukaj (produkt / nazwa)..." style="padding:6px; width: 360px;">
+</div>
+
+<table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Produkt</th>
+      <th>Akcje</th>
+    </tr>
+  </thead>
+  <tbody id="bomRows">
+    {% for bom in boms %}
+      <tr>
+        <td>{{ bom.id }}</td>
+        <td>
+          {{ bom.product }}
+        </td>
+        <td style="white-space:nowrap;">
+          {# DOSTOSUJ nazwę URL do Twojego BOM detail (jeśli inna) #}
+          <a href="{% url 'warehouse:bom_detail' bom.id %}">Podgląd</a>
+          &nbsp;|&nbsp;
+          <a href="{% url 'warehouse:bom_create_order' bom.id %}"
+             style="padding:6px 10px; border:1px solid #333; text-decoration:none;">
+            + Utwórz order
+          </a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="3">Brak BOM.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if is_paginated %}
+  <div style="margin-top:12px;">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}">← Poprzednia</a>
+    {% endif %}
+
+    <span style="margin:0 10px;">
+      Strona {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">Następna →</a>
+    {% endif %}
+  </div>
+{% endif %}
+
+<script>
+  const input = document.getElementById("bomSearch");
+  const rows = document.querySelectorAll("#bomRows tr");
+
+  input.addEventListener("input", () => {
+    const q = input.value.toLowerCase();
+    rows.forEach(r => {
+      const text = r.innerText.toLowerCase();
+      r.style.display = text.includes(q) ? "" : "none";
+    });
+  });
+</script>
+{% endblock %}

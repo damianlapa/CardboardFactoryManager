@@ -1,9 +1,10 @@
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
-
+from utils.money import money, D, money_sum
 from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
-
+from warehouse.models import MonthResults, DeliveryItem, Order
+from decimal import Decimal, ROUND_HALF_UP
 import datetime
 
 PRODUCTION_ORDER_STATUSES = (
@@ -75,11 +76,46 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
 
+    def month_year_order(self):
+        month, year = datetime.date.today().month, datetime.date.today().year
+        try:
+            if self.order_units():
+                for unit in self.order_units():
+                    if unit.start:
+                        month, year = unit.start.date().month, unit.start.date().year
+                        break
+            else:
+                month, year = self.add_date.date().month, self.add_date.date().year
+        except:
+            pass
+
+        return month, year
+
+    def work_energy_usage_cost(self):
+        units = self.order_units()
+        cost = [0, 0, 0]
+        for u in units:
+            work, energy, usage = u.unit_production_cost()
+            cost[0] += work
+            cost[1] += energy
+            cost[2] += usage
+
+        cost = [Decimal(str(cost[0])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                Decimal(str(cost[1])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                Decimal(str(cost[2])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)]
+
+        return cost
+
+    def order_units(self):
+        units = ProductionUnit.objects.filter(production_order=self)
+        return units
+
     def planned_end(self):
         if self.status == 'PLANNED':
             units = ProductionUnit.objects.filter(production_order=self).order_by('-sequence')
-            if units[0].planned_end():
-                return units[0].planned_end()
+            if units:
+                if units[0].planned_end():
+                    return units[0].planned_end()
 
     def cardboard_layers(self):
         if self.cardboard:
@@ -114,9 +150,27 @@ class ProductionOrder(models.Model):
 
 class WorkStation(models.Model):
     name = models.CharField(max_length=48)
+    energy = models.PositiveIntegerField(default=0)
+    value = models.PositiveIntegerField(default=0)
+    lifetime = models.PositiveIntegerField(default=0)
+    setup_time = models.CharField(max_length=128, null=True, blank=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
+
+    def get_setup_time(self, unit):
+        return int(self.setup_time)
+
+    def calculate_machine_usage(self, duration):
+        if not self.lifetime:
+            return money(0)
+        return money(D(self.value) * D(duration) / D(self.lifetime))
+
+    def calculate_energy_cost(self, duration, price):
+        return money(D(self.energy) * D(duration) * D(price))
 
     def currently_in_production(self):
         units = ProductionUnit.objects.filter(work_station=self, status='IN PROGRESS')
@@ -236,9 +290,45 @@ class ProductionUnit(models.Model):
     quantity_start = models.IntegerField(null=True, blank=True)
     quantity_end = models.IntegerField(null=True, blank=True)
     notes = models.CharField(max_length=1000, null=True, blank=True)
+    required_operators = models.PositiveIntegerField(default=1)
+    required_helpers = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('production_order', 'sequence')
 
     def __str__(self):
         return f'{self.sequence}) {self.work_station} {self.production_order} {self.status}'
+
+    def pieces_per_hour(self):
+        people = self.persons.all().count()
+        if people:
+            quantity = self.quantity_end if self.quantity_end else self.production_order.quantity
+            duration = self.unit_duration2()/60
+            estimated = self.estimated_time
+
+            if quantity and duration:
+                duration -= self.work_station.get_setup_time(self)
+                return round(quantity*60/(duration*people)), round(quantity*60/(estimated*people))
+            else:
+                return 0
+        else:
+            return 0
+
+    def unit_production_cost(self):
+        worker_cost = 0
+        unit_duration = self.unit_duration2() / 3600
+        unit_start = self.start
+        for worker in self.persons.all():
+            current_contract = worker.contract(unit_start)
+            if not current_contract:
+                current_contract = 0
+            unit_duration = Decimal(str(unit_duration))
+            worker_cost += (current_contract * unit_duration) / 168
+        worker_cost = D(str(worker_cost * Decimal('1.205')))
+        energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
+        machine_usage = self.work_station.calculate_machine_usage(unit_duration)
+
+        return money(worker_cost), money(energy_cost), money(machine_usage)
 
     @classmethod
     def last_in_line(cls, station, point=None):
@@ -537,6 +627,15 @@ class ProductionUnit(models.Model):
         else:
             return None
 
+    def unit_duration_minutes(self):
+        if self.unit_duration2():
+            return int(self.unit_duration2() // 60)
+        else:
+            return 0
+
+    def duration_person(self):
+        return len(self.persons.all()), len(self.persons.all()) * self.unit_duration_minutes()
+
     def duration_in_minutes(self):
         if self.unit_duration2():
             return self.unit_duration2() // 60
@@ -650,8 +749,12 @@ class ProductionUnit(models.Model):
                     time_value = None
                 return time_value
         elif self.work_station.name == 'ROTACJA':
-            dimensions = self.production_order.dimensions.lower().split('x')
+            dimensions_raw = self.production_order.dimensions
+            if not dimensions_raw:
+                return 0
+
             try:
+                dimensions = dimensions_raw.lower().split('x')
                 dimensions = [int(dimension) for dimension in dimensions]
             except Exception:
                 dimensions = []
@@ -754,3 +857,31 @@ class ProductionUnit(models.Model):
 
         return [units_started_and_finished_during_day, units_started_earlier_and_not_finished,
                 units_started_before_and_ended_today, units_started_today_and_not_finished]
+
+
+class WeeklyPlan(models.Model):
+    week = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('week', 'year')
+
+    def __str__(self):
+        return f"Production Plan - Week {self.week}, {self.year}"
+
+
+class ProductionTask(models.Model):
+    plan = models.ForeignKey(WeeklyPlan, on_delete=models.CASCADE, related_name='tasks')
+    production_unit = models.ForeignKey(ProductionUnit, on_delete=models.CASCADE)
+    work_station = models.ForeignKey(WorkStation, on_delete=models.CASCADE)
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    persons = models.ManyToManyField(Person, blank=True, related_name='tasks')
+    is_temporary = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['start']
+
+    def __str__(self):
+        return f"Zadanie: {self.production_unit} ({self.start.strftime('%Y-%m-%d %H:%M')})"

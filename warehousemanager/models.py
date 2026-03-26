@@ -154,12 +154,32 @@ class Person(models.Model):
     yearly_vacation_limit = models.PositiveIntegerField(default=0)
     amount_2020 = models.IntegerField(null=True, blank=True, default=0)
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
+    qualified_workstations = models.ManyToManyField('production.WorkStation', through='WorkStationQualification', blank=True,
+        related_name='qualified_persons'
+    )
 
     class Meta:
         ordering = ['last_name', 'first_name']
 
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
+
+    def contract(self, date=None):
+        contracts = list(Contract.objects.filter(worker=self).order_by('date_start'))
+        if contracts:
+            if not date:
+                return contracts[-1].salary
+            else:
+                date = date.date()
+                contracts = list(Contract.objects.filter(worker=self, date_start__lte=date).order_by('date_start'))
+                for c in contracts:
+                    if c.date_end:
+                        if c.date_end >= date:
+                            return c.salary
+                    else:
+                        return contracts[-1].salary
+        return 0
+
 
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
@@ -470,6 +490,29 @@ class Person(models.Model):
         return data
 
 
+from django.utils import timezone
+
+class WorkStationQualification(models.Model):
+
+    person = models.ForeignKey('Person', on_delete=models.CASCADE)
+    workstation = models.ForeignKey('production.WorkStation', on_delete=models.CASCADE)
+    acquired_at = models.DateField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('person', 'workstation')
+
+    def __str__(self):
+        return f"{self.person} → {self.workstation} ({self.acquired_at})"
+
+
+class LocalSetting(models.Model):
+    name = models.CharField(max_length=64)
+    value = models.CharField(max_length=128)
+
+    def __str__(self):
+        return f'Setting "{self.name}"'
+
+
 class CardboardProvider(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=6, blank=True)
@@ -484,12 +527,47 @@ class CardboardProvider(models.Model):
 class Buyer(models.Model):
     name = models.CharField(max_length=32)
     shortcut = models.CharField(max_length=32)
+    tax_number = models.CharField(max_length=16, blank=True, null=True)
 
     class Meta:
         ordering = ['name']
 
     def __str__(self):
         return self.name
+
+
+class CustomerDeliveryPlace(models.Model):
+    FREQ_CHOICES = [
+        ("rare", "Rare"),
+        ("occasional", "Occasional"),
+        ("regular", "Regular"),
+        ("frequent", "Frequent"),
+    ]
+
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
+    name = models.CharField(max_length=32, default='Main')
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    lat_long = models.CharField(max_length=64, null=True, blank=True)
+    delivery_frequency = models.CharField(
+        max_length=16, choices=FREQ_CHOICES, default="occasional"
+    )
+
+    class Meta:
+        ordering = ['customer__name']
+
+    def __str__(self):
+        return f'{self.customer.name} [{self.name}]'
+
+    def save(self, *args, **kwargs):
+        if self.lat_long and (self.latitude is None or self.longitude is None):
+            try:
+                lat, lon = str(self.lat_long).split(',')
+                self.latitude = float(lat.strip())
+                self.longitude = float(lon.strip())
+            except ValueError:
+                pass
+        super().save(*args, **kwargs)
 
 
 class Order(models.Model):
@@ -828,7 +906,7 @@ class Photopolymer(models.Model):
     link = models.URLField(null=True, blank=True)
 
     class Meta:
-        ordering = ['identification_number']
+        ordering = ['identification_number', 'identification_letter']
 
     def __str__(self):
         if self.identification_letter:

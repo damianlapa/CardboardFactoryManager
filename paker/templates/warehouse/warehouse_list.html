@@ -14,7 +14,9 @@
     <tbody>
       {% for warehouse in warehouses %}
       <tr>
-        <td><a href="{% url 'warehouse:warehouse-detail-view' warehouse_id=warehouse.id %}">{{ warehouse.name }}</a></td>
+        <td><a href="{% url 'warehouse:warehouse-detail-view' warehouse_id=warehouse.id %}">{{ warehouse.name }}</a>
+        [ {{ warehouse.count_warehouse_value }} ]
+        </td>
       </tr>
       {% empty %}
       <tr>

@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 {% endblock %}
 {% block content %}
-  <h1>Orders</h1>
+  <h1>Orders ({{ orders_num }})</h1>
   <form method="GET">
     <label for="status">Status:</label>
     <select name="status" id="status">
@@ -27,12 +27,15 @@
       <th><a href="?sort=provider&dir={% if current_sort == 'provider' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Provider</a></th>
       <th><a href="?sort=order_id&dir={% if current_sort == 'order_id' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Order ID</a></th>
       <th><a href="?sort=name&dir={% if current_sort == 'name' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Name</a></th>
+      <th><a href="?sort=dimensions&dir={% if current_sort == 'dimensions' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Dimensions</a></th>
       <th><a href="?sort=customer&dir={% if current_sort == 'customer' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Customer</a></th>
+      <th><a href="?sort=product&dir={% if current_sort == 'product' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Product</a></th>
       <th><a href="?sort=order_date&dir={% if current_sort == 'order_date' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Order Date</a></th>
       <th><a href="?sort=delivery_date&dir={% if current_sort == 'delivery_date' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Delivery Date</a></th>
       <th><a href="?sort=order_quantity&dir={% if current_sort == 'order_quantity' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Quantity</a></th>
       <th><a href="?sort=delivered_quantity&dir={% if current_sort == 'delivered_quantity' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Delivered Quantity</a></th>
       <th><a href="?sort=price&dir={% if current_sort == 'price' and current_dir == 'asc' %}desc{% else %}asc{% endif %}">Price</a></th>
+      <th>Area</th>
       <th>Status</th>
     </tr>
   </thead>
@@ -42,14 +45,19 @@
         <td>{{ order.provider }}</td>
         <td><a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">{{ order.order_id }}</a></td>
         <td>{{ order.name }}</td>
+        <td>{{ order.dimensions }}</td>
         <td>{{ order.customer }}</td>
+        <td>{{ order.product }}</td>
         <td>{{ order.order_date|date:"Y-m-d" }}</td>
         <td>{{ order.delivery_date|date:"Y-m-d" }}</td>
         <td>{{ order.order_quantity }}</td>
         <td>{{ order.delivered_quantity }}</td>
         <td>{{ order.price }}</td>
+        <td>{{ order.total_area }}</td>
         <td>
-          {% if order.finished %}
+          {% if order.check_if_settled %}
+            Settled
+          {% elif order.finished %}
             Finished
           {% elif order.delivered %}
             Delivered

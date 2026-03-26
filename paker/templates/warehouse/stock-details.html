@@ -5,5 +5,113 @@
 {% endblock %}
 
 {% block content %}
-
+{% if orders %}
+<h1>Orders</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Provider</th>
+      <th>Order ID</th>
+      <th>Name</th>
+      <th>Dimensions</th>
+      <th>Customer</th>
+      <th>Product</th>
+      <th>Order Date</th>
+      <th>Delivery Date</th>
+      <th>Quantity</th>
+      <th>Delivered Quantity</th>
+      <th>Price</th>
+      <th>Area</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td>{{ order.provider }}</td>
+        <td><a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">{{ order.order_id }}</a></td>
+        <td>{{ order.name }}</td>
+        <td>{{ order.dimensions }}</td>
+        <td>{{ order.customer }}</td>
+        <td>{{ order.product }}</td>
+        <td>{{ order.order_date|date:"Y-m-d" }}</td>
+        <td>{{ order.delivery_date|date:"Y-m-d" }}</td>
+        <td>{{ order.order_quantity }}</td>
+        <td>{{ order.delivered_quantity }}</td>
+        <td>{{ order.price }}</td>
+        <td>{{ order.total_area }}</td>
+        <td>
+          {% if order.check_if_settled %}
+            Settled
+          {% elif order.finished %}
+            Finished
+          {% elif order.delivered %}
+            Delivered
+          {% else %}
+            In Progress
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No orders available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if product_supplies %}
+<h1>Product Supplies</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Quantity</th>
+      <th>Value</th>
+      <th>Used</th>
+    </tr>
+  </thead>
+    <tbody>
+      {% for product_supply in product_supplies %}
+      <tr>
+        <td>{{ product_supply.date }}</td>
+        <td>{{ product_supply.quantity }}</td>
+        <td>{{ product_supply.value }}</td>
+        <td>{{ product_supply.used }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No supplies available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if supplies %}
+<h1>Supplies</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Delivery Item</th>
+      <th>Dimensions</th>
+      <th>Date</th>
+      <th>Quantity</th>
+    </tr>
+  </thead>
+    <tbody>
+      {% for supply in supplies %}
+      <tr>
+        <td>{{ supply.delivery_item.order }}</td>
+        <td>{{ supply.dimensions }}</td>
+        <td>{{ supply.date }}</td>
+        <td>{{ supply.quantity }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">No supplies available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 {% endblock %}

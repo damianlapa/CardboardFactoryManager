@@ -1,0 +1,21 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+  <h2>Utwórz zamówienie z BOM</h2>
+
+  <div style="margin-bottom:12px;">
+    <b>BOM:</b> {{ bom }}<br>
+    <b>Produkt:</b> {{ bom.product }}<br>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Utwórz zamówienie</button>
+  </form>
+{% endblock %}

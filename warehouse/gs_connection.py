@@ -97,12 +97,48 @@ def get_rows_numbers(numbers, year, provider, values):
         numbers2.append((provider.shortcut.lower(), str(n), year))
 
     for i in range(1, len(column_a)):
-        row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
-        print(row_data)
-        if row_data in numbers2:
-            current_value = sheet.cell(i+1, 16).value
-            if current_value:
-                current_value = int(current_value)
-            else:
-                current_value = 0
-            sheet.update_cell(i+1, 16, f'={current_value}+{values[numbers2.index(row_data)]}')
+        if len(column_a) > i and len(column_b) > i and len(column_c) > i:
+            row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
+            if row_data in numbers2:
+                current_value = sheet.cell(i+1, 16).value
+                print(current_value, i)
+                if current_value and current_value != 'None':
+                    current_value = int(current_value)
+                else:
+                    current_value = 0
+                sheet.update_cell(i+1, 16, f'={current_value}+{values[numbers2.index(row_data)]}')
+
+
+def get_rows_numbers2(numbers, year, provider):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    credentials_json = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+    if credentials_json is None:
+        raise EnvironmentError("GOOGLE_CREDENTIALS environment variable not set")
+    credentials_info = json.loads(credentials_json)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
+
+    client = gspread.authorize(creds)
+    sheet = client.open("PAKER TEKTURA ZAMÓWIENIA").worksheet(f"ZAMÓWIENIA {year}")
+
+    column_a = sheet.col_values(1)
+    column_b = sheet.col_values(2)
+    column_c = sheet.col_values(3)
+
+    numbers2 = []
+    year = str(year-2000)
+
+    result = []
+
+    for n in numbers:
+        numbers2.append((provider.shortcut.lower(), str(n), year))
+
+    # print(numbers, numbers2)
+
+    for i in range(1, len(column_a)):
+        if len(column_a) > i and len(column_b) > i and len(column_c) > i:
+            row_data = (column_a[i].lower().strip(), str(column_b[i]), str(column_c[i]))
+            if row_data in numbers2:
+                result.append(i)
+
+    # print(result)
+    return result

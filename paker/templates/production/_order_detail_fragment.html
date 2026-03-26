@@ -1,0 +1,92 @@
+<div class="order-detail">
+    <form method="post"
+      class="order-status-form"
+      data-order-id="{{ selected_order.id }}"
+      data-ajax-url="{% url 'ajax_update_order_status' selected_order.id %}">
+    {% csrf_token %}
+    <label for="status-select"><strong>Status:</strong></label>
+    <select name="status" id="status-select">
+        {% for key, label in PRODUCTION_ORDER_STATUSES %}
+            <option value="{{ key }}" {% if selected_order.status == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Zapisz</button>
+</form>
+    <h2>Zamówienie {{ selected_order.id_number }}</h2>
+    <p><strong>Klient:</strong> {{ selected_order.customer.name }}</p>
+    <p><strong>Status:</strong> {{ selected_order.status }}</p>
+    <p><strong>Priorytet:</strong> {{ selected_order.priority|yesno:"✅ Tak,❌ Nie" }}</p>
+    <p><strong>Ilość zamówiona:</strong> {{ selected_order.ordered_quantity }}</p>
+    <p><strong>Ilość wykonana:</strong> {{ selected_order.quantity }}</p>
+    <p><strong>Tektura:</strong> {{ selected_order.cardboard }}</p>
+    <p><strong>Wymiary tektury:</strong> {{ selected_order.cardboard_dimensions }}</p>
+    <p><strong>Wymiary produktu:</strong> {{ selected_order.dimensions }}</p>
+    <p><strong>Data dodania:</strong> {{ selected_order.add_date|date:"d.m.Y H:i" }}</p>
+    {% if selected_order.completed %}
+        <p><strong>Zakończono:</strong> {{ selected_order.completed|date:"d.m.Y H:i" }}</p>
+    {% endif %}
+    {% if selected_order.notes %}
+        <p><strong>Notatki:</strong> {{ selected_order.notes }}</p>
+    {% endif %}
+</div>
+
+<hr>
+
+<div class="table-wrapper">
+    <h3>Jednostki produkcyjne:</h3>
+    <table>
+    <thead>
+        <tr>
+            <th>Kolejność</th>
+            <th>Stacja</th>
+            <th>Status</th>
+            <th>Czas [min]</th>
+            <th>Oper.</th>
+            <th>Pom.</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody id="unit-list" class="sortable-units">
+        {% for unit in units %}
+        <tr data-unit-id="{{ unit.id }}"
+    data-work-station="{{ unit.work_station.id }}"
+    data-estimated-time="{{ unit.estimated_time }}"
+    data-required-operators="{{ unit.required_operators }}"
+    data-required-helpers="{{ unit.required_helpers }}"
+    data-status="{{ unit.status }}">
+            <td>{{ unit.sequence }}</td>
+            <td>{{ unit.work_station }}</td>
+            <td>{{ unit.status }}</td>
+            <td>{{ unit.estimated_time }}</td>
+            <td>{{ unit.required_operators }}</td>
+            <td>{{ unit.required_helpers }}</td>
+            <td>
+    <button class="edit-unit-btn" data-unit-id="{{ unit.id }}">✏️</button>
+    <button class="delete-unit-btn" data-unit-id="{{ unit.id }}" data-order-id="{{ selected_order.id }}">🗑</button>
+</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<hr>
+
+<form method="post"
+      data-order-id="{{ selected_order.id }}"
+      data-ajax-url="{% url 'ajax_add_unit' selected_order.id %}"
+      class="add-unit-form ajax-add-unit-form">
+    {% csrf_token %}
+    <h3>Dodaj jednostkę produkcyjną</h3>
+    <div class="form-inline-group">
+        <select name="work_station" required>
+            {% for ws in work_stations %}
+                <option value="{{ ws.id }}">{{ ws.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" name="estimated_time" placeholder="Czas (min)" required>
+        <input type="number" name="required_operators" placeholder="Operatorzy" required>
+        <input type="number" name="required_helpers" placeholder="Pomocnicy" required>
+        <button type="submit">Dodaj unit</button>
+    </div>
+</form>
