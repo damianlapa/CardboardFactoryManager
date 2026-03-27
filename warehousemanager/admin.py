@@ -5,7 +5,6 @@ admin.site.register(Order)
 admin.site.register(Person)
 admin.site.register(CardboardProvider)
 admin.site.register(OrderItem)
-admin.site.register(Buyer)
 admin.site.register(OrderItemQuantity)
 admin.site.register(Delivery)
 admin.site.register(Machine)
@@ -36,3 +35,13 @@ admin.site.register(GluerNumber)
 admin.site.register(WorkStationQualification)
 admin.site.register(LocalSetting)
 admin.site.register(CustomerDeliveryPlace)
+
+from django.contrib import admin
+from .models import Buyer
+
+
+@admin.register(Buyer)
+class BuyerAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name", "shortcut")
+    ordering = ("name",)

@@ -14,6 +14,12 @@ from .views import (
     MaintenanceEventCreateView,
     MachinePartAssignmentCreateView,
     PartSupplierCreateView,
+    MaintenancePartUsageCreateView,
+    MaintenanceDeliveryListView,
+    MaintenanceDeliveryCreateView,
+    MaintenanceDeliveryDetailView,
+    MaintenanceDeliveryItemCreateView,
+    MaintenanceDeliveryReceiveView
 )
 
 app_name = "maintenance"
@@ -44,4 +50,17 @@ urlpatterns += [
         PartSupplierCreateView.as_view(),
         name="part-supplier-add",
     ),
+    path(
+        "events/<int:event_id>/parts/add/",
+        MaintenancePartUsageCreateView.as_view(),
+        name="event-part-add",
+    ),
 ]
+
+urlpatterns += [
+    path("deliveries/", MaintenanceDeliveryListView.as_view(), name="delivery-list"),
+    path("deliveries/add/", MaintenanceDeliveryCreateView.as_view(), name="delivery-add"),
+    path("deliveries/<int:delivery_id>/", MaintenanceDeliveryDetailView.as_view(), name="delivery-detail"),
+    path("deliveries/<int:delivery_id>/items/add/", MaintenanceDeliveryItemCreateView.as_view(), name="delivery-item-add"),
+    path("deliveries/<int:delivery_id>/receive/", MaintenanceDeliveryReceiveView.as_view(), name="delivery-receive"),
+    ]

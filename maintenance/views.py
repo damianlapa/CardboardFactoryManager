@@ -15,6 +15,7 @@ from .forms import (
     MaintenanceEventForm,
     MachinePartAssignmentForm,
     MachinePartSupplierForm,
+    MaintenancePartUsageForm
 )
 
 from .models import (
@@ -27,7 +28,12 @@ from .models import (
     PartCategory,
     MachinePartSupplier
 )
-from warehouse.models import WarehouseStock
+
+from .forms import MaintenanceDeliveryForm, MaintenanceDeliveryItemForm
+from .models import MaintenanceDelivery, MaintenanceDeliveryItem
+
+from django.db import transaction
+from warehouse.models import Stock, StockType, Warehouse, WarehouseStock
 
 
 class MachineListView(LoginRequiredMixin, View):
@@ -75,6 +81,8 @@ class MachineDetailView(LoginRequiredMixin, View):
 
         assignments = machine.part_assignments.all()
         events = machine.events.all()
+        # machine_parts = [a.part for a in assignments if a.part.stock_id]
+        machine_parts = [a.part for a in assignments]
 
         assigned_part_ids = [a.part_id for a in assignments]
 
@@ -237,6 +245,9 @@ class MaintenanceDashboardView(LoginRequiredMixin, View):
     login_url = "login"
 
     def get(self, request):
+        deliveries_count = MaintenanceDelivery.objects.count()
+        open_deliveries_count = MaintenanceDelivery.objects.filter(is_received=False).count()
+        received_deliveries_count = MaintenanceDelivery.objects.filter(is_received=True).count()
         machines_count = Machine.objects.filter(is_active=True).count()
         parts_count = MachinePart.objects.filter(is_active=True).count()
 
@@ -260,6 +271,7 @@ class MaintenanceDashboardView(LoginRequiredMixin, View):
         )
 
         return render(request, "maintenance/dashboard.html", locals())
+
 
 class MachineCreateView(LoginRequiredMixin, View):
     login_url = "login"
@@ -290,10 +302,40 @@ class PartCreateView(LoginRequiredMixin, View):
     def post(self, request):
         form = MachinePartForm(request.POST)
         title = "Dodaj część"
+
         if form.is_valid():
-            part = form.save()
-            messages.success(request, "Część została dodana.")
-            return redirect("maintenance:part-detail", part_id=part.id)
+            try:
+                with transaction.atomic():
+                    initial_quantity = form.cleaned_data["initial_quantity"]
+
+                    warehouse = Warehouse.objects.get(name="MAGAZYN CZĘŚCI")
+                    stock_type = StockType.objects.get(stock_type="machine_part")
+
+                    stock = Stock.objects.create(
+                        name=f"{form.cleaned_data['name']} | {form.cleaned_data['code']}",
+                        stock_type=stock_type,
+                    )
+
+                    part = form.save(commit=False)
+                    part.stock = stock
+                    part.save()
+
+                    WarehouseStock.objects.create(
+                        stock=stock,
+                        warehouse=warehouse,
+                        quantity=initial_quantity,
+                    )
+
+                    messages.success(request, "Część została dodana.")
+                    return redirect("maintenance:part-detail", part_id=part.id)
+
+            except Warehouse.DoesNotExist:
+                messages.error(request, 'Brak magazynu "MAGAZYN CZĘŚCI".')
+            except StockType.DoesNotExist:
+                messages.error(request, 'Brak StockType dla części technicznych.')
+            except Exception as e:
+                messages.error(request, f"Błąd przy tworzeniu części: {e}")
+
         return render(request, "maintenance/form.html", locals())
 
 
@@ -400,3 +442,121 @@ class PartSupplierCreateView(LoginRequiredMixin, View):
             messages.error(request, f"Nie udało się dodać dostawcy: {form.errors}")
 
         return redirect("maintenance:part-detail", part_id=part.id)
+
+
+class MaintenancePartUsageCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, event_id):
+        event = get_object_or_404(
+            MaintenanceEvent.objects.select_related("machine"),
+            id=event_id
+        )
+
+        form = MaintenancePartUsageForm(request.POST)
+        if form.is_valid():
+            usage = form.save(commit=False)
+            usage.event = event
+            usage.save()
+            messages.success(request, "Zużycie części zostało dodane.")
+        else:
+            messages.error(request, f"Nie udało się dodać zużycia części: {form.errors}")
+
+        return redirect("maintenance:machine-detail", machine_id=event.machine.id)
+
+
+class MaintenanceDeliveryListView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request):
+        deliveries = (
+            MaintenanceDelivery.objects
+            .select_related("supplier", "created_by")
+            .order_by("-delivery_date", "-id")
+        )
+        suppliers = MaintenanceSupplier.objects.filter(is_active=True).order_by("name")
+        return render(request, "maintenance/delivery_list.html", locals())
+
+
+class MaintenanceDeliveryDetailView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request, delivery_id):
+        delivery = get_object_or_404(
+            MaintenanceDelivery.objects.select_related(
+                "supplier",
+                "created_by",
+            ).prefetch_related(
+                "items__part",
+                "items__warehouse",
+            ),
+            id=delivery_id
+        )
+
+        items = delivery.items.all()
+        total_net = sum(item.total_price_net for item in items)
+
+        available_parts = MachinePart.objects.filter(is_active=True).order_by("name", "code")
+        available_warehouses = Warehouse.objects.order_by("name")
+
+        return render(request, "maintenance/delivery_detail.html", locals())
+
+
+class MaintenanceDeliveryCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request):
+        form = MaintenanceDeliveryForm(request.POST)
+        if form.is_valid():
+            delivery = form.save(commit=False)
+            delivery.created_by = request.user
+            delivery.save()
+            messages.success(request, "Przyjęcie zostało utworzone.")
+        else:
+            messages.error(request, f"Nie udało się utworzyć przyjęcia: {form.errors}")
+
+        return redirect("maintenance:delivery-list")
+
+
+class MaintenanceDeliveryItemCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, delivery_id):
+        delivery = get_object_or_404(MaintenanceDelivery, id=delivery_id)
+
+        if delivery.is_received:
+            messages.error(request, "To przyjęcie zostało już zatwierdzone.")
+            return redirect("maintenance:delivery-detail", delivery_id=delivery.id)
+
+        form = MaintenanceDeliveryItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.delivery = delivery
+            item.save()
+            messages.success(request, "Pozycja została dodana.")
+        else:
+            messages.error(request, f"Nie udało się dodać pozycji: {form.errors}")
+
+        return redirect("maintenance:delivery-detail", delivery_id=delivery.id)
+
+
+class MaintenanceDeliveryReceiveView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, delivery_id):
+        delivery = get_object_or_404(
+            MaintenanceDelivery.objects.prefetch_related("items__part__stock"),
+            id=delivery_id
+        )
+
+        if delivery.is_received:
+            messages.warning(request, "To przyjęcie było już wcześniej zatwierdzone.")
+            return redirect("maintenance:delivery-detail", delivery_id=delivery.id)
+
+        if not delivery.items.exists():
+            messages.error(request, "Nie można przyjąć pustego dokumentu.")
+            return redirect("maintenance:delivery-detail", delivery_id=delivery.id)
+
+        delivery.receive()
+        messages.success(request, "Przyjęcie zostało zaksięgowane na magazyn.")
+        return redirect("maintenance:delivery-detail", delivery_id=delivery.id)

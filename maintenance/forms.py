@@ -10,6 +10,8 @@ from .models import (
     MachinePartSupplier
 )
 
+from .models import MaintenanceDelivery, MaintenanceDeliveryItem
+
 
 class MaintenanceEventForm(forms.ModelForm):
     class Meta:
@@ -38,6 +40,12 @@ class MachineForm(forms.ModelForm):
 
 
 class MachinePartForm(forms.ModelForm):
+    initial_quantity = forms.IntegerField(
+        min_value=0,
+        initial=0,
+        label="Stan początkowy"
+    )
+
     class Meta:
         model = MachinePart
         fields = [
@@ -45,10 +53,7 @@ class MachinePartForm(forms.ModelForm):
             "code",
             "category",
             "producer",
-            "supplier",
-            "supplier_code",
             "unit",
-            "stock",
             "min_quantity",
             "recommended_quantity",
             "description",
@@ -103,5 +108,30 @@ class MachinePartSupplierForm(forms.ModelForm):
             "supplier_code",
             "is_preferred",
             "lead_time_days",
+            "notes",
+        ]
+
+
+class MaintenanceDeliveryForm(forms.ModelForm):
+    class Meta:
+        model = MaintenanceDelivery
+        fields = [
+            "supplier",
+            "delivery_date",
+            "document_number",
+            "invoice_number",
+            "notes",
+        ]
+
+
+class MaintenanceDeliveryItemForm(forms.ModelForm):
+    class Meta:
+        model = MaintenanceDeliveryItem
+        fields = [
+            "part",
+            "warehouse",
+            "quantity",
+            "unit_price_net",
+            "supplier_code",
             "notes",
         ]

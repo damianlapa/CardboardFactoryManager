@@ -142,6 +142,11 @@
             <div class="stat-value status-yellow">{{ low_parts|length }}</div>
             <div class="stat-label">Niski stan</div>
         </div>
+
+        <div class="stat-card">
+            <div class="stat-value">{{ open_deliveries_count }}</div>
+            <div class="stat-label">Przyjęcia robocze</div>
+        </div>
     </div>
 
     <div class="nav-grid">
@@ -163,6 +168,13 @@
             <a href="{% url 'maintenance:supplier-list' %}">
                 <div class="nav-title">Dostawcy</div>
                 <div class="nav-desc">Kontakty i dostawcy UR</div>
+            </a>
+        </div>
+
+        <div class="nav-card">
+            <a href="{% url 'maintenance:delivery-list' %}">
+                <div class="nav-title">Przyjęcia</div>
+                <div class="nav-desc">Zakupy i przyjęcia części</div>
             </a>
         </div>
     </div>

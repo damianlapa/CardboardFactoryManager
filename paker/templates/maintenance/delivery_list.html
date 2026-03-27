@@ -1,0 +1,135 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<style>
+    .page { padding: 16px; }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .panel { background:#fff; border:1px solid #ddd; border-radius:12px; padding:16px; }
+    .table { width:100%; border-collapse:collapse; }
+    .table th, .table td { padding:10px 8px; border-bottom:1px solid #eee; text-align:left; }
+    .btn { display:inline-block; padding:10px 14px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; text-decoration:none; color:#222; font-size:14px; }
+    .badge { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; }
+    .ok { background:#e7f6ea; color:#1d6b1d; }
+    .draft { background:#fff1c2; color:#8a6300; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; padding:20px; z-index:9999; }
+    .modal-box { width:100%; max-width:700px; background:#fff; border-radius:12px; border:1px solid #ddd; box-shadow:0 10px 30px rgba(0,0,0,.18); padding:18px; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .modal-close { border:none; background:transparent; font-size:24px; cursor:pointer; }
+    .modal-form-grid { display:grid; gap:14px; }
+    .form-row label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+    .form-row input, .form-row select, .form-row textarea { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; box-sizing:border-box; }
+    .modal-actions { display:flex; gap:10px; margin-top:16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="header">
+        <h2>Przyjęcia części</h2>
+        <button type="button" class="btn" onclick="openDeliveryModal()">Nowe przyjęcie</button>
+    </div>
+
+    <div class="panel">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Dostawca</th>
+                    <th>Dokument</th>
+                    <th>Faktura</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for delivery in deliveries %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'maintenance:delivery-detail' delivery.id %}">
+                                {{ delivery.delivery_date|date:"Y-m-d" }}
+                            </a>
+                        </td>
+                        <td>{{ delivery.supplier }}</td>
+                        <td>{{ delivery.document_number|default:"-" }}</td>
+                        <td>{{ delivery.invoice_number|default:"-" }}</td>
+                        <td>
+                            {% if delivery.is_received %}
+                                <span class="badge ok">PRZYJĘTE</span>
+                            {% else %}
+                                <span class="badge draft">ROBOCZE</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">Brak przyjęć.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="deliveryModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Nowe przyjęcie</h3>
+            <button type="button" class="modal-close" onclick="closeDeliveryModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:delivery-add' %}">
+            {% csrf_token %}
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_supplier">Dostawca</label>
+                    <select name="supplier" id="id_supplier" required>
+                        {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="id_delivery_date">Data</label>
+                    <input type="date" name="delivery_date" id="id_delivery_date" required>
+                </div>
+                <div class="form-row">
+                    <label for="id_document_number">Numer dokumentu</label>
+                    <input type="text" name="document_number" id="id_document_number">
+                </div>
+                <div class="form-row">
+                    <label for="id_invoice_number">Numer faktury</label>
+                    <input type="text" name="invoice_number" id="id_invoice_number">
+                </div>
+                <div class="form-row">
+                    <label for="id_notes">Notatki</label>
+                    <textarea name="notes" id="id_notes" rows="4"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeDeliveryModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openDeliveryModal() {
+    document.getElementById("deliveryModal").style.display = "flex";
+}
+function closeDeliveryModal() {
+    document.getElementById("deliveryModal").style.display = "none";
+    document.querySelector("#deliveryModal form").reset();
+}
+window.addEventListener("click", function(e) {
+    const modal = document.getElementById("deliveryModal");
+    if (e.target === modal) closeDeliveryModal();
+});
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") closeDeliveryModal();
+});
+</script>
+{% endblock %}

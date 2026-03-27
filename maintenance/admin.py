@@ -8,7 +8,9 @@ from .models import (
     MaintenancePartUsage,
     MaintenanceSupplier,
     MaintenanceSupplierContact,
-    MachinePartSupplier
+    MachinePartSupplier,
+    MaintenanceDelivery,
+    MaintenanceDeliveryItem
 )
 
 
@@ -99,3 +101,48 @@ class MachinePartSupplierAdmin(admin.ModelAdmin):
         "supplier",
     )
     autocomplete_fields = ["part", "supplier"]
+
+
+class MaintenanceDeliveryItemInline(admin.TabularInline):
+    model = MaintenanceDeliveryItem
+    extra = 1
+    autocomplete_fields = ["part", "warehouse"]
+
+
+@admin.register(MaintenanceDelivery)
+class MaintenanceDeliveryAdmin(admin.ModelAdmin):
+    list_display = (
+        "supplier",
+        "delivery_date",
+        "document_number",
+        "invoice_number",
+        "is_received",
+        "created_by",
+    )
+    search_fields = (
+        "supplier__name",
+        "document_number",
+        "invoice_number",
+    )
+    list_filter = ("is_received", "delivery_date", "supplier")
+    autocomplete_fields = ["supplier", "created_by"]
+    inlines = [MaintenanceDeliveryItemInline]
+
+
+@admin.register(MaintenanceDeliveryItem)
+class MaintenanceDeliveryItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "delivery",
+        "part",
+        "warehouse",
+        "quantity",
+        "unit_price_net",
+        "total_price_net",
+    )
+    search_fields = (
+        "delivery__document_number",
+        "part__name",
+        "part__code",
+        "supplier_code",
+    )
+    autocomplete_fields = ["delivery", "part", "warehouse"]

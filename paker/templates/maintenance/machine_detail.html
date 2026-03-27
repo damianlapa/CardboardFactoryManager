@@ -394,6 +394,15 @@
                                 {% endfor %}
                             </ul>
                         {% endif %}
+                        <div style="margin-top:10px;">
+                            <button
+                                type="button"
+                                class="btn"
+                                onclick="openUsageModal('{{ event.id }}', '{{ event.get_event_type_display|escapejs }}', '{{ event.date|date:"Y-m-d" }}')"
+                            >
+                                Dodaj zużycie części
+                            </button>
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}
@@ -497,8 +506,73 @@
         </form>
     </div>
 </div>
+<div id="usageModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj zużycie części</h3>
+            <button type="button" class="modal-close" onclick="closeUsageModal()">×</button>
+        </div>
+
+        <div class="small-muted" style="margin-bottom:12px;">
+            Zdarzenie: <span id="usageEventLabel">-</span>
+        </div>
+
+        <form method="post" id="usageForm" action="">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_usage_part">Część</label>
+                    <select name="part" id="id_usage_part" required>
+                        <option value="">---</option>
+                        {% for part in machine_parts %}
+                            <option value="{{ part.id }}">{{ part.name }} | {{ part.code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_usage_warehouse_stock">Stan magazynowy</label>
+                    <select name="warehouse_stock" id="id_usage_warehouse_stock" required>
+                        <option value="">---</option>
+                        {% for part in machine_parts %}
+                            {% for ws in part.stock.warehouse_stocks.all %}
+                                <option value="{{ ws.id }}">
+                                    {{ part.name }} | {{ ws.warehouse.name }} | stan: {{ ws.quantity }}
+                                </option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_usage_quantity">Ilość</label>
+                    <input type="number" name="quantity" id="id_usage_quantity" value="1" min="1" required>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeUsageModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}
+<script>
+    function openUsageModal(eventId, eventType, eventDate) {
+        document.getElementById("usageModal").style.display = "flex";
+        document.getElementById("usageForm").action = `/maintenance/events/${eventId}/parts/add/`;
+        document.getElementById("usageEventLabel").innerText = `${eventType} | ${eventDate}`;
+    }
+
+    function closeUsageModal() {
+        document.getElementById("usageModal").style.display = "none";
+        document.getElementById("usageForm").reset();
+        document.getElementById("usageEventLabel").innerText = "-";
+    }
+</script>
 <script>
     function openAssignmentModal() {
         document.getElementById("assignmentModal").style.display = "flex";
@@ -521,21 +595,27 @@
     }
 
     window.addEventListener("click", function(e) {
-        const eventModal = document.getElementById("eventModal");
-        const assignmentModal = document.getElementById("assignmentModal");
+    const eventModal = document.getElementById("eventModal");
+    const assignmentModal = document.getElementById("assignmentModal");
+    const usageModal = document.getElementById("usageModal");
 
-        if (e.target === eventModal) {
-            closeEventModal();
-        }
-        if (e.target === assignmentModal) {
-            closeAssignmentModal();
-        }
-    });
-    document.addEventListener("keydown", function(e) {
-        if (e.key === "Escape") {
-            closeEventModal();
-            closeAssignmentModal();
-        }
-    });
+    if (eventModal && e.target === eventModal) {
+        closeEventModal();
+    }
+    if (assignmentModal && e.target === assignmentModal) {
+        closeAssignmentModal();
+    }
+    if (usageModal && e.target === usageModal) {
+        closeUsageModal();
+    }
+});
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+        if (typeof closeEventModal === "function") closeEventModal();
+        if (typeof closeAssignmentModal === "function") closeAssignmentModal();
+        if (typeof closeUsageModal === "function") closeUsageModal();
+    }
+});
 </script>
 {% endblock %}

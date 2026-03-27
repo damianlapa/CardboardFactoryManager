@@ -725,6 +725,12 @@ class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
     delivery_special_item = models.ForeignKey(DeliverySpecialItem, on_delete=models.PROTECT, null=True, blank=True)
+    maintenance_delivery_item = models.ForeignKey(
+        "maintenance.MaintenanceDeliveryItem",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
@@ -744,6 +750,11 @@ class StockSupply(models.Model):
                 fields=["delivery_special_item"],
                 condition=Q(delivery_special_item__isnull=False),
                 name="uniq_supply_per_delivery_special_item",
+            ),
+            models.UniqueConstraint(
+                fields=["maintenance_delivery_item"],
+                condition=Q(maintenance_delivery_item__isnull=False),
+                name="uniq_supply_per_maintenance_delivery_item",
             )
         ]
 

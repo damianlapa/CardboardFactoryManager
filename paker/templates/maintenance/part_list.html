@@ -149,6 +149,86 @@
             grid-template-columns: 1fr;
         }
     }
+
+    .btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 700px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
 </style>
 {% endblock %}
 
@@ -200,7 +280,7 @@
             </div>
         </form>
     </div>
-
+    <button type="button" class="btn" onclick="openPartModal()">Dodaj część</button>
     <div class="table-panel">
         {% if parts %}
             <table class="parts-table">
@@ -260,4 +340,105 @@
         {% endif %}
     </div>
 </div>
+<div id="partModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj część</h3>
+            <button type="button" class="modal-close" onclick="closePartModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:part-add' %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_name">Nazwa</label>
+                    <input type="text" name="name" id="id_name" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_code">Kod</label>
+                    <input type="text" name="code" id="id_code" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_category">Kategoria</label>
+                    <select name="category" id="id_category">
+                        <option value="">---</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_producer">Producent</label>
+                    <input type="text" name="producer" id="id_producer">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_unit">Jednostka</label>
+                    <input type="text" name="unit" id="id_unit" value="PIECE">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_initial_quantity">Stan początkowy</label>
+                    <input type="number" name="initial_quantity" id="id_initial_quantity" value="0" min="0" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_min_quantity">Minimum</label>
+                    <input type="number" name="min_quantity" id="id_min_quantity" value="0" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_recommended_quantity">Stan zalecany</label>
+                    <input type="number" name="recommended_quantity" id="id_recommended_quantity" value="0" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_description">Opis</label>
+                    <textarea name="description" id="id_description" rows="4"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="is_active" id="id_is_active" checked>
+                        Aktywna
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closePartModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    function openPartModal() {
+        document.getElementById("partModal").style.display = "flex";
+    }
+
+    function closePartModal() {
+        document.getElementById("partModal").style.display = "none";
+        document.querySelector("#partModal form").reset();
+    }
+
+    window.addEventListener("click", function(e) {
+        const modal = document.getElementById("partModal");
+        if (e.target === modal) {
+            closePartModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closePartModal();
+        }
+    });
+</script>
 {% endblock %}
