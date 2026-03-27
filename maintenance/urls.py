@@ -13,6 +13,7 @@ from .views import (
     SupplierContactCreateView,
     MaintenanceEventCreateView,
     MachinePartAssignmentCreateView,
+    PartSupplierCreateView,
 )
 
 app_name = "maintenance"
@@ -35,6 +36,12 @@ urlpatterns += [
     path("suppliers/add/", SupplierCreateView.as_view(), name="supplier-add"),
     path("suppliers/<int:supplier_id>/contacts/add/", SupplierContactCreateView.as_view(), name="supplier-contact-add"),
     path("machines/<int:machine_id>/events/add/", MaintenanceEventCreateView.as_view(), name="event-add"),
-    path("machines/<int:machine_id>/parts/add/", MachinePartAssignmentCreateView.as_view(), name="machine-part-assignment-add",
+    path("machines/<int:machine_id>/parts/add/",
+         MachinePartAssignmentCreateView.as_view(),
+         name="machine-part-assignment-add"),
+    path(
+        "parts/<int:part_id>/suppliers/add/",
+        PartSupplierCreateView.as_view(),
+        name="part-supplier-add",
     ),
 ]

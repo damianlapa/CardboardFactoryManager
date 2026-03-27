@@ -264,7 +264,7 @@
         <div class="panel">
             <h3>Części dostawcy</h3>
 
-            {% if parts %}
+            {% if supplier_parts %}
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -276,24 +276,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for part in parts %}
+                        {% for link in supplier_parts %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'maintenance:part-detail' part.id %}">
-                                        <b>{{ part.name }}</b>
+                                    <a href="{% url 'maintenance:part-detail' link.part.id %}">
+                                        <b>{{ link.part.name }}</b>
                                     </a>
-                                    <div class="small-muted">{{ part.code }}</div>
-                                    {% if part.supplier_code %}
-                                        <div class="small-muted">Kod dostawcy: {{ part.supplier_code }}</div>
+                                    <div class="small-muted">{{ link.part.code }}</div>
+                                    {% if link.part.supplier_code %}
+                                        <div class="small-muted">Kod dostawcy: {{ link.part.supplier_code }}</div>
                                     {% endif %}
                                 </td>
-                                <td>{{ part.category|default:"-" }}</td>
-                                <td>{{ part.current_qty }} {{ part.unit }}</td>
-                                <td>{{ part.min_quantity }} {{ part.unit }}</td>
+                                <td>{{ link.part.category|default:"-" }}</td>
+                                <td>{{ link.part.current_qty }} {{ link.part.unit }}</td>
+                                <td>{{ link.part.min_quantity }} {{ link.part.unit }}</td>
                                 <td>
-                                    {% if part.current_qty <= 0 %}
+                                    {% if link.part.current_qty <= 0 %}
                                         <span class="status-badge status-missing">BRAK</span>
-                                    {% elif part.below_minimum %}
+                                    {% elif link.part.below_minimum %}
                                         <span class="status-badge status-low">NISKI STAN</span>
                                     {% else %}
                                         <span class="status-badge status-ok">OK</span>

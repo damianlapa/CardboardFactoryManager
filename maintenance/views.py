@@ -13,7 +13,8 @@ from .forms import (
     MaintenanceSupplierForm,
     MaintenanceSupplierContactForm,
     MaintenanceEventForm,
-    MachinePartAssignmentForm
+    MachinePartAssignmentForm,
+    MachinePartSupplierForm,
 )
 
 from .models import (
@@ -24,6 +25,7 @@ from .models import (
     MaintenanceSupplier,
     MaintenanceSupplierContact,
     PartCategory,
+    MachinePartSupplier
 )
 from warehouse.models import WarehouseStock
 
@@ -173,6 +175,9 @@ class PartDetailView(LoginRequiredMixin, View):
         machines = part.machine_assignments.all().order_by("machine__code")
         usages = part.usages.all().order_by("-event__date", "-id")
         part_suppliers = part.part_suppliers.all()
+        available_suppliers = MaintenanceSupplier.objects.filter(is_active=True).exclude(
+            id__in=part.part_suppliers.values_list("supplier_id", flat=True)
+        ).order_by("name")
         preferred_supplier = part.part_suppliers.filter(is_preferred=True).first()
 
         return render(request, "maintenance/part_detail.html", locals())
@@ -202,22 +207,24 @@ class SupplierDetailView(LoginRequiredMixin, View):
                     queryset=MaintenanceSupplierContact.objects.order_by("-is_main", "name")
                 ),
                 Prefetch(
-                    "parts",
-                    queryset=MachinePart.objects.select_related(
-                        "category",
-                        "stock",
+                    "supplier_parts",
+                    queryset=MachinePartSupplier.objects.select_related(
+                        "part",
+                        "part__category",
+                        "part__stock",
                     ).prefetch_related(
-                        "stock__warehouse_stocks__warehouse"
-                    ).order_by("name", "code")
+                        "part__stock__warehouse_stocks__warehouse"
+                    ).order_by("-is_preferred", "part__name", "part__code")
                 )
             ),
             id=supplier_id
         )
 
         contacts = supplier.contacts.all()
-        parts = list(supplier.parts.all())
-
-        for part in parts:
+        supplier_parts = list(supplier.supplier_parts.all())
+        print(supplier_parts)
+        for link in supplier_parts:
+            part = link.part
             part.current_qty = part.current_quantity()
             part.below_minimum = part.is_below_minimum()
 
@@ -370,3 +377,26 @@ class MachinePartAssignmentCreateView(LoginRequiredMixin, View):
             messages.error(request, f"Nie udało się przypisać części: {form.errors}")
 
         return redirect("maintenance:machine-detail", machine_id=machine.id)
+
+
+class PartSupplierCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, part_id):
+        part = get_object_or_404(MachinePart, id=part_id)
+
+        form = MachinePartSupplierForm(request.POST)
+        if form.is_valid():
+            link = form.save(commit=False)
+            link.part = part
+
+            exists = part.part_suppliers.filter(supplier=link.supplier).exists()
+            if exists:
+                messages.error(request, "Ten dostawca jest już przypisany do tej części.")
+            else:
+                link.save()
+                messages.success(request, "Dostawca został dodany do części.")
+        else:
+            messages.error(request, f"Nie udało się dodać dostawcy: {form.errors}")
+
+        return redirect("maintenance:part-detail", part_id=part.id)

@@ -34,6 +34,12 @@
         font-size: 18px;
     }
 
+    .panel h4 {
+        margin-top: 18px;
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
     .info-row {
         margin-bottom: 10px;
         font-size: 14px;
@@ -149,6 +155,90 @@
         text-align: center;
     }
 
+    .btn {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        color: #222;
+        font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 700px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+    }
+
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
     @media (max-width: 1400px) {
         .maintenance-layout {
             grid-template-columns: 280px 1fr 360px;
@@ -177,19 +267,18 @@
             <div class="info-row"><b>Nazwa:</b> {{ part.name }}</div>
             <div class="info-row"><b>Kategoria:</b> {{ part.category|default:"-" }}</div>
             <div class="info-row"><b>Producent:</b> {{ part.producer|default:"-" }}</div>
-            <div class="info-row">
-                <b>Dostawca:</b>
-                {% if part.supplier %}
-                    <a href="{% url 'maintenance:supplier-detail' part.supplier.id %}">
-                        {{ part.supplier }}
-                    </a>
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-            <div class="info-row"><b>Kod u dostawcy:</b> {{ part.supplier_code|default:"-" }}</div>
             <div class="info-row"><b>Jednostka:</b> {{ part.unit }}</div>
             <div class="info-row"><b>Opis:</b><br>{{ part.description|default:"-" }}</div>
+
+            <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="btn" onclick="openSupplierModal()">Dodaj dostawcę</button>
+            </div>
+
+            {% if not available_suppliers %}
+                <div class="small-muted" style="margin-top:8px;">
+                    Wszyscy aktywni dostawcy są już przypisani do tej części.
+                </div>
+            {% endif %}
 
             <div class="summary-boxes">
                 <div class="summary-box green">
@@ -212,7 +301,7 @@
         </div>
 
         <div class="panel">
-            <h3>Stany magazynowe i użycie</h3>
+            <h3>Stany magazynowe i dostawcy</h3>
 
             <h4>Magazyny</h4>
             {% if warehouse_stocks %}
@@ -233,12 +322,52 @@
                     </tbody>
                 </table>
             {% else %}
-                <div class="empty-box" style="margin-bottom:16px;">
+                <div class="empty-box">
                     Brak stanów magazynowych.
                 </div>
             {% endif %}
 
-            <h4 style="margin-top:18px;">Przypisana do maszyn</h4>
+            <h4>Dostawcy</h4>
+            {% if part_suppliers %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Dostawca</th>
+                            <th>Kod u dostawcy</th>
+                            <th>Preferowany</th>
+                            <th>Lead time</th>
+                            <th>Notatki</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for link in part_suppliers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:supplier-detail' link.supplier.id %}">
+                                        {{ link.supplier.name }}
+                                    </a>
+                                </td>
+                                <td>{{ link.supplier_code|default:"-" }}</td>
+                                <td>{% if link.is_preferred %}Tak{% else %}Nie{% endif %}</td>
+                                <td>
+                                    {% if link.lead_time_days %}
+                                        {{ link.lead_time_days }} dni
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ link.notes|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Brak dostawców przypisanych do tej części.
+                </div>
+            {% endif %}
+
+            <h4>Przypisana do maszyn</h4>
             {% if machines %}
                 <table class="data-table">
                     <thead>
@@ -301,43 +430,83 @@
             {% endif %}
         </div>
     </div>
-    <h4 style="margin-top:18px;">Dostawcy</h4>
-
-    {% if part_suppliers %}
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Dostawca</th>
-                    <th>Kod u dostawcy</th>
-                    <th>Preferowany</th>
-                    <th>Lead time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for link in part_suppliers %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'maintenance:supplier-detail' link.supplier.id %}">
-                                {{ link.supplier.name }}
-                            </a>
-                        </td>
-                        <td>{{ link.supplier_code|default:"-" }}</td>
-                        <td>{% if link.is_preferred %}Tak{% else %}Nie{% endif %}</td>
-                        <td>
-                            {% if link.lead_time_days %}
-                                {{ link.lead_time_days }} dni
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="empty-box">
-            Brak dostawców przypisanych do tej części.
-        </div>
-    {% endif %}
 </div>
+
+<div id="supplierModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj dostawcę do części</h3>
+            <button type="button" class="modal-close" onclick="closeSupplierModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:part-supplier-add' part.id %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_supplier">Dostawca</label>
+                    <select name="supplier" id="id_supplier" required>
+                        <option value="">---</option>
+                        {% for supplier in available_suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_supplier_code">Kod u dostawcy</label>
+                    <input type="text" name="supplier_code" id="id_supplier_code">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_lead_time_days">Lead time [dni]</label>
+                    <input type="number" name="lead_time_days" id="id_lead_time_days" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="is_preferred" id="id_is_preferred">
+                        Preferowany dostawca
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_notes">Notatki</label>
+                    <textarea name="notes" id="id_notes" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeSupplierModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openSupplierModal() {
+        document.getElementById("supplierModal").style.display = "flex";
+    }
+
+    function closeSupplierModal() {
+        document.getElementById("supplierModal").style.display = "none";
+        document.querySelector("#supplierModal form").reset();
+    }
+
+    window.addEventListener("click", function(e) {
+        const supplierModal = document.getElementById("supplierModal");
+        if (e.target === supplierModal) {
+            closeSupplierModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeSupplierModal();
+        }
+    });
+</script>
 {% endblock %}
