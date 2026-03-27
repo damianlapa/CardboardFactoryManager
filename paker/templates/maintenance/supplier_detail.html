@@ -133,6 +133,90 @@
             grid-template-columns: 1fr;
         }
     }
+
+    .btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 700px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+    }
+
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
 </style>
 {% endblock %}
 
@@ -161,7 +245,9 @@
                 {% endif %}
             </div>
             <div class="info-row"><b>Notatki:</b><br>{{ supplier.notes|default:"-" }}</div>
-
+            <div style="margin-top:16px;">
+                <button type="button" class="btn" onclick="openContactModal()">Dodaj kontakt</button>
+            </div>
             <div class="info-row" style="margin-top:16px;">
                 <b>Główny kontakt:</b><br>
                 {% if main_contact %}
@@ -255,4 +341,91 @@
         </div>
     </div>
 </div>
+<div id="contactModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj kontakt</h3>
+            <button type="button" class="modal-close" onclick="closeContactModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:supplier-contact-add' supplier.id %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_name">Imię i nazwisko</label>
+                    <input type="text" name="name" id="id_name" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_role">Rola</label>
+                    <input type="text" name="role" id="id_role">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_contact_type">Typ kontaktu</label>
+                    <select name="contact_type" id="id_contact_type" required>
+                        <option value="general">General</option>
+                        <option value="sales">Sales</option>
+                        <option value="service">Service</option>
+                        <option value="parts">Parts</option>
+                        <option value="complaint">Complaint</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_phone">Telefon</label>
+                    <input type="text" name="phone" id="id_phone">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_email">Email</label>
+                    <input type="email" name="email" id="id_email">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_notes">Notatki</label>
+                    <textarea name="notes" id="id_notes" rows="4"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="is_main" id="id_is_main">
+                        Główny kontakt
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeContactModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    function openContactModal() {
+        document.getElementById("contactModal").style.display = "flex";
+    }
+
+    function closeContactModal() {
+        document.getElementById("contactModal").style.display = "none";
+        document.querySelector("#contactModal form").reset();
+    }
+
+    window.addEventListener("click", function(e) {
+        const modal = document.getElementById("contactModal");
+        if (e.target === modal) {
+            closeContactModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeContactModal();
+        }
+    });
+</script>
 {% endblock %}

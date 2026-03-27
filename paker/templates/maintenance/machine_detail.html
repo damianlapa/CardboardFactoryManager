@@ -178,6 +178,88 @@
             grid-template-columns: 1fr;
         }
     }
+    .btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+    .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 700px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+    }
+
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
 </style>
 {% endblock %}
 
@@ -197,6 +279,11 @@
             <div class="machine-info-row"><b>Nr seryjny:</b> {{ machine.serial_number|default:"-" }}</div>
             <div class="machine-info-row"><b>Lokalizacja:</b> {{ machine.location|default:"-" }}</div>
             <div class="machine-info-row"><b>Opis:</b><br>{{ machine.description|default:"-" }}</div>
+            <div style="margin-top:16px;">
+                <button type="button" class="btn" onclick="openEventModal()">Dodaj zdarzenie</button>
+                <button type="button" class="btn" onclick="openAssignmentModal()">Przypisz część</button>
+            </div>
+
 
             <div class="summary-boxes">
                 <div class="summary-box red">
@@ -317,4 +404,138 @@
         </div>
     </div>
 </div>
+<div id="eventModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj zdarzenie</h3>
+            <button type="button" class="modal-close" onclick="closeEventModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:event-add' machine.id %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_event_type">Typ zdarzenia</label>
+                    <select name="event_type" id="id_event_type" required>
+                        <option value="">---</option>
+                        <option value="failure">Awaria</option>
+                        <option value="repair">Naprawa</option>
+                        <option value="inspection">Przegląd</option>
+                        <option value="replacement">Wymiana części</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_date">Data</label>
+                    <input type="date" name="date" id="id_date" value="{{ today|date:'Y-m-d' }}" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_downtime_hours">Przestój [h]</label>
+                    <input type="number" step="0.01" name="downtime_hours" id="id_downtime_hours" value="0">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_description">Opis</label>
+                    <textarea name="description" id="id_description" rows="5"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeEventModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="assignmentModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Przypisz część do maszyny</h3>
+            <button type="button" class="modal-close" onclick="closeAssignmentModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:machine-part-assignment-add' machine.id %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_part">Część</label>
+                    <select name="part" id="id_part" required>
+                        <option value="">---</option>
+                        {% for assignment in assignments %}
+                        {% endfor %}
+                        {% for part in available_parts %}
+                            <option value="{{ part.id }}">{{ part.name }} | {{ part.code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_quantity_needed">Wymagana ilość</label>
+                    <input type="number" name="quantity_needed" id="id_quantity_needed" value="1" min="1" required>
+                </div>
+
+                <div class="form-row">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="is_critical" id="id_is_critical">
+                        Część krytyczna
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_assignment_notes">Notatki</label>
+                    <textarea name="notes" id="id_assignment_notes" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeAssignmentModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    function openAssignmentModal() {
+        document.getElementById("assignmentModal").style.display = "flex";
+    }
+
+    function closeAssignmentModal() {
+        document.getElementById("assignmentModal").style.display = "none";
+        document.querySelector("#assignmentModal form").reset();
+    }
+</script>
+<script>
+
+    function openEventModal() {
+        document.getElementById("eventModal").style.display = "flex";
+    }
+
+    function closeEventModal() {
+        document.getElementById("eventModal").style.display = "none";
+        document.querySelector("#eventModal form").reset();
+    }
+
+    window.addEventListener("click", function(e) {
+        const eventModal = document.getElementById("eventModal");
+        const assignmentModal = document.getElementById("assignmentModal");
+
+        if (e.target === eventModal) {
+            closeEventModal();
+        }
+        if (e.target === assignmentModal) {
+            closeAssignmentModal();
+        }
+    });
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeEventModal();
+            closeAssignmentModal();
+        }
+    });
+</script>
 {% endblock %}

@@ -301,5 +301,43 @@
             {% endif %}
         </div>
     </div>
+    <h4 style="margin-top:18px;">Dostawcy</h4>
+
+    {% if part_suppliers %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Dostawca</th>
+                    <th>Kod u dostawcy</th>
+                    <th>Preferowany</th>
+                    <th>Lead time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for link in part_suppliers %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'maintenance:supplier-detail' link.supplier.id %}">
+                                {{ link.supplier.name }}
+                            </a>
+                        </td>
+                        <td>{{ link.supplier_code|default:"-" }}</td>
+                        <td>{% if link.is_preferred %}Tak{% else %}Nie{% endif %}</td>
+                        <td>
+                            {% if link.lead_time_days %}
+                                {{ link.lead_time_days }} dni
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-box">
+            Brak dostawców przypisanych do tej części.
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

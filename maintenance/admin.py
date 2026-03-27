@@ -7,7 +7,8 @@ from .models import (
     MaintenanceEvent,
     MaintenancePartUsage,
     MaintenanceSupplier,
-    MaintenanceSupplierContact
+    MaintenanceSupplierContact,
+    MachinePartSupplier
 )
 
 
@@ -23,11 +24,18 @@ class PartCategoryAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+class MachinePartSupplierInline(admin.TabularInline):
+    model = MachinePartSupplier
+    extra = 1
+    autocomplete_fields = ["supplier"]
+
+
 @admin.register(MachinePart)
 class MachinePartAdmin(admin.ModelAdmin):
     list_display = ("code", "name", "category", "min_quantity", "recommended_quantity", "is_active")
     search_fields = ("code", "name", "producer")
     list_filter = ("category", "is_active")
+    inlines = [MachinePartSupplierInline]
 
 
 @admin.register(MachinePartAssignment)
@@ -69,3 +77,25 @@ class MaintenanceSupplierAdmin(admin.ModelAdmin):
         return f"{contact.name} | {contact.phone or ''} | {contact.email or ''}"
 
     main_contact_display.short_description = "Main contact"
+
+
+@admin.register(MachinePartSupplier)
+class MachinePartSupplierAdmin(admin.ModelAdmin):
+    list_display = (
+        "part",
+        "supplier",
+        "supplier_code",
+        "is_preferred",
+        "lead_time_days",
+    )
+    search_fields = (
+        "part__name",
+        "part__code",
+        "supplier__name",
+        "supplier_code",
+    )
+    list_filter = (
+        "is_preferred",
+        "supplier",
+    )
+    autocomplete_fields = ["part", "supplier"]

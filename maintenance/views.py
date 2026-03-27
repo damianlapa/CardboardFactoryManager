@@ -3,7 +3,18 @@ from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django.db.models import Prefetch, Sum
 from django.db.models import Q
+from django.contrib import messages
+from django.shortcuts import redirect
+from datetime import date
 
+from .forms import (
+    MachineForm,
+    MachinePartForm,
+    MaintenanceSupplierForm,
+    MaintenanceSupplierContactForm,
+    MaintenanceEventForm,
+    MachinePartAssignmentForm
+)
 
 from .models import (
     Machine,
@@ -33,6 +44,7 @@ class MachineDetailView(LoginRequiredMixin, View):
     login_url = "login"
 
     def get(self, request, machine_id):
+        today = date.today()
         machine = get_object_or_404(
             Machine.objects.prefetch_related(
                 Prefetch(
@@ -61,6 +73,12 @@ class MachineDetailView(LoginRequiredMixin, View):
 
         assignments = machine.part_assignments.all()
         events = machine.events.all()
+
+        assigned_part_ids = [a.part_id for a in assignments]
+
+        available_parts = MachinePart.objects.filter(is_active=True).exclude(
+            id__in=assigned_part_ids
+        ).order_by("name", "code")
 
         critical_parts = [a for a in assignments if a.is_critical]
         missing_parts = []
@@ -140,6 +158,7 @@ class PartDetailView(LoginRequiredMixin, View):
                 "machine_assignments__machine",
                 "usages__event__machine",
                 "usages__warehouse_stock__warehouse",
+                "part_suppliers__supplier",
             ),
             id=part_id
         )
@@ -153,6 +172,8 @@ class PartDetailView(LoginRequiredMixin, View):
 
         machines = part.machine_assignments.all().order_by("machine__code")
         usages = part.usages.all().order_by("-event__date", "-id")
+        part_suppliers = part.part_suppliers.all()
+        preferred_supplier = part.part_suppliers.filter(is_preferred=True).first()
 
         return render(request, "maintenance/part_detail.html", locals())
 
@@ -232,3 +253,120 @@ class MaintenanceDashboardView(LoginRequiredMixin, View):
         )
 
         return render(request, "maintenance/dashboard.html", locals())
+
+class MachineCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request):
+        form = MachineForm()
+        title = "Dodaj maszynę"
+        return render(request, "maintenance/form.html", locals())
+
+    def post(self, request):
+        form = MachineForm(request.POST)
+        title = "Dodaj maszynę"
+        if form.is_valid():
+            machine = form.save()
+            messages.success(request, "Maszyna została dodana.")
+            return redirect("maintenance:machine-detail", machine_id=machine.id)
+        return render(request, "maintenance/form.html", locals())
+
+
+class PartCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request):
+        form = MachinePartForm()
+        title = "Dodaj część"
+        return render(request, "maintenance/form.html", locals())
+
+    def post(self, request):
+        form = MachinePartForm(request.POST)
+        title = "Dodaj część"
+        if form.is_valid():
+            part = form.save()
+            messages.success(request, "Część została dodana.")
+            return redirect("maintenance:part-detail", part_id=part.id)
+        return render(request, "maintenance/form.html", locals())
+
+
+class SupplierCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request):
+        form = MaintenanceSupplierForm()
+        title = "Dodaj dostawcę"
+        return render(request, "maintenance/form.html", locals())
+
+    def post(self, request):
+        form = MaintenanceSupplierForm(request.POST)
+        title = "Dodaj dostawcę"
+        if form.is_valid():
+            supplier = form.save()
+            messages.success(request, "Dostawca został dodany.")
+            return redirect("maintenance:supplier-detail", supplier_id=supplier.id)
+        return render(request, "maintenance/form.html", locals())
+
+
+class SupplierContactCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, supplier_id):
+        supplier = get_object_or_404(MaintenanceSupplier, id=supplier_id)
+
+        form = MaintenanceSupplierContactForm(request.POST)
+        if form.is_valid():
+            contact = form.save(commit=False)
+            contact.supplier = supplier
+            contact.save()
+            messages.success(request, "Kontakt został dodany.")
+        else:
+            messages.error(request, f"Nie udało się dodać kontaktu: {form.errors}")
+
+        return redirect("maintenance:supplier-detail", supplier_id=supplier.id)
+
+
+class MaintenanceEventCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, machine_id):
+        machine = get_object_or_404(Machine, id=machine_id)
+
+        form = MaintenanceEventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.machine = machine
+            event.created_by = request.user
+            event.save()
+            messages.success(request, "Zdarzenie zostało dodane.")
+        else:
+            messages.error(request, f"Nie udało się dodać zdarzenia: {form.errors}")
+
+        return redirect("maintenance:machine-detail", machine_id=machine.id)
+
+
+class MachinePartAssignmentCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def post(self, request, machine_id):
+        machine = get_object_or_404(Machine, id=machine_id)
+
+        form = MachinePartAssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.machine = machine
+
+            existing = MachinePartAssignment.objects.filter(
+                machine=machine,
+                part=assignment.part
+            ).exists()
+
+            if existing:
+                messages.error(request, "Ta część jest już przypisana do tej maszyny.")
+            else:
+                assignment.save()
+                messages.success(request, "Część została przypisana do maszyny.")
+        else:
+            messages.error(request, f"Nie udało się przypisać części: {form.errors}")
+
+        return redirect("maintenance:machine-detail", machine_id=machine.id)

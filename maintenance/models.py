@@ -256,3 +256,36 @@ class MaintenanceSupplierContact(models.Model):
             ).exclude(pk=self.pk).update(is_main=False)
 
         super().save(*args, **kwargs)
+
+
+class MachinePartSupplier(models.Model):
+    part = models.ForeignKey(
+        MachinePart,
+        on_delete=models.CASCADE,
+        related_name="part_suppliers",
+    )
+    supplier = models.ForeignKey(
+        MaintenanceSupplier,
+        on_delete=models.PROTECT,
+        related_name="supplier_parts",
+    )
+    supplier_code = models.CharField(max_length=100, blank=True, null=True)
+    is_preferred = models.BooleanField(default=False)
+    lead_time_days = models.PositiveIntegerField(blank=True, null=True)
+    notes = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        unique_together = ("part", "supplier")
+        ordering = ["-is_preferred", "supplier__name"]
+
+    def __str__(self):
+        return f"{self.part} -> {self.supplier}"
+
+    def save(self, *args, **kwargs):
+        if self.is_preferred:
+            MachinePartSupplier.objects.filter(
+                part=self.part,
+                is_preferred=True
+            ).exclude(pk=self.pk).update(is_preferred=False)
+
+        super().save(*args, **kwargs)
