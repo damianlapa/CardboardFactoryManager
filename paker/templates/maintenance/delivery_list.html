@@ -124,7 +124,7 @@ function closeDeliveryModal() {
     document.getElementById("deliveryModal").style.display = "none";
     document.querySelector("#deliveryModal form").reset();
 }
-window.addEventListener("click", function(e) {
+window.addEventListener("mousedown", function(e) {
     const modal = document.getElementById("deliveryModal");
     if (e.target === modal) closeDeliveryModal();
 });

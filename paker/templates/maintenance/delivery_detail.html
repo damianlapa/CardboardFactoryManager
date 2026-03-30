@@ -152,7 +152,7 @@ function closeItemModal() {
     document.getElementById("itemModal").style.display = "none";
     document.querySelector("#itemModal form").reset();
 }
-window.addEventListener("click", function(e) {
+window.addEventListener("mousedown", function(e) {
     const modal = document.getElementById("itemModal");
     if (e.target === modal) closeItemModal();
 });

@@ -180,6 +180,71 @@ class MaintenancePartUsage(models.Model):
         related_name="maintenance_usages",
     )
     quantity = models.PositiveIntegerField(default=1)
+    processed = models.BooleanField(default=False)
+
+    @transaction.atomic
+    def process_stock_out(self):
+        if self.processed:
+            return
+
+        ws = WarehouseStock.objects.select_for_update().get(pk=self.warehouse_stock_id)
+
+        if ws.stock_id != self.part.stock_id:
+            raise ValidationError("Wybrany stan magazynowy nie należy do tej części.")
+
+        if ws.quantity < self.quantity:
+            raise ValidationError("Brak wystarczającej ilości na magazynie.")
+
+        supplies = (
+            StockSupply.objects
+            .select_for_update()
+            .filter(
+                name=ws.stock.name,
+                stock_type=ws.stock.stock_type,
+            )
+            .order_by("date", "id")
+        )
+
+        total_available = sum(s.available_quantity() for s in supplies)
+        if total_available < self.quantity:
+            raise ValidationError(
+                f"FIFO: brak ilości w partiach (dostępne {total_available}, wymagane {self.quantity})."
+            )
+
+        remaining = int(self.quantity)
+
+        for supply in supplies:
+            if remaining <= 0:
+                break
+
+            available = int(supply.available_quantity())
+            if available <= 0:
+                supply.refresh_used_flag()
+                continue
+
+            take = min(available, remaining)
+
+            MaintenancePartUsageSupply.objects.create(
+                usage=self,
+                stock_supply=supply,
+                quantity=take,
+            )
+
+            supply.refresh_used_flag()
+            remaining -= take
+
+        if remaining > 0:
+            raise ValidationError("Nie udało się rozpisać pełnego rozchodu na partie FIFO.")
+
+        move_ws(
+            ws=ws,
+            delta=-int(self.quantity),
+            date=self.event.date,
+            maintenance_part_usage=self
+        )
+
+        self.processed = True
+        self.save(update_fields=["processed"])
 
     class Meta:
         ordering = ["event__date", "id"]
@@ -200,8 +265,12 @@ class MaintenancePartUsage(models.Model):
             })
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         self.full_clean()
         super().save(*args, **kwargs)
+
+        if is_new and not self.processed:
+            self.process_stock_out()
 
 
 class MaintenanceSupplier(models.Model):
@@ -439,3 +508,23 @@ class MaintenanceDeliveryItem(models.Model):
 
             item.processed = True
             item.save(update_fields=["processed"])
+
+
+class MaintenancePartUsageSupply(models.Model):
+    usage = models.ForeignKey(
+        "maintenance.MaintenancePartUsage",
+        on_delete=models.CASCADE,
+        related_name="supply_rows",
+    )
+    stock_supply = models.ForeignKey(
+        "warehouse.StockSupply",
+        on_delete=models.PROTECT,
+        related_name="maintenance_usage_rows",
+    )
+    quantity = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["stock_supply__date", "stock_supply__id"]
+
+    def __str__(self):
+        return f"{self.usage} -> {self.stock_supply} ({self.quantity})"

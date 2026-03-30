@@ -428,7 +428,7 @@
         document.querySelector("#partModal form").reset();
     }
 
-    window.addEventListener("click", function(e) {
+    window.addEventListener("mousedown", function(e) {
         const modal = document.getElementById("partModal");
         if (e.target === modal) {
             closePartModal();

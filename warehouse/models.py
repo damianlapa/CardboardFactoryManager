@@ -790,7 +790,11 @@ class StockSupply(models.Model):
             .filter(stock_supply=self)
             .aggregate(s=Coalesce(Sum("quantity"), 0))["s"]
         )
-        return int(settled) + int(sold)
+        maintenance_used = (
+            self.maintenance_usage_rows
+            .aggregate(s=Coalesce(Sum("quantity"), 0))["s"]
+        )
+        return int(settled) + int(sold) + int(maintenance_used)
 
     def available_quantity(self) -> int:
         """Ile jeszcze zostało w tej partii."""
@@ -1586,6 +1590,13 @@ class WarehouseStockHistory(models.Model):
     quantity_after = models.PositiveIntegerField(default=0)
     date = models.DateField(null=True, blank=True)
     sell = models.ForeignKey("ProductSell3", on_delete=models.PROTECT, null=True, blank=True)
+    maintenance_part_usage = models.ForeignKey(
+        "maintenance.MaintenancePartUsage",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="warehouse_history_rows",
+    )
 
     class Meta:
         ordering = ['-date', '-warehouse_stock']

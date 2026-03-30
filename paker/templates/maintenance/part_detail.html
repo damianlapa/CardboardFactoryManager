@@ -602,7 +602,7 @@
         document.querySelector("#supplierModal form").reset();
     }
 
-    window.addEventListener("click", function(e) {
+    window.addEventListener("mousedown", function(e) {
         const supplierModal = document.getElementById("supplierModal");
         if (e.target === supplierModal) {
             closeSupplierModal();
@@ -630,7 +630,7 @@
         preview.src = "";
     }
 
-    window.addEventListener("click", function(e) {
+    window.addEventListener("mousedown", function(e) {
         const imageModal = document.getElementById("imageModal");
         const supplierModal = document.getElementById("supplierModal");
 

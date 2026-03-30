@@ -415,7 +415,7 @@
         document.querySelector("#contactModal form").reset();
     }
 
-    window.addEventListener("click", function(e) {
+    window.addEventListener("mousedown", function(e) {
         const modal = document.getElementById("contactModal");
         if (e.target === modal) {
             closeContactModal();

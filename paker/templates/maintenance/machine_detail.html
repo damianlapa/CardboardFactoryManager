@@ -610,7 +610,7 @@
     }
 });
 
-document.addEventListener("keydown", function(e) {
+document.addEventListener("mousedown", function(e) {
     if (e.key === "Escape") {
         if (typeof closeEventModal === "function") closeEventModal();
         if (typeof closeAssignmentModal === "function") closeAssignmentModal();
