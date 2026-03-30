@@ -186,6 +186,19 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            workers = list(workers)
+
+            from .models import LocalSetting
+            excluded_workers = LocalSetting.objects.filter(name='excluded_workers').first()
+            ew_list = []
+            if excluded_workers:
+                for ew in excluded_workers.value.split(','):
+                    worker = ew.split('_')
+                    worker = Person.objects.filter(first_name=worker[0], last_name=worker[1]).first()
+                    if worker:
+                        if worker in workers:
+                            workers.remove(worker)
+
             contracts = Contract.objects.filter(
                 date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1,
                                               calendar.monthrange(year_num, month_num)[1]))
