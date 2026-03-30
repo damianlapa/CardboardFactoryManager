@@ -74,6 +74,16 @@ class MachinePart(models.Model):
     min_quantity = models.PositiveIntegerField(default=0)
     recommended_quantity = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    image_urls = models.TextField(blank=True, null=True,
+                                      help_text="Jedno zdjęcie w jednej linii lub oddzielone przecinkami/średnikami")
+
+    @property
+    def image_url_list(self):
+        if not self.image_urls:
+            return []
+
+        raw = self.image_urls.replace(";", "\n").replace(",", "\n")
+        return [url.strip() for url in raw.splitlines() if url.strip()]
 
     class Meta:
         ordering = ["name", "code"]
