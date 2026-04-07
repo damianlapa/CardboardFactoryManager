@@ -1042,11 +1042,17 @@ class OrderDetailView(LoginRequiredMixin, View):
             except Exception:
                 pass
 
-        if shifts_to:
-            stock_materials = shifts_to[0].get_items()
-            shift_quantity = 0
-            for s in shifts_to:
-                shift_quantity += s.quantity
+        main_wh = Warehouse.objects.get(name="MAGAZYN GŁÓWNY")
+        all_materials_in_warehouse = (
+            WarehouseStock.objects
+            .select_related("stock", "stock__stock_type", "warehouse")
+            .filter(
+                warehouse=main_wh,
+                quantity__gt=0,
+                stock__stock_type__stock_type="material",
+            )
+            .order_by("stock__name")
+        )
 
         # zostawiamy - potrzebne przy settle
         stocks = StockSupply.objects.all()
