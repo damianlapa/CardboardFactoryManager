@@ -138,3 +138,7 @@ urlpatterns += [
     path("sell/<int:sell_id>/undo/", undo_product_sell, name="undo_product_sell"),
     path("delivery-item/<int:item_id>/undo-process/", undo_delivery_item_process, name="undo_delivery_item_process"),
 ]
+
+urlpatterns += [
+    path('warehouses/refresh_warehouses_values/', refresh_warehouses_values, name='refresh_warehouses_values'),
+]

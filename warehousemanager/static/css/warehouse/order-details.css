@@ -94,3 +94,12 @@ tr:hover {
     font-size: 24px;
     font-weight: bold;
 }
+
+.refresh-btn i {
+    display: inline-block;
+    transition: transform 0.5s ease;
+}
+
+.refresh-btn:hover i {
+    transform: rotate(360deg);
+}

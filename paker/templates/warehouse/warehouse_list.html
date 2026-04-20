@@ -5,6 +5,9 @@
 {% endblock %}
 {% block content %}
   <h1>Warehouses</h1>
+  <a href="{% url 'warehouse:refresh_warehouses_values' %}" class="refresh-btn" title="Odśwież">
+    <i class="fa-solid fa-rotate"></i>
+</a>
   <table>
     <thead>
       <tr>
@@ -15,7 +18,7 @@
       {% for warehouse in warehouses %}
       <tr>
         <td><a href="{% url 'warehouse:warehouse-detail-view' warehouse_id=warehouse.id %}">{{ warehouse.name }}</a>
-        [ {{ warehouse.count_warehouse_value }} ]
+        [ {{ warehouse.value }} ]
         </td>
       </tr>
       {% empty %}

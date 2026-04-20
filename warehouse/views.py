@@ -2600,3 +2600,13 @@ def undo_product_sell(request, sell_id):
         messages.error(request, f"Błąd cofania sprzedaży: {e}")
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+def refresh_warehouses_values(request):
+    # if request.method != "POST":
+    #     return redirect(request.META.get("HTTP_REFERER", "/"))
+    warehouses = Warehouse.objects.all()
+    for w in warehouses:
+        w.count_warehouse_value()
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))

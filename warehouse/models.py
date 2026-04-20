@@ -871,6 +871,7 @@ class Stock(models.Model):
 class Warehouse(models.Model):
     name = models.CharField(max_length=64)
     description = models.TextField(null=True, blank=True)
+    value = models.DecimalField(default="0.00", max_digits=12, decimal_places=2)
 
     def __str__(self):
         return f'{self.name}'
@@ -884,7 +885,8 @@ class Warehouse(models.Model):
         value = 0
         for s in stocks:
             value += s.count_value()
-        return value
+        self.value = value
+        self.save()
 
 
 class WarehouseStock(models.Model):
