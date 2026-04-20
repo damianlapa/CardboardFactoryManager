@@ -91,6 +91,7 @@ def supplies_value_at_date_for_keys(
       - debug_supply: supply_id -> szczegóły obliczeń
       - qty_map: (stock_type_id, name) -> remaining_qty_at_date  (sumarycznie po partiach)
     """
+
     if not keys:
         return {}, {}, {}
 
@@ -118,6 +119,20 @@ def supplies_value_at_date_for_keys(
         )
     }
 
+    from maintenance.models import MaintenancePartUsageSupply
+    maintenance_map = {
+        row["stock_supply_id"]: int(row["s"] or 0)
+        for row in (
+            MaintenancePartUsageSupply.objects
+            .filter(
+                stock_supply_id__in=supply_ids,
+                usage__event__date__lte=date_point
+            )
+            .values("stock_supply_id")
+            .annotate(s=Sum("quantity"))
+        )
+    }
+
     sold_map = {
         row["stock_supply_id"]: int(row["s"] or 0)
         for row in (
@@ -139,7 +154,8 @@ def supplies_value_at_date_for_keys(
 
         settled = settled_map.get(s.id, 0)
         sold = sold_map.get(s.id, 0)
-        used = settled + sold
+        maintenance_used = maintenance_map.get(s.id, 0)
+        used = settled + sold + maintenance_used
 
         overused = used > qty
         remaining_raw = qty - used  # może być ujemne
