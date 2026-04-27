@@ -214,11 +214,49 @@ class Order(models.Model):
             print(s)
 
     def sold_quantity(self):
+        from django.db.models import Sum
+        from warehouse.models import ProductSellOrderPart
+
         return (
                 ProductSellOrderPart.objects
                 .filter(order=self)
                 .aggregate(total=Sum("quantity"))["total"] or 0
         )
+
+    def real_sales_value(self):
+        from decimal import Decimal
+        from warehouse.models import ProductSellOrderPart
+
+        rows = (
+            ProductSellOrderPart.objects
+            .filter(order=self)
+            .select_related("sell")
+        )
+
+        total = Decimal("0.00")
+
+        for row in rows:
+            total += D(row.quantity) * D(row.sell.price)
+
+        return money(total)
+
+    def expected_total_sales(self):
+        sold_qty = self.sold_quantity()
+        settled_qty = self.settled_quantity()
+        sold_value = D(self.real_sales_value())
+
+        if sold_qty <= 0:
+            return money(0)
+
+        if settled_qty <= 0:
+            return money(sold_value)
+
+        if sold_qty >= settled_qty:
+            return money(sold_value)
+
+        avg_price = sold_value / D(sold_qty)
+
+        return money(avg_price * D(settled_qty))
 
     def settled_quantity(self):
         settlements = OrderSettlement.objects.filter(order=self)
@@ -236,35 +274,6 @@ class Order(models.Model):
                 qty += delta
 
         return qty
-
-    def expected_total_sales(self):
-        sells = (
-            ProductSell3.objects
-            .filter(Q(order=self) | Q(order_parts__order=self))
-            .distinct()
-        )
-
-        sold_qty = 0
-        sold_value = Decimal("0.00")
-
-        for sell in sells:
-            qty = int(sell.quantity or 0)
-            sold_qty += qty
-            sold_value += D(sell.calculate_value())
-
-        settled_qty = self.settled_quantity()
-
-        # nic nie sprzedano — nie mamy ceny referencyjnej
-        if sold_qty <= 0:
-            return money(0)
-
-        # całość sprzedana albo sprzedano więcej niż settled
-        if sold_qty >= settled_qty:
-            return money(sold_value)
-
-        avg_price = sold_value / Decimal(sold_qty)
-
-        return money(avg_price * Decimal(settled_qty))
 
     def sales_profitability_status(self):
         sold_qty = self.sold_quantity()
