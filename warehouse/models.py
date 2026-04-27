@@ -214,12 +214,11 @@ class Order(models.Model):
             print(s)
 
     def sold_quantity(self):
-        sells = (
-            ProductSell3.objects
-            .filter(Q(order=self) | Q(order_parts__order=self))
-            .distinct()
+        return (
+                ProductSellOrderPart.objects
+                .filter(order=self)
+                .aggregate(total=Sum("quantity"))["total"] or 0
         )
-        return sum(int(s.quantity or 0) for s in sells)
 
     def settled_quantity(self):
         settlements = OrderSettlement.objects.filter(order=self)
