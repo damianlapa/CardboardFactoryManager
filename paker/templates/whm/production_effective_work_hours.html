@@ -1,0 +1,366 @@
+<style>
+    .effective-page {
+        background: #f5f7fb;
+        min-height: calc(100vh - 80px);
+    }
+
+    .effective-header {
+        background: linear-gradient(135deg, #111827, #374151);
+        color: white;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+    }
+
+    .effective-header .text-muted {
+        color: rgba(255, 255, 255, 0.72) !important;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+    }
+
+    .summary-box {
+        background: white;
+        border-radius: 14px;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .summary-label {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        margin-bottom: 6px;
+    }
+
+    .summary-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .filter-card,
+    .effective-table-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+    }
+
+    .filter-card {
+        padding: 18px;
+    }
+
+    .info-box {
+        border: 0;
+        border-left: 5px solid #0d6efd;
+        border-radius: 14px;
+        background: #eef5ff;
+        color: #1f3b64;
+    }
+
+    .effective-table-card {
+        overflow: hidden;
+    }
+
+    .effective-table {
+        margin-bottom: 0;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .effective-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #111827 !important;
+        color: white;
+        border-color: #374151 !important;
+        vertical-align: middle;
+        font-weight: 600;
+    }
+
+    .effective-table tbody td {
+        vertical-align: middle;
+    }
+
+    .effective-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .worker-cell {
+        min-width: 170px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .period-cell {
+        min-width: 155px;
+        color: #4b5563;
+    }
+
+    .number-cell {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .badge-soft {
+        display: inline-block;
+        min-width: 42px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .badge-blue {
+        background: #e0f2fe;
+        color: #075985;
+    }
+
+    .badge-green {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge-orange {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    .badge-red {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .badge-gray {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .effective-hours {
+        font-size: 14px;
+        font-weight: 900;
+        color: #111827;
+    }
+
+    .effective-table tfoot th {
+        background: #f3f4f6 !important;
+        font-weight: 900;
+        border-top: 2px solid #d1d5db;
+    }
+
+    @media (max-width: 768px) {
+        .effective-header {
+            padding: 18px;
+        }
+
+        .effective-table {
+            font-size: 12px;
+        }
+    }
+</style>
+
+<div class="effective-page">
+    <div class="container-fluid py-4">
+
+        <div class="effective-header mb-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                    <h2 class="mb-1">Efektywne godziny pracy produkcji</h2>
+                    <div class="text-muted">
+                        {{ month_start|date:"d.m.Y" }} - {{ month_end|date:"d.m.Y" }}
+                        &nbsp;•&nbsp;
+                        1 dzień = {{ hours_per_day }}h
+                        &nbsp;•&nbsp;
+                        przerwa = {{ break_minutes }} min
+                    </div>
+                </div>
+
+                <div class="btn-group mt-3 mt-md-0">
+                    <a class="btn btn-light"
+                       href="?year={{ previous_year }}&month={{ previous_month }}">
+                        ← Poprzedni miesiąc
+                    </a>
+                    <a class="btn btn-light"
+                       href="?year={{ next_year }}&month={{ next_month }}">
+                        Następny miesiąc →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-grid mb-4">
+            <div class="summary-box">
+                <div class="summary-label">Planowane godziny</div>
+                <div class="summary-value">{{ totals.planned_hours }}</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-label">Rzeczywiste godziny</div>
+                <div class="summary-value">{{ totals.actual_hours }}</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-label">Efektywne godziny</div>
+                <div class="summary-value">{{ totals.effective_hours }}</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-label">Nadgodziny</div>
+                <div class="summary-value">{{ totals.overtime_hours }}</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-label">Przerwy płatne</div>
+                <div class="summary-value">{{ totals.break_hours }}</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-label">Śr. efektywne h / dzień roboczy</div>
+                <div class="summary-value">{{ totals.avg_effective_hours_per_workday }}</div>
+            </div>
+        </div>
+
+        <div class="filter-card mb-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label for="year" class="form-label">Rok</label>
+                    <input id="year" class="form-control" type="number" name="year" value="{{ year }}">
+                </div>
+
+                <div class="col-auto">
+                    <label for="month" class="form-label">Miesiąc</label>
+                    <input id="month" class="form-control" type="number" name="month" value="{{ month }}" min="1" max="12">
+                </div>
+
+                <div class="col-auto">
+                    <button class="btn btn-primary px-4" type="submit">
+                        Pokaż
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="alert info-box mb-4">
+            <strong>Zasada liczenia:</strong>
+            plan = dni robocze × 8h. Przy absencji
+            <strong>CH, OP, UW, UŻ, UO, UB, NN, KW, IZ</strong>
+            dzień ma 0h pracy. Jeśli istnieje wpis ExtraHour:
+            <strong>full_day=True</strong> oznacza 8h + wpisana wartość,
+            a <strong>full_day=False</strong> oznacza tylko wpisaną wartość godzin.
+            Od każdego dnia z faktyczną pracą odejmujemy {{ break_minutes }} minut płatnej przerwy.
+        </div>
+
+        <div class="effective-table-card">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-bordered align-middle effective-table">
+                    <thead>
+                        <tr>
+                            <th>Pracownik</th>
+                            <th>Okres</th>
+                            <th class="text-end">Dni robocze</th>
+                            <th class="text-end">Dni pracy</th>
+                            <th class="text-end">Absencje</th>
+                            <th class="text-end">Pełne dni</th>
+                            <th class="text-end">Skrócone dni</th>
+                            <th class="text-end">Plan h</th>
+                            <th class="text-end">Rzecz. h</th>
+                            <th class="text-end">Nadgodz. h</th>
+                            <th class="text-end">Przerwy h</th>
+                            <th class="text-end">Efekt. h</th>
+                            <th class="text-end">Niedostępne h</th>
+                            <th class="text-end">Śr. rzecz. / dzień</th>
+                            <th class="text-end">Śr. efekt. / dzień rob.</th>
+                            <th class="text-end">Śr. efekt. / dzień pracy</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in rows %}
+                            <tr>
+                                <td class="worker-cell">{{ row.worker }}</td>
+
+                                <td class="period-cell">
+                                    {{ row.period_start|date:"d.m.Y" }} - {{ row.period_end|date:"d.m.Y" }}
+                                </td>
+
+                                <td class="text-end number-cell">{{ row.workdays }}</td>
+                                <td class="text-end number-cell">{{ row.worked_days }}</td>
+
+                                <td class="text-end number-cell">
+                                    <span class="badge-soft badge-red">{{ row.absence_days }}</span>
+                                </td>
+
+                                <td class="text-end number-cell">{{ row.full_days }}</td>
+                                <td class="text-end number-cell">{{ row.short_days }}</td>
+
+                                <td class="text-end number-cell">
+                                    <span class="badge-soft badge-blue">{{ row.planned_hours }}</span>
+                                </td>
+
+                                <td class="text-end number-cell">
+                                    <span class="badge-soft badge-green">{{ row.actual_hours }}</span>
+                                </td>
+
+                                <td class="text-end number-cell">
+                                    <span class="badge-soft badge-orange">{{ row.overtime_hours }}</span>
+                                </td>
+
+                                <td class="text-end number-cell">{{ row.break_hours }}</td>
+
+                                <td class="text-end number-cell effective-hours">
+                                    {{ row.effective_hours }}
+                                </td>
+
+                                <td class="text-end number-cell">{{ row.unavailable_hours }}</td>
+
+                                <td class="text-end number-cell">{{ row.avg_actual_hours_per_workday }}</td>
+
+                                <td class="text-end number-cell">
+                                    <span class="badge-soft badge-blue">
+                                        {{ row.avg_effective_hours_per_workday }}
+                                    </span>
+                                </td>
+
+                                <td class="text-end number-cell">
+                                    {{ row.avg_effective_hours_per_worked_day }}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="16" class="text-center text-muted py-5">
+                                    Brak aktywnych pracowników produkcyjnych UOP w wybranym miesiącu.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+
+                    <tfoot>
+                        <tr>
+                            <th colspan="2">Razem</th>
+                            <th class="text-end number-cell">{{ totals.workdays }}</th>
+                            <th class="text-end number-cell">{{ totals.worked_days }}</th>
+                            <th class="text-end number-cell">{{ totals.absence_days }}</th>
+                            <th class="text-end number-cell">{{ totals.full_days }}</th>
+                            <th class="text-end number-cell">{{ totals.short_days }}</th>
+                            <th class="text-end number-cell">{{ totals.planned_hours }}</th>
+                            <th class="text-end number-cell">{{ totals.actual_hours }}</th>
+                            <th class="text-end number-cell">{{ totals.overtime_hours }}</th>
+                            <th class="text-end number-cell">{{ totals.break_hours }}</th>
+                            <th class="text-end number-cell">{{ totals.effective_hours }}</th>
+                            <th class="text-end number-cell">{{ totals.unavailable_hours }}</th>
+                            <th class="text-end number-cell">{{ totals.avg_actual_hours_per_workday }}</th>
+                            <th class="text-end number-cell">{{ totals.avg_effective_hours_per_workday }}</th>
+                            <th class="text-end number-cell">{{ totals.avg_effective_hours_per_worked_day }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>

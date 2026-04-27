@@ -1,6 +1,7 @@
 from django.urls import path
 from warehousemanager.gluer_views import *
 from warehousemanager.customer_views import *
+from warehousemanager.absence_views import ProductionEffectiveWorkHoursView
 
 
 urlpatterns = [
@@ -10,4 +11,12 @@ urlpatterns = [
 urlpatterns += [
     path("map-deliveries/", DeliveryPlacesMapView.as_view(), name="delivery_places_map"),
     path("acv/", AllCustomersView.as_view(), name="acv"),
+]
+
+urlpatterns += [
+    path(
+        "statistics/production-effective-hours/",
+        ProductionEffectiveWorkHoursView.as_view(),
+        name="production_effective_work_hours",
+    ),
 ]

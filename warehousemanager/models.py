@@ -145,6 +145,7 @@ COLORS_PROVIDERS = (
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
+    birth_date = models.DateField(blank=True, null=True)
     email_address = models.EmailField()
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
