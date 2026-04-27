@@ -292,7 +292,7 @@ class Order(models.Model):
 
     def production_alternative_cost(self):
         return money(
-            D("233") * D(self.production_work_hours()) + D(self.material_cost())
+            D("192") * D(self.production_work_hours()) + D(self.material_cost())
         )
 
     class Meta:
