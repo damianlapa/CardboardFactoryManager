@@ -2610,3 +2610,67 @@ def refresh_warehouses_values(request):
         w.count_warehouse_value()
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+class OrderProfitabilityListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def get(self, request):
+        today = datetime.date.today()
+
+        year = int(request.GET.get("year", today.year))
+        month = int(request.GET.get("month", today.month))
+
+        orders = (
+            Order.objects
+            .filter(order_date__year=year, order_date__month=month)
+            .select_related("provider", "customer", "product")
+            .order_by("-order_date", "-id")
+        )
+
+        rows = []
+
+        for order in orders:
+            sold_qty = order.sold_quantity()
+            settled_qty = order.settled_quantity()
+
+            sales = order.expected_total_sales()
+            production_cost = order.production_alternative_cost()
+            result = sales - production_cost
+            status = order.sales_profitability_status()
+
+            rows.append({
+                "order": order,
+                "sold_qty": sold_qty,
+                "settled_qty": settled_qty,
+                "sales": sales,
+                "production_cost": production_cost,
+                "result": result,
+                "is_profit": result >= 0,
+                "status": status,
+            })
+
+        months = [
+            (1, "Styczeń"),
+            (2, "Luty"),
+            (3, "Marzec"),
+            (4, "Kwiecień"),
+            (5, "Maj"),
+            (6, "Czerwiec"),
+            (7, "Lipiec"),
+            (8, "Sierpień"),
+            (9, "Wrzesień"),
+            (10, "Październik"),
+            (11, "Listopad"),
+            (12, "Grudzień"),
+        ]
+
+        years = range(today.year - 3, today.year + 1)
+
+        return render(request, "warehouse/order_profitability_list.html", {
+            "rows": rows,
+            "month": month,
+            "year": year,
+            "months": months,
+            "years": years,
+        })

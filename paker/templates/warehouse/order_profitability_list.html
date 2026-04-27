@@ -1,0 +1,258 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1">Rentowność zleceń</h2>
+            <div class="text-muted">
+                Koszt = roboczogodziny × 233 + materiał
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTR -->
+    <form method="get" class="row g-2 align-items-end mb-3">
+
+        <div class="col-auto">
+            <label class="form-label mb-1">Miesiąc</label>
+            <select name="month" class="form-select form-select-sm">
+                {% for number, name in months %}
+                    <option value="{{ number }}" {% if number == month %}selected{% endif %}>
+                        {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label mb-1">Rok</label>
+            <select name="year" class="form-select form-select-sm">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>
+                        {{ y }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">
+                Filtruj
+            </button>
+        </div>
+
+    </form>
+
+    <!-- TABELA -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+            <table id="profitabilityTable"
+                   class="table table-hover table-striped table-sm align-middle mb-0">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Zlecenie</th>
+                        <th>Klient</th>
+                        <th>Produkt</th>
+
+                        <th class="text-end sortable" data-type="number">
+                            Wyprodukowano <span class="sort-icon"></span>
+                        </th>
+
+                        <th class="text-end sortable" data-type="number">
+                            Sprzedano <span class="sort-icon"></span>
+                        </th>
+
+                        <th class="text-end sortable" data-type="number">
+                            Koszt <span class="sort-icon"></span>
+                        </th>
+
+                        <th class="text-end sortable" data-type="number">
+                            Sprzedaż <span class="sort-icon"></span>
+                        </th>
+
+                        <th class="text-end sortable" data-type="number">
+                            Wynik <span class="sort-icon"></span>
+                        </th>
+
+                        <th>Status sprzedaży</th>
+                        <th>Rentowność</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td class="fw-semibold">
+                                <a href="{% url 'warehouse:order-detail-view' row.order.id %}">
+                                    {{ row.order.provider }} {{ row.order.order_id }}
+                                </a>
+                                <div class="small text-muted">
+                                    {{ row.order.order_date|date:"d.m.Y" }}
+                                </div>
+                            </td>
+
+                            <td>{{ row.order.customer }}</td>
+
+                            <td>
+                                {% if row.order.product %}
+                                    {{ row.order.product.name }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end">{{ row.settled_qty }}</td>
+                            <td class="text-end">{{ row.sold_qty }}</td>
+
+                            <td class="text-end">
+                                {{ row.production_cost|floatformat:2 }} zł
+                            </td>
+
+                            <td class="text-end fw-semibold">
+                                {{ row.sales|floatformat:2 }} zł
+                            </td>
+
+                            <td class="text-end fw-bold {% if row.is_profit %}text-success{% else %}text-danger{% endif %}">
+                                {{ row.result|floatformat:2 }} zł
+                            </td>
+
+                            <td>
+                                {% if row.status == "SOLD_FULL" %}
+                                    <span class="badge bg-success">Sprzedane</span>
+                                {% elif row.status == "FORECASTED" %}
+                                    <span class="badge bg-warning text-dark">Prognoza</span>
+                                {% elif row.status == "NO_SALES" %}
+                                    <span class="badge bg-secondary">Brak sprzedaży</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">Brak danych</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if row.is_profit %}
+                                    <span class="badge bg-success">PLUS</span>
+                                {% else %}
+                                    <span class="badge bg-danger">MINUS</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                Brak danych
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- STYLE -->
+<style>
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+th.sortable:hover {
+    text-decoration: underline;
+}
+
+.sort-icon {
+    display: inline-block;
+    width: 14px;
+    margin-left: 5px;
+    color: #ccc;
+}
+
+th.sort-asc .sort-icon::after {
+    content: "▲";
+    font-size: 10px;
+}
+
+th.sort-desc .sort-icon::after {
+    content: "▼";
+    font-size: 10px;
+}
+</style>
+
+<!-- SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const table = document.getElementById("profitabilityTable");
+    const tbody = table.querySelector("tbody");
+    const headers = table.querySelectorAll("thead th");
+
+    function cleanNumber(value) {
+        return parseFloat(
+            value.replace(/\s/g, "")
+                 .replace("zł", "")
+                 .replace(",", ".")
+                 .replace(/[^\d.-]/g, "")
+        ) || 0;
+    }
+
+    function clearSort() {
+        headers.forEach(h => h.classList.remove("sort-asc", "sort-desc"));
+    }
+
+    function sortTable(index, type, direction) {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+
+        rows.sort((a, b) => {
+            let A = a.children[index].innerText.trim();
+            let B = b.children[index].innerText.trim();
+
+            if (type === "number") {
+                A = cleanNumber(A);
+                B = cleanNumber(B);
+            } else {
+                A = A.toLowerCase();
+                B = B.toLowerCase();
+            }
+
+            if (A < B) return direction === "asc" ? -1 : 1;
+            if (A > B) return direction === "asc" ? 1 : -1;
+            return 0;
+        });
+
+        rows.forEach(r => tbody.appendChild(r));
+    }
+
+    headers.forEach((header, index) => {
+        if (!header.classList.contains("sortable")) return;
+
+        header.addEventListener("click", function () {
+
+            const current = header.dataset.dir || "desc";
+            const next = current === "asc" ? "desc" : "asc";
+
+            headers.forEach(h => delete h.dataset.dir);
+            header.dataset.dir = next;
+
+            clearSort();
+            header.classList.add(next === "asc" ? "sort-asc" : "sort-desc");
+
+            sortTable(index, header.dataset.type, next);
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

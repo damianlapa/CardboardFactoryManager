@@ -141,4 +141,9 @@ urlpatterns += [
 
 urlpatterns += [
     path('warehouses/refresh_warehouses_values/', refresh_warehouses_values, name='refresh_warehouses_values'),
+    path(
+        "orders/profitability/",
+        OrderProfitabilityListView.as_view(),
+        name="order-profitability-list"
+    ),
 ]

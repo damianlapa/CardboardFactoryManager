@@ -131,6 +131,36 @@ class Order(models.Model):
         else:
             return Decimal('0.00'), Decimal('0.00'), Decimal('0.00')
 
+    def production_work_hours(self):
+        from production.models import ProductionOrder, ProductionUnit
+
+        production_order = ProductionOrder.objects.filter(
+            id_number=f"{self.provider} {self.order_id}"
+        ).first()
+
+        if not production_order:
+            return Decimal("0.00")
+
+        units = (
+            ProductionUnit.objects
+            .filter(production_order=production_order)
+            .prefetch_related("persons")
+        )
+
+        total_minutes = 0
+
+        for unit in units:
+            minutes = unit.unit_duration_minutes()
+            people_count = unit.persons.count()
+
+            if minutes and people_count:
+                total_minutes += minutes * people_count
+
+        return Decimal(total_minutes / 60).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP
+        )
+
     def other_costs(self):
         month, year = self.order_date.month, self.order_date.year
         month_results = MonthResults.objects.get(month=month, year=year)
@@ -182,6 +212,80 @@ class Order(models.Model):
         settlements = OrderSettlement.objects.filter(order=self)
         for s in settlements:
             print(s)
+
+    def sold_quantity(self):
+        sells = (
+            ProductSell3.objects
+            .filter(Q(order=self) | Q(order_parts__order=self))
+            .distinct()
+        )
+        return sum(int(s.quantity or 0) for s in sells)
+
+    def settled_quantity(self):
+        settlements = OrderSettlement.objects.filter(order=self)
+
+        qty = 0
+
+        history = WarehouseStockHistory.objects.filter(
+            order_settlement__in=settlements,
+            stock_supply__isnull=False,
+        )
+
+        for h in history:
+            delta = int(h.quantity_after or 0) - int(h.quantity_before or 0)
+            if delta > 0:
+                qty += delta
+
+        return qty
+
+    def expected_total_sales(self):
+        sells = (
+            ProductSell3.objects
+            .filter(Q(order=self) | Q(order_parts__order=self))
+            .distinct()
+        )
+
+        sold_qty = 0
+        sold_value = Decimal("0.00")
+
+        for sell in sells:
+            qty = int(sell.quantity or 0)
+            sold_qty += qty
+            sold_value += D(sell.calculate_value())
+
+        settled_qty = self.settled_quantity()
+
+        # nic nie sprzedano — nie mamy ceny referencyjnej
+        if sold_qty <= 0:
+            return money(0)
+
+        # całość sprzedana albo sprzedano więcej niż settled
+        if sold_qty >= settled_qty:
+            return money(sold_value)
+
+        avg_price = sold_value / Decimal(sold_qty)
+
+        return money(avg_price * Decimal(settled_qty))
+
+    def sales_profitability_status(self):
+        sold_qty = self.sold_quantity()
+        settled_qty = self.settled_quantity()
+
+        if settled_qty <= 0:
+            return "NO_SETTLEMENT"
+
+        if sold_qty <= 0:
+            return "NO_SALES"
+
+        if sold_qty >= settled_qty:
+            return "SOLD_FULL"
+
+        return "FORECASTED"
+
+    def production_alternative_cost(self):
+        return money(
+            D("233") * D(self.production_work_hours()) + D(self.material_cost())
+        )
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
