@@ -101,10 +101,19 @@ class GenerateOrderInlineView(View):
         num, year = order.order_id.split('/')
         order_provider = order.provider.shortcut
 
+        euro = False
+
         data = get_data_by_values(order_provider, num, year, f'20{year}')
 
+        if product:
+            inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
+            if inf_pakowanie:
+                euro = "EPAL" in inf_pakowanie.pallette.name
+        else:
+            inf_pakowanie = ""
+
         # Pobierz plik wzoru z linku
-        euro = order.customer.name in euro_clients()
+        euro = order.customer.name in euro_clients() or euro
         url = "https://paker.eu/wp-content/uploads/2025/09/wzor2.xlsx"
         if euro:
             url = "https://paker.eu/wp-content/uploads/2025/07/wzor2euro.xlsx"
@@ -116,6 +125,9 @@ class GenerateOrderInlineView(View):
         # Załaduj do workbooka i zmodyfikuj
         wb = load_workbook(filename=BytesIO(response.content))
         ws = wb.active
+
+        if inf_pakowanie:
+            ws['A50'] = inf_pakowanie.order_info()
 
         dane_polimeru = get_polymer_number(data[10].strip())
         if dane_polimeru:
@@ -199,10 +211,6 @@ class GenerateOrderInlineView(View):
             else:
                 print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
 
-        if product:
-            inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
-            if inf_pakowanie:
-                ws['A50'] = inf_pakowanie.order_info()
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()
