@@ -7,7 +7,7 @@ import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 import gspread
-from warehouse.models import Order
+from warehouse.models import Order, ProductPackaging
 from warehousemanager.models import LocalSetting
 
 
@@ -97,6 +97,7 @@ class GenerateOrderInlineView(View):
     def get(self, request, order_id, *args, **kwargs):
 
         order = Order.objects.get(id=order_id)
+        product = order.product
         num, year = order.order_id.split('/')
         order_provider = order.provider.shortcut
 
@@ -197,6 +198,11 @@ class GenerateOrderInlineView(View):
                 ws['E17'] = wykrojnik
             else:
                 print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
+
+        if product:
+            inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
+            if inf_pakowanie:
+                ws['A50'] = inf_pakowanie
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()
