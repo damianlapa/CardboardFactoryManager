@@ -108,7 +108,7 @@ class GenerateOrderInlineView(View):
         if product:
             inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
             if inf_pakowanie:
-                euro = "EPAL" in inf_pakowanie.pallette.name
+                euro = "EPAL" in inf_pakowanie.palette.name
         else:
             inf_pakowanie = ""
 
