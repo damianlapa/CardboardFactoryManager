@@ -202,7 +202,7 @@ class GenerateOrderInlineView(View):
         if product:
             inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
             if inf_pakowanie:
-                ws['A50'] = inf_pakowanie
+                ws['A50'] = inf_pakowanie.order_info()
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()

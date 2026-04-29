@@ -2045,3 +2045,8 @@ class ProductPackaging(models.Model):
 
     def __str__(self):
         return f"Packaging: {self.product}"
+
+    def order_info(self):
+        text = (f'Pakowane na paletę: {self.palette}\nSztuki w paczce: {self.qty_per_pack}\n'
+                f'Słupki: {self.columns}\nWartswy: {self.layers}')
+        return text
