@@ -1,0 +1,140 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+
+<h2>👷 Pracownicy</h2>
+
+<!-- TOGGLE -->
+<div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+    <div>
+        {% if show_all %}
+            <span class="badge bg-secondary">Wszyscy pracownicy</span>
+        {% else %}
+            <span class="badge bg-success">Tylko aktywni</span>
+        {% endif %}
+    </div>
+
+    <div>
+        {% if show_all %}
+            <a href="{% url 'employee_list' %}" class="btn btn-sm btn-success">
+                Tylko aktywni
+            </a>
+        {% else %}
+            <a href="{% url 'employee_list' %}?all=1" class="btn btn-sm btn-outline-secondary">
+                Pokaż wszystkich
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TABELA -->
+<table class="table table-striped table-hover" id="employeeTable">
+    <thead class="table-dark">
+        <tr>
+            <th data-sort>Imię i nazwisko ⬍</th>
+            <th data-sort>Dział ⬍</th>
+            <th data-sort>Data zatrudnienia ⬍</th>
+            <th data-sort>Staż ⬍</th>
+            <th data-sort>Status ⬍</th>
+            <th>Badania</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in workers %}
+        <tr onclick="window.location.href='{% url 'person-details' row.worker.id %}'" style="cursor:pointer;">
+
+            <td data-value="{{ row.worker.last_name }} {{ row.worker.first_name }}">
+                <b>{{ row.worker.first_name }} {{ row.worker.last_name }}</b>
+            </td>
+
+            <td data-value="{{ row.worker.occupancy_type }}">
+                {{ row.worker.occupancy_type }}
+            </td>
+
+            <td data-value="{{ row.worker.job_start|date:'Y-m-d' }}">
+                {{ row.worker.job_start }}
+            </td>
+
+            <!-- SORT PO STAŻU = sort po dacie zatrudnienia -->
+            <td data-value="{{ row.worker.job_start|date:'Y-m-d' }}">
+                {{ row.seniority }}
+            </td>
+
+            <td data-value="{{ row.status }}">
+                {% if row.status == "Aktywny" %}
+                    <span class="badge bg-success">Aktywny</span>
+                {% else %}
+                    <span class="badge bg-secondary">Nieaktywny</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if row.medical_expired %}
+                    <span class="badge bg-danger">Brak / wygasły</span>
+                {% else %}
+                    <span class="badge bg-success">OK</span>
+                {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+```
+
+</div>
+
+<!-- JS SORTOWANIE -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const getCellValue = (tr, idx) => {
+        const td = tr.children[idx];
+        return td.getAttribute("data-value") || td.innerText;
+    };
+
+    const comparer = (idx, asc) => (a, b) => {
+        let v1 = getCellValue(asc ? a : b, idx);
+        let v2 = getCellValue(asc ? b : a, idx);
+
+        // DATY
+        if (!isNaN(Date.parse(v1)) && !isNaN(Date.parse(v2))) {
+            return new Date(v1) - new Date(v2);
+        }
+
+        // LICZBY
+        if (!isNaN(v1) && !isNaN(v2)) {
+            return v1 - v2;
+        }
+
+        // TEKST
+        return v1.localeCompare(v2, 'pl', { sensitivity: 'base' });
+    };
+
+    document.querySelectorAll("#employeeTable th[data-sort]").forEach((th, index) => {
+        let asc = true;
+
+        th.addEventListener("click", () => {
+            const table = th.closest("table");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort(comparer(index, asc));
+            asc = !asc;
+
+            rows.forEach(tr => tbody.appendChild(tr));
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

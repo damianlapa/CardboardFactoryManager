@@ -2,6 +2,7 @@ from django.urls import path
 from warehousemanager.gluer_views import *
 from warehousemanager.customer_views import *
 from warehousemanager.absence_views import ProductionEffectiveWorkHoursView
+from warehousemanager.empoyee_views import EmployeeListView
 
 
 urlpatterns = [
@@ -19,4 +20,8 @@ urlpatterns += [
         ProductionEffectiveWorkHoursView.as_view(),
         name="production_effective_work_hours",
     ),
+]
+
+urlpatterns += [
+    path("employees/", EmployeeListView.as_view(), name="employee_list"),
 ]
