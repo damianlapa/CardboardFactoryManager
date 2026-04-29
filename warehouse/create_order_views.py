@@ -114,9 +114,9 @@ class GenerateOrderInlineView(View):
 
         # Pobierz plik wzoru z linku
         euro = order.customer.name in euro_clients() or euro
-        url = "https://paker.eu/wp-content/uploads/2025/09/wzor2.xlsx"
+        url = "https://paker.eu/wp-content/uploads/2026/04/wzor2.xlsx"
         if euro:
-            url = "https://paker.eu/wp-content/uploads/2025/07/wzor2euro.xlsx"
+            url = "https://paker.eu/wp-content/uploads/2026/04/wzor2euro.xlsx"
         response = requests.get(url)
 
         if response.status_code != 200:
