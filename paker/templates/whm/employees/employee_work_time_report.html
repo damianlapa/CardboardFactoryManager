@@ -1,0 +1,414 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Raport czasu pracy</h2>
+            <div class="text-muted">
+                Zakres: {{ start }} — {{ end }}
+            </div>
+        </div>
+
+        <form method="get" class="d-flex gap-2 align-items-end">
+            <div>
+                <label class="form-label mb-1">Od</label>
+                <input type="date" name="start" value="{{ start|date:'Y-m-d' }}" class="form-control form-control-sm">
+            </div>
+
+            <div>
+                <label class="form-label mb-1">Do</label>
+                <input type="date" name="end" value="{{ end|date:'Y-m-d' }}" class="form-control form-control-sm">
+            </div>
+
+            {% if show_all %}
+                <input type="hidden" name="all" value="1">
+            {% endif %}
+
+            <button class="btn btn-sm btn-primary">Przelicz</button>
+
+            {% if show_all %}
+                <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}"
+                   class="btn btn-sm btn-success">
+                    Tylko produkcja
+                </a>
+            {% else %}
+                <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&all=1"
+                   class="btn btn-sm btn-outline-secondary">
+                    Wszyscy pracownicy
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="row g-3 mb-3">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Wymiar czasu</div>
+                    <h4>{{ totals.base_minutes }} min</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Fizycznie w pracy</div>
+                    <h4>{{ totals.physical_minutes }} min</h4>
+                    <span class="badge bg-info">{{ totals.physical_percent }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Po odjęciu przerw</div>
+                    <h4>{{ totals.net_minutes }} min</h4>
+                    <span class="badge bg-warning text-dark">{{ totals.net_percent }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Production Unit</div>
+                    <h4>{{ totals.production_minutes }} min</h4>
+                    <span class="badge bg-success">
+                        {{ totals.production_vs_net_percent }}% czasu netto
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row g-3 mb-3">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Dni z problemami</div>
+                    <h4>{{ totals.problem_days }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Nakładania PU</div>
+                    <h4>{{ totals.overlaps }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Dziury w ewidencji</div>
+                    <h4>{{ totals.gaps }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="text-muted small">Praca poza oczekiwanym zakresem</div>
+                    <h4>{{ totals.outside }}</h4>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-hover table-striped align-middle" id="workTimeTable">
+            <thead class="table-dark">
+                <tr>
+                    <th data-sort>Pracownik ⬍</th>
+                    <th data-sort>Wymiar czasu ⬍</th>
+                    <th data-sort>Dni robocze ⬍</th>
+                    <th data-sort>Nieobecności ⬍</th>
+                    <th data-sort>Niepełne dni ⬍</th>
+                    <th data-sort>Fizycznie w pracy ⬍</th>
+                    <th data-sort>% fizycznie ⬍</th>
+                    <th data-sort>Przerwy ⬍</th>
+                    <th data-sort>Po przerwach ⬍</th>
+                    <th data-sort>% netto ⬍</th>
+                    <th data-sort>Production Unit ⬍</th>
+                    <th data-sort>PU / fizycznie ⬍</th>
+                    <th data-sort>PU / netto ⬍</th>
+                    <th data-sort>Problemy ⬍</th>
+                    <th data-sort>Nakładania ⬍</th>
+                    <th data-sort>Dziury ⬍</th>
+                    <th data-sort>Poza zakresem ⬍</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                    <tr class="employee-row" data-person-id="{{ row.person.id }}" style="cursor:pointer;">
+                        <td data-value="{{ row.person.last_name }} {{ row.person.first_name }}">
+                            <b>{{ row.person.first_name }} {{ row.person.last_name }}</b>
+                            <div class="text-muted small">{{ row.person.occupancy_type }}</div>
+                        </td>
+
+                        <td data-value="{{ row.base_minutes }}">{{ row.base_minutes }} min</td>
+                        <td data-value="{{ row.workdays }}">{{ row.workdays }}</td>
+
+                        <td data-value="{{ row.absence_days }}">
+                            {% if row.absence_days %}
+                                <span class="badge bg-danger">{{ row.absence_days }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.partial_days }}">
+                            {% if row.partial_days %}
+                                <span class="badge bg-warning text-dark">{{ row.partial_days }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.physical_minutes }}">{{ row.physical_minutes }} min</td>
+
+                        <td data-value="{{ row.physical_percent }}">
+                            <span class="badge bg-info">{{ row.physical_percent }}%</span>
+                        </td>
+
+                        <td data-value="{{ row.break_minutes }}">{{ row.break_minutes }} min</td>
+                        <td data-value="{{ row.net_minutes }}">{{ row.net_minutes }} min</td>
+
+                        <td data-value="{{ row.net_percent }}">
+                            <span class="badge bg-warning text-dark">{{ row.net_percent }}%</span>
+                        </td>
+
+                        <td data-value="{{ row.production_minutes }}">
+                            <b>{{ row.production_minutes }} min</b>
+                            {% if row.production_union_minutes != row.production_minutes %}
+                                <div class="text-danger small">
+                                    bez nakładań: {{ row.production_union_minutes }} min
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.production_vs_physical_percent }}">
+                            {% if row.production_vs_physical_percent >= 100 %}
+                                <span class="badge bg-danger">{{ row.production_vs_physical_percent }}%</span>
+                            {% elif row.production_vs_physical_percent >= 80 %}
+                                <span class="badge bg-success">{{ row.production_vs_physical_percent }}%</span>
+                            {% elif row.production_vs_physical_percent >= 60 %}
+                                <span class="badge bg-warning text-dark">{{ row.production_vs_physical_percent }}%</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ row.production_vs_physical_percent }}%</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.production_vs_net_percent }}">
+                            {% if row.production_vs_net_percent >= 100 %}
+                                <span class="badge bg-danger">{{ row.production_vs_net_percent }}%</span>
+                            {% elif row.production_vs_net_percent >= 80 %}
+                                <span class="badge bg-success">{{ row.production_vs_net_percent }}%</span>
+                            {% elif row.production_vs_net_percent >= 60 %}
+                                <span class="badge bg-warning text-dark">{{ row.production_vs_net_percent }}%</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ row.production_vs_net_percent }}%</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.problem_days }}">
+                            {% if row.problem_days %}
+                                <span class="badge bg-danger">{{ row.problem_days }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.overlaps_count }}">
+                            {% if row.overlaps_count %}
+                                <span class="badge bg-danger">{{ row.overlaps_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.gaps_count }}">
+                            {% if row.gaps_count %}
+                                <span class="badge bg-warning text-dark">{{ row.gaps_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+
+                        <td data-value="{{ row.outside_count }}">
+                            {% if row.outside_count %}
+                                <span class="badge bg-warning text-dark">{{ row.outside_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <tr class="employee-units-row d-none" id="employee-units-{{ row.person.id }}">
+                        <td colspan="17">
+                            <div class="employee-units-content">
+                                Ładowanie...
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+
+            <tfoot class="table-secondary fw-bold">
+                <tr>
+                    <td>RAZEM</td>
+                    <td>{{ totals.base_minutes }} min</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>{{ totals.physical_minutes }} min</td>
+                    <td>{{ totals.physical_percent }}%</td>
+                    <td></td>
+                    <td>{{ totals.net_minutes }} min</td>
+                    <td>{{ totals.net_percent }}%</td>
+                    <td>{{ totals.production_minutes }} min</td>
+                    <td>{{ totals.production_vs_physical_percent }}%</td>
+                    <td>{{ totals.production_vs_net_percent }}%</td>
+                    <td>{{ totals.problem_days }}</td>
+                    <td>{{ totals.overlaps }}</td>
+                    <td>{{ totals.gaps }}</td>
+                    <td>{{ totals.outside }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const getCellValue = (tr, idx) => {
+        const td = tr.children[idx];
+        return td ? (td.getAttribute("data-value") || td.innerText.trim()) : "";
+    };
+
+    const comparer = (idx, asc) => (a, b) => {
+        let v1 = getCellValue(a, idx);
+        let v2 = getCellValue(b, idx);
+
+        const n1 = parseFloat(String(v1).replace(",", "."));
+        const n2 = parseFloat(String(v2).replace(",", "."));
+
+        if (!isNaN(n1) && !isNaN(n2)) {
+            return asc ? n1 - n2 : n2 - n1;
+        }
+
+        return asc
+            ? String(v1).localeCompare(String(v2), "pl", { sensitivity: "base" })
+            : String(v2).localeCompare(String(v1), "pl", { sensitivity: "base" });
+    };
+
+    document.querySelectorAll("#workTimeTable th[data-sort]").forEach((th, index) => {
+        let asc = true;
+        th.style.cursor = "pointer";
+
+        th.addEventListener("click", () => {
+            const tbody = document.querySelector("#workTimeTable tbody");
+
+            const pairs = [];
+            const rows = Array.from(tbody.children);
+
+            for (let i = 0; i < rows.length; i += 2) {
+                pairs.push({
+                    main: rows[i],
+                    details: rows[i + 1]
+                });
+            }
+
+            pairs.sort((a, b) => comparer(index, asc)(a.main, b.main));
+            asc = !asc;
+
+            pairs.forEach(pair => {
+                tbody.appendChild(pair.main);
+                tbody.appendChild(pair.details);
+            });
+        });
+    });
+
+    document.querySelectorAll(".employee-row").forEach(row => {
+        row.addEventListener("click", function () {
+            const personId = this.dataset.personId;
+            const detailsRow = document.getElementById(`employee-units-${personId}`);
+            const content = detailsRow.querySelector(".employee-units-content");
+
+            const start = document.querySelector("input[name='start']").value;
+            const end = document.querySelector("input[name='end']").value;
+
+            if (!detailsRow.classList.contains("d-none")) {
+                detailsRow.classList.add("d-none");
+                return;
+            }
+
+            document.querySelectorAll(".employee-units-row").forEach(r => {
+                r.classList.add("d-none");
+            });
+
+            detailsRow.classList.remove("d-none");
+            content.innerHTML = "Ładowanie...";
+
+            const url = `{% url 'employee_production_units_ajax' 0 %}`.replace("/0/", `/${personId}/`);
+
+            fetch(`${url}?start=${start}&end=${end}`, {
+    headers: {
+        "X-Requested-With": "XMLHttpRequest"
+    }
+})
+.then(async response => {
+    const text = await response.text();
+
+    if (!response.ok) {
+        console.error("AJAX ERROR:", response.status, text);
+        content.innerHTML = `
+            <div class="alert alert-danger mb-0">
+                <b>Nie udało się wczytać ProductionUnit.</b><br>
+                Status: ${response.status}<br>
+                <pre style="white-space: pre-wrap; max-height: 300px; overflow:auto;">${text}</pre>
+            </div>
+        `;
+        return;
+    }
+
+    const data = JSON.parse(text);
+    content.innerHTML = data.html;
+})
+.catch(error => {
+    console.error(error);
+    content.innerHTML = `
+        <div class="alert alert-danger mb-0">
+            Błąd JS/AJAX: ${error}
+        </div>
+    `;
+});
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

@@ -1,5 +1,11 @@
 # warehousemanager/employee_views.py
 
+import datetime
+from collections import defaultdict
+from decimal import Decimal
+
+from django.utils import timezone
+
 from django.http import JsonResponse
 import datetime
 from decimal import Decimal
@@ -47,25 +53,15 @@ class EmployeeListView(View):
         })
 
 
-class EmployeeWorkTimeReportView(View):
-    template_name = "whm/employees/work_time_report.html"
+class EmployeeWorkTimeBaseMixin:
+    WORK_START = datetime.time(7, 0)
+    WORK_END = datetime.time(15, 0)
 
-    BREAK_MINUTES_PER_DAY = 35
     WORK_MINUTES_PER_DAY = 8 * 60
+    BREAK_MINUTES_PER_DAY = 35
+    GAP_TOLERANCE_MINUTES = 10
 
-    ABSENCE_FULL_DAY_TYPES = ["UW", "UB", "CH", "OP", "NN", "KW", "UO"]
-
-    def _default_range(self):
-        today = datetime.date.today()
-        start = today.replace(day=1)
-        end = today
-        return start, end
-
-    def _date_range(self, start, end):
-        day = start
-        while day <= end:
-            yield day
-            day += datetime.timedelta(days=1)
+    FULL_DAY_ABSENCES = ["UW", "UB", "CH", "OP", "NN", "KW", "UO"]
 
     def _safe_parse_date(self, value, default):
         if not value:
@@ -73,107 +69,357 @@ class EmployeeWorkTimeReportView(View):
         parsed = parse_date(value)
         return parsed or default
 
-    def _workdays_count(self, start, end):
-        holidays = set(
-            Holiday.objects
-            .filter(holiday_date__gte=start, holiday_date__lte=end)
-            .values_list("holiday_date", flat=True)
-        )
+    def _default_range(self):
+        today = datetime.date.today()
+        return today.replace(day=1), today
 
-        count = 0
-        for day in self._date_range(start, end):
-            if day.weekday() < 5 and day not in holidays:
-                count += 1
+    def _date_range(self, start, end):
+        day = start
+        while day <= end:
+            yield day
+            day += datetime.timedelta(days=1)
 
-        return count
+    def _aware_combine(self, day, time_value):
+        dt = datetime.datetime.combine(day, time_value)
+        tz = timezone.get_current_timezone()
 
-    def _active_in_period_qs(self, start, end):
-        return (
-            Person.objects
-            .filter(job_start__lte=end)
+        if timezone.is_naive(dt):
+            return timezone.make_aware(dt, tz)
+
+        return timezone.localtime(dt, tz)
+
+    def _to_current_timezone(self, dt):
+        if not dt:
+            return dt
+
+        tz = timezone.get_current_timezone()
+
+        if timezone.is_naive(dt):
+            return timezone.make_aware(dt, tz)
+
+        return timezone.localtime(dt, tz)
+
+    def _expected_day_for_person(self, person, day):
+        if day.weekday() >= 5:
+            return {
+                "should_work": False,
+                "expected_minutes": 0,
+                "absence": None,
+                "extra": None,
+                "start": None,
+                "end": None,
+                "reason": "weekend",
+            }
+
+        if person.job_start and day < person.job_start:
+            return {
+                "should_work": False,
+                "expected_minutes": 0,
+                "absence": None,
+                "extra": None,
+                "start": None,
+                "end": None,
+                "reason": "before_job_start",
+            }
+
+        if person.job_end and day > person.job_end:
+            return {
+                "should_work": False,
+                "expected_minutes": 0,
+                "absence": None,
+                "extra": None,
+                "start": None,
+                "end": None,
+                "reason": "after_job_end",
+            }
+
+        holiday = Holiday.objects.filter(holiday_date=day).first()
+        if holiday:
+            return {
+                "should_work": False,
+                "expected_minutes": 0,
+                "absence": None,
+                "extra": None,
+                "start": None,
+                "end": None,
+                "reason": "holiday",
+            }
+
+        absence = Absence.objects.filter(worker=person, absence_date=day).first()
+
+        if absence and absence.absence_type in self.FULL_DAY_ABSENCES:
+            return {
+                "should_work": False,
+                "expected_minutes": 0,
+                "absence": absence,
+                "extra": None,
+                "start": None,
+                "end": None,
+                "reason": "absence",
+            }
+
+        extra = ExtraHour.objects.filter(worker=person, extras_date=day).first()
+
+        expected_start = self._aware_combine(day, self.WORK_START)
+        expected_end = self._aware_combine(day, self.WORK_END)
+        expected_minutes = self.WORK_MINUTES_PER_DAY
+
+        if extra:
+            extra_minutes = int(Decimal(extra.quantity) * Decimal("60"))
+
+            if extra.full_day:
+                expected_minutes = self.WORK_MINUTES_PER_DAY + extra_minutes
+                expected_end = expected_end + datetime.timedelta(minutes=extra_minutes)
+            else:
+                expected_minutes = extra_minutes
+                expected_end = expected_start + datetime.timedelta(minutes=extra_minutes)
+
+        return {
+            "should_work": True,
+            "expected_minutes": expected_minutes,
+            "absence": absence,
+            "extra": extra,
+            "start": expected_start,
+            "end": expected_end,
+            "reason": "workday",
+        }
+
+    def _split_unit_by_day(self, unit):
+        """
+        Dzieli ProductionUnit na fragmenty robocze 7:00-15:00.
+
+        Przykład:
+        start: 2026-02-04 12:01
+        end:   2026-02-05 09:20
+
+        wynik:
+        2026-02-04 12:01-15:00
+        2026-02-05 07:00-09:20
+
+        Dzięki temu praca przechodząca przez noc nie jest liczona jako 12:01-23:59.
+        """
+
+        result = []
+
+        start = self._to_current_timezone(unit.start)
+        end = self._to_current_timezone(unit.end)
+
+        if not start or not end or end <= start:
+            return result
+
+        current_day = start.date()
+        last_day = end.date()
+
+        while current_day <= last_day:
+            # pomijamy weekendy
+            if current_day.weekday() >= 5:
+                current_day += datetime.timedelta(days=1)
+                continue
+
+            day_start = self._aware_combine(current_day, self.WORK_START)
+            day_end = self._aware_combine(current_day, self.WORK_END)
+
+            part_start = max(start, day_start)
+            part_end = min(end, day_end)
+
+            if part_end > part_start:
+                result.append({
+                    "day": current_day,
+                    "unit": unit,
+                    "start": part_start,
+                    "end": part_end,
+                    "minutes": int((part_end - part_start).total_seconds() / 60),
+                    "persons_count": unit.persons.count(),
+                })
+
+            current_day += datetime.timedelta(days=1)
+
+        return result
+
+    def _analyze_intervals(self, intervals, expected_start, expected_end):
+        intervals = sorted(intervals, key=lambda x: x["start"])
+
+        total_minutes = 0
+        union_minutes = 0
+        overlaps = []
+        gaps = []
+        outside = []
+
+        previous_end = None
+
+        for interval in intervals:
+            start = interval["start"]
+            end = interval["end"]
+            minutes = int((end - start).total_seconds() / 60)
+
+            total_minutes += minutes
+
+            if expected_start and expected_end:
+                if start < expected_start or end > expected_end:
+                    outside.append(interval)
+
+            if previous_end and start < previous_end:
+                overlap_end = min(end, previous_end)
+                overlap_minutes = int((overlap_end - start).total_seconds() / 60)
+
+                if overlap_minutes > 0:
+                    overlaps.append({
+                        "interval": interval,
+                        "minutes": overlap_minutes,
+                    })
+
+                if end > previous_end:
+                    union_minutes += int((end - previous_end).total_seconds() / 60)
+                    previous_end = end
+            else:
+                union_minutes += minutes
+                previous_end = end
+
+        if expected_start and expected_end:
+            pointer = expected_start
+
+            for interval in intervals:
+                start = max(interval["start"], expected_start)
+                end = min(interval["end"], expected_end)
+
+                if end <= expected_start or start >= expected_end:
+                    continue
+
+                gap_minutes = int((start - pointer).total_seconds() / 60)
+
+                if gap_minutes > self.GAP_TOLERANCE_MINUTES:
+                    gaps.append({
+                        "start": pointer,
+                        "end": start,
+                        "minutes": gap_minutes,
+                    })
+
+                if end > pointer:
+                    pointer = end
+
+            final_gap = int((expected_end - pointer).total_seconds() / 60)
+
+            if final_gap > self.GAP_TOLERANCE_MINUTES:
+                gaps.append({
+                    "start": pointer,
+                    "end": expected_end,
+                    "minutes": final_gap,
+                })
+
+        return {
+            "total_minutes": total_minutes,
+            "union_minutes": union_minutes,
+            "overlaps": overlaps,
+            "gaps": gaps,
+            "outside": outside,
+        }
+
+    def _audit_person_days(self, person, start, end):
+        units = (
+            ProductionUnit.objects
             .filter(
-                # aktywni w zakresie
-                # czyli nie zakończyli pracy albo zakończyli po początku zakresu
-                models.Q(job_end__isnull=True) | models.Q(job_end__gte=start)
+                persons=person,
+                start__date__lte=end,
+                end__date__gte=start,
             )
-            .order_by("last_name", "first_name")
+            .exclude(start__isnull=True)
+            .exclude(end__isnull=True)
+            .select_related("production_order", "work_station")
+            .prefetch_related("persons")
+            .order_by("start", "end")
         )
+
+        units_by_day = defaultdict(list)
+
+        for unit in units:
+            for part in self._split_unit_by_day(unit):
+                if start <= part["day"] <= end:
+                    units_by_day[part["day"]].append(part)
+
+        days = []
+
+        totals = {
+            "total_minutes": 0,
+            "union_minutes": 0,
+            "gaps": 0,
+            "overlaps": 0,
+            "outside": 0,
+            "problem_days": 0,
+        }
+
+        for day in self._date_range(start, end):
+            expected = self._expected_day_for_person(person, day)
+            intervals = units_by_day.get(day, [])
+
+            analysis = self._analyze_intervals(
+                intervals=intervals,
+                expected_start=expected["start"],
+                expected_end=expected["end"],
+            )
+
+            problems = []
+
+            if not expected["should_work"] and intervals:
+                problems.append("Praca w dzień wolny / nieobecność")
+
+            if expected["should_work"] and not intervals:
+                problems.append("Brak ewidencji ProductionUnit")
+
+            if analysis["gaps"]:
+                problems.append("Dziury w ewidencji")
+
+            if analysis["overlaps"]:
+                problems.append("Nakładania ProductionUnit")
+
+            if analysis["outside"]:
+                problems.append("Praca poza oczekiwanym zakresem")
+
+            if expected["expected_minutes"] and analysis["union_minutes"] > expected["expected_minutes"]:
+                problems.append("PU przekracza dostępny czas pracy")
+
+            totals["total_minutes"] += analysis["total_minutes"]
+            totals["union_minutes"] += analysis["union_minutes"]
+            totals["gaps"] += len(analysis["gaps"])
+            totals["overlaps"] += len(analysis["overlaps"])
+            totals["outside"] += len(analysis["outside"])
+
+            if problems:
+                totals["problem_days"] += 1
+
+            days.append({
+                "day": day,
+                "expected": expected,
+                "intervals": intervals,
+                "analysis": analysis,
+                "problems": problems,
+            })
+
+        return days, totals
 
     def _person_available_minutes(self, person, start, end):
-        """
-        Liczymy dzień po dniu:
-        - tylko dni robocze
-        - tylko dni, gdy osoba była zatrudniona
-        - odejmujemy pełne nieobecności
-        - uwzględniamy ExtraHour:
-            full_day=True  -> 480 + extra
-            full_day=False -> tylko podana liczba godzin, np. 4h
-        """
-
-        holidays = set(
-            Holiday.objects
-            .filter(holiday_date__gte=start, holiday_date__lte=end)
-            .values_list("holiday_date", flat=True)
-        )
-
-        absences = {
-            a.absence_date: a
-            for a in Absence.objects.filter(
-                worker=person,
-                absence_date__gte=start,
-                absence_date__lte=end,
-            )
-        }
-
-        extra_hours = {
-            e.extras_date: e
-            for e in ExtraHour.objects.filter(
-                worker=person,
-                extras_date__gte=start,
-                extras_date__lte=end,
-            )
-        }
-
         workdays = 0
         physical_minutes = 0
         absence_days = 0
         partial_days = 0
 
         for day in self._date_range(start, end):
-            if day.weekday() >= 5:
-                continue
+            expected = self._expected_day_for_person(person, day)
 
-            if day in holidays:
-                continue
-
-            if person.job_start and day < person.job_start:
-                continue
-
-            if person.job_end and day > person.job_end:
+            if expected["reason"] in ["weekend", "holiday", "before_job_start", "after_job_end"]:
                 continue
 
             workdays += 1
 
-            absence = absences.get(day)
-            if absence and absence.absence_type in self.ABSENCE_FULL_DAY_TYPES:
+            if expected["reason"] == "absence":
                 absence_days += 1
                 continue
 
-            minutes = self.WORK_MINUTES_PER_DAY
+            if expected["extra"] and not expected["extra"].full_day:
+                partial_days += 1
 
-            extra = extra_hours.get(day)
-            if extra:
-                extra_minutes = int(Decimal(extra.quantity) * Decimal("60"))
+            physical_minutes += expected["expected_minutes"]
 
-                if extra.full_day:
-                    minutes = self.WORK_MINUTES_PER_DAY + extra_minutes
-                else:
-                    minutes = extra_minutes
-                    partial_days += 1
-
-            physical_minutes += minutes
-
-        break_minutes = max((workdays - absence_days), 0) * self.BREAK_MINUTES_PER_DAY
+        break_minutes = max(workdays - absence_days, 0) * self.BREAK_MINUTES_PER_DAY
         net_minutes = max(physical_minutes - break_minutes, 0)
 
         return {
@@ -186,50 +432,16 @@ class EmployeeWorkTimeReportView(View):
             "net_minutes": net_minutes,
         }
 
-    def _production_unit_minutes_by_person(self, start, end):
-        """
-        Zakładam, że ProductionUnit ma:
-        - start
-        - end
-        - workers / worker / employee
-
-        Niżej daję wariant najczęstszy: ManyToMany workers.
-        Jeśli u Ciebie pole nazywa się inaczej, podmienimy jedną linijkę.
-        """
-
-        result = defaultdict(int)
-
-        units = (
-            ProductionUnit.objects
-            .filter(start__date__gte=start, start__date__lte=end)
-            .exclude(start__isnull=True)
-            .exclude(end__isnull=True)
-            .prefetch_related("persons")
-        )
-
-        for unit in units:
-            minutes = int((unit.end - unit.start).total_seconds() / 60)
-
-            workers = unit.persons.all()
-            workers_count = workers.count()
-
-            if workers_count == 0:
-                continue
-
-            minutes_per_worker = minutes / workers_count
-
-            for worker in workers:
-                result[worker.id] += minutes_per_worker
-
-        return result
-
     def _percent(self, value, total):
         if not total:
             return 0
         return round((value / total) * 100, 1)
 
-    def get(self, request):
 
+class EmployeeWorkTimeReportView(EmployeeWorkTimeBaseMixin, View):
+    template_name = "whm/employees/employee_work_time_report.html"
+
+    def get(self, request):
         default_start, default_end = self._default_range()
 
         start = self._safe_parse_date(request.GET.get("start"), default_start)
@@ -238,7 +450,17 @@ class EmployeeWorkTimeReportView(View):
         if end < start:
             start, end = end, start
 
-        production_minutes_by_person = self._production_unit_minutes_by_person(start, end)
+        show_all = request.GET.get("all") == "1"
+
+        workers = (
+            Person.objects
+            .filter(job_start__lte=end)
+            .filter(models.Q(job_end__isnull=True) | models.Q(job_end__gte=start))
+            .order_by("last_name", "first_name")
+        )
+
+        if not show_all:
+            workers = workers.filter(occupancy_type="PRODUCTION")
 
         rows = []
 
@@ -247,18 +469,19 @@ class EmployeeWorkTimeReportView(View):
             "physical_minutes": 0,
             "net_minutes": 0,
             "production_minutes": 0,
+            "production_union_minutes": 0,
+            "problem_days": 0,
+            "overlaps": 0,
+            "gaps": 0,
+            "outside": 0,
         }
-
-        show_all = request.GET.get("all") == "1"
-
-        workers = self._active_in_period_qs(start, end)
-
-        if not show_all:
-            workers = workers.filter(occupancy_type="PRODUCTION")
 
         for person in workers:
             availability = self._person_available_minutes(person, start, end)
-            production_minutes = int(production_minutes_by_person.get(person.id, 0))
+            audit_days, audit_totals = self._audit_person_days(person, start, end)
+
+            production_minutes = audit_totals["total_minutes"]
+            production_union_minutes = audit_totals["union_minutes"]
 
             row = {
                 "person": person,
@@ -282,6 +505,8 @@ class EmployeeWorkTimeReportView(View):
                 ),
 
                 "production_minutes": production_minutes,
+                "production_union_minutes": production_union_minutes,
+
                 "production_vs_physical_percent": self._percent(
                     production_minutes,
                     availability["physical_minutes"],
@@ -290,6 +515,11 @@ class EmployeeWorkTimeReportView(View):
                     production_minutes,
                     availability["net_minutes"],
                 ),
+
+                "problem_days": audit_totals["problem_days"],
+                "overlaps_count": audit_totals["overlaps"],
+                "gaps_count": audit_totals["gaps"],
+                "outside_count": audit_totals["outside"],
             }
 
             rows.append(row)
@@ -298,102 +528,66 @@ class EmployeeWorkTimeReportView(View):
             totals["physical_minutes"] += availability["physical_minutes"]
             totals["net_minutes"] += availability["net_minutes"]
             totals["production_minutes"] += production_minutes
+            totals["production_union_minutes"] += production_union_minutes
+            totals["problem_days"] += audit_totals["problem_days"]
+            totals["overlaps"] += audit_totals["overlaps"]
+            totals["gaps"] += audit_totals["gaps"]
+            totals["outside"] += audit_totals["outside"]
 
-        context = {
+        totals["physical_percent"] = self._percent(
+            totals["physical_minutes"],
+            totals["base_minutes"],
+        )
+        totals["net_percent"] = self._percent(
+            totals["net_minutes"],
+            totals["base_minutes"],
+        )
+        totals["production_vs_physical_percent"] = self._percent(
+            totals["production_minutes"],
+            totals["physical_minutes"],
+        )
+        totals["production_vs_net_percent"] = self._percent(
+            totals["production_minutes"],
+            totals["net_minutes"],
+        )
+
+        return render(request, self.template_name, {
             "start": start,
             "end": end,
             "rows": rows,
-            "totals": {
-                **totals,
-                "physical_percent": self._percent(totals["physical_minutes"], totals["base_minutes"]),
-                "net_percent": self._percent(totals["net_minutes"], totals["base_minutes"]),
-                "production_vs_physical_percent": self._percent(totals["production_minutes"], totals["physical_minutes"]),
-                "production_vs_net_percent": self._percent(totals["production_minutes"], totals["net_minutes"]),
-            },
+            "totals": totals,
             "show_all": show_all,
-        }
-
-        return render(request, self.template_name, context)
+        })
 
 
-class EmployeeProductionUnitsAjaxView(View):
+class EmployeeProductionUnitsAjaxView(EmployeeWorkTimeBaseMixin, View):
     template_name = "whm/employees/_employee_production_units.html"
 
     def get(self, request, person_id):
         person = get_object_or_404(Person, id=person_id)
 
-        start = parse_date(request.GET.get("start") or "")
-        end = parse_date(request.GET.get("end") or "")
+        default_start, default_end = self._default_range()
 
-        if not start or not end:
-            today = datetime.date.today()
-            start = today.replace(day=1)
-            end = today
+        start = self._safe_parse_date(request.GET.get("start"), default_start)
+        end = self._safe_parse_date(request.GET.get("end"), default_end)
 
-        units = (
-            ProductionUnit.objects
-            .filter(
-                persons=person,
-                start__date__gte=start,
-                start__date__lte=end,
-            )
-            .exclude(start__isnull=True)
-            .exclude(end__isnull=True)
-            .select_related(
-                "production_order",
-                "work_station",
-            )
-            .prefetch_related("persons")
-            .order_by("start", "end")
-        )
+        if end < start:
+            start, end = end, start
 
-        rows = []
-        total_minutes = 0
+        days, totals = self._audit_person_days(person, start, end)
 
-        previous = None
-
-        for unit in units:
-            minutes = int((unit.end - unit.start).total_seconds() / 60)
-
-            overlap = False
-            overlap_minutes = 0
-
-            if previous and unit.start < previous["end"]:
-                overlap = True
-                overlap_end = min(unit.end, previous["end"])
-                overlap_minutes = int((overlap_end - unit.start).total_seconds() / 60)
-
-            row = {
-                "unit": unit,
-                "minutes": minutes,
-                "persons_count": unit.persons.count(),
-                "overlap": overlap,
-                "overlap_minutes": max(overlap_minutes, 0),
-            }
-
-            rows.append(row)
-            total_minutes += minutes
-
-            if not previous or unit.end > previous["end"]:
-                previous = {
-                    "unit": unit,
-                    "start": unit.start,
-                    "end": unit.end,
-                }
-
-        html = render(
-            request,
-            self.template_name,
-            {
-                "person": person,
-                "rows": rows,
-                "total_minutes": total_minutes,
-                "total_hours": round(total_minutes / 60, 2),
-                "overlaps_count": sum(1 for r in rows if r["overlap"]),
-            }
-        ).content.decode("utf-8")
+        html = render(request, self.template_name, {
+            "person": person,
+            "start": start,
+            "end": end,
+            "days": days,
+            "totals": totals,
+            "total_hours": round(totals["total_minutes"] / 60, 2),
+            "union_hours": round(totals["union_minutes"] / 60, 2),
+        }).content.decode("utf-8")
 
         return JsonResponse({
             "html": html,
-            "total_minutes": total_minutes,
+            "total_minutes": totals["total_minutes"],
+            "union_minutes": totals["union_minutes"],
         })

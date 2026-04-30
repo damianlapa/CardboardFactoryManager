@@ -1,72 +1,189 @@
 <div class="p-3 bg-light border rounded">
 
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <b>{{ person.first_name }} {{ person.last_name }}</b>
-            <span class="text-muted">— Production Units</span>
+            <span class="text-muted">— szczegóły ProductionUnit</span>
+            <div class="text-muted small">
+                Zakres: {{ start }} — {{ end }}
+            </div>
         </div>
 
-        <div>
-            <span class="badge bg-primary">
-                Razem: {{ total_minutes }} min / {{ total_hours }} h
-            </span>
+        <div class="text-end">
+            <div>
+                <span class="badge bg-primary">
+                    Suma PU: {{ totals.total_minutes }} min / {{ total_hours }} h
+                </span>
 
-            {% if overlaps_count %}
-                <span class="badge bg-danger">
-                    Nakładania: {{ overlaps_count }}
+                <span class="badge bg-secondary">
+                    Bez nakładań: {{ totals.union_minutes }} min / {{ union_hours }} h
                 </span>
-            {% else %}
-                <span class="badge bg-success">
-                    Brak nakładania
-                </span>
-            {% endif %}
+            </div>
+
+            <div class="mt-1">
+                {% if totals.problem_days %}
+                    <span class="badge bg-danger">Dni z problemami: {{ totals.problem_days }}</span>
+                {% else %}
+                    <span class="badge bg-success">Brak problemów</span>
+                {% endif %}
+
+                {% if totals.overlaps %}
+                    <span class="badge bg-danger">Nakładania: {{ totals.overlaps }}</span>
+                {% endif %}
+
+                {% if totals.gaps %}
+                    <span class="badge bg-warning text-dark">Dziury: {{ totals.gaps }}</span>
+                {% endif %}
+
+                {% if totals.outside %}
+                    <span class="badge bg-warning text-dark">Poza zakresem: {{ totals.outside }}</span>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <table class="table table-sm table-bordered mb-0">
-        <thead class="table-secondary">
-            <tr>
-                <th>Start</th>
-                <th>Koniec</th>
-                <th>Czas</th>
-                <th>Stanowisko</th>
-                <th>Zlecenie</th>
-                <th>Status</th>
-                <th>Osób</th>
-                <th>Konflikt</th>
-            </tr>
-        </thead>
+    {% for day in days %}
+        {% if day.intervals or day.problems %}
+            <div class="card mb-3 {% if day.problems %}border-danger{% else %}border-success{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center {% if day.problems %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+                    <div>
+                        <b>{{ day.day|date:"Y-m-d" }}</b>
+                    </div>
 
-        <tbody>
-            {% for row in rows %}
-            <tr class="{% if row.overlap %}table-danger{% endif %}">
-                <td>{{ row.unit.start|date:"Y-m-d H:i" }}</td>
-                <td>{{ row.unit.end|date:"Y-m-d H:i" }}</td>
-                <td>
-                    <b>{{ row.minutes }} min</b>
-                </td>
-                <td>{{ row.unit.work_station }}</td>
-                <td>{{ row.unit.production_order }}</td>
-                <td>{{ row.unit.status }}</td>
-                <td>{{ row.persons_count }}</td>
-                <td>
-                    {% if row.overlap %}
-                        <span class="badge bg-danger">
-                            +{{ row.overlap_minutes }} min
-                        </span>
-                    {% else %}
-                        <span class="text-muted">—</span>
+                    <div>
+                        {% if day.expected.should_work %}
+                            Oczekiwano:
+                            <b>{{ day.expected.expected_minutes }} min</b>
+                        {% else %}
+                            Dzień wolny / nieobecność
+                        {% endif %}
+
+                        |
+                        PU:
+                        <b>{{ day.analysis.total_minutes }} min</b>
+
+                        {% if day.analysis.union_minutes != day.analysis.total_minutes %}
+                            |
+                            Bez nakładań:
+                            <b>{{ day.analysis.union_minutes }} min</b>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    {% if day.expected.absence %}
+                        <div class="alert alert-secondary py-2">
+                            Nieobecność:
+                            <b>{{ day.expected.absence.absence_type }}</b>
+                            {% if day.expected.absence.additional_info %}
+                                — {{ day.expected.absence.additional_info }}
+                            {% endif %}
+                        </div>
                     {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" class="text-center text-muted">
-                    Brak ProductionUnit w tym zakresie.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+                    {% if day.expected.extra %}
+                        <div class="alert alert-info py-2">
+                            ExtraHour:
+                            <b>{{ day.expected.extra.quantity }} h</b>
+                            {% if day.expected.extra.full_day %}
+                                + pełny dzień
+                            {% else %}
+                                niepełny dzień
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if day.problems %}
+                        <div class="mb-2">
+                            {% for problem in day.problems %}
+                                <span class="badge bg-danger me-1">{{ problem }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% if day.analysis.gaps %}
+                        <div class="alert alert-warning py-2">
+                            <b>Dziury w ewidencji:</b>
+                            {% for gap in day.analysis.gaps %}
+                                <div>
+                                    {{ gap.start|date:"H:i" }}–{{ gap.end|date:"H:i" }}
+                                    =
+                                    {{ gap.minutes }} min
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Start</th>
+                                    <th>Koniec</th>
+                                    <th>Czas</th>
+                                    <th>Stanowisko</th>
+                                    <th>Zlecenie</th>
+                                    <th>Status</th>
+                                    <th>Osób</th>
+                                    <th>Uwagi</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for interval in day.intervals %}
+                                    <tr
+                                        {% for overlap in day.analysis.overlaps %}
+                                            {% if overlap.interval.unit.id == interval.unit.id and overlap.interval.start == interval.start %}
+                                                class="table-danger"
+                                            {% endif %}
+                                        {% endfor %}
+                                    >
+                                        <td>{{ interval.start|date:"Y-m-d H:i" }}</td>
+                                        <td>{{ interval.end|date:"Y-m-d H:i" }}</td>
+                                        <td>
+                                            <b>{{ interval.minutes }} min</b>
+                                        </td>
+                                        <td>{{ interval.unit.work_station }}</td>
+                                        <td>{{ interval.unit.production_order }}</td>
+                                        <td>{{ interval.unit.status }}</td>
+                                        <td>{{ interval.unit.persons.count }}</td>
+                                        <td>
+                                            {% for overlap in day.analysis.overlaps %}
+                                                {% if overlap.interval.unit.id == interval.unit.id and overlap.interval.start == interval.start %}
+                                                    <span class="badge bg-danger">
+                                                        nakładanie +{{ overlap.minutes }} min
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            {% for outside in day.analysis.outside %}
+                                                {% if outside.unit.id == interval.unit.id and outside.start == interval.start %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        poza zakresem
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">
+                                            Brak ProductionUnit tego dnia.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        {% endif %}
+    {% empty %}
+        <div class="alert alert-secondary mb-0">
+            Brak danych w wybranym zakresie.
+        </div>
+    {% endfor %}
 
 </div>
