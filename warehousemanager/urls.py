@@ -2,7 +2,8 @@ from django.urls import path
 from warehousemanager.gluer_views import *
 from warehousemanager.customer_views import *
 from warehousemanager.absence_views import ProductionEffectiveWorkHoursView
-from warehousemanager.employee_views import EmployeeListView, EmployeeWorkTimeReportView
+from warehousemanager.employee_views import (EmployeeListView, EmployeeWorkTimeReportView,
+                                             EmployeeProductionUnitsAjaxView)
 
 
 urlpatterns = [
@@ -28,5 +29,10 @@ urlpatterns += [
         "employees/work-time-report/",
         EmployeeWorkTimeReportView.as_view(),
         name="employee_work_time_report",
-    )
+    ),
+    path(
+        "employees/work-time-report/person/<int:person_id>/units/",
+        EmployeeProductionUnitsAjaxView.as_view(),
+        name="employee_production_units_ajax",
+    ),
 ]

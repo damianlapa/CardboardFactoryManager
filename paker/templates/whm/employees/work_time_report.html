@@ -29,6 +29,17 @@
             </div>
             <button class="btn btn-sm btn-primary">Przelicz</button>
         </form>
+        {% if show_all %}
+    <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}"
+       class="btn btn-sm btn-success">
+        Tylko produkcja
+    </a>
+{% else %}
+    <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&all=1"
+       class="btn btn-sm btn-outline-secondary">
+        Wszyscy pracownicy
+    </a>
+{% endif %}
     </div>
 
     <div class="row g-3 mb-3">
@@ -96,7 +107,7 @@
 
             <tbody>
                 {% for row in rows %}
-                <tr>
+                <tr class="employee-row" data-person-id="{{ row.person.id }}" style="cursor:pointer;">
                     <td data-value="{{ row.person.last_name }} {{ row.person.first_name }}">
                         <b>{{ row.person.first_name }} {{ row.person.last_name }}</b>
                         <div class="text-muted small">{{ row.person.occupancy_type }}</div>
@@ -170,6 +181,13 @@
                         {% endif %}
                     </td>
                 </tr>
+                <tr class="employee-units-row d-none" id="employee-units-{{ row.person.id }}">
+                    <td colspan="13">
+                        <div class="employee-units-content">
+                            Ładowanie...
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
 
@@ -234,6 +252,54 @@ document.addEventListener("DOMContentLoaded", function () {
             rows.forEach(row => tbody.appendChild(row));
         });
     });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".employee-row").forEach(row => {
+        row.addEventListener("click", function () {
+            const personId = this.dataset.personId;
+            const detailsRow = document.getElementById(`employee-units-${personId}`);
+            const content = detailsRow.querySelector(".employee-units-content");
+
+            const start = document.querySelector("input[name='start']").value;
+            const end = document.querySelector("input[name='end']").value;
+
+            if (!detailsRow.classList.contains("d-none")) {
+                detailsRow.classList.add("d-none");
+                return;
+            }
+
+            document.querySelectorAll(".employee-units-row").forEach(r => {
+                r.classList.add("d-none");
+            });
+
+            detailsRow.classList.remove("d-none");
+            content.innerHTML = "Ładowanie...";
+
+            const url = `{% url 'employee_production_units_ajax' 0 %}`.replace("/0/", `/${personId}/`);
+
+            fetch(`${url}?start=${start}&end=${end}`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                content.innerHTML = data.html;
+            })
+            .catch(error => {
+                console.error(error);
+                content.innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        Nie udało się wczytać ProductionUnit.
+                    </div>
+                `;
+            });
+        });
+    });
+
 });
 </script>
 

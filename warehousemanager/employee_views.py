@@ -1,11 +1,12 @@
 # warehousemanager/employee_views.py
 
+from django.http import JsonResponse
 import datetime
 from decimal import Decimal
 from collections import defaultdict
 
 from django.views import View
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils.dateparse import parse_date
 from django.db import models
 
@@ -228,6 +229,7 @@ class EmployeeWorkTimeReportView(View):
         return round((value / total) * 100, 1)
 
     def get(self, request):
+
         default_start, default_end = self._default_range()
 
         start = self._safe_parse_date(request.GET.get("start"), default_start)
@@ -247,7 +249,12 @@ class EmployeeWorkTimeReportView(View):
             "production_minutes": 0,
         }
 
+        show_all = request.GET.get("all") == "1"
+
         workers = self._active_in_period_qs(start, end)
+
+        if not show_all:
+            workers = workers.filter(occupancy_type="PRODUCTION")
 
         for person in workers:
             availability = self._person_available_minutes(person, start, end)
@@ -302,7 +309,91 @@ class EmployeeWorkTimeReportView(View):
                 "net_percent": self._percent(totals["net_minutes"], totals["base_minutes"]),
                 "production_vs_physical_percent": self._percent(totals["production_minutes"], totals["physical_minutes"]),
                 "production_vs_net_percent": self._percent(totals["production_minutes"], totals["net_minutes"]),
-            }
+            },
+            "show_all": show_all,
         }
 
         return render(request, self.template_name, context)
+
+
+class EmployeeProductionUnitsAjaxView(View):
+    template_name = "whm/employees/_employee_production_units.html"
+
+    def get(self, request, person_id):
+        person = get_object_or_404(Person, id=person_id)
+
+        start = parse_date(request.GET.get("start") or "")
+        end = parse_date(request.GET.get("end") or "")
+
+        if not start or not end:
+            today = datetime.date.today()
+            start = today.replace(day=1)
+            end = today
+
+        units = (
+            ProductionUnit.objects
+            .filter(
+                persons=person,
+                start__date__gte=start,
+                start__date__lte=end,
+            )
+            .exclude(start__isnull=True)
+            .exclude(end__isnull=True)
+            .select_related(
+                "production_order",
+                "work_station",
+            )
+            .prefetch_related("persons")
+            .order_by("start", "end")
+        )
+
+        rows = []
+        total_minutes = 0
+
+        previous = None
+
+        for unit in units:
+            minutes = int((unit.end - unit.start).total_seconds() / 60)
+
+            overlap = False
+            overlap_minutes = 0
+
+            if previous and unit.start < previous["end"]:
+                overlap = True
+                overlap_end = min(unit.end, previous["end"])
+                overlap_minutes = int((overlap_end - unit.start).total_seconds() / 60)
+
+            row = {
+                "unit": unit,
+                "minutes": minutes,
+                "persons_count": unit.persons.count(),
+                "overlap": overlap,
+                "overlap_minutes": max(overlap_minutes, 0),
+            }
+
+            rows.append(row)
+            total_minutes += minutes
+
+            if not previous or unit.end > previous["end"]:
+                previous = {
+                    "unit": unit,
+                    "start": unit.start,
+                    "end": unit.end,
+                }
+
+        html = render(
+            request,
+            self.template_name,
+            {
+                "person": person,
+                "rows": rows,
+                "total_minutes": total_minutes,
+                "total_hours": round(total_minutes / 60, 2),
+                "overlaps_count": sum(1 for r in rows if r["overlap"]),
+            }
+        ).content.decode("utf-8")
+
+        return JsonResponse({
+            "html": html,
+            "total_minutes": total_minutes,
+        })
