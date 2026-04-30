@@ -63,6 +63,53 @@ class EmployeeWorkTimeBaseMixin:
 
     FULL_DAY_ABSENCES = ["UW", "UB", "CH", "OP", "NN", "KW", "UO"]
 
+    BREAKS = [
+        (datetime.time(9, 0), datetime.time(9, 5)),
+        (datetime.time(11, 0), datetime.time(11, 20)),
+        (datetime.time(12, 30), datetime.time(12, 35)),
+        (datetime.time(14, 0), datetime.time(14, 5)),
+    ]
+
+    def _work_windows_for_day(self, day):
+        windows = []
+
+        current_start = self.WORK_START
+
+        # piątek = 4
+        work_end = datetime.time(14, 0) if day.weekday() == 4 else self.WORK_END
+
+        for break_start, break_end in self.BREAKS:
+            # jeżeli przerwa zaczyna się po końcu dnia, pomijamy ją
+            if break_start >= work_end:
+                break
+
+            if current_start < break_start:
+                windows.append((
+                    self._aware_combine(day, current_start),
+                    self._aware_combine(day, min(break_start, work_end)),
+                ))
+
+            current_start = break_end
+
+            if current_start >= work_end:
+                break
+
+        if current_start < work_end:
+            windows.append((
+                self._aware_combine(day, current_start),
+                self._aware_combine(day, work_end),
+            ))
+
+        return windows
+
+    def _expected_production_minutes_for_day(self, day):
+        total = 0
+
+        for start, end in self._work_windows_for_day(day):
+            total += int((end - start).total_seconds() / 60)
+
+        return total
+
     def _safe_parse_date(self, value, default):
         if not value:
             return default
@@ -162,13 +209,13 @@ class EmployeeWorkTimeBaseMixin:
 
         expected_start = self._aware_combine(day, self.WORK_START)
         expected_end = self._aware_combine(day, self.WORK_END)
-        expected_minutes = self.WORK_MINUTES_PER_DAY
+        expected_minutes = self._expected_production_minutes_for_day(day)
 
         if extra:
             extra_minutes = int(Decimal(extra.quantity) * Decimal("60"))
 
             if extra.full_day:
-                expected_minutes = self.WORK_MINUTES_PER_DAY + extra_minutes
+                expected_minutes = self._expected_production_minutes_for_day(day) + extra_minutes
                 expected_end = expected_end + datetime.timedelta(minutes=extra_minutes)
             else:
                 expected_minutes = extra_minutes
@@ -184,21 +231,7 @@ class EmployeeWorkTimeBaseMixin:
             "reason": "workday",
         }
 
-    def _split_unit_by_day(self, unit):
-        """
-        Dzieli ProductionUnit na fragmenty robocze 7:00-15:00.
-
-        Przykład:
-        start: 2026-02-04 12:01
-        end:   2026-02-05 09:20
-
-        wynik:
-        2026-02-04 12:01-15:00
-        2026-02-05 07:00-09:20
-
-        Dzięki temu praca przechodząca przez noc nie jest liczona jako 12:01-23:59.
-        """
-
+    def _split_unit_by_day(self, unit, person=None):
         result = []
 
         start = self._to_current_timezone(unit.start)
@@ -211,26 +244,34 @@ class EmployeeWorkTimeBaseMixin:
         last_day = end.date()
 
         while current_day <= last_day:
-            # pomijamy weekendy
-            if current_day.weekday() >= 5:
-                current_day += datetime.timedelta(days=1)
-                continue
 
-            day_start = self._aware_combine(current_day, self.WORK_START)
-            day_end = self._aware_combine(current_day, self.WORK_END)
+            # 🔴 sprawdzamy czy pracownik powinien pracować tego dnia
+            if person:
+                expected = self._expected_day_for_person(person, current_day)
+                if not expected["should_work"]:
+                    current_day += datetime.timedelta(days=1)
+                    continue
+            else:
+                if current_day.weekday() >= 5:
+                    current_day += datetime.timedelta(days=1)
+                    continue
 
-            part_start = max(start, day_start)
-            part_end = min(end, day_end)
+            # 🔥 NAJWAŻNIEJSZE — używamy okien pracy
+            work_windows = self._work_windows_for_day(current_day)
 
-            if part_end > part_start:
-                result.append({
-                    "day": current_day,
-                    "unit": unit,
-                    "start": part_start,
-                    "end": part_end,
-                    "minutes": int((part_end - part_start).total_seconds() / 60),
-                    "persons_count": unit.persons.count(),
-                })
+            for window_start, window_end in work_windows:
+                part_start = max(start, window_start)
+                part_end = min(end, window_end)
+
+                if part_end > part_start:
+                    result.append({
+                        "day": current_day,
+                        "unit": unit,
+                        "start": part_start,
+                        "end": part_end,
+                        "minutes": int((part_end - part_start).total_seconds() / 60),
+                        "persons_count": unit.persons.count(),
+                    })
 
             current_day += datetime.timedelta(days=1)
 
@@ -276,35 +317,38 @@ class EmployeeWorkTimeBaseMixin:
                 previous_end = end
 
         if expected_start and expected_end:
-            pointer = expected_start
+            work_windows = self._work_windows_for_day(expected_start.date())
 
-            for interval in intervals:
-                start = max(interval["start"], expected_start)
-                end = min(interval["end"], expected_end)
+            for window_start, window_end in work_windows:
+                pointer = window_start
 
-                if end <= expected_start or start >= expected_end:
-                    continue
+                for interval in intervals:
+                    start = max(interval["start"], window_start)
+                    end = min(interval["end"], window_end)
 
-                gap_minutes = int((start - pointer).total_seconds() / 60)
+                    if end <= window_start or start >= window_end:
+                        continue
 
-                if gap_minutes > self.GAP_TOLERANCE_MINUTES:
+                    gap_minutes = int((start - pointer).total_seconds() / 60)
+
+                    if gap_minutes > self.GAP_TOLERANCE_MINUTES:
+                        gaps.append({
+                            "start": pointer,
+                            "end": start,
+                            "minutes": gap_minutes,
+                        })
+
+                    if end > pointer:
+                        pointer = end
+
+                final_gap = int((window_end - pointer).total_seconds() / 60)
+
+                if final_gap > self.GAP_TOLERANCE_MINUTES:
                     gaps.append({
                         "start": pointer,
-                        "end": start,
-                        "minutes": gap_minutes,
+                        "end": window_end,
+                        "minutes": final_gap,
                     })
-
-                if end > pointer:
-                    pointer = end
-
-            final_gap = int((expected_end - pointer).total_seconds() / 60)
-
-            if final_gap > self.GAP_TOLERANCE_MINUTES:
-                gaps.append({
-                    "start": pointer,
-                    "end": expected_end,
-                    "minutes": final_gap,
-                })
 
         return {
             "total_minutes": total_minutes,
@@ -332,7 +376,7 @@ class EmployeeWorkTimeBaseMixin:
         units_by_day = defaultdict(list)
 
         for unit in units:
-            for part in self._split_unit_by_day(unit):
+            for part in self._split_unit_by_day(unit, person=person):
                 if start <= part["day"] <= end:
                     units_by_day[part["day"]].append(part)
 
