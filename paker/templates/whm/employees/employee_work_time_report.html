@@ -134,6 +134,100 @@
 
     </div>
 
+    <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-dark text-white">
+        Koszt pracy produkcji — {{ cost_summary.month }}/{{ cost_summary.year }}
+    </div>
+
+    <div class="card-body">
+
+        {% if not cost_summary.month_result_exists %}
+            <div class="alert alert-warning">
+                Brak wpisu MonthResults dla {{ cost_summary.month }}/{{ cost_summary.year }}.
+                Stawka zawiera tylko pensje produkcji.
+            </div>
+        {% endif %}
+
+        <div class="row g-3">
+
+            <div class="col-md-3">
+                <div class="border rounded p-3">
+                    <div class="text-muted small">Pensje produkcji</div>
+                    <h4>{{ cost_summary.production_salary_sum }} zł</h4>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="border rounded p-3">
+                    <div class="text-muted small">Koszty pośrednie</div>
+                    <h4>{{ cost_summary.indirect_costs }} zł</h4>
+                    <div class="small text-muted">
+                        Fin: {{ cost_summary.financial }} |
+                        Zarz: {{ cost_summary.management }} |
+                        Log: {{ cost_summary.logistic }} |
+                        Inne: {{ cost_summary.other }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="border rounded p-3">
+                    <div class="text-muted small">Koszt łącznie</div>
+                    <h4>{{ cost_summary.total_costs }} zł</h4>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="border rounded p-3">
+                    <div class="text-muted small">Godziny netto produkcji</div>
+                    <h4>{{ cost_summary.net_hours }} h</h4>
+                    <div class="small text-muted">
+                        PU: {{ cost_summary.production_hours }} h
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <hr>
+
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <div class="border rounded p-3 bg-light">
+                    <div class="text-muted small">Stawka czysta produkcyjna</div>
+                    <h3>{{ cost_summary.pure_production_rate }} zł/h</h3>
+                    <div class="small text-muted">
+                        Pensje produkcji / godziny netto
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="border rounded p-3 bg-warning-subtle">
+                    <div class="text-muted small">Stawka break-even do wycen</div>
+                    <h3>{{ cost_summary.break_even_rate }} zł/h</h3>
+                    <div class="small text-muted">
+                        Pensje + koszty pośrednie / godziny netto
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="border rounded p-3 bg-light">
+                    <div class="text-muted small">Stawka kontrolna wg PU</div>
+                    <h3>{{ cost_summary.break_even_rate_by_pu }} zł/h</h3>
+                    <div class="small text-muted">
+                        Pensje + koszty pośrednie / godziny ProductionUnit
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
     <div class="table-responsive">
         <table class="table table-sm table-hover table-striped align-middle" id="workTimeTable">
             <thead class="table-dark">

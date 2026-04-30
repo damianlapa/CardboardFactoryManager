@@ -18,6 +18,7 @@ from django.db import models
 
 from warehousemanager.models import Person, Absence, Holiday, ExtraHour
 from production.models import ProductionUnit
+from warehouse.models import MonthResults
 
 
 class EmployeeListView(View):
@@ -481,6 +482,75 @@ class EmployeeWorkTimeBaseMixin:
             return 0
         return round((value / total) * 100, 1)
 
+    def _month_cost_summary(self, start, workers, net_minutes, production_minutes):
+        month = start.month
+        year = start.year
+
+        salary_date = datetime.datetime.combine(start, datetime.time(12, 0))
+
+        production_salary_sum = Decimal("0.00")
+
+        for person in workers:
+            if person.occupancy_type != "PRODUCTION":
+                continue
+
+            salary = person.contract(date=salary_date) or 0
+            production_salary_sum += Decimal(salary)
+
+        month_result = MonthResults.objects.filter(
+            month=month,
+            year=year,
+        ).first()
+
+        financial = Decimal("0.00")
+        management = Decimal("0.00")
+        logistic = Decimal("0.00")
+        other = Decimal("0.00")
+
+        if month_result:
+            financial = Decimal(month_result.financial_expenses or 0)
+            management = Decimal(month_result.management_expenses or 0)
+            logistic = Decimal(month_result.logistic_expenses or 0)
+            other = Decimal(month_result.other_expenses or 0)
+
+        indirect_costs = financial + management + logistic + other
+        total_costs = production_salary_sum + indirect_costs
+
+        net_hours = Decimal(net_minutes) / Decimal("60") if net_minutes else Decimal("0")
+        production_hours = Decimal(production_minutes) / Decimal("60") if production_minutes else Decimal("0")
+
+        pure_production_rate = Decimal("0.00")
+        break_even_rate = Decimal("0.00")
+        break_even_rate_by_pu = Decimal("0.00")
+
+        if net_hours:
+            pure_production_rate = production_salary_sum / net_hours
+            break_even_rate = total_costs / net_hours
+
+        if production_hours:
+            break_even_rate_by_pu = total_costs / production_hours
+
+        return {
+            "month": month,
+            "year": year,
+            "month_result_exists": bool(month_result),
+
+            "production_salary_sum": round(production_salary_sum, 2),
+            "financial": round(financial, 2),
+            "management": round(management, 2),
+            "logistic": round(logistic, 2),
+            "other": round(other, 2),
+            "indirect_costs": round(indirect_costs, 2),
+            "total_costs": round(total_costs, 2),
+
+            "net_hours": round(net_hours, 2),
+            "production_hours": round(production_hours, 2),
+
+            "pure_production_rate": round(pure_production_rate, 2),
+            "break_even_rate": round(break_even_rate, 2),
+            "break_even_rate_by_pu": round(break_even_rate_by_pu, 2),
+        }
+
 
 class EmployeeWorkTimeReportView(EmployeeWorkTimeBaseMixin, View):
     template_name = "whm/employees/employee_work_time_report.html"
@@ -505,6 +575,8 @@ class EmployeeWorkTimeReportView(EmployeeWorkTimeBaseMixin, View):
 
         if not show_all:
             workers = workers.filter(occupancy_type="PRODUCTION")
+
+        workers = list(workers)
 
         rows = []
 
@@ -595,12 +667,20 @@ class EmployeeWorkTimeReportView(EmployeeWorkTimeBaseMixin, View):
             totals["net_minutes"],
         )
 
+        cost_summary = self._month_cost_summary(
+            start=start,
+            workers=workers,
+            net_minutes=totals["net_minutes"],
+            production_minutes=totals["production_minutes"],
+        )
+
         return render(request, self.template_name, {
             "start": start,
             "end": end,
             "rows": rows,
             "totals": totals,
             "show_all": show_all,
+            "cost_summary": cost_summary,
         })
 
 
