@@ -14,7 +14,7 @@ class ProductionUnitForm(ModelForm):
     def __init__(self, day=None, *args, **kwargs):
         super(ProductionUnitForm, self).__init__(*args, **kwargs)
         day = datetime.datetime.today() if not day else day
-        c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC"))
+        c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC", "MAN/PROD"))
 
         self.fields['persons'].widget.attrs['size'] = str(c_workers.count())
         self.fields['persons'].queryset = c_workers
