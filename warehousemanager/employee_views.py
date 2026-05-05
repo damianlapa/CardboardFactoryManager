@@ -16,12 +16,19 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.dateparse import parse_date
 from django.db import models
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+
 from warehousemanager.models import Person, Absence, Holiday, ExtraHour
 from production.models import ProductionUnit
 from warehouse.models import MonthResults
 
 
-class EmployeeListView(View):
+class BaseLoginRequiredMixin(LoginRequiredMixin):
+    login_url = reverse_lazy('login')
+
+
+class EmployeeListView(BaseLoginRequiredMixin, View):
     template_name = "whm/employees/employee_list.html"
 
     def get(self, request):
@@ -552,10 +559,11 @@ class EmployeeWorkTimeBaseMixin:
         }
 
 
-class EmployeeWorkTimeReportView(EmployeeWorkTimeBaseMixin, View):
+class EmployeeWorkTimeReportView(BaseLoginRequiredMixin, EmployeeWorkTimeBaseMixin, View):
     template_name = "whm/employees/employee_work_time_report.html"
 
     def get(self, request):
+        main_user = request.user.username == 'damian'
         default_start, default_end = self._default_range()
 
         start = self._safe_parse_date(request.GET.get("start"), default_start)
@@ -681,10 +689,11 @@ class EmployeeWorkTimeReportView(EmployeeWorkTimeBaseMixin, View):
             "totals": totals,
             "show_all": show_all,
             "cost_summary": cost_summary,
+            "main_user": main_user,
         })
 
 
-class EmployeeProductionUnitsAjaxView(EmployeeWorkTimeBaseMixin, View):
+class EmployeeProductionUnitsAjaxView(BaseLoginRequiredMixin, EmployeeWorkTimeBaseMixin, View):
     template_name = "whm/employees/_employee_production_units.html"
 
     def get(self, request, person_id):

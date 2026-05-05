@@ -135,6 +135,7 @@
     </div>
 
     <div class="card shadow-sm border-0 mb-3">
+        {% if main_user %}
     <div class="card-header bg-dark text-white">
         Koszt pracy produkcji — {{ cost_summary.month }}/{{ cost_summary.year }}
     </div>
@@ -227,7 +228,7 @@
 
     </div>
 </div>
-
+{% endif %}
     <div class="table-responsive">
         <table class="table table-sm table-hover table-striped align-middle" id="workTimeTable">
             <thead class="table-dark">

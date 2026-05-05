@@ -50,7 +50,7 @@
     {% endblock %}
     <div class="nav-bar">
         {% if user.is_superuser %}
-        <a href="{% url 'persons' %}">
+        <a href="{% url 'employee_list' %}">
             <div class="nav-item" {% if new_reminders %}id="div-workers-att"{% endif %}>
                 WORKERS
             </div>
