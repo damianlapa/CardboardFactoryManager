@@ -291,9 +291,11 @@ class Order(models.Model):
         return "FORECASTED"
 
     def production_alternative_cost(self):
+        from warehousemanager.models import LocalSetting
+        value = str(LocalSetting.objects.filter(name="work_hour_value").first().value) or "192"
         if self.production_work_hours():
             return money(
-                D("192") * D(self.production_work_hours()) + D(self.material_cost())
+                D(value) * D(self.production_work_hours()) + D(self.material_cost())
             )
         return D("0.00")
 
