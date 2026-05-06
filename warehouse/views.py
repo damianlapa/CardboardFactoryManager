@@ -2639,16 +2639,18 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
             result = sales - production_cost
             status = order.sales_profitability_status()
 
-            rows.append({
-                "order": order,
-                "sold_qty": sold_qty,
-                "settled_qty": settled_qty,
-                "sales": sales,
-                "production_cost": production_cost,
-                "result": result,
-                "is_profit": result >= 0,
-                "status": status,
-            })
+            if sold_qty > 0:
+
+                rows.append({
+                    "order": order,
+                    "sold_qty": sold_qty,
+                    "settled_qty": settled_qty,
+                    "sales": sales,
+                    "production_cost": production_cost,
+                    "result": result,
+                    "is_profit": result >= 0,
+                    "status": status,
+                })
 
         months = [
             (1, "Styczeń"),
