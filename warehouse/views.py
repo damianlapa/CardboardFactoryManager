@@ -2639,7 +2639,7 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
             result = sales - production_cost
             status = order.sales_profitability_status()
 
-            if sold_qty > 0 and settled_qty > 0:
+            if sold_qty > 0 and settled_qty > 0 and production_cost != D('0.00'):
 
                 rows.append({
                     "order": order,

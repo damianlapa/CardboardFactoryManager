@@ -291,9 +291,11 @@ class Order(models.Model):
         return "FORECASTED"
 
     def production_alternative_cost(self):
-        return money(
-            D("192") * D(self.production_work_hours()) + D(self.material_cost())
-        )
+        if self.production_work_hours():
+            return money(
+                D("192") * D(self.production_work_hours()) + D(self.material_cost())
+            )
+        return D("0.00")
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
