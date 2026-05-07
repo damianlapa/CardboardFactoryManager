@@ -25,6 +25,8 @@ class StartPage(View):
     def get(self, request):
         user = request.user
         visit_counter(user, 'index')
+        if user.groups.filter(name="WarehouseWorker").exists():
+            return redirect('warehouse:warehouse-list-view')
         return render(request, 'start-page.html', locals())
 
     def post(self, request):
