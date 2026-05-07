@@ -111,7 +111,7 @@
                                 {{ summary.sales|floatformat:2 }} zł
                             </td>
 
-                            <td class="text-end fw-bold {% if row.is_profit %}text-success{% else %}text-danger{% endif %}">
+                            <td class="text-end fw-bold {% if summary.result > 0 %}text-success{% else %}text-danger{% endif %}">
                                 {{ summary.result|floatformat:2 }} zł
                             </td>
 
