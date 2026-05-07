@@ -292,7 +292,8 @@ class Order(models.Model):
 
     def production_alternative_cost(self):
         from warehousemanager.models import LocalSetting
-        value = str(LocalSetting.objects.filter(name="work_hour_value").first().value) or "192"
+        work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
+        value = str(work_hour_value.value) if work_hour_value else "192"
         if self.production_work_hours():
             return money(
                 D(value) * D(self.production_work_hours()) + D(self.material_cost())

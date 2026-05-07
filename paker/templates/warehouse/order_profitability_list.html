@@ -12,7 +12,7 @@
         <div>
             <h2 class="mb-1">Rentowność zleceń</h2>
             <div class="text-muted">
-                Koszt = roboczogodziny × 233 + materiał
+                Koszt = roboczogodziny × {{ value }} + materiał
             </div>
         </div>
     </div>
@@ -89,6 +89,40 @@
                 </thead>
 
                 <tbody>
+                <tr class="summary">
+                            <td class="fw-semibold">
+                                {{ summary.order }}
+                            </td>
+
+                            <td>-</td>
+
+                            <td>
+                                    <span class="text-muted">-</span>
+                            </td>
+
+                            <td class="text-end">{{ summary.settled_qty }}</td>
+                            <td class="text-end">{{ summary.sold_qty }}</td>
+
+                            <td class="text-end">
+                                {{ summary.production_cost|floatformat:2 }} zł
+                            </td>
+
+                            <td class="text-end fw-semibold">
+                                {{ summary.sales|floatformat:2 }} zł
+                            </td>
+
+                            <td class="text-end fw-bold {% if row.is_profit %}text-success{% else %}text-danger{% endif %}">
+                                {{ summary.result|floatformat:2 }} zł
+                            </td>
+
+                            <td>
+                                    <span class="badge bg-light text-dark border">Brak danych</span>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-light text-dark border">Brak danych</span>
+                            </td>
+                        </tr>
                     {% for row in rows %}
                         <tr>
                             <td class="fw-semibold">
@@ -152,6 +186,7 @@
                             </td>
                         </tr>
                     {% endfor %}
+
                 </tbody>
 
             </table>
@@ -212,7 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function sortTable(index, type, direction) {
-        const rows = Array.from(tbody.querySelectorAll("tr"));
+        const rows = Array.from(tbody.querySelectorAll("tr:not(.summary)"));
 
         rows.sort((a, b) => {
             let A = a.children[index].innerText.trim();

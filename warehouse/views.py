@@ -2616,6 +2616,10 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
+        from warehousemanager.models import LocalSetting
+        work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
+        value = str(work_hour_value.value) if work_hour_value else "192"
+
         today = datetime.date.today()
 
         year = int(request.GET.get("year", today.year))
@@ -2627,6 +2631,15 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
             .select_related("provider", "customer", "product")
             .order_by("-order_date", "-id")
         )
+
+        summary = {
+                    "order": "SUMA",
+                    "sold_qty": 0,
+                    "settled_qty": 0,
+                    "sales": 0,
+                    "production_cost": 0,
+                    "result": 0,
+                }
 
         rows = []
 
@@ -2640,6 +2653,12 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
             status = order.sales_profitability_status()
 
             if sold_qty > 0 and settled_qty > 0 and production_cost != D('0.00'):
+
+                summary["sold_qty"] += sold_qty
+                summary["settled_qty"] = int(summary["settled_qty"]) + int(settled_qty)
+                summary["sales"] += sales
+                summary["production_cost"] += production_cost
+                summary["result"] += result
 
                 rows.append({
                     "order": order,
@@ -2675,4 +2694,6 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
             "year": year,
             "months": months,
             "years": years,
+            "value": value,
+            "summary": summary,
         })
