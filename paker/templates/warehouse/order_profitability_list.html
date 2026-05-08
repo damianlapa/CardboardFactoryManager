@@ -1,10 +1,12 @@
 {% extends "__base3__.html" %}
-{% block style %}
 {% load static %}
+
+{% block style %}
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
 <link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
 {% endblock %}
+
 {% block content %}
 <div class="container-fluid mt-4">
 
@@ -12,16 +14,17 @@
         <div>
             <h2 class="mb-1">Rentowność zleceń</h2>
             <div class="text-muted">
+                Pokazywane są tylko zlecenia rozliczone, z czasem produkcji i choć częściowo sprzedane.
                 Koszt = roboczogodziny × {{ value }} + materiał
             </div>
         </div>
     </div>
 
-    <!-- FILTR -->
     <form method="get" class="row g-2 align-items-end mb-3">
         <div class="col-auto">
             <label class="form-label mb-1">Pracownik</label>
             <select name="person" class="form-select form-select-sm">
+                <option value="">Wszyscy</option>
                 {% for person in persons %}
                     <option value="{{ person.id }}" {% if person.id == person_id %}selected{% endif %}>
                         {{ person }}
@@ -54,7 +57,10 @@
 
         <div class="col-auto">
             <label class="form-label mb-1">Klient</label>
-            <input name="customer" class="form-input ">
+            <input name="customer"
+                   value="{{ customer }}"
+                   class="form-control form-control-sm"
+                   placeholder="np. archem">
         </div>
 
         <div class="col-auto">
@@ -62,10 +68,8 @@
                 Filtruj
             </button>
         </div>
-
     </form>
 
-    <!-- TABELA -->
     <div class="card shadow-sm">
         <div class="card-body p-0">
 
@@ -103,115 +107,50 @@
                     </tr>
                 </thead>
 
+                <tbody id="profitability-body">
+                    <tr class="summary">
+                        <td class="fw-semibold">SUMA</td>
+                        <td>-</td>
+                        <td><span class="text-muted">-</span></td>
+
+                        <td class="text-end" id="summary-settled-qty">0</td>
+                        <td class="text-end" id="summary-sold-qty">0</td>
+
+                        <td class="text-end" id="summary-production-cost">0.00 zł</td>
+                        <td class="text-end fw-semibold" id="summary-sales">0.00 zł</td>
+
+                        <td class="text-end fw-bold" id="summary-result">0.00 zł</td>
+
+                        <td>
+                            <span class="badge bg-light text-dark border">-</span>
+                        </td>
+
+                        <td>
+                            <span class="badge bg-light text-dark border">-</span>
+                        </td>
+                    </tr>
+                </tbody>
+
                 <tbody>
-                <tr class="summary">
-                            <td class="fw-semibold">
-                                {{ summary.order }}
-                            </td>
+                    <tr id="loading-row">
+                        <td colspan="10" class="text-center text-muted py-4">
+                            Ładowanie danych...
+                        </td>
+                    </tr>
 
-                            <td>-</td>
-
-                            <td>
-                                    <span class="text-muted">-</span>
-                            </td>
-
-                            <td class="text-end">{{ summary.settled_qty }}</td>
-                            <td class="text-end">{{ summary.sold_qty }}</td>
-
-                            <td class="text-end">
-                                {{ summary.production_cost|floatformat:2 }} zł
-                            </td>
-
-                            <td class="text-end fw-semibold">
-                                {{ summary.sales|floatformat:2 }} zł
-                            </td>
-
-                            <td class="text-end fw-bold {% if summary.result > 0 %}text-success{% else %}text-danger{% endif %}">
-                                {{ summary.result|floatformat:2 }} zł
-                            </td>
-
-                            <td>
-                                    <span class="badge bg-light text-dark border">Brak danych</span>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-light text-dark border">Brak danych</span>
-                            </td>
-                        </tr>
-                    {% for row in rows %}
-                        <tr>
-                            <td class="fw-semibold">
-                                <a href="{% url 'warehouse:order-detail-view' row.order.id %}">
-                                    {{ row.order.provider }} {{ row.order.order_id }}
-                                </a>
-                                <div class="small text-muted">
-                                    {{ row.order.order_date|date:"d.m.Y" }}
-                                </div>
-                            </td>
-
-                            <td>{{ row.order.customer }}</td>
-
-                            <td>
-                                {% if row.order.product %}
-                                    {{ row.order.product.name }}
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-
-                            <td class="text-end">{{ row.settled_qty }}</td>
-                            <td class="text-end">{{ row.sold_qty }}</td>
-
-                            <td class="text-end">
-                                {{ row.production_cost|floatformat:2 }} zł
-                            </td>
-
-                            <td class="text-end fw-semibold">
-                                {{ row.sales|floatformat:2 }} zł
-                            </td>
-
-                            <td class="text-end fw-bold {% if row.is_profit %}text-success{% else %}text-danger{% endif %}">
-                                {{ row.result|floatformat:2 }} zł
-                            </td>
-
-                            <td>
-                                {% if row.status == "SOLD_FULL" %}
-                                    <span class="badge bg-success">Sprzedane</span>
-                                {% elif row.status == "FORECASTED" %}
-                                    <span class="badge bg-warning text-dark">Prognoza</span>
-                                {% elif row.status == "NO_SALES" %}
-                                    <span class="badge bg-secondary">Brak sprzedaży</span>
-                                {% else %}
-                                    <span class="badge bg-light text-dark border">Brak danych</span>
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                {% if row.is_profit %}
-                                    <span class="badge bg-success">PLUS</span>
-                                {% else %}
-                                    <span class="badge bg-danger">MINUS</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="10" class="text-center text-muted py-4">
-                                Brak danych
-                            </td>
-                        </tr>
-                    {% endfor %}
-
+                    <tr id="empty-row" style="display: none;">
+                        <td colspan="10" class="text-center text-muted py-4">
+                            Brak danych spełniających warunki.
+                        </td>
+                    </tr>
                 </tbody>
 
             </table>
 
         </div>
     </div>
-
 </div>
 
-<!-- STYLE -->
 <style>
 th.sortable {
     cursor: pointer;
@@ -238,30 +177,183 @@ th.sort-desc .sort-icon::after {
     content: "▼";
     font-size: 10px;
 }
+
+tr.summary {
+    background: #f8f9fa;
+    border-top: 2px solid #212529;
+    border-bottom: 2px solid #dee2e6;
+}
+
+tr.summary td {
+    font-weight: 600;
+}
 </style>
 
-<!-- SCRIPT -->
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+let page = 1;
+let loading = false;
+let hasNext = true;
+let rowsLoaded = 0;
 
-    const table = document.getElementById("profitabilityTable");
-    const tbody = table.querySelector("tbody");
-    const headers = table.querySelectorAll("thead th");
+let summary = {
+    settled_qty: 0,
+    sold_qty: 0,
+    production_cost: 0,
+    sales: 0,
+    result: 0
+};
 
-    function cleanNumber(value) {
-        return parseFloat(
-            value.replace(/\s/g, "")
-                 .replace("zł", "")
-                 .replace(",", ".")
-                 .replace(/[^\d.-]/g, "")
-        ) || 0;
+function money(value) {
+    return Number(value || 0).toFixed(2) + " zł";
+}
+
+function updateSummary(row) {
+    summary.settled_qty += Number(row.settled_qty || 0);
+    summary.sold_qty += Number(row.sold_qty || 0);
+    summary.production_cost += Number(row.production_cost || 0);
+    summary.sales += Number(row.sales || 0);
+    summary.result += Number(row.result || 0);
+
+    document.getElementById("summary-settled-qty").textContent = summary.settled_qty;
+    document.getElementById("summary-sold-qty").textContent = summary.sold_qty;
+    document.getElementById("summary-production-cost").textContent = money(summary.production_cost);
+    document.getElementById("summary-sales").textContent = money(summary.sales);
+
+    const resultEl = document.getElementById("summary-result");
+    resultEl.textContent = money(summary.result);
+    resultEl.classList.toggle("text-success", summary.result >= 0);
+    resultEl.classList.toggle("text-danger", summary.result < 0);
+}
+
+function statusBadge(status) {
+    if (status === "SOLD_FULL") {
+        return '<span class="badge bg-success">Sprzedane</span>';
     }
+
+    if (status === "FORECASTED") {
+        return '<span class="badge bg-warning text-dark">Prognoza</span>';
+    }
+
+    if (status === "NO_SALES") {
+        return '<span class="badge bg-secondary">Brak sprzedaży</span>';
+    }
+
+    return '<span class="badge bg-light text-dark border">Brak danych</span>';
+}
+
+function profitabilityBadge(isProfit) {
+    if (isProfit) {
+        return '<span class="badge bg-success">PLUS</span>';
+    }
+
+    return '<span class="badge bg-danger">MINUS</span>';
+}
+
+function appendRow(row) {
+    const tbody = document.getElementById("profitability-body");
+    const tr = document.createElement("tr");
+
+    const resultClass = row.is_profit ? "text-success" : "text-danger";
+    const product = row.product || '<span class="text-muted">-</span>';
+
+    tr.innerHTML = `
+        <td class="fw-semibold">
+            <a href="${row.order_url}">
+                ${row.order}
+            </a>
+            <div class="small text-muted">
+                ${row.order_date}
+            </div>
+        </td>
+
+        <td>${row.customer}</td>
+
+        <td>${product}</td>
+
+        <td class="text-end">${row.settled_qty}</td>
+        <td class="text-end">${row.sold_qty}</td>
+
+        <td class="text-end">
+            ${money(row.production_cost)}
+        </td>
+
+        <td class="text-end fw-semibold">
+            ${money(row.sales)}
+        </td>
+
+        <td class="text-end fw-bold ${resultClass}">
+            ${money(row.result)}
+        </td>
+
+        <td>${statusBadge(row.status)}</td>
+
+        <td>${profitabilityBadge(row.is_profit)}</td>
+    `;
+
+    tbody.appendChild(tr);
+    updateSummary(row);
+    rowsLoaded += 1;
+}
+
+async function loadProfitabilityPage() {
+    if (loading || !hasNext) return;
+
+    loading = true;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set("page", page);
+
+    try {
+        const response = await fetch("{% url 'warehouse:orders-profitability-data' %}?" + params.toString());
+        const data = await response.json();
+
+        data.rows.forEach(row => appendRow(row));
+
+        hasNext = data.has_next;
+        page += 1;
+        loading = false;
+
+        if (hasNext) {
+            loadProfitabilityPage();
+        } else {
+            document.getElementById("loading-row").style.display = "none";
+
+            if (rowsLoaded === 0) {
+                document.getElementById("empty-row").style.display = "";
+            }
+        }
+
+    } catch (error) {
+        loading = false;
+        document.getElementById("loading-row").innerHTML = `
+            <td colspan="10" class="text-center text-danger py-4">
+                Błąd ładowania danych.
+            </td>
+        `;
+        console.error(error);
+    }
+}
+
+function cleanNumber(value) {
+    return parseFloat(
+        value.replace(/\s/g, "")
+             .replace("zł", "")
+             .replace(",", ".")
+             .replace(/[^\d.-]/g, "")
+    ) || 0;
+}
+
+function initSorting() {
+    const table = document.getElementById("profitabilityTable");
+    const tbody = document.getElementById("profitability-body");
+    const headers = table.querySelectorAll("thead th");
 
     function clearSort() {
         headers.forEach(h => h.classList.remove("sort-asc", "sort-desc"));
     }
 
     function sortTable(index, type, direction) {
+        const summaryRow = tbody.querySelector("tr.summary");
         const rows = Array.from(tbody.querySelectorAll("tr:not(.summary)"));
 
         rows.sort((a, b) => {
@@ -281,6 +373,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return 0;
         });
 
+        tbody.innerHTML = "";
+        tbody.appendChild(summaryRow);
         rows.forEach(r => tbody.appendChild(r));
     }
 
@@ -288,7 +382,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!header.classList.contains("sortable")) return;
 
         header.addEventListener("click", function () {
-
             const current = header.dataset.dir || "desc";
             const next = current === "asc" ? "desc" : "asc";
 
@@ -301,8 +394,11 @@ document.addEventListener("DOMContentLoaded", function () {
             sortTable(index, header.dataset.type, next);
         });
     });
+}
 
+document.addEventListener("DOMContentLoaded", function () {
+    initSorting();
+    loadProfitabilityPage();
 });
 </script>
-
 {% endblock %}

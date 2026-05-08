@@ -2602,110 +2602,257 @@ def refresh_warehouses_values(request):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-class OrderProfitabilityListView(PermissionRequiredMixin, View):
-    permission_required = 'warehouse.add_order'
-    login_url = reverse_lazy('login')
+# class OrderProfitabilityListView(PermissionRequiredMixin, View):
+#     permission_required = 'warehouse.add_order'
+#     login_url = reverse_lazy('login')
+#
+#     def get(self, request):
+#         from warehousemanager.models import LocalSetting, Person
+#         work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
+#         value = str(work_hour_value.value) if work_hour_value else "192"
+#         customers = Buyer.objects.filter(name__icontains=request.GET.get('customer'))
+#
+#         today = datetime.date.today()
+#
+#         persons = Person.objects.all()
+#         person_id = int(request.GET.get("person", 1))
+#
+#         year = int(request.GET.get("year", today.year))
+#         month = int(request.GET.get("month", today.month))
+#
+#         if not customers:
+#
+#             orders = (
+#                 Order.objects
+#                 .filter(order_date__year=year, order_date__month=month)
+#                 .select_related("provider", "customer", "product")
+#                 .order_by("-order_date", "-id")
+#             )
+#
+#         else:
+#             orders = (
+#                 Order.objects
+#                 .filter(customer__in=customers)
+#                 .select_related("provider", "customer", "product")
+#                 .order_by("-order_date", "-id")
+#             )
+#
+#         if person_id:
+#             person_to_orders = Person.objects.filter(id=person_id).first()
+#
+#             orders = Order.produced_by_person(person_to_orders)
+#
+#         summary = {
+#                     "order": "SUMA",
+#                     "sold_qty": 0,
+#                     "settled_qty": 0,
+#                     "sales": 0,
+#                     "production_cost": 0,
+#                     "result": 0,
+#                 }
+#
+#         rows = []
+#
+#         for order in orders:
+#             sold_qty = order.sold_quantity()
+#             settled_qty = order.settled_quantity()
+#
+#             sales = order.expected_total_sales()
+#             production_cost = order.production_alternative_cost()
+#             result = sales - production_cost
+#             status = order.sales_profitability_status()
+#
+#             if sold_qty > 0 and settled_qty > 0 and production_cost != D('0.00'):
+#
+#                 summary["sold_qty"] += sold_qty
+#                 summary["settled_qty"] = int(summary["settled_qty"]) + int(settled_qty)
+#                 summary["sales"] += sales
+#                 summary["production_cost"] += production_cost
+#                 summary["result"] += result
+#
+#                 rows.append({
+#                     "order": order,
+#                     "sold_qty": sold_qty,
+#                     "settled_qty": settled_qty,
+#                     "sales": sales,
+#                     "production_cost": production_cost,
+#                     "result": result,
+#                     "is_profit": result >= 0,
+#                     "status": status,
+#                 })
+#
+#         months = [
+#             (1, "Styczeń"),
+#             (2, "Luty"),
+#             (3, "Marzec"),
+#             (4, "Kwiecień"),
+#             (5, "Maj"),
+#             (6, "Czerwiec"),
+#             (7, "Lipiec"),
+#             (8, "Sierpień"),
+#             (9, "Wrzesień"),
+#             (10, "Październik"),
+#             (11, "Listopad"),
+#             (12, "Grudzień"),
+#         ]
+#
+#         years = range(today.year - 3, today.year + 1)
+#
+#         return render(request, "warehouse/order_profitability_list.html", {
+#             "rows": rows,
+#             "month": month,
+#             "year": year,
+#             "months": months,
+#             "years": years,
+#             "value": value,
+#             "summary": summary,
+#             "persons": persons,
+#             "person_id": person_id
+#         })
+class OrderProfitabilityListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/order_profitability_list.html"
 
     def get(self, request):
-        from warehousemanager.models import LocalSetting, Person
-        work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
-        value = str(work_hour_value.value) if work_hour_value else "192"
-        customers = Buyer.objects.filter(name__icontains=request.GET.get('customer'))
-
+        from warehousemanager.models import Person
         today = datetime.date.today()
 
-        persons = Person.objects.all()
-        person_id = int(request.GET.get("person", 1))
+        value_setting = LocalSetting.objects.filter(name="work_hour_value").first()
+        value = value_setting.value if value_setting else 192
 
-        year = int(request.GET.get("year", today.year))
+        persons = Person.objects.all().order_by("first_name", "last_name")
+        person_id = request.GET.get("person")
+        customer = request.GET.get("customer", "")
+
+        months = [
+            (1, "Styczeń"), (2, "Luty"), (3, "Marzec"),
+            (4, "Kwiecień"), (5, "Maj"), (6, "Czerwiec"),
+            (7, "Lipiec"), (8, "Sierpień"), (9, "Wrzesień"),
+            (10, "Październik"), (11, "Listopad"), (12, "Grudzień"),
+        ]
+
         month = int(request.GET.get("month", today.month))
+        year = int(request.GET.get("year", today.year))
+        years = range(today.year - 3, today.year + 2)
 
-        if not customers:
+        return render(request, self.template_name, {
+            "persons": persons,
+            "person_id": int(person_id) if person_id else None,
+            "customer": customer,
+            "months": months,
+            "month": month,
+            "year": year,
+            "years": years,
+            "value": value,
+        })
 
-            orders = (
-                Order.objects
-                .filter(order_date__year=year, order_date__month=month)
-                .select_related("provider", "customer", "product")
-                .order_by("-order_date", "-id")
-            )
 
-        else:
-            orders = (
-                Order.objects
-                .filter(customer__in=customers)
-                .select_related("provider", "customer", "product")
-                .order_by("-order_date", "-id")
-            )
+class OrderProfitabilityDataView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    PAGE_SIZE = 10
+
+    def get_base_queryset(self, request):
+        from warehousemanager.models import Person
+        customer = request.GET.get("customer", "").strip()
+        person_id = request.GET.get("person")
+        month = int(request.GET.get("month", datetime.date.today().month))
+        year = int(request.GET.get("year", datetime.date.today().year))
+
+        qs = (
+            Order.objects
+            .select_related("provider", "customer", "product")
+            .order_by("-order_date", "-id")
+        )
+
+        if customer:
+            qs = qs.filter(customer__name__icontains=customer)
 
         if person_id:
-            person_to_orders = Person.objects.filter(id=person_id).first()
+            person = Person.objects.filter(id=person_id).first()
+            if person:
+                qs = (Order.produced_by_person(person).
+                      select_related("provider", "customer", "product").order_by("-order_date", "-id"))
 
-            orders = Order.produced_by_person(person_to_orders)
+                if customer:
+                    qs = qs.filter(customer__name__icontains=customer)
+            else:
+                qs = Order.objects.none()
 
-        summary = {
-                    "order": "SUMA",
-                    "sold_qty": 0,
-                    "settled_qty": 0,
-                    "sales": 0,
-                    "production_cost": 0,
-                    "result": 0,
-                }
+        return qs
+
+    def order_has_production_time(self, order):
+        production_order = ProductionOrder.objects.filter(
+            id_number=f"{order.provider} {order.order_id}"
+        ).first()
+
+        if not production_order:
+            return False
+
+        return ProductionUnit.objects.filter(
+            production_order=production_order,
+            start__isnull=False,
+            end__isnull=False,
+        ).exists()
+
+    def build_row(self, order):
+        settled_qty = order.settled_quantity()
+        sold_qty = order.sold_quantity()
+
+        # tylko rozliczone
+        if settled_qty <= 0:
+            return None
+
+        # tylko choć częściowo sprzedane
+        if sold_qty <= 0:
+            return None
+
+        # tylko takie, które mają czasy produkcji
+        if not self.order_has_production_time(order):
+            return None
+
+        sales = Decimal(order.real_sales_value() or 0)
+        production_cost = Decimal(order.production_alternative_cost() or 0)
+
+        # tylko z kosztem produkcji
+        if production_cost <= 0:
+            return None
+
+        result = sales - production_cost
+        status = order.sales_profitability_status()
+
+        return {
+            "id": order.id,
+            "order": f"{order.provider} {order.order_id}",
+            "order_url": reverse("warehouse:order-detail-view", args=[order.id]),
+            "order_date": order.order_date.strftime("%d.%m.%Y") if order.order_date else "",
+            "customer": str(order.customer),
+            "product": order.product.name if order.product else "",
+            "settled_qty": int(settled_qty),
+            "sold_qty": int(sold_qty),
+            "production_cost": float(production_cost),
+            "sales": float(sales),
+            "result": float(result),
+            "status": status,
+            "is_profit": result >= 0,
+        }
+
+    def get(self, request):
+        page = int(request.GET.get("page", 1))
+
+        qs = self.get_base_queryset(request)
+
+        paginator = Paginator(qs, self.PAGE_SIZE)
+        page_obj = paginator.get_page(page)
 
         rows = []
 
-        for order in orders:
-            sold_qty = order.sold_quantity()
-            settled_qty = order.settled_quantity()
+        for order in page_obj.object_list:
+            row = self.build_row(order)
+            if row:
+                rows.append(row)
 
-            sales = order.expected_total_sales()
-            production_cost = order.production_alternative_cost()
-            result = sales - production_cost
-            status = order.sales_profitability_status()
-
-            if sold_qty > 0 and settled_qty > 0 and production_cost != D('0.00'):
-
-                summary["sold_qty"] += sold_qty
-                summary["settled_qty"] = int(summary["settled_qty"]) + int(settled_qty)
-                summary["sales"] += sales
-                summary["production_cost"] += production_cost
-                summary["result"] += result
-
-                rows.append({
-                    "order": order,
-                    "sold_qty": sold_qty,
-                    "settled_qty": settled_qty,
-                    "sales": sales,
-                    "production_cost": production_cost,
-                    "result": result,
-                    "is_profit": result >= 0,
-                    "status": status,
-                })
-
-        months = [
-            (1, "Styczeń"),
-            (2, "Luty"),
-            (3, "Marzec"),
-            (4, "Kwiecień"),
-            (5, "Maj"),
-            (6, "Czerwiec"),
-            (7, "Lipiec"),
-            (8, "Sierpień"),
-            (9, "Wrzesień"),
-            (10, "Październik"),
-            (11, "Listopad"),
-            (12, "Grudzień"),
-        ]
-
-        years = range(today.year - 3, today.year + 1)
-
-        return render(request, "warehouse/order_profitability_list.html", {
+        return JsonResponse({
             "rows": rows,
-            "month": month,
-            "year": year,
-            "months": months,
-            "years": years,
-            "value": value,
-            "summary": summary,
-            "persons": persons,
-            "person_id": person_id
+            "page": page,
+            "has_next": page_obj.has_next(),
         })

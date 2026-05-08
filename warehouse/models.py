@@ -98,7 +98,6 @@ class Order(models.Model):
         return f'{self.provider} {self.order_id} {self.name}'
 
     @classmethod
-    @classmethod
     def produced_by_person(cls, person):
         from production.models import ProductionOrder
         from django.db import models

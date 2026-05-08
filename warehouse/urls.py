@@ -146,4 +146,9 @@ urlpatterns += [
         OrderProfitabilityListView.as_view(),
         name="order-profitability-list"
     ),
+    path(
+        "orders/profitability/data/",
+        OrderProfitabilityDataView.as_view(),
+        name="orders-profitability-data",
+    ),
 ]
