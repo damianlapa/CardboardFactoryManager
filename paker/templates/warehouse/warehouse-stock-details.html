@@ -141,8 +141,10 @@
                 {% endif %}
 
                 {% if h.sell %}
+                {% if perms.warehouse.edit_warehouse %}
                   {% if h.order_settlement or h.stock_supply %} | {% endif %}
                   <a href="{% url 'warehouse:sells-list-view' %}">Sell #{{ h.sell_id }}</a>
+                {% endif %}
                 {% endif %}
               </td>
             </tr>
