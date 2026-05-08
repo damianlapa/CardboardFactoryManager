@@ -828,13 +828,20 @@ class OrderListView(PermissionRequiredMixin, View):
         order_direction = request.GET.get('dir', 'asc')
         manual = request.GET.get('manual')
         all_orders = request.GET.get('all')
+        customer = request.GET.get('customer')
 
-        if order_direction == 'desc':
-            sort_by = f'-{sort_by}'
+
         if all_orders:
             orders = Order.objects.all().order_by(sort_by)
         else:
             orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
+
+        if customer:
+            customers = Buyer.objects.filter(name__icontains=customer)
+            orders = Order.objects.filter(delivered=True, finished=False, customer__in=customers).order_by(sort_by)
+
+        if order_direction == 'desc':
+            sort_by = f'-{sort_by}'
         if manual:
             year = request.GET.get('year')
             orders = Order.objects.filter(provider=Provider.objects.get(name=manual))
