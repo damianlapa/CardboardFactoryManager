@@ -2610,18 +2610,29 @@ class OrderProfitabilityListView(PermissionRequiredMixin, View):
         from warehousemanager.models import LocalSetting
         work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
         value = str(work_hour_value.value) if work_hour_value else "192"
+        customers = Buyer.objects.filter(name__icontains=request.GET.get('customer'))
 
         today = datetime.date.today()
 
         year = int(request.GET.get("year", today.year))
         month = int(request.GET.get("month", today.month))
 
-        orders = (
-            Order.objects
-            .filter(order_date__year=year, order_date__month=month)
-            .select_related("provider", "customer", "product")
-            .order_by("-order_date", "-id")
-        )
+        if not customers:
+
+            orders = (
+                Order.objects
+                .filter(order_date__year=year, order_date__month=month)
+                .select_related("provider", "customer", "product")
+                .order_by("-order_date", "-id")
+            )
+
+        else:
+            orders = (
+                Order.objects
+                .filter(customer__in=customers)
+                .select_related("provider", "customer", "product")
+                .order_by("-order_date", "-id")
+            )
 
         summary = {
                     "order": "SUMA",
