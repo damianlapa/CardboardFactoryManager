@@ -97,6 +97,35 @@ class Order(models.Model):
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
 
+    @classmethod
+    @classmethod
+    def produced_by_person(cls, person):
+        from production.models import ProductionOrder
+        from django.db import models
+
+        id_numbers = (
+            ProductionOrder.objects
+            .filter(productionunit__persons=person)
+            .values_list("id_number", flat=True)
+            .distinct()
+        )
+
+        q = models.Q()
+
+        for id_number in id_numbers:
+            try:
+                provider, order_id = id_number.rsplit(" ", 1)
+
+                q |= models.Q(
+                    provider__name=provider,
+                    order_id=order_id
+                )
+
+            except ValueError:
+                pass
+
+        return cls.objects.filter(q).distinct() if q else cls.objects.none()
+
     def total_sales(self):
         sells = (
             ProductSell3.objects
@@ -160,6 +189,7 @@ class Order(models.Model):
             Decimal("0.01"),
             rounding=ROUND_HALF_UP
         )
+
 
     def other_costs(self):
         month, year = self.order_date.month, self.order_date.year

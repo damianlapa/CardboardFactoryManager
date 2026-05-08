@@ -2607,12 +2607,15 @@ class OrderProfitabilityListView(PermissionRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
-        from warehousemanager.models import LocalSetting
+        from warehousemanager.models import LocalSetting, Person
         work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
         value = str(work_hour_value.value) if work_hour_value else "192"
         customers = Buyer.objects.filter(name__icontains=request.GET.get('customer'))
 
         today = datetime.date.today()
+
+        persons = Person.objects.all()
+        person_id = int(request.GET.get("person", 1))
 
         year = int(request.GET.get("year", today.year))
         month = int(request.GET.get("month", today.month))
@@ -2633,6 +2636,11 @@ class OrderProfitabilityListView(PermissionRequiredMixin, View):
                 .select_related("provider", "customer", "product")
                 .order_by("-order_date", "-id")
             )
+
+        if person_id:
+            person_to_orders = Person.objects.filter(id=person_id).first()
+
+            orders = Order.produced_by_person(person_to_orders)
 
         summary = {
                     "order": "SUMA",
@@ -2698,4 +2706,6 @@ class OrderProfitabilityListView(PermissionRequiredMixin, View):
             "years": years,
             "value": value,
             "summary": summary,
+            "persons": persons,
+            "person_id": person_id
         })
