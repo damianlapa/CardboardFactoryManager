@@ -5,9 +5,11 @@
 {% endblock %}
 {% block content %}
   <h1>Warehouses</h1>
+{% if perms.warehouse.edit_warehouse %}
   <a href="{% url 'warehouse:refresh_warehouses_values' %}" class="refresh-btn" title="Odśwież">
     <i class="fa-solid fa-rotate"></i>
 </a>
+{% endif %}
   <table>
     <thead>
       <tr>
@@ -18,7 +20,9 @@
       {% for warehouse in warehouses %}
       <tr>
         <td><a href="{% url 'warehouse:warehouse-detail-view' warehouse_id=warehouse.id %}">{{ warehouse.name }}</a>
+        {% if perms.warehouse.edit_warehouse %}
         [ {{ warehouse.value }} ]
+        {% endif %}
         </td>
       </tr>
       {% empty %}

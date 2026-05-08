@@ -138,9 +138,10 @@ urlpatterns += [
     path('active_hours/', ActiveHours.as_view(), name='active-hours')
 ]
 
-urlpatterns += [
-    path('wwtest/', WorkersVacationsTest.as_view())
-]
+#to delete?
+# urlpatterns += [
+#     path('wwtest/', WorkersVacationsTest.as_view())
+# ]
 
 urlpatterns += [
     path('add-note/', NoteAdd.as_view(), name='add-note'),

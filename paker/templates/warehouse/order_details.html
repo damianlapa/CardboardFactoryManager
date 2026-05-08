@@ -30,23 +30,28 @@
 
 <div class="order-header-container">
   <div class="left-header">
+    {% if perms.warehouse.edit_warehouse %}
     <a href="{% url 'warehouse:generate_order_inline' order_id=order.id %}" target="_blank">
     🧾 Wygeneruj zlecenie (podgląd)
     </a>
+    {% endif %}
     <h1>{{ order }} // {{ order.dimensions }} // {{ order.customer }} // {{ order.product }}</h1>
+    {% if perms.warehouse.edit_warehouse %}
     <button id="settleOrderBtn">Settle Order</button>
+    {% endif %}
     {% if order.bom %}
     <button id="openBomModal">BOM</button>
     {% else %}
     <small style="margin-left:10px;color:#888;">brak BOM</small>
     {% endif %}
-
+  {% if perms.warehouse.edit_warehouse %}
     <input type="checkbox" id="order_delivered_cbx" name="order_delivered" {% if order.delivered %}checked{% endif %}>
     <label for="order_delivered_cbx" class="label" id="delivery_cbx">Delivered</label>
     <input type="checkbox" id="order_finished_cbx" {% if order.finished %}checked{% endif %}>
     <label for="order_finished_cbx" class="label" id="finished_cbx">Finished</label>
+    {% endif %}
   </div>
-
+{% if perms.warehouse.edit_warehouse %}
   <div class="right-header">
     <h2 class="collapsible-header" id="results-toggle">
       <span class="left">
@@ -153,9 +158,8 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
-
-{{ price_item.price }} // {{ order.price }}
 
 <h2>Deliveries</h2>
 <table>
@@ -167,7 +171,9 @@
       <th>Order</th>
       <th>Quantity</th>
       <th>Palettes quantity</th>
+      {% if perms.warehouse.edit_warehouse %}
       <th>Value</th>
+      {% endif %}
     </tr>
   </thead>
   <tbody>
@@ -179,7 +185,9 @@
       <td><a href="{% url 'warehouse:order-detail-view' order_id=item.order.id %}">{{ item.order }}</a></td>
       <td>{{ item.quantity }}</td>
       <td>{{ item.palettes_quantity }}</td>
+      {% if perms.warehouse.edit_warehouse %}
       <td>{{ item.calculate_value }}</td>
+      {% endif %}
     </tr>
     {% empty %}
     <tr><td colspan="10">No deliveries available.</td></tr>
@@ -199,9 +207,11 @@
       <th>Quantity start</th>
       <th>Quantity end</th>
       <th>Workers</th>
+      {% if perms.warehouse.edit_warehouse %}
       <th>Cost work</th>
       <th>Cost energy</th>
       <th>Exploatation</th>
+      {% endif %}
     </tr>
   </thead>
   <tbody>
@@ -215,16 +225,18 @@
       <td>{{ unit.quantity_start }}</td>
       <td>{{ unit.quantity_end }}</td>
       <td>{{ unit.persons.all|join:", " }}</td>
+      {% if perms.warehouse.edit_warehouse %}
       <td>{{ unit.unit_production_cost.0 }}</td>
       <td>{{ unit.unit_production_cost.1 }}</td>
       <td>{{ unit.unit_production_cost.2 }}</td>
+      {% endif %}
     </tr>
     {% empty %}
     <tr><td colspan="10">No production units available.</td></tr>
     {% endfor %}
   </tbody>
 </table>
-
+{% if perms.warehouse.edit_warehouse %}
 <h2>Settlements</h2>
 <table>
   <thead>
@@ -285,7 +297,7 @@
     {% endfor %}
   </tbody>
 </table>
-
+{% endif %}
 <h2>History</h2>
 <table>
   <thead>
@@ -312,7 +324,7 @@
   </tbody>
 </table>
 <hr>
-
+{% if perms.warehouse.edit_warehouse %}
 <h2>Sales</h2>
 <table>
   <thead>
@@ -352,7 +364,7 @@
     {% endfor %}
   </tbody>
 </table>
-
+{% endif %}
 <div id="bomModal" class="modal">
   <div class="modal-content">
     <span class="closebom">&times;</span>
@@ -490,32 +502,6 @@
 
       <br>
       <button type="submit" id="submit-btn">Submit</button>
-    </form>
-  </div>
-</div>
-
-<div id="shiftModal" class="modal">
-  <div class="modal-content">
-    <span class="closeshift">&times;</span>
-    <h2>Add Shift from: {{ order }} </h2>
-
-    <form method="post" action="{% url 'warehouse:add_shift' order.id %}">
-      {% csrf_token %}
-
-      <label>Date:</label>
-      <input type="date" name="date" value="{{ today }}" required><br>
-
-      <label>Order to:</label>
-      <select name="order_to" required>
-        {% for o in orders_other %}
-          <option value="{{ o.id }}">{{ o }}</option>
-        {% endfor %}
-      </select><br>
-
-      <label>Quantity:</label>
-      <input type="number" name="quantity" min="1" required><br>
-
-      <input type="submit" value="Save">
     </form>
   </div>
 </div>

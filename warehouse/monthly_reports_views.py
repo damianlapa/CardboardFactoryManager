@@ -5,7 +5,7 @@ import datetime
 import re
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import OuterRef, Subquery, IntegerField, Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
@@ -200,7 +200,8 @@ def supplies_value_at_date_for_keys(
     return value_map, debug_supply, qty_map
 
 
-class MonthlyWarehouseReportView(LoginRequiredMixin, View):
+class MonthlyWarehouseReportView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_month_result"
     template_name = "warehouse/monthly_report.html"
 
     def _parse_year_month(self, request) -> tuple[int, int]:

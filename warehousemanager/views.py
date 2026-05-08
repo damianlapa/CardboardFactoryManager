@@ -43,11 +43,9 @@ class StartPage(View):
 
 class LoginView(View):
     def get(self, request):
-        print('here')
         user = request.user
         visit_counter(user, 'index')
         next_url = request.GET.get('next')
-        print(next_url)
         return render(request, 'start-page.html', locals())
 
     def post(self, request):
@@ -75,6 +73,10 @@ class MainPageView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
+        user = request.user
+        if user.groups.filter(name="WarehouseWorker").exists():
+            return redirect('warehouse:warehouse-list-view')
+        visit_counter(user, 'main_page')
         title = 'MAIN PAGE'
         orders = Order.objects.all()
         items = OrderItem.objects.all()
@@ -1249,7 +1251,8 @@ class ProfileView(LoginRequiredMixin, View):
             return render(request, 'warehousemanager-profile.html', locals())
 
 
-class MonthlyCardPresence(LoginRequiredMixin, View):
+class MonthlyCardPresence(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request, year, month, worker_id):
@@ -1567,7 +1570,8 @@ class MonthlyCardPresence(LoginRequiredMixin, View):
         return response
 
 
-class MonthlyCardPresenceAll(LoginRequiredMixin, View):
+class MonthlyCardPresenceAll(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request, year, month):
@@ -1918,7 +1922,8 @@ class MonthlyCardPresenceAll(LoginRequiredMixin, View):
         return response
 
 
-class WorkRemindersView(LoginRequiredMixin, View):
+class WorkRemindersView(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1930,7 +1935,8 @@ class WorkRemindersView(LoginRequiredMixin, View):
         return render(request, 'whm/workreminders.html', locals())
 
 
-class WorkReminderAdd(LoginRequiredMixin, View):
+class WorkReminderAdd(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1949,7 +1955,8 @@ class WorkReminderAdd(LoginRequiredMixin, View):
             pass
 
 
-class GluerNumberView(LoginRequiredMixin, View):
+class GluerNumberView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.view_gluer_number"
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -2155,35 +2162,36 @@ class ActiveHours(LoginRequiredMixin, View):
         return render(request, 'whm/active_hours.html', locals())
 
 
-class WorkersVacationsTest(View):
-    def get(self, request):
-        result = ''
-        workers = Person.objects.all()
-        workers_cumulative = {}
-        for y in range(2017, datetime.date.today().year + 1):
-            result += f'<h1>{y}</h1>'
-            for w in workers:
-                if w.worker_vacation_in_year(y):
-                    if not w.job_end:
-                        vacations = 0 if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UW']
-                        vacations_on_demand = 0 if not 'UŻ' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UŻ']
-                        vacations += vacations_on_demand
-                        result += f'<h3>{w} - [{w.worker_vacation_in_year(y) - vacations}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
-                        if w in workers_cumulative.keys():
-                            workers_cumulative[w] += w.worker_vacation_in_year(y) - vacations
-                        else:
-                            workers_cumulative[w] = w.worker_vacation_in_year(y) - vacations
-            result += '<hr>'
-
-        result += '<hr>'
-        workers_data = [(worker, workers_cumulative[worker]) for worker in workers_cumulative.keys()]
-        workers_data.sort(key=lambda x:x[0].last_name)
-
-        for data in workers_data:
-            result += f'<h2>{data[0]} :: {data[1]}<h2>'
-
-
-        return HttpResponse(result)
+# to delete?
+# class WorkersVacationsTest(View):
+#     def get(self, request):
+#         result = ''
+#         workers = Person.objects.all()
+#         workers_cumulative = {}
+#         for y in range(2017, datetime.date.today().year + 1):
+#             result += f'<h1>{y}</h1>'
+#             for w in workers:
+#                 if w.worker_vacation_in_year(y):
+#                     if not w.job_end:
+#                         vacations = 0 if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UW']
+#                         vacations_on_demand = 0 if not 'UŻ' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UŻ']
+#                         vacations += vacations_on_demand
+#                         result += f'<h3>{w} - [{w.worker_vacation_in_year(y) - vacations}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
+#                         if w in workers_cumulative.keys():
+#                             workers_cumulative[w] += w.worker_vacation_in_year(y) - vacations
+#                         else:
+#                             workers_cumulative[w] = w.worker_vacation_in_year(y) - vacations
+#             result += '<hr>'
+#
+#         result += '<hr>'
+#         workers_data = [(worker, workers_cumulative[worker]) for worker in workers_cumulative.keys()]
+#         workers_data.sort(key=lambda x:x[0].last_name)
+#
+#         for data in workers_data:
+#             result += f'<h2>{data[0]} :: {data[1]}<h2>'
+#
+#
+#         return HttpResponse(result)
 
 
 class NoteAdd(PermissionRequiredMixin, View):

@@ -56,11 +56,13 @@
         <li><a href="{% url 'warehouse:order_list' %}">Orders</a></li>
         <li><a href="{% url 'warehouse:delivery_list' %}">Deliveries</a></li>
         <li><a href="{% url 'warehouse:warehouse-list-view' %}">Warehouses</a></li>
+        {% if perms.warehouse.edit_warehouse %}
         <li><a href="{% url 'warehouse:sells-list-view' %}">Sells</a></li>
         <li><a href="{% url 'warehouse:palette-list-view' %}">Palette</a></li>
         <li><a href="{% url 'warehouse:bom_list' %}">Boms</a></li>
         <li><a href="{% url 'warehouse:product_packaging_list' %}">Products</a></li>
         <li><a href="{% url 'maintenance:dashboard' %}">Maintenance</a></li>
+        {% endif %}
     </ul>
 </nav>
     {% if messages %}

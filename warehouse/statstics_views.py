@@ -39,39 +39,43 @@ def customer_distribution(request):
 
 
 def customer_orders(request):
-    today = timezone.now().date()
+    user = request.user
 
-    try:
-        min_days = int(request.GET.get('min', 0))
-        max_days = int(request.GET.get('max', 365))
-    except ValueError:
-        min_days, max_days = 0, 365
+    if user.has_perm('warehouse.add_month_result'):
 
-    # Pobierz wszystkie zamówienia np. z ostatnich 2 lat (lub bez ograniczenia)
-    orders = Order.objects.select_related('customer').filter(
-        order_date__gte=today - datetime.timedelta(days=730)
-    )
+        today = timezone.now().date()
 
-    last_orders = {}
+        try:
+            min_days = int(request.GET.get('min', 0))
+            max_days = int(request.GET.get('max', 365))
+        except ValueError:
+            min_days, max_days = 0, 365
 
-    for order in orders:
-        customer = str(order.customer)
-        order_date = order.order_date
+        # Pobierz wszystkie zamówienia np. z ostatnich 2 lat (lub bez ograniczenia)
+        orders = Order.objects.select_related('customer').filter(
+            order_date__gte=today - datetime.timedelta(days=730)
+        )
 
-        if customer not in last_orders or order_date > last_orders[customer]:
-            last_orders[customer] = order_date
+        last_orders = {}
 
-    result = []
-    for customer, last_date in last_orders.items():
-        days_since = (today - last_date).days
-        if min_days <= days_since <= max_days:
-            result.append({
-                'customer': customer,
-                'days_since_last': days_since
-            })
+        for order in orders:
+            customer = str(order.customer)
+            order_date = order.order_date
 
-    # Posortuj od najstarszej do najnowszej dostawy (opcjonalnie)
-    result.sort(key=lambda x: x['days_since_last'], reverse=True)
+            if customer not in last_orders or order_date > last_orders[customer]:
+                last_orders[customer] = order_date
 
-    return JsonResponse(result, safe=False)
+        result = []
+        for customer, last_date in last_orders.items():
+            days_since = (today - last_date).days
+            if min_days <= days_since <= max_days:
+                result.append({
+                    'customer': customer,
+                    'days_since_last': days_since
+                })
+
+        # Posortuj od najstarszej do najnowszej dostawy (opcjonalnie)
+        result.sort(key=lambda x: x['days_since_last'], reverse=True)
+
+        return JsonResponse(result, safe=False)
 

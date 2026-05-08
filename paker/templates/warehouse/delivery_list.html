@@ -6,9 +6,11 @@
 {% endblock %}
 {% block content %}
   <h1>Deliveries</h1>
+{% if perms.warehouse.delete_delivery %}
 <div class="action-buttons">
     <a href="{% url 'warehouse:load-transport-document' %}" class="btn">Load Document</a>
   </div>
+{% endif %}
   <table class="deliveries-table">
     <thead>
       <tr>
@@ -19,7 +21,9 @@
         <th>Telephone</th>
         <th>Status</th>
         <th>Palettes</th>
+          {% if perms.warehouse.delete_delivery %}
         <th>Delete</th>
+          {% endif %}
       </tr>
     </thead>
     <tbody id="deliveries-tbody">

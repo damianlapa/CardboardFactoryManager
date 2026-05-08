@@ -6,7 +6,7 @@ from warehouse.ajax_views import *
 from warehouse.load_csv_views import *
 from warehouse.statstics_views import *
 from warehouse.create_order_views import GenerateOrderInlineView
-from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
+# from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
 from warehouse.product_complex_views import *
 from warehouse.price_list_view import PriceListUploadView
 from warehouse.monthly_reports_views import MonthlyWarehouseReportView
@@ -80,21 +80,21 @@ urlpatterns += [
     path('clr/', clear_orders),
 ]
 
-# report
-urlpatterns += [
-    path('sales-report/', sales_report_view, name='sales_report'),
-    path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
-]
-
-urlpatterns += [
-    path("assembly/new/", AssemblyCreateView.as_view(), name="assembly_create"),
-    path("assembly/", AssemblyListView.as_view(), name="assembly_list"),
-    path("assembly/<int:pk>/", AssemblyDetailView.as_view(), name="assembly_detail"),
-]
-
-urlpatterns += [
-    path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
-]
+# # report
+# urlpatterns += [
+#     path('sales-report/', sales_report_view, name='sales_report'),
+#     path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
+# ]
+#
+# urlpatterns += [
+#     path("assembly/new/", AssemblyCreateView.as_view(), name="assembly_create"),
+#     path("assembly/", AssemblyListView.as_view(), name="assembly_list"),
+#     path("assembly/<int:pk>/", AssemblyDetailView.as_view(), name="assembly_detail"),
+# ]
+#
+# urlpatterns += [
+#     path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
+# ]
 
 # urlpatterns += [
 #     path("orders/<int:order_id>/add-shift/", AddDeliveryItemToWarehouse.as_view(), name="add_shift"),

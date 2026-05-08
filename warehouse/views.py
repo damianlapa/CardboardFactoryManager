@@ -6,43 +6,45 @@ from warehouse.forms import WarehouseStockFifoSellForm
 from django.shortcuts import HttpResponse
 from django.views import View
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.db.models.deletion import ProtectedError
 from django.views.generic import CreateView, DetailView
 from django.urls import reverse
-from django.contrib import messages
-from django.shortcuts import redirect
 from warehouse.gs_connection import *
 from warehouse.models import *
-from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, \
-    OrderToOrderShiftForm, ManuallyOrdersForm
+from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, ManuallyOrdersForm
 from warehousemanager.models import Buyer, LocalSetting
 from production.models import ProductionOrder, ProductionUnit
 import pdfplumber
-from django.db import transaction
-from django.db.models import Sum
-import datetime, calendar
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
+import calendar
 from collections import defaultdict
 from django.shortcuts import render
 from django.utils.timezone import now
 from django.db.models import Prefetch
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
 from warehouse.services.stock_moves import rebuild_ws_history_from_date
-from django.db.models import F
 from warehouse.models import attach_origin_orders_to_sell
 from warehousemanager.functions import  visit_counter
 from django.utils.dateparse import parse_date
 import datetime
 import secrets
 from django.conf import settings
+from warehouse.models import BOM, Order
+from warehouse.forms import OrderFromBOMForm
 from django.contrib import messages
-
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.db.models import Sum
+from django.core.exceptions import ValidationError
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -349,24 +351,25 @@ def load_orders(year, row=None, division=None, row_list=None, preview_only=False
 
 
 def delete_delivery_ajax(request, delivery_id):
-    if request.method == "POST":
-        delivery = get_object_or_404(Delivery, id=delivery_id)
+    user = request.user
+    if user.has_perm('warehouse.delete_delivery'):
+        if request.method == "POST":
+            delivery = get_object_or_404(Delivery, id=delivery_id)
 
-        try:
-            with transaction.atomic():
-                delivery.deliverypalette_set.all().delete()
-                delivery.deliveryitem_set.all().delete()
-                delivery.delete()
-        except ProtectedError:
-            return JsonResponse({"success": False,
-                                 "message": f"Delivery {delivery.number} can not be deleted. One or more delivery item is already added to stock."})
+            try:
+                with transaction.atomic():
+                    delivery.deliverypalette_set.all().delete()
+                    delivery.deliveryitem_set.all().delete()
+                    delivery.delete()
+            except ProtectedError:
+                return JsonResponse({"success": False,
+                                     "message": f"Delivery {delivery.number} can not be deleted. One or more delivery item is already added to stock."})
 
-        return JsonResponse({"success": True, "message": f"Delivery {delivery.number} deleted successfully."})
-    return JsonResponse({"success": False, "message": "Invalid request method."})
+            return JsonResponse({"success": True, "message": f"Delivery {delivery.number} deleted successfully."})
+        return JsonResponse({"success": False, "message": "Invalid request method."})
 
 
 def parse_wz_pdf(pdf_file):
-    print('here')
     errors = []
     provider = ''
     wz_number = ''
@@ -636,7 +639,8 @@ def collect_new_products_for_wz(parsed):
     }
 
 
-class LoadWZ(LoginRequiredMixin, View):
+class LoadWZ(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_delivery"
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -814,7 +818,8 @@ class LoadWZ(LoginRequiredMixin, View):
         })
 
 
-class OrderListView(LoginRequiredMixin, View):
+class OrderListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_order'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -850,7 +855,8 @@ class OrderListView(LoginRequiredMixin, View):
         return render(request, 'warehouse/order_list.html', locals())
 
 
-class OrderDetailView(LoginRequiredMixin, View):
+class OrderDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_order'
     login_url = reverse_lazy('login')
 
     def post(self, request, order_id):
@@ -1121,28 +1127,30 @@ class OrderDetailView(LoginRequiredMixin, View):
         return render(request, "warehouse/order_details.html", locals())
 
 
-class AddShiftView(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+# to delete
+# class AddShiftView(LoginRequiredMixin, View):
+#     login_url = reverse_lazy('login')
+#
+#     def post(self, request, order_id):
+#         order_from = get_object_or_404(Order, id=order_id)
+#         form = OrderToOrderShiftForm(request.POST)
+#
+#         if form.is_valid():
+#             shift: OrderToOrderShift = form.save(commit=False)
+#             shift.order_from = order_from
+#             # jeśli masz logikę wyliczania wartości, możesz tu ją uzupełnić
+#             # shift.value = shift.quantity * (shift.order_to.product.price or 0)
+#             shift.save()
+#             messages.success(request, "Shift added.")
+#             return redirect(request.META.get('HTTP_REFERER', '/'))
+#         else:
+#             messages.error(request, f"Cannot add shift: {form.errors.as_text()}")
+#
+#         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    def post(self, request, order_id):
-        order_from = get_object_or_404(Order, id=order_id)
-        form = OrderToOrderShiftForm(request.POST)
 
-        if form.is_valid():
-            shift: OrderToOrderShift = form.save(commit=False)
-            shift.order_from = order_from
-            # jeśli masz logikę wyliczania wartości, możesz tu ją uzupełnić
-            # shift.value = shift.quantity * (shift.order_to.product.price or 0)
-            shift.save()
-            messages.success(request, "Shift added.")
-            return redirect(request.META.get('HTTP_REFERER', '/'))
-        else:
-            messages.error(request, f"Cannot add shift: {form.errors.as_text()}")
-
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-
-class DeliveriesView(LoginRequiredMixin, View):
+class DeliveriesView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_delivery'
     login_url = reverse_lazy('login')
 
     PAGE_SIZE = 30
@@ -1194,7 +1202,8 @@ class DeliveriesView(LoginRequiredMixin, View):
         })
 
 
-class DeliveryDetailView(LoginRequiredMixin, View):
+class DeliveryDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_delivery'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1204,7 +1213,8 @@ class DeliveryDetailView(LoginRequiredMixin, View):
         return render(request, 'warehouse/delivery_details.html', locals())
 
 
-class DeliverySpecialDetailView(LoginRequiredMixin, View):
+class DeliverySpecialDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_deliveryspecial'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1214,7 +1224,8 @@ class DeliverySpecialDetailView(LoginRequiredMixin, View):
         return render(request, 'warehouse/delivery_special_details.html', locals())
 
 
-class DeliveryEditView(LoginRequiredMixin, View):
+class DeliveryEditView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.edit_delivery'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1243,7 +1254,8 @@ class DeliveryEditView(LoginRequiredMixin, View):
         return render(request, "warehouse/delivery-edit.html", context)
 
 
-class AddDeliveryItem(LoginRequiredMixin, View):
+class AddDeliveryItem(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def post(self, request):
@@ -1254,7 +1266,8 @@ class AddDeliveryItem(LoginRequiredMixin, View):
             return redirect('warehouse:delivery-detail-view', delivery_id=delivery_id)
 
 
-class AddDeliverySpecialItem(LoginRequiredMixin, View):
+class AddDeliverySpecialItem(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryspecialitem'
     login_url = reverse_lazy('login')
 
     def post(self, request):
@@ -1271,7 +1284,8 @@ class AddDeliverySpecialItem(LoginRequiredMixin, View):
             return HttpResponse(r)
 
 
-class AddDeliveryItemToWarehouse(LoginRequiredMixin, View):
+class AddDeliveryItemToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id, item_id):
@@ -1281,7 +1295,8 @@ class AddDeliveryItemToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliveryToWarehouse(LoginRequiredMixin, View):
+class AddDeliveryToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def post(self, request, delivery_id):
@@ -1292,7 +1307,8 @@ class AddDeliveryToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliverySpecialToWarehouse(LoginRequiredMixin, View):
+class AddDeliverySpecialToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def post(self, request, delivery_id):
@@ -1303,7 +1319,8 @@ class AddDeliverySpecialToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliverySpecialItemToWarehouse(LoginRequiredMixin, View):
+class AddDeliverySpecialItemToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id, item_id):
@@ -1313,7 +1330,8 @@ class AddDeliverySpecialItemToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
-class WarehouseView(LoginRequiredMixin, View):
+class WarehouseView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_warehouse'
     login_url = reverse_lazy('login')
 
     def get(self, request, warehouse_id):
@@ -1335,7 +1353,8 @@ class WarehouseView(LoginRequiredMixin, View):
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
-class WarehouseListView(LoginRequiredMixin, View):
+class WarehouseListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_warehouse'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1344,7 +1363,8 @@ class WarehouseListView(LoginRequiredMixin, View):
         return render(request, 'warehouse/warehouse_list.html', locals())
 
 
-class DeliveriesStatistics(LoginRequiredMixin, View):
+class DeliveriesStatistics(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_delivery'
     login_url = reverse_lazy('login')
     template_name = 'warehouse/deliveries-statistics.html'
 
@@ -1533,7 +1553,8 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
 
-class StockView(LoginRequiredMixin, View):
+class StockView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_stock'
     login_url = reverse_lazy('login')
 
     def get(self, request, stock_id):
@@ -1546,7 +1567,6 @@ class StockView(LoginRequiredMixin, View):
         history = WarehouseStockHistory.objects.filter(warehouse_stock__stock=stock)
 
         return render(request, 'warehouse/stock-details.html', locals())
-
 
 
 # toremove
@@ -1573,7 +1593,8 @@ class WarehouseStockView(LoginRequiredMixin, View):
         return render(request, 'warehouse/warehouse-stock-details.html', locals())
 
 
-class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
+class WarehouseStockHistoryDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehouse.view_warehousestockhistory'
     login_url = reverse_lazy('login')
     model = WarehouseStock
     template_name = "warehouse/warehouse_stock_history.html"
@@ -1598,7 +1619,8 @@ class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-class WarehouseStockDetailView(DetailView):
+class WarehouseStockDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehouse.view_warehousestock'
     model = WarehouseStock
     template_name = "warehouse/warehouse-stock-details.html"
     context_object_name = "ws"
@@ -1707,8 +1729,8 @@ class WarehouseStockDetailView(DetailView):
         return redirect(request.path)
 
 
-
-class LoadDeliveryToGSFile(LoginRequiredMixin, View):
+class LoadDeliveryToGSFile(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_delivery'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1745,7 +1767,8 @@ class LoadDeliveryToGSFile(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class SellProductList(LoginRequiredMixin, View):
+class SellProductList(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_productsell3'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1775,7 +1798,8 @@ class SellProductList(LoginRequiredMixin, View):
         return render(request, "warehouse/sell-product-list.html", context=context)
 
 
-class ProductSell3CreateView(LoginRequiredMixin, CreateView):
+class ProductSell3CreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'warehouse.add_productsell3'
     login_url = reverse_lazy('login')
 
     model = ProductSell3
@@ -1819,7 +1843,8 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
         return redirect(self.get_success_url())
 
 
-class PaletteView(LoginRequiredMixin, View):
+class PaletteView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_palette'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1897,17 +1922,8 @@ class PaletteView(LoginRequiredMixin, View):
         return render(request, 'warehouse/palette.html', context)
 
 
-# from django.contrib import messages
-# from django.shortcuts import render, redirect
-# from django.urls import reverse_lazy
-# from django.views import View
-#
-# from .forms import ManuallyOrdersForm
-# from .models import Provider
-# from .utils import load_orders   # przykładowo, dostosuj import
-
-
-class AddOrdersManually(LoginRequiredMixin, View):
+class AddOrdersManually(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_order'
     login_url = reverse_lazy('login')
     template_name = "warehouse/add_orders.html"
 
@@ -2024,98 +2040,97 @@ class AddOrdersManually(LoginRequiredMixin, View):
 
 
 def add_product_sell3(request):
-    if request.method != "POST":
+    user = request.user
+    if user.has_perm('warehouse.add_productsell3'):
+        if request.method != "POST":
+            return redirect(request.META.get("HTTP_REFERER", "/"))
+
+        try:
+            with transaction.atomic():
+                warehouse_stock = WarehouseStock.objects.select_for_update().get(
+                    id=int(request.POST.get("warehouse_stock"))
+                )
+
+                # klient
+                customer_id = request.POST.get("customer")
+                customer = Buyer.objects.get(id=int(customer_id)) if customer_id else None
+                customer_alter_name = (request.POST.get("customer_alter_name") or "").strip() or None
+                if not customer and not customer_alter_name:
+                    raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
+
+                # order opcjonalny
+                order_id = request.POST.get("order")
+                order = Order.objects.get(id=int(order_id)) if order_id else None
+
+                quantity = int(request.POST.get("quantity_sell"))
+
+                # ...
+                date_raw = request.POST.get("date_sell")  # string z inputa
+                date = parse_date(date_raw)  # obsługuje 'YYYY-MM-DD'
+
+                # jeśli czasem wysyłasz 'dd-mm-YYYY' (bo tak masz w UI), dodaj fallback:
+                if date is None and date_raw:
+                    try:
+                        date = datetime.datetime.strptime(date_raw, "%d-%m-%Y").date()
+                    except ValueError:
+                        date = None
+
+                if date is None:
+                    raise ValidationError(f"Niepoprawna data sprzedaży: {date_raw}")
+                price = request.POST.get("price_sell")
+
+                if quantity <= 0:
+                    raise ValidationError("Ilość musi być większa od zera.")
+                if warehouse_stock.quantity < quantity:
+                    raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
+
+                # ✅ PRODUKT: jeśli formularz podał product -> bierzemy z POST (OrderDetail)
+                product_id = request.POST.get("product")
+                if product_id:
+                    product = Product.objects.get(id=int(product_id))
+                else:
+                    # fallback: jeśli Stock ma przypięty Product
+                    product = getattr(warehouse_stock.stock, "product", None)
+
+                # opcjonalna spójność: jeśli stock ma przypięty product, a user wybrał inny -> błąd
+                stock_prod = getattr(warehouse_stock.stock, "product", None)
+                if stock_prod and product and stock_prod.id != product.id:
+                    raise ValidationError("Wybrany produkt nie zgadza się z produktem powiązanym ze stockiem.")
+
+                sale = ProductSell3.objects.create(
+                    product=product,                      # ✅ dla OrderDetail będzie ustawiony
+                    stock=warehouse_stock.stock,           # ✅ zawsze
+                    customer=customer,
+                    customer_alter_name=customer_alter_name,
+                    warehouse_stock=warehouse_stock,
+                    order=order,
+                    quantity=quantity,
+                    price=price,
+                    date=date,
+                )
+
+                # rozchód
+                if sale.order_id:
+                    warehouse_stock.sell_from_order(sale)
+                    attach_origin_orders_to_sell(sale)     # ✅ też warto dopiąć po order-sellu
+                else:
+                    warehouse_stock.fifo_sell(sale)
+                    attach_origin_orders_to_sell(sale)
+
+                # aktualizacja ceny produktu tylko jeśli produkt istnieje
+                if sale.product_id:
+                    sale.product.price = price
+                    sale.product.save(update_fields=["price"])
+
+            messages.success(request, "Sprzedaż zapisana.")
+
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.exception("[ADD_SELL] ERROR")
+            messages.error(request, f"Błąd zapisu sprzedaży: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "/"))
-
-    try:
-        with transaction.atomic():
-            warehouse_stock = WarehouseStock.objects.select_for_update().get(
-                id=int(request.POST.get("warehouse_stock"))
-            )
-
-            # klient
-            customer_id = request.POST.get("customer")
-            customer = Buyer.objects.get(id=int(customer_id)) if customer_id else None
-            customer_alter_name = (request.POST.get("customer_alter_name") or "").strip() or None
-            if not customer and not customer_alter_name:
-                raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
-
-            # order opcjonalny
-            order_id = request.POST.get("order")
-            order = Order.objects.get(id=int(order_id)) if order_id else None
-
-            quantity = int(request.POST.get("quantity_sell"))
-
-            # ...
-            date_raw = request.POST.get("date_sell")  # string z inputa
-            date = parse_date(date_raw)  # obsługuje 'YYYY-MM-DD'
-
-            # jeśli czasem wysyłasz 'dd-mm-YYYY' (bo tak masz w UI), dodaj fallback:
-            if date is None and date_raw:
-                try:
-                    date = datetime.datetime.strptime(date_raw, "%d-%m-%Y").date()
-                except ValueError:
-                    date = None
-
-            if date is None:
-                raise ValidationError(f"Niepoprawna data sprzedaży: {date_raw}")
-            price = request.POST.get("price_sell")
-
-            if quantity <= 0:
-                raise ValidationError("Ilość musi być większa od zera.")
-            if warehouse_stock.quantity < quantity:
-                raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
-
-            # ✅ PRODUKT: jeśli formularz podał product -> bierzemy z POST (OrderDetail)
-            product_id = request.POST.get("product")
-            if product_id:
-                product = Product.objects.get(id=int(product_id))
-            else:
-                # fallback: jeśli Stock ma przypięty Product
-                product = getattr(warehouse_stock.stock, "product", None)
-
-            # opcjonalna spójność: jeśli stock ma przypięty product, a user wybrał inny -> błąd
-            stock_prod = getattr(warehouse_stock.stock, "product", None)
-            if stock_prod and product and stock_prod.id != product.id:
-                raise ValidationError("Wybrany produkt nie zgadza się z produktem powiązanym ze stockiem.")
-
-            sale = ProductSell3.objects.create(
-                product=product,                      # ✅ dla OrderDetail będzie ustawiony
-                stock=warehouse_stock.stock,           # ✅ zawsze
-                customer=customer,
-                customer_alter_name=customer_alter_name,
-                warehouse_stock=warehouse_stock,
-                order=order,
-                quantity=quantity,
-                price=price,
-                date=date,
-            )
-
-            # rozchód
-            if sale.order_id:
-                warehouse_stock.sell_from_order(sale)
-                attach_origin_orders_to_sell(sale)     # ✅ też warto dopiąć po order-sellu
-            else:
-                warehouse_stock.fifo_sell(sale)
-                attach_origin_orders_to_sell(sale)
-
-            # aktualizacja ceny produktu tylko jeśli produkt istnieje
-            if sale.product_id:
-                sale.product.price = price
-                sale.product.save(update_fields=["price"])
-
-        messages.success(request, "Sprzedaż zapisana.")
-
-    except ValidationError as e:
-        messages.error(request, str(e))
-    except Exception as e:
-        logger.exception("[ADD_SELL] ERROR")
-        messages.error(request, f"Błąd zapisu sprzedaży: {e}")
-
-    return redirect(request.META.get("HTTP_REFERER", "/"))
-
-
-
 
 
 def assign_products_to_orders(year=None, row=None, division=None):
@@ -2252,24 +2267,14 @@ def clear_orders(request):
         o.save()
 
 
-# warehouse/views.py
-
-from django.views import View
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.db import transaction
-import datetime
-
-from warehouse.models import BOM, Order
-from warehouse.forms import OrderFromBOMForm
-
-
-class CreateOrderFromBOMView(View):
+class CreateOrderFromBOMView(PermissionRequiredMixin, View):
     """
     Tworzy Order i automatycznie podpina:
       - order.bom = BOM
       - order.product = BOM.product
     """
+    permission_required = 'warehouse.add_order'
+
     def get(self, request, bom_id: int):
 
         from warehouse.services.orders import next_free_order_id_for_bom
@@ -2328,7 +2333,8 @@ class CreateOrderFromBOMView(View):
             return render(request, "warehouse/bom_create_order.html", {"bom": bom, "form": form})
 
 
-class BOMListView(LoginRequiredMixin, ListView):
+class BOMListView(PermissionRequiredMixin, ListView):
+    permission_required = 'warehouse.view_bom'
     template_name = "warehouse/bom_list.html"
     model = BOM
     context_object_name = "boms"
@@ -2343,9 +2349,8 @@ class BOMListView(LoginRequiredMixin, ListView):
         return qs
 
 
-from django.db.models import Prefetch
-
-class BOMDetailView(LoginRequiredMixin, DetailView):
+class BOMDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehouse.view_bom'
     model = BOM
     template_name = "warehouse/bom_detail.html"
     context_object_name = "bom"
@@ -2365,12 +2370,8 @@ class BOMDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-from django.views.decorators.http import require_POST
-from django.utils.decorators import method_decorator
-from django.middleware.csrf import get_token
-
-
-class ProductPackagingListView(LoginRequiredMixin, View):
+class ProductPackagingListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_productpackaging'
     login_url = reverse_lazy("login")
 
     def get(self, request):
@@ -2397,7 +2398,8 @@ class ProductPackagingListView(LoginRequiredMixin, View):
 
 
 @method_decorator(require_POST, name="dispatch")
-class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
+class ProductPackagingUpsertAjaxView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_productpackaging'
     login_url = reverse_lazy("login")
 
     def post(self, request):
@@ -2443,163 +2445,144 @@ class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
         })
 
 
-from django.core.exceptions import ValidationError
-from django.db import transaction
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
-from warehouse.services.stock_moves import move_ws
-
-
-from django.db.models import Sum
-from django.core.exceptions import ValidationError
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
-from django.db import transaction
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 def undo_order_settlement(request, settlement_id):
-    if request.method != "POST":
-        return redirect(request.META.get("HTTP_REFERER", "/"))
+    if request.user.has_perm('warehouse.add_ordersettlement'):
+        if request.method != "POST":
+            return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    if not _check_undo_password(request):
-        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
-        return redirect(request.META.get("HTTP_REFERER", "/"))
+        if not _check_undo_password(request):
+            messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+            return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    try:
-        with transaction.atomic():
-            settlement = OrderSettlement.objects.select_for_update().get(pk=settlement_id)
+        try:
+            with transaction.atomic():
+                settlement = OrderSettlement.objects.select_for_update().get(pk=settlement_id)
 
-            touched_ws_ids = set()
-            settlement_date = settlement.settlement_date
+                touched_ws_ids = set()
+                settlement_date = settlement.settlement_date
 
-            result_rows = list(
-                StockSupplySettlement.objects
-                .select_for_update()
-                .filter(settlement=settlement, as_result=True)
-                .select_related("stock_supply")
-                .order_by("id")
-            )
-
-            for row in result_rows:
-                supply = row.stock_supply
-
-                sold_qty = (
-                    StockSupplySell.objects
-                    .filter(stock_supply=supply)
-                    .aggregate(s=Sum("quantity"))["s"] or 0
+                result_rows = list(
+                    StockSupplySettlement.objects
+                    .select_for_update()
+                    .filter(settlement=settlement, as_result=True)
+                    .select_related("stock_supply")
+                    .order_by("id")
                 )
-                if sold_qty > 0:
-                    raise ValidationError(
-                        f"Nie można cofnąć rozliczenia. Partia '{supply.name}' została już sprzedana ({sold_qty})."
+
+                for row in result_rows:
+                    supply = row.stock_supply
+
+                    sold_qty = (
+                        StockSupplySell.objects
+                        .filter(stock_supply=supply)
+                        .aggregate(s=Sum("quantity"))["s"] or 0
                     )
+                    if sold_qty > 0:
+                        raise ValidationError(
+                            f"Nie można cofnąć rozliczenia. Partia '{supply.name}' została już sprzedana ({sold_qty})."
+                        )
 
-            hist_rows = list(
-                WarehouseStockHistory.objects
-                .select_for_update()
-                .filter(order_settlement=settlement)
-                .order_by("date", "id")
-            )
+                hist_rows = list(
+                    WarehouseStockHistory.objects
+                    .select_for_update()
+                    .filter(order_settlement=settlement)
+                    .order_by("date", "id")
+                )
 
-            for h in hist_rows:
-                touched_ws_ids.add(h.warehouse_stock_id)
+                for h in hist_rows:
+                    touched_ws_ids.add(h.warehouse_stock_id)
 
-            WarehouseStockHistory.objects.filter(order_settlement=settlement).delete()
+                WarehouseStockHistory.objects.filter(order_settlement=settlement).delete()
 
-            for row in result_rows:
-                supply = row.stock_supply
-                row.delete()
-                supply.delete()
+                for row in result_rows:
+                    supply = row.stock_supply
+                    row.delete()
+                    supply.delete()
 
-            material_rows = list(
-                StockSupplySettlement.objects
-                .select_for_update()
-                .filter(settlement=settlement, as_result=False)
-                .select_related("stock_supply")
-            )
+                material_rows = list(
+                    StockSupplySettlement.objects
+                    .select_for_update()
+                    .filter(settlement=settlement, as_result=False)
+                    .select_related("stock_supply")
+                )
 
-            touched_supplies = []
-            for row in material_rows:
-                if row.stock_supply_id:
-                    touched_supplies.append(row.stock_supply)
-                row.delete()
+                touched_supplies = []
+                for row in material_rows:
+                    if row.stock_supply_id:
+                        touched_supplies.append(row.stock_supply)
+                    row.delete()
 
-            for supply in touched_supplies:
-                supply.refresh_used_flag()
+                for supply in touched_supplies:
+                    supply.refresh_used_flag()
 
-            settlement.delete()
+                settlement.delete()
 
-            for ws_id in touched_ws_ids:
-                ws = WarehouseStock.objects.select_for_update().get(pk=ws_id)
-                rebuild_ws_history_from_date(ws=ws, from_date=settlement_date)
+                for ws_id in touched_ws_ids:
+                    ws = WarehouseStock.objects.select_for_update().get(pk=ws_id)
+                    rebuild_ws_history_from_date(ws=ws, from_date=settlement_date)
 
-        messages.success(request, "Rozliczenie zostało cofnięte.")
-    except Exception as e:
-        messages.error(request, f"Błąd cofania rozliczenia: {e}")
+            messages.success(request, "Rozliczenie zostało cofnięte.")
+        except Exception as e:
+            messages.error(request, f"Błąd cofania rozliczenia: {e}")
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
-
-from django.contrib import messages
-from django.db import transaction
-from django.shortcuts import get_object_or_404, redirect
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 def undo_product_sell(request, sell_id):
-    if request.method != "POST":
+    if request.user.has_perm('warehouse.delete_productsell3'):
+        if request.method != "POST":
+            return redirect(request.META.get("HTTP_REFERER", "/"))
+
+        if not _check_undo_password(request):
+            messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+            return redirect(request.META.get("HTTP_REFERER", "/"))
+
+        try:
+            with transaction.atomic():
+                sell = ProductSell3.objects.select_for_update().get(pk=sell_id)
+
+                if not sell.warehouse_stock_id:
+                    raise ValueError("Sprzedaż nie ma przypisanego warehouse_stock.")
+
+                qty = int(sell.quantity or 0)
+                if qty <= 0:
+                    raise ValueError("Sprzedaż ma nieprawidłową ilość.")
+
+                sell_date = sell.date
+                ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
+
+                WarehouseStockHistory.objects.filter(sell=sell).delete()
+
+                supply_rows = list(
+                    StockSupplySell.objects
+                    .select_for_update()
+                    .filter(sell=sell)
+                    .select_related("stock_supply")
+                )
+
+                touched_supplies = []
+                for row in supply_rows:
+                    if row.stock_supply_id:
+                        touched_supplies.append(row.stock_supply)
+                    row.delete()
+
+                seen_ids = set()
+                for supply in touched_supplies:
+                    if supply.id in seen_ids:
+                        continue
+                    seen_ids.add(supply.id)
+                    supply.refresh_used_flag()
+
+                sell.order_parts.all().delete()
+                sell.delete()
+
+                rebuild_ws_history_from_date(ws=ws, from_date=sell_date)
+
+            messages.success(request, "Sprzedaż została cofnięta.")
+        except Exception as e:
+            messages.error(request, f"Błąd cofania sprzedaży: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "/"))
-
-    if not _check_undo_password(request):
-        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
-        return redirect(request.META.get("HTTP_REFERER", "/"))
-
-    try:
-        with transaction.atomic():
-            sell = ProductSell3.objects.select_for_update().get(pk=sell_id)
-
-            if not sell.warehouse_stock_id:
-                raise ValueError("Sprzedaż nie ma przypisanego warehouse_stock.")
-
-            qty = int(sell.quantity or 0)
-            if qty <= 0:
-                raise ValueError("Sprzedaż ma nieprawidłową ilość.")
-
-            sell_date = sell.date
-            ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
-
-            WarehouseStockHistory.objects.filter(sell=sell).delete()
-
-            supply_rows = list(
-                StockSupplySell.objects
-                .select_for_update()
-                .filter(sell=sell)
-                .select_related("stock_supply")
-            )
-
-            touched_supplies = []
-            for row in supply_rows:
-                if row.stock_supply_id:
-                    touched_supplies.append(row.stock_supply)
-                row.delete()
-
-            seen_ids = set()
-            for supply in touched_supplies:
-                if supply.id in seen_ids:
-                    continue
-                seen_ids.add(supply.id)
-                supply.refresh_used_flag()
-
-            sell.order_parts.all().delete()
-            sell.delete()
-
-            rebuild_ws_history_from_date(ws=ws, from_date=sell_date)
-
-        messages.success(request, "Sprzedaż została cofnięta.")
-    except Exception as e:
-        messages.error(request, f"Błąd cofania sprzedaży: {e}")
-
-    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 def refresh_warehouses_values(request):
@@ -2612,7 +2595,8 @@ def refresh_warehouses_values(request):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-class OrderProfitabilityListView(LoginRequiredMixin, View):
+class OrderProfitabilityListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_order'
     login_url = reverse_lazy('login')
 
     def get(self, request):

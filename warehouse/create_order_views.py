@@ -1,5 +1,6 @@
 from django.views import View
 from django.http import HttpResponse
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from openpyxl import load_workbook
 from io import BytesIO
 import requests
@@ -93,7 +94,8 @@ def get_data_by_values(provider: str, number: str, year_short: str, year_full: s
     return None
 
 
-class GenerateOrderInlineView(View):
+class GenerateOrderInlineView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_order"
     def get(self, request, order_id, *args, **kwargs):
 
         order = Order.objects.get(id=order_id)

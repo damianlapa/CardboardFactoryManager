@@ -53,6 +53,7 @@
     <div class="sticky-actions">
       <div class="card ws-card p-3">
         <div class="d-grid gap-2">
+          {% if perms.warehouse.edit_warehouse %}
           <button
             class="btn btn-danger"
             data-bs-toggle="modal"
@@ -65,7 +66,7 @@
           <a class="btn btn-outline-secondary" href="{% url 'warehouse:sells-list-view' %}">
             Lista sprzedaży
           </a>
-
+          {% endif %}
           <a class="btn btn-outline-secondary" href="{% url 'warehouse:warehouse-detail-view' ws.warehouse_id %}">
             Powrót do magazynu
           </a>
@@ -117,7 +118,9 @@
 
               <td>
                 {% if h.sell %}
+                {% if perms.warehouse.edit_warehouse %}
                   <span class="badge bg-danger">Sprzedaż</span>
+                {% endif %}
                 {% elif h.order_settlement %}
                   <span class="badge bg-primary">Settlement</span>
                 {% elif h.stock_supply %}
