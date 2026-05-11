@@ -5,6 +5,181 @@
 <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
 <style>
+.warehouse-premium-card {
+    border: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.warehouse-premium-table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.warehouse-premium-table thead th {
+    background: #f8fafc;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 14px 16px;
+}
+
+.warehouse-premium-table tbody td {
+    padding: 16px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.warehouse-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.warehouse-icon-1 { background: #6366f1; }
+.warehouse-icon-2 { background: #22c55e; }
+.warehouse-icon-3 { background: #f59e0b; }
+.warehouse-icon-4 { background: #06b6d4; }
+.warehouse-icon-5 { background: #ec4899; }
+
+.value-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.value-bar {
+    height: 9px;
+    width: 210px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.value-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d6efd, #60a5fa);
+    border-radius: 999px;
+}
+
+.warehouse-total-row td {
+    background: #eff6ff;
+    font-weight: 800;
+    color: #0d6efd;
+}
+    .chart-card {
+    min-height: 380px;
+}
+
+.chart-box {
+    position: relative;
+    width: 100%;
+    height: 310px;
+}
+
+.chart-box-sm {
+    position: relative;
+    width: 100%;
+    height: 310px;
+}
+
+.chart-box canvas,
+.chart-box-sm canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+.work-card {
+    border: 0;
+    border-radius: 18px;
+}
+
+.work-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.work-dot-danger {
+    background: #dc3545;
+}
+
+.work-dot-warning {
+    background: #ffc107;
+}
+
+.work-dot-success {
+    background: #198754;
+}
+.operation-card {
+    border: 0;
+    border-radius: 18px;
+}
+
+.operation-value {
+    font-size: 1.45rem;
+    font-weight: 800;
+}
+.move-type {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 800;
+}
+
+.move-in {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.move-out {
+    background: #f8d7da;
+    color: #842029;
+}
+
+.move-neutral {
+    background: #e2e3e5;
+    color: #41464b;
+}
+.status-card {
+    border: 0;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.status-top {
+    height: 5px;
+}
+
+.status-top-success {
+    background: #198754;
+}
+
+.status-top-warning {
+    background: #ffc107;
+}
+
+.status-top-danger {
+    background: #dc3545;
+}
+
+.status-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+}
 .dashboard-card {
     border: 0;
     border-radius: 18px;
@@ -23,10 +198,166 @@
 .report-card {
     border-left: 4px solid #0d6efd;
 }
+.alert-tile {
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.alert-strip {
+    width: 6px;
+}
+
+.alert-strip-danger {
+    background: #dc3545;
+}
+
+.alert-strip-warning {
+    background: #ffc107;
+}
+
+.alert-strip-info {
+    background: #0dcaf0;
+}
+
+.alert-strip-success {
+    background: #198754;
+}
+
+.control-center-card {
+    border: 0;
+    border-radius: 20px;
+}
+
+.alert-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    font-weight: 800;
+}
+    .quick-link .card {
+    min-height: 118px;
+}
+
+.quick-link:hover {
+    color: inherit;
+}
+
+.quick-link .badge {
+    font-size: 0.78rem;
+}
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="alert alert-dark border-0 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+
+        <div>
+            <strong>LIVE SYSTEM STATUS</strong>
+        </div>
+
+        <div class="small text-success">
+            ● dashboard online
+        </div>
+
+    </div>
+</div>
+<!-- Status systemu -->
+<h5 class="mb-3">Status systemu</h5>
+
+<div class="row g-3 mb-4">
+
+    {% for item in system_status %}
+    <div class="col-md">
+        <div class="card shadow-sm status-card h-100">
+            <div class="status-top status-top-{{ item.level }}"></div>
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="fw-semibold">{{ item.title }}</div>
+                    <span class="badge bg-{{ item.level }}">
+                        {{ item.status }}
+                    </span>
+                </div>
+
+                <div class="status-value">
+                    {{ item.value }}
+                </div>
+
+                <div class="small text-muted">
+                    {{ item.label }}
+                </div>
+
+                <div class="small text-muted mt-2">
+                    {{ item.description }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+<!-- Operacje okresowe -->
+<h5 class="mb-3">Puls firmy</h5>
+
+<div class="row g-3 mb-4">
+
+    {% for period in operations_periods %}
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong>{{ period.label }}</strong>
+
+                    <span class="small text-muted">
+                        {{ period.date_from|date:"d.m" }} - {{ period.date_to|date:"d.m" }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                {% for item in period.items %}
+                <div class="d-flex justify-content-between align-items-start border-bottom py-2">
+
+                    <div>
+                        <div class="small text-muted">
+                            {{ item.title }}
+                        </div>
+
+                        <div class="fw-semibold">
+                            {{ item.description }}
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <div class="fw-bold text-{{ item.level }}">
+                            {{ item.value }}
+                        </div>
+
+                        <span class="badge bg-{{ item.level }}">
+                            {{ period.label }}
+                        </span>
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
 <div class="container-fluid mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -49,7 +380,9 @@
             <div class="card dashboard-card shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Aktywne zlecenia</div>
-                    <div class="dashboard-kpi">{{ active_orders }}</div>
+                    <div class="dashboard-kpi" id="kpi-active-orders">
+                        {{ active_orders }}
+                    </div>
                     <a href="{% url 'warehouse:order_list' %}" class="small">Przejdź do zleceń</a>
                 </div>
             </div>
@@ -69,7 +402,7 @@
             <div class="card dashboard-card shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Dostawy do przetworzenia</div>
-                    <div class="dashboard-kpi">
+                    <div class="dashboard-kpi" id="kpi-unprocessed-deliveries">
                         {{ unprocessed_deliveries }}
                     </div>
                     <a href="{% url 'warehouse:delivery_list' %}" class="small">Lista dostaw</a>
@@ -81,7 +414,7 @@
             <div class="card dashboard-card shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Wartość magazynów</div>
-                    <div class="dashboard-kpi">
+                    <div class="dashboard-kpi" id="kpi-warehouse-value">
                         {{ total_warehouse_value|floatformat:2 }} zł
                     </div>
                     <a href="{% url 'warehouse:warehouse-list-view' %}" class="small">Magazyny</a>
@@ -90,7 +423,137 @@
         </div>
 
     </div>
+    <!-- Centrum kontroli -->
+<h5 class="mb-3">Centrum kontroli</h5>
 
+<div class="row g-3 mb-4">
+
+    <div class="col-md-8">
+        <div class="card shadow-sm control-center-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Co wymaga uwagi?</strong>
+                <span class="badge bg-dark">{{ dashboard_alerts|length }}</span>
+            </div>
+
+            <div class="card-body">
+
+                {% for alert in dashboard_alerts %}
+                    <div class="card shadow-sm alert-tile mb-2">
+                        <div class="d-flex">
+                            <div class="alert-strip alert-strip-{{ alert.level }}"></div>
+
+                            <div class="p-3 flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold">{{ alert.title }}</div>
+                                        <div class="small text-muted">{{ alert.message }}</div>
+                                    </div>
+
+                                    {% if alert.level == "danger" %}
+                                        <span class="badge bg-danger">Pilne</span>
+                                    {% elif alert.level == "warning" %}
+                                        <span class="badge bg-warning text-dark">Uwaga</span>
+                                    {% elif alert.level == "info" %}
+                                        <span class="badge bg-info text-dark">Info</span>
+                                    {% else %}
+                                        <span class="badge bg-success">OK</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-muted py-4">
+                        Brak alertów. System wygląda stabilnie.
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm control-center-card">
+            <div class="card-header bg-white">
+                <strong>Diagnostyka</strong>
+            </div>
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <span>Zlecenia otwarte po dostawie</span>
+                    <span class="badge bg-danger">{{ unsettled_orders_count }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <span>Stany zerowe</span>
+                    <span class="badge bg-secondary">{{ zero_stocks_count }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <span>Produkty bez ceny</span>
+                    <span class="badge bg-warning text-dark">{{ products_without_price_count }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <span>BOM bez części</span>
+                    <span class="badge bg-danger">{{ bom_without_parts_count }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between py-2">
+                    <span>Sprzedaże ze stratą</span>
+                    <span class="badge bg-danger">{{ negative_sales|length }}</span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- Kolejka pracy -->
+<h5 class="mb-3">Najważniejsze do zrobienia</h5>
+
+<div class="card shadow-sm work-card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>Kolejka pracy</strong>
+        <span class="badge bg-dark">{{ work_queue|length }}</span>
+    </div>
+
+    <div class="card-body">
+
+        {% for task in work_queue %}
+        <div class="d-flex justify-content-between align-items-start border-bottom py-3">
+
+            <div class="d-flex gap-3">
+                <div class="pt-1">
+                    <span class="work-dot work-dot-{{ task.level }}"></span>
+                </div>
+
+                <div>
+                    <div class="fw-semibold">{{ task.title }}</div>
+                    <div class="small text-muted">{{ task.description }}</div>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <span class="badge bg-{{ task.level }}">
+                    {{ task.priority }}
+                </span>
+
+                {% if task.url %}
+                    <div class="mt-2">
+                        <a href="{% url task.url %}" class="small">
+                            Przejdź
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
     <!-- Sprzedaż -->
     <div class="row g-3 mb-4">
 
@@ -98,7 +561,9 @@
             <div class="card dashboard-card shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Sprzedaż w miesiącu</div>
-                    <div class="dashboard-kpi">{{ sales_value|floatformat:2 }} zł</div>
+                    <div class="dashboard-kpi" id="kpi-sales-value">
+                        {{ sales_value|floatformat:2 }} zł
+                    </div>
                     <span class="small text-muted">Od {{ month_start|date:"d.m.Y" }}</span>
                 </div>
             </div>
@@ -108,7 +573,9 @@
             <div class="card dashboard-card shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Wynik sprzedaży w miesiącu</div>
-                    <div class="dashboard-kpi {% if sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    <div
+                    id="kpi-sales-profit"
+                    class="dashboard-kpi {% if sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
                         {{ sales_profit|floatformat:2 }} zł
                     </div>
                     <span class="small text-muted">Przychód minus koszt FIFO</span>
@@ -128,149 +595,424 @@
 
     </div>
 
-    <!-- Szybkie akcje -->
-    <h5 class="mb-3">Szybkie akcje</h5>
+<!-- Szybkie akcje -->
+<h5 class="mb-3">Szybkie akcje</h5>
 
-    <div class="row g-3 mb-4">
+<div class="row g-3 mb-4">
 
-        <div class="col-md-2">
-            <a class="quick-link" href="{% url 'warehouse:order_list' %}">
-                <div class="card shadow-sm dashboard-card">
-                    <div class="card-body text-center">Zlecenia</div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-2">
-            <a class="quick-link" href="{% url 'warehouse:add-orders' %}">
-                <div class="card shadow-sm dashboard-card">
-                    <div class="card-body text-center">Dodaj zamówienie</div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-2">
-            <a class="quick-link" href="{% url 'warehouse:delivery_list' %}">
-                <div class="card shadow-sm dashboard-card">
-                    <div class="card-body text-center">Dostawy</div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-2">
-            <a class="quick-link" href="{% url 'warehouse:sells-list-view' %}">
-                <div class="card shadow-sm dashboard-card">
-                    <div class="card-body text-center">Sprzedaż</div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-2">
-            <a class="quick-link" href="{% url 'warehouse:price_list-upload' %}">
-                <div class="card shadow-sm dashboard-card">
-                    <div class="card-body text-center">Cennik</div>
-                </div>
-            </a>
-        </div>
-
-    </div>
-
-    <!-- Raporty -->
-    <h5 class="mb-3">Raporty</h5>
-
-    <div class="row g-3 mb-4">
-
-        <div class="col-md-3">
-            <div class="card shadow-sm report-card">
-                <div class="card-body">
-                    <h6>Rentowność zleceń</h6>
-                    <p class="small text-muted mb-2">Koszty, sprzedaż i wynik na zleceniach.</p>
-                    <a href="{% url 'warehouse:orders-profitability' %}" class="btn btn-sm btn-primary">Otwórz</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm report-card">
-                <div class="card-body">
-                    <h6>Statystyki dostaw</h6>
-                    <p class="small text-muted mb-2">Dostawy według okresów i dostawców.</p>
-                    <a href="{% url 'warehouse:deliveries-statistics' %}" class="btn btn-sm btn-primary">Otwórz</a>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Magazyny -->
-    <div class="row g-3 mb-4">
-
-        <div class="col-md-6">
-            <div class="card shadow-sm dashboard-card">
-                <div class="card-header bg-white">
-                    <strong>Magazyny</strong>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Magazyn</th>
-                                <th class="text-end">Pozycji</th>
-                                <th class="text-end">Wartość</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in warehouses %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'warehouse:warehouse-detail-view' item.warehouse.id %}">
-                                        {{ item.warehouse.name }}
-                                    </a>
-                                </td>
-                                <td class="text-end">{{ item.stocks_count }}</td>
-                                <td class="text-end">{{ item.value|floatformat:2 }} zł</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-muted text-center py-3">Brak magazynów.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Alerty -->
-        <div class="col-md-6">
-            <div class="card shadow-sm dashboard-card">
-                <div class="card-header bg-white">
-                    <strong>Alerty</strong>
-                </div>
+    {% for action in quick_actions %}
+    <div class="col-md-2">
+        <a class="quick-link" href="{% url action.url %}">
+            <div class="card shadow-sm dashboard-card h-100">
                 <div class="card-body">
 
-                    <div class="mb-3">
-                        <div class="fw-semibold">Dostawy specjalne do przetworzenia</div>
-                        <div class="text-muted">{{ unprocessed_special_deliveries }}</div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-semibold">{{ action.title }}</div>
+                        <span class="badge bg-{{ action.badge }}">
+                            {{ action.count }}
+                        </span>
                     </div>
 
-                    <div>
-                        <div class="fw-semibold mb-2">Stany zerowe</div>
+                    <div class="small text-muted">
+                        {{ action.description }}
+                    </div>
 
-                        {% for ws in zero_stocks %}
-                            <div class="small border-bottom py-1">
-                                {{ ws.warehouse.name }} — {{ ws.stock.name }}
-                            </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+
+</div>
+
+    <!-- Raporty i szybka analiza -->
+<h5 class="mb-3">Raporty i szybka analiza</h5>
+
+<div class="row g-3 mb-4">
+
+    {% for report in reports %}
+    <div class="col-md-3">
+        <div class="card shadow-sm dashboard-card h-100 report-card">
+            <div class="card-body d-flex flex-column">
+
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">{{ report.title }}</h6>
+                    <span class="badge bg-{{ report.level }}">
+                        {{ report.value }}
+                    </span>
+                </div>
+
+                <p class="small text-muted mb-3">
+                    {{ report.description }}
+                </p>
+
+                <div class="small text-muted mb-3">
+                    {{ report.value_label }}
+                </div>
+
+                <div class="mt-auto">
+                    <a href="{% url report.url %}" class="btn btn-sm btn-outline-primary w-100">
+                        Otwórz raport
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+    <!-- Top listy -->
+<h5 class="mb-3">Top listy miesiąca</h5>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+            <div class="card-header bg-white">
+                <strong>Top klienci</strong>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Klient</th>
+                            <th class="text-end">Sprzedaż</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer, value in top_customers %}
+                        <tr>
+                            <td>{{ customer }}</td>
+                            <td class="text-end">{{ value|floatformat:2 }} zł</td>
+                        </tr>
                         {% empty %}
-                            <div class="text-muted small">Brak stanów zerowych do pokazania.</div>
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                Brak danych.
+                            </td>
+                        </tr>
                         {% endfor %}
-                    </div>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+            <div class="card-header bg-white">
+                <strong>Top produkty / stocki</strong>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produkt</th>
+                            <th class="text-end">Sprzedaż</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product, value in top_products %}
+                        <tr>
+                            <td>{{ product|truncatechars:42 }}</td>
+                            <td class="text-end">{{ value|floatformat:2 }} zł</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                Brak danych.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+            <div class="card-header bg-white">
+                <strong>Sprzedaże ze stratą</strong>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Pozycja</th>
+                            <th class="text-end">Wynik</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in top_negative_sales %}
+                        <tr>
+                            <td>
+                                <div>{{ item.name|truncatechars:38 }}</div>
+                                <div class="small text-muted">{{ item.customer }}</div>
+                            </td>
+                            <td class="text-end text-danger fw-semibold">
+                                {{ item.profit|floatformat:2 }} zł
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                Brak sprzedaży ze stratą.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Analiza magazynu -->
+<h5 class="mb-3">Analiza magazynu</h5>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+            <div class="card-header bg-white">
+                <strong>Stany zerowe</strong>
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Magazyn</th>
+                            <th>Pozycja</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for ws in zero_stock_items %}
+                        <tr>
+                            <td>{{ ws.warehouse.name }}</td>
+                            <td>{{ ws.stock.name|truncatechars:36 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                Brak stanów zerowych.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+            <div class="card-header bg-white">
+                <strong>Największa wartość na stanie</strong>
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Pozycja</th>
+                            <th class="text-end">Wartość</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in top_warehouse_values %}
+                        <tr>
+                            <td>
+                                <div>{{ item.ws.stock.name|truncatechars:34 }}</div>
+                                <div class="small text-muted">
+                                    {{ item.ws.warehouse.name }} · ilość: {{ item.ws.quantity }}
+                                </div>
+                            </td>
+                            <td class="text-end fw-semibold">
+                                {{ item.value|floatformat:2 }} zł
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                Brak danych.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm dashboard-card h-100">
+            <div class="card-header bg-white">
+                <strong>Pozycje bez historii ruchów</strong>
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Magazyn</th>
+                            <th>Pozycja</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for ws in stocks_without_recent_moves %}
+                        <tr>
+                            <td>{{ ws.warehouse.name }}</td>
+                            <td>{{ ws.stock.name|truncatechars:36 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                Brak takich pozycji.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Wykresy -->
+<h5 class="mb-3">Wyniki i trendy</h5>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-xl-7 col-lg-12">
+        <div class="card shadow-sm dashboard-card chart-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Sprzedaż i wynik — ostatnie 30 dni</strong>
+                <span class="badge bg-light text-dark border">PLN</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-box">
+                    <canvas id="salesProfitChart"></canvas>
                 </div>
             </div>
         </div>
-
     </div>
+
+    <div class="col-xl-5 col-lg-12">
+        <div class="card shadow-sm dashboard-card chart-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Wartość magazynów</strong>
+                <span class="badge bg-light text-dark border">stan</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-box-sm">
+                    <canvas id="warehouseValueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Magazyny -->
+<h5 class="mb-3">Magazyny</h5>
+
+<div class="card warehouse-premium-card mb-4">
+    <div class="table-responsive">
+        <table class="table warehouse-premium-table">
+            <thead>
+                <tr>
+                    <th style="width: 54px;"></th>
+                    <th>Magazyn</th>
+                    <th class="text-end">Wartość</th>
+                    <th class="text-end">Ilość pozycji</th>
+                    <th>Udział w wartości</th>
+                    <th class="text-end">Akcje</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in warehouses %}
+                <tr>
+                    <td>
+                        <span class="warehouse-icon warehouse-icon-{{ forloop.counter }}">
+                            M
+                        </span>
+                    </td>
+
+                    <td class="fw-semibold">
+                        {{ item.warehouse.name }}
+                    </td>
+
+                    <td class="text-end fw-semibold">
+                        {{ item.value|floatformat:2 }} zł
+                    </td>
+
+                    <td class="text-end">
+                        {{ item.stocks_count }}
+                    </td>
+
+                    <td>
+                        <div class="value-bar-wrap">
+                            <div class="value-bar">
+                                <div
+                                    class="value-bar-fill"
+                                    style="width: {{ item.percent|stringformat:'s' }}%;">
+                                </div>
+                            </div>
+
+                            <span class="fw-semibold text-primary">
+                                {{ item.percent }}%
+                            </span>
+                        </div>
+                    </td>
+
+                    <td class="text-end">
+                        <a href="{% url 'warehouse:warehouse-detail-view' item.warehouse.id %}">
+                            Szczegóły
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        Brak magazynów.
+                    </td>
+                </tr>
+                {% endfor %}
+
+                <tr class="warehouse-total-row">
+                    <td></td>
+                    <td>RAZEM</td>
+                    <td class="text-end">
+                        {{ total_warehouse_value|floatformat:2 }} zł
+                    </td>
+                    <td class="text-end">
+                        {{ warehouse_stocks_count }}
+                    </td>
+                    <td>
+                        <div class="value-bar-wrap">
+                            <div class="value-bar">
+                                <div class="value-bar-fill" style="width: 100%;"></div>
+                            </div>
+                            <span>100%</span>
+                        </div>
+                    </td>
+                    <td></td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
 
     <!-- Ostatnie wpisy -->
     <div class="row g-3">
@@ -363,5 +1105,324 @@
 
     </div>
 
+<!-- Ostatnie ruchy magazynowe -->
+<h5 class="mb-3 mt-4">Ostatnie ruchy magazynowe</h5>
+
+<div class="card shadow-sm dashboard-card mb-4">
+
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>Dziennik operacji</strong>
+
+        <span class="badge bg-dark">
+            {{ latest_stock_moves|length }}
+        </span>
+    </div>
+
+    <div class="card-body p-0">
+
+        <table class="table table-sm table-hover align-middle mb-0">
+
+            <thead class="table-light">
+                <tr>
+                    <th>Typ</th>
+                    <th>Data</th>
+                    <th>Magazyn</th>
+                    <th>Pozycja</th>
+                    <th class="text-end">Przed</th>
+                    <th class="text-end">Po</th>
+                    <th class="text-end">Zmiana</th>
+                    <th>Źródło</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for item in latest_stock_moves %}
+
+                <tr>
+
+                    <!-- typ ruchu -->
+                    <td>
+                        {% if item.type == "in" %}
+                            <span class="move-type move-in">+</span>
+
+                        {% elif item.type == "out" %}
+                            <span class="move-type move-out">-</span>
+
+                        {% else %}
+                            <span class="move-type move-neutral">0</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- data -->
+                    <td>
+                        {{ item.move.date|date:"d.m.Y" }}
+                    </td>
+
+                    <!-- magazyn -->
+                    <td>
+                        {{ item.move.warehouse_stock.warehouse.name }}
+                    </td>
+
+                    <!-- stock -->
+                    <td>
+                        {{ item.move.warehouse_stock.stock.name|truncatechars:48 }}
+                    </td>
+
+                    <!-- before -->
+                    <td class="text-end">
+                        {{ item.move.quantity_before }}
+                    </td>
+
+                    <!-- after -->
+                    <td class="text-end">
+                        {{ item.move.quantity_after }}
+                    </td>
+
+                    <!-- delta -->
+                    <td class="text-end fw-semibold">
+
+                        {% if item.delta > 0 %}
+                            <span class="text-success">
+                                +{{ item.delta }}
+                            </span>
+
+                        {% elif item.delta < 0 %}
+                            <span class="text-danger">
+                                {{ item.delta }}
+                            </span>
+
+                        {% else %}
+                            0
+                        {% endif %}
+
+                    </td>
+
+                    <!-- source -->
+                    <td>
+                        <span class="badge bg-{{ item.source_badge }}">
+                            {{ item.source_label }}
+                        </span>
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        Brak ruchów magazynowych.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    function shortLabel(label) {
+    return String(label || "")
+        .replace("MAGAZYN ", "")
+        .replace("WYROBÓW GOTOWYCH", "WYROBY GOTOWE")
+        .replace("MATERIAŁÓW POMOCNICZYCH", "POMOCNICZE");
+}
+const chartDays = {{ chart_days_json|safe }};
+const salesByDay = {{ sales_by_day_json|safe }};
+const profitByDay = {{ profit_by_day_json|safe }};
+const warehouseLabels = {{ warehouse_labels_json|safe }};
+const warehouseValues = {{ warehouse_values_json|safe }};
+
+console.log("warehouseLabels", warehouseLabels);
+console.log("warehouseValues", warehouseValues);
+
+function formatMoney(value) {
+    return Number(value || 0).toLocaleString("pl-PL", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }) + " zł";
+}
+
+const commonMoneyTooltip = {
+    callbacks: {
+        label: function(context) {
+            return context.dataset.label + ": " + formatMoney(context.raw);
+        }
+    }
+};
+
+const salesProfitCtx = document.getElementById("salesProfitChart");
+
+if (salesProfitCtx) {
+    new Chart(salesProfitCtx, {
+        data: {
+            labels: chartDays,
+            datasets: [
+                {
+                    type: "bar",
+                    label: "Sprzedaż",
+                    data: salesByDay,
+                    borderWidth: 1,
+                    borderRadius: 8
+                },
+                {
+                    type: "line",
+                    label: "Wynik",
+                    data: profitByDay,
+                    tension: 0.35,
+                    borderWidth: 3,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: "bottom"
+                },
+                tooltip: commonMoneyTooltip
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return Number(value).toLocaleString("pl-PL") + " zł";
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+const warehouseValueCtx = document.getElementById("warehouseValueChart");
+
+if (warehouseValueCtx) {
+    new Chart(warehouseValueCtx, {
+        type: "bar",
+        data: {
+            labels: warehouseLabels.map(shortLabel),
+            datasets: [
+                {
+                    label: "Wartość",
+                    data: warehouseValues,
+                    borderWidth: 1,
+                    borderRadius: 8
+                }
+            ]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: commonMoneyTooltip
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return Number(value).toLocaleString("pl-PL") + " zł";
+                        }
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+<script>
+async function refreshDashboardData() {
+
+    try {
+
+        const response = await fetch(
+            "{% url 'warehouse:dashboard-data' %}"
+        );
+
+        const data = await response.json();
+
+        // KPI
+        document.getElementById(
+            "kpi-active-orders"
+        ).innerText = data.active_orders;
+
+        document.getElementById(
+            "kpi-unprocessed-deliveries"
+        ).innerText = data.unprocessed_deliveries;
+
+        document.getElementById(
+            "kpi-warehouse-value"
+        ).innerText =
+            data.warehouse_value.toFixed(2) + " zł";
+
+        document.getElementById(
+            "kpi-sales-value"
+        ).innerText =
+            data.sales_value.toFixed(2) + " zł";
+
+        const profitEl = document.getElementById(
+            "kpi-sales-profit"
+        );
+
+        profitEl.innerText =
+            data.sales_profit.toFixed(2) + " zł";
+
+        profitEl.classList.remove(
+            "text-success",
+            "text-danger"
+        );
+
+        if (data.sales_profit >= 0) {
+            profitEl.classList.add("text-success");
+        } else {
+            profitEl.classList.add("text-danger");
+        }
+
+    } catch (e) {
+        console.error(
+            "Dashboard refresh error:",
+            e
+        );
+    }
+}
+
+// refresh co 300 sekund
+setInterval(
+    refreshDashboardData,
+    300000
+);
+</script>
 {% endblock %}

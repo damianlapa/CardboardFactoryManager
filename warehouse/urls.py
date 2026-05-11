@@ -155,4 +155,5 @@ urlpatterns += [
 
 urlpatterns += [
     path("dashboard/", WarehouseDashboardView.as_view(), name="dashboard"),
+    path("dashboard/data/", DashboardDataView.as_view(), name="dashboard-data"),
 ]
