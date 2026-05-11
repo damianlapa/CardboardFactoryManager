@@ -20,55 +20,64 @@
         </div>
     </div>
 
-    <form method="get" class="row g-2 align-items-end mb-3">
-        <div class="col-auto">
-            <label class="form-label mb-1">Pracownik</label>
-            <select name="person" class="form-select form-select-sm">
-                <option value="">Wszyscy</option>
-                {% for person in persons %}
-                    <option value="{{ person.id }}" {% if person.id == person_id %}selected{% endif %}>
-                        {{ person }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+<div id="orders-table-container">
+    <div class="card shadow-sm mb-3">
+    <div class="card-body py-3">
 
-        <div class="col-auto">
-            <label class="form-label mb-1">Miesiąc</label>
-            <select name="month" class="form-select form-select-sm">
-                {% for number, name in months %}
-                    <option value="{{ number }}" {% if number == month %}selected{% endif %}>
-                        {{ name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+        <form method="get" class="row g-3 align-items-end">
 
-        <div class="col-auto">
-            <label class="form-label mb-1">Rok</label>
-            <select name="year" class="form-select form-select-sm">
-                {% for y in years %}
-                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>
-                        {{ y }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Pracownik</label>
+                <select name="person" class="form-select form-select-sm">
+                    <option value="">Dowolny pracownik</option>
+                    {% for person in persons %}
+                        <option value="{{ person.id }}" {% if person.id == person_id %}selected{% endif %}>
+                            {{ person }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="col-auto">
-            <label class="form-label mb-1">Klient</label>
-            <input name="customer"
-                   value="{{ customer }}"
-                   class="form-control form-control-sm"
-                   placeholder="np. archem">
-        </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Data od</label>
+                <input type="date"
+                       name="date_from"
+                       value="{{ date_from }}"
+                       class="form-control form-control-sm">
+            </div>
 
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary btn-sm">
-                Filtruj
-            </button>
-        </div>
-    </form>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Data do</label>
+                <input type="date"
+                       name="date_to"
+                       value="{{ date_to }}"
+                       class="form-control form-control-sm">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Klient</label>
+                <input name="customer"
+                       value="{{ customer }}"
+                       class="form-control form-control-sm"
+                       placeholder="Wpisz nazwę klienta">
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                    Filtruj
+                </button>
+
+                <a href="{% url 'warehouse:orders-profitability' %}"
+                   class="btn btn-outline-secondary btn-sm">
+                    Reset
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+    {% if has_filters %}
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -150,6 +159,25 @@
         </div>
     </div>
 </div>
+
+    {% else %}
+
+<div class="card shadow-sm">
+    <div class="card-body text-center py-5">
+
+        <h5 class="text-muted mb-2">
+            Brak wybranych filtrów
+        </h5>
+
+        <p class="text-muted mb-0">
+            Wybierz zakres dat, pracownika lub klienta i kliknij
+            <strong>Filtruj</strong>.
+        </p>
+
+    </div>
+</div>
+
+{% endif %}
 
 <style>
 th.sortable {

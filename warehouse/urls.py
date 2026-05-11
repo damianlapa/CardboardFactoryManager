@@ -144,11 +144,15 @@ urlpatterns += [
     path(
         "orders/profitability/",
         OrderProfitabilityListView.as_view(),
-        name="order-profitability-list"
+        name="orders-profitability"
     ),
     path(
         "orders/profitability/data/",
         OrderProfitabilityDataView.as_view(),
         name="orders-profitability-data",
     ),
+]
+
+urlpatterns += [
+    path("dashboard/", WarehouseDashboardView.as_view(), name="dashboard"),
 ]

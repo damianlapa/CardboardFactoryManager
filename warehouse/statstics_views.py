@@ -1,9 +1,24 @@
+# warehouse/statistic_views.py
+
 import datetime
 from django.utils import timezone
 
 from django.http import JsonResponse
 from collections import defaultdict
-from warehouse.models import Order  # lub zaktualizuj nazwę importu
+from warehouse.models import *
+
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Sum
+from django.utils import timezone
+from decimal import Decimal
+import datetime
+
+from django.urls import reverse_lazy
+from django.views import View
+from django.shortcuts import render
+
+from decimal import Decimal
+
 
 
 def customer_distribution(request):
@@ -79,3 +94,91 @@ def customer_orders(request):
 
         return JsonResponse(result, safe=False)
 
+
+
+class WarehouseDashboardView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+    template_name = "warehouse/dashboard.html"
+
+    def get(self, request):
+        today = datetime.datetime.now().date()
+        month_start = today.replace(day=1)
+
+        active_orders = Order.objects.filter(delivered=True, finished=False).count()
+        open_orders = Order.objects.filter(finished=False).count()
+
+        unprocessed_deliveries = Delivery.objects.filter(processed=False).count()
+        unprocessed_special_deliveries = DeliverySpecial.objects.filter(processed=False).count()
+
+        warehouse_stocks_count = WarehouseStock.objects.filter(quantity__gt=0).count()
+        bom_count = BOM.objects.count()
+
+        warehouses = Warehouse.objects.all()
+        warehouse_cards = []
+        total_warehouse_value = Decimal("0.00")
+
+        for warehouse in warehouses:
+            value = Decimal(warehouse.count_warehouse_value() or 0)
+            total_warehouse_value += value
+
+            warehouse_cards.append({
+                "warehouse": warehouse,
+                "value": value,
+                "stocks_count": WarehouseStock.objects.filter(
+                    warehouse=warehouse,
+                    quantity__gt=0
+                ).count(),
+            })
+
+        month_sales = ProductSell3.objects.filter(
+            date__gte=month_start,
+            date__lte=today
+        ).select_related("customer", "product", "stock")
+
+        sales_value = Decimal("0.00")
+        sales_profit = Decimal("0.00")
+
+        for sell in month_sales:
+            sales_value += sell.revenue()
+            sales_profit += sell.profit()
+
+        latest_sales = month_sales.order_by("-date")[:8]
+
+        latest_deliveries = Delivery.objects.select_related(
+            "provider"
+        ).order_by("-date", "-id")[:8]
+
+        unsettled_orders = Order.objects.filter(
+            delivered=True,
+            finished=False
+        ).select_related("customer", "provider").order_by("-delivery_date")[:8]
+
+        zero_stocks = WarehouseStock.objects.filter(
+            quantity=0
+        ).select_related("warehouse", "stock")[:8]
+
+        context = {
+            "today": today,
+            "month_start": month_start,
+
+            "active_orders": active_orders,
+            "open_orders": open_orders,
+            "unprocessed_deliveries": unprocessed_deliveries,
+            "unprocessed_special_deliveries": unprocessed_special_deliveries,
+            "warehouse_stocks_count": warehouse_stocks_count,
+            "bom_count": bom_count,
+
+            "warehouses": warehouse_cards,
+            "total_warehouse_value": total_warehouse_value,
+
+            "sales_value": sales_value,
+            "sales_profit": sales_profit,
+            "month_sales_count": month_sales.count(),
+
+            "latest_sales": latest_sales,
+            "latest_deliveries": latest_deliveries,
+            "unsettled_orders": unsettled_orders,
+            "zero_stocks": zero_stocks,
+        }
+
+        return render(request, self.template_name, context)

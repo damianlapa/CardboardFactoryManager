@@ -2715,35 +2715,32 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
 
     def get(self, request):
         from warehousemanager.models import Person
-        today = datetime.date.today()
 
         value_setting = LocalSetting.objects.filter(name="work_hour_value").first()
         value = value_setting.value if value_setting else 192
 
         persons = Person.objects.all().order_by("first_name", "last_name")
+
+        date_from = request.GET.get("date_from", "")
+        date_to = request.GET.get("date_to", "")
+        customer = request.GET.get("customer", "").strip()
         person_id = request.GET.get("person")
-        customer = request.GET.get("customer", "")
 
-        months = [
-            (1, "Styczeń"), (2, "Luty"), (3, "Marzec"),
-            (4, "Kwiecień"), (5, "Maj"), (6, "Czerwiec"),
-            (7, "Lipiec"), (8, "Sierpień"), (9, "Wrzesień"),
-            (10, "Październik"), (11, "Listopad"), (12, "Grudzień"),
-        ]
-
-        month = int(request.GET.get("month", today.month))
-        year = int(request.GET.get("year", today.year))
-        years = range(today.year - 3, today.year + 2)
+        has_filters = any([
+            request.GET.get("person"),
+            request.GET.get("customer"),
+            request.GET.get("date_from"),
+            request.GET.get("date_to"),
+        ])
 
         return render(request, self.template_name, {
             "persons": persons,
             "person_id": int(person_id) if person_id else None,
             "customer": customer,
-            "months": months,
-            "month": month,
-            "year": year,
-            "years": years,
+            "date_from": date_from,
+            "date_to": date_to,
             "value": value,
+            "has_filters": has_filters,
         })
 
 
@@ -2753,10 +2750,11 @@ class OrderProfitabilityDataView(LoginRequiredMixin, View):
 
     def get_base_queryset(self, request):
         from warehousemanager.models import Person
-        customer = request.GET.get("customer", "").strip()
+
         person_id = request.GET.get("person")
-        month = int(request.GET.get("month", datetime.date.today().month))
-        year = int(request.GET.get("year", datetime.date.today().year))
+        customer = request.GET.get("customer", "").strip()
+        date_from = parse_date(request.GET.get("date_from") or "")
+        date_to = parse_date(request.GET.get("date_to") or "")
 
         qs = (
             Order.objects
@@ -2764,19 +2762,25 @@ class OrderProfitabilityDataView(LoginRequiredMixin, View):
             .order_by("-order_date", "-id")
         )
 
+        if person_id:
+            person = Person.objects.filter(id=person_id).first()
+            if not person:
+                return Order.objects.none()
+
+            qs = (
+                Order.produced_by_person(person)
+                .select_related("provider", "customer", "product")
+                .order_by("-order_date", "-id")
+            )
+
         if customer:
             qs = qs.filter(customer__name__icontains=customer)
 
-        if person_id:
-            person = Person.objects.filter(id=person_id).first()
-            if person:
-                qs = (Order.produced_by_person(person).
-                      select_related("provider", "customer", "product").order_by("-order_date", "-id"))
+        if date_from:
+            qs = qs.filter(order_date__gte=date_from)
 
-                if customer:
-                    qs = qs.filter(customer__name__icontains=customer)
-            else:
-                qs = Order.objects.none()
+        if date_to:
+            qs = qs.filter(order_date__lte=date_to)
 
         return qs
 

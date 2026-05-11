@@ -1,0 +1,367 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<style>
+.dashboard-card {
+    border: 0;
+    border-radius: 18px;
+}
+.dashboard-kpi {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+.quick-link {
+    text-decoration: none;
+}
+.quick-link .card:hover {
+    transform: translateY(-2px);
+    transition: 0.15s ease;
+}
+.report-card {
+    border-left: 4px solid #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Dashboard zarządzania</h2>
+            <div class="text-muted">
+                Podsumowanie magazynu, produkcji, sprzedaży i raportów.
+            </div>
+        </div>
+
+        <div class="text-end text-muted small">
+            Dzisiaj: {{ today|date:"d.m.Y" }}
+        </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Aktywne zlecenia</div>
+                    <div class="dashboard-kpi">{{ active_orders }}</div>
+                    <a href="{% url 'warehouse:order_list' %}" class="small">Przejdź do zleceń</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Otwarte zlecenia razem</div>
+                    <div class="dashboard-kpi">{{ open_orders }}</div>
+                    <span class="small text-muted">Wszystkie niewykończone</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Dostawy do przetworzenia</div>
+                    <div class="dashboard-kpi">
+                        {{ unprocessed_deliveries }}
+                    </div>
+                    <a href="{% url 'warehouse:delivery_list' %}" class="small">Lista dostaw</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Wartość magazynów</div>
+                    <div class="dashboard-kpi">
+                        {{ total_warehouse_value|floatformat:2 }} zł
+                    </div>
+                    <a href="{% url 'warehouse:warehouse-list-view' %}" class="small">Magazyny</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sprzedaż -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Sprzedaż w miesiącu</div>
+                    <div class="dashboard-kpi">{{ sales_value|floatformat:2 }} zł</div>
+                    <span class="small text-muted">Od {{ month_start|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Wynik sprzedaży w miesiącu</div>
+                    <div class="dashboard-kpi {% if sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ sales_profit|floatformat:2 }} zł
+                    </div>
+                    <span class="small text-muted">Przychód minus koszt FIFO</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Liczba sprzedaży w miesiącu</div>
+                    <div class="dashboard-kpi">{{ month_sales_count }}</div>
+                    <a href="{% url 'warehouse:sells-list-view' %}" class="small">Lista sprzedaży</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Szybkie akcje -->
+    <h5 class="mb-3">Szybkie akcje</h5>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-2">
+            <a class="quick-link" href="{% url 'warehouse:order_list' %}">
+                <div class="card shadow-sm dashboard-card">
+                    <div class="card-body text-center">Zlecenia</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-2">
+            <a class="quick-link" href="{% url 'warehouse:add-orders' %}">
+                <div class="card shadow-sm dashboard-card">
+                    <div class="card-body text-center">Dodaj zamówienie</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-2">
+            <a class="quick-link" href="{% url 'warehouse:delivery_list' %}">
+                <div class="card shadow-sm dashboard-card">
+                    <div class="card-body text-center">Dostawy</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-2">
+            <a class="quick-link" href="{% url 'warehouse:sells-list-view' %}">
+                <div class="card shadow-sm dashboard-card">
+                    <div class="card-body text-center">Sprzedaż</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-2">
+            <a class="quick-link" href="{% url 'warehouse:price_list-upload' %}">
+                <div class="card shadow-sm dashboard-card">
+                    <div class="card-body text-center">Cennik</div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Raporty -->
+    <h5 class="mb-3">Raporty</h5>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm report-card">
+                <div class="card-body">
+                    <h6>Rentowność zleceń</h6>
+                    <p class="small text-muted mb-2">Koszty, sprzedaż i wynik na zleceniach.</p>
+                    <a href="{% url 'warehouse:orders-profitability' %}" class="btn btn-sm btn-primary">Otwórz</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm report-card">
+                <div class="card-body">
+                    <h6>Statystyki dostaw</h6>
+                    <p class="small text-muted mb-2">Dostawy według okresów i dostawców.</p>
+                    <a href="{% url 'warehouse:deliveries-statistics' %}" class="btn btn-sm btn-primary">Otwórz</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Magazyny -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-header bg-white">
+                    <strong>Magazyny</strong>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Magazyn</th>
+                                <th class="text-end">Pozycji</th>
+                                <th class="text-end">Wartość</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in warehouses %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'warehouse:warehouse-detail-view' item.warehouse.id %}">
+                                        {{ item.warehouse.name }}
+                                    </a>
+                                </td>
+                                <td class="text-end">{{ item.stocks_count }}</td>
+                                <td class="text-end">{{ item.value|floatformat:2 }} zł</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-muted text-center py-3">Brak magazynów.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerty -->
+        <div class="col-md-6">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-header bg-white">
+                    <strong>Alerty</strong>
+                </div>
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Dostawy specjalne do przetworzenia</div>
+                        <div class="text-muted">{{ unprocessed_special_deliveries }}</div>
+                    </div>
+
+                    <div>
+                        <div class="fw-semibold mb-2">Stany zerowe</div>
+
+                        {% for ws in zero_stocks %}
+                            <div class="small border-bottom py-1">
+                                {{ ws.warehouse.name }} — {{ ws.stock.name }}
+                            </div>
+                        {% empty %}
+                            <div class="text-muted small">Brak stanów zerowych do pokazania.</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Ostatnie wpisy -->
+    <div class="row g-3">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-header bg-white">
+                    <strong>Ostatnia sprzedaż</strong>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data</th>
+                                <th>Produkt</th>
+                                <th>Klient</th>
+                                <th class="text-end">Wartość</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sell in latest_sales %}
+                            <tr>
+                                <td>{{ sell.date|date:"d.m.Y" }}</td>
+                                <td>
+                                    {% if sell.product %}
+                                        {{ sell.product.name }}
+                                    {% elif sell.stock %}
+                                        {{ sell.stock.name }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ sell.customer|default:sell.customer_alter_name }}</td>
+                                <td class="text-end">{{ sell.revenue|floatformat:2 }} zł</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-muted text-center py-3">Brak sprzedaży.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-header bg-white">
+                    <strong>Ostatnie dostawy</strong>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data</th>
+                                <th>Dostawca</th>
+                                <th>Numer</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for delivery in latest_deliveries %}
+                            <tr>
+                                <td>{{ delivery.date|date:"d.m.Y" }}</td>
+                                <td>{{ delivery.provider }}</td>
+                                <td>
+                                    <a href="{% url 'warehouse:delivery-detail-view' delivery.id %}">
+                                        {{ delivery.number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if delivery.processed %}
+                                        <span class="badge bg-success">Przetworzona</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Do przyjęcia</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-muted text-center py-3">Brak dostaw.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
