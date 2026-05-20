@@ -1,4 +1,5 @@
 from django.forms import ModelForm, TextInput, Select, DateTimeInput, SelectMultiple
+from django import forms
 from production.models import *
 from warehousemanager.models import Person
 
@@ -10,23 +11,53 @@ class ProductionOrderForm(ModelForm):
         fields = '__all__'
 
 
-class ProductionUnitForm(ModelForm):
-    def __init__(self, day=None, *args, **kwargs):
-        super(ProductionUnitForm, self).__init__(*args, **kwargs)
-        day = datetime.datetime.today() if not day else day
-        c_workers = Person.objects.filter(job_start__lte=day, job_end__isnull=True, occupancy_type__in=("PRODUCTION", "LOGISTIC", "MAN/PROD"))
-
-        self.fields['persons'].widget.attrs['size'] = str(c_workers.count())
-        self.fields['persons'].queryset = c_workers
-
+class ProductionUnitForm(forms.ModelForm):
     class Meta:
         model = ProductionUnit
-        exclude = ['production_order']
+        fields = [
+            "sequence",
+            "work_station",
+            "status",
+            "persons",
+            "estimated_time",
+            "start",
+            "end",
+            "quantity_start",
+            "quantity_end",
+            "notes",
+        ]
+
         widgets = {
-            'start': DateTimeInput(attrs={'type': 'datetime'}),
-            'end': DateTimeInput(attrs={'type': 'datetime'}),
-            'persons': SelectMultiple()
+            "start": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "class": "form-control",
+                },
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "end": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "class": "form-control",
+                },
+                format="%Y-%m-%dT%H:%M",
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        day = kwargs.pop("day", None)
+        super().__init__(*args, **kwargs)
+
+        self.fields["start"].input_formats = ["%Y-%m-%dT%H:%M"]
+        self.fields["end"].input_formats = ["%Y-%m-%dT%H:%M"]
+
+        for name, field in self.fields.items():
+            if name not in ("persons",):
+                field.widget.attrs.setdefault("class", "form-control")
+
+        self.fields["persons"].widget.attrs.update({
+            "class": "d-none",
+        })
 
 
 class QuickProductionUnitForm(ModelForm):

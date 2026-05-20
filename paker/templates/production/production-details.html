@@ -1,143 +1,311 @@
-{% extends '__base2__.html' %}
-{% block title %}{{ prduction_order }}{% endblock %}
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block title %}{{ production_order }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/production/production-details.css' %}">
+{% endblock %}
+
 {% block content %}
-<a href="{% url 'all-production-orders' %}">
-    <button>
-        BACK TO ALL ORDERS
-    </button>
-</a>
-<h1 class="page-header">{{ production_order }}</h1>
+<div class="production-page">
 
-<form class="ordinary-form" method="get" action="{% url 'production-details-change' %}">
-    <select id="select-status" name="status">
-        {% for s in production_order_statuses %}
-        <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %} >
-            {{ s.0 }}
-        </option>
-        {% endfor %}
-    </select>
-    <input type="number" value="{{ production_order.id }}" name="production-order-id" hidden>
-    <input type="submit" class="ordinary-form" value="CHANGE" id="change-btn" disabled>
-</form>
+    <div class="mb-3">
+        <a href="{% url 'all-production-orders' %}" class="btn btn-link text-decoration-none px-0">
+            ← Back to all orders
+        </a>
+    </div>
 
-<h3 class="red">DETAILS</h3>
-<a href="{% url 'order-redirect' order_id=production_order.id %}"><button>WAREHOUSE ORDER</button></a>
-<table style="border: 1px solid pink" class="center bg-white">
-    <tr style="display: none">
-        <td id="order_id">{{ production_order.id }}</td>
-    </tr>
-    <tr>
-        <th>id_number</th>
-        <th>{{ production_order.id_number }}</th>
-    </tr>
-    <tr>
-        <th>cardboard</th>
-        <th>{{ production_order.cardboard }}</th>
-    </tr>
-    <tr>
-        <th>cardboard dimensions</th>
-        <th>{{ production_order.cardboard_dimensions }}</th>
-    </tr>
-    <tr>
-        <th>customer</th>
-        <th>{{ production_order.customer }}</th>
-    </tr>
-    <tr>
-        <th>dimensions</th>
-        <th>{{ production_order.dimensions }}</th>
-    </tr>
-    <tr>
-        <th>ordered</th>
-        <th id="production-order-ordered">{{ production_order.ordered_quantity }}</th>
-    </tr>
-    <tr>
-        <th>quantity</th>
-        <th id="production-order-quantity">{{ production_order.quantity }}</th>
-    </tr>
-    <tr>
-        <th>status</th>
-        <th id="production-status">{{ production_order.status }}</th>
-    </tr>
-    <tr>
-        <th>completed</th>
-        <th>{{ production_order.completed }}</th>
-    </tr>
-    <tr>
-        <th>priority</th>
-        <th>{{ production_order.priority }}</th>
-    </tr>
-    <tr>
-        <th>notes</th>
-        <th>{{ production_order.notes }}</th>
-    </tr>
-    <tr>
-        <th>added</th>
-        <th>{{ production_order.add_date }}</th>
-    </tr>
-</table>
-<h3 class="red">UNITS</h3>
-<a href="{% url 'production-unit-add' order_id=production_order.id %}">
-    <button>Add Unit</button>
-</a>
-<div>
-    <table class="bg-white center">
-        <tr>
-            <th>
-                DETAILS
-            </th>
-            <th>
-                SEQUENCE
-            </th>
-            <th>
-                STATUS
-            </th>
-            <th>
-                WORK STATION
-            </th>
-            <th>
-                START
-            </th>
-            <th>
-                END
-            </th>
-            <th>
-                ESTIMATED TIME
-            </th>
-            <th>
-                ESTIMATED END
-            </th>
+    <div class="page-top">
+        <div>
+            <h1 class="order-title">{{ production_order }}</h1>
 
-        </tr>
-        {% for p in production_units %}
-        <tr>
-            <td>
-                <a href="{% url 'unit-details' unit_id=p.id %}" >
-                    <button style="color: white; background: green;">
-                        DETAILS
-                    </button>
-                </a>
-            </td>
-            <td>{{ p.sequence }}</td>
-            <td>{{ p.status }}</td>
-            <td>{{ p.work_station }}</td>
-            <td>{{ p.start }}</td>
-            <td>{{ p.end }}</td>
-            <td>{{ p.estimated_time }}</td>
-            <td>{{ p.estimated_end }}</td>
-            <td>
-                <a href="{% url 'delete-production-unit' unit_id=p.id %}">
-                <button style="background: red; color: white;">
-                DELETE
+            <form method="get" action="{% url 'production-details-change' %}" class="d-flex gap-2 align-items-center">
+                <select id="select-status" name="status" class="form-select" style="max-width: 190px;">
+                    {% for s in production_order_statuses %}
+                        <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %}>
+                            {{ s.0 }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <input type="number" value="{{ production_order.id }}" name="production-order-id" hidden>
+
+                <button type="submit" class="btn btn-outline-primary" id="change-btn" disabled>
+                    Change
                 </button>
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            </form>
+        </div>
+
+        <div class="order-card">
+            <div class="info-grid">
+                <div>
+                    <div class="info-label">Customer</div>
+                    <div class="info-value">{{ production_order.customer }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Dimensions</div>
+                    <div class="info-value">{{ production_order.dimensions }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Quantity</div>
+                    <div class="info-value">{{ production_order.quantity }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Status</div>
+                    <div class="info-value">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            {{ production_order.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-tabs-clean">
+        <a href="#">Details</a>
+        <a href="{% url 'order-redirect' order_id=production_order.id %}">Warehouse order</a>
+        <a href="#" class="active">Units</a>
+    </div>
+
+    <div class="table-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title mb-0">
+                Jednostki produkcyjne ({{ production_units.count }})
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Seq</th>
+                        <th>Status</th>
+                        <th>Stanowisko</th>
+                        <th>Start</th>
+                        <th>Koniec</th>
+                        <th>Ilość start</th>
+                        <th>Ilość koniec</th>
+                        <th>Czas przew. [min]</th>
+                        <th>Pracownicy</th>
+                        <th class="text-end">Akcje</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for p in production_units %}
+                        <tr>
+                            <td class="fw-bold">{{ p.sequence }}</td>
+
+                            <td>
+                                {% if p.status == "FINISHED" %}
+                                    <span class="badge-status badge-finished">{{ p.status }}</span>
+                                {% elif p.status == "PLANNED" %}
+                                    <span class="badge-status badge-planned">{{ p.status }}</span>
+                                {% elif p.status == "IN PROGRESS" %}
+                                    <span class="badge-status badge-progress">{{ p.status }}</span>
+                                {% else %}
+                                    <span class="badge-status badge-default">{{ p.status }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ p.work_station }}</td>
+                            <td>{{ p.start|date:"Y-m-d H:i"|default:"-" }}</td>
+                            <td>{{ p.end|date:"Y-m-d H:i"|default:"-" }}</td>
+                            <td>{{ p.quantity_start|default:"-" }}</td>
+                            <td>{{ p.quantity_end|default:"-" }}</td>
+                            <td>{{ p.estimated_time|default:"-" }}</td>
+
+                            <td>
+                                {% for person in p.persons.all %}
+                                    <span class="badge bg-secondary worker-badge">{{ person }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Brak</span>
+                                {% endfor %}
+                            </td>
+
+                            <td class="text-end text-nowrap">
+                                <a href="{% url 'unit-details' unit_id=p.id %}" class="btn btn-sm btn-outline-primary">
+                                    Details
+                                </a>
+                                <a href="{% url 'delete-production-unit' unit_id=p.id %}" class="btn btn-sm btn-outline-danger">
+                                    Delete
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+
+                    <tr class="unit-add-row">
+
+    <td>
+        <form method="post" id="unit-form">
+            {% csrf_token %}
+            {{ form.sequence }}
+    </td>
+
+    <td>
+        {{ form.status }}
+    </td>
+
+    <td>
+        {{ form.work_station }}
+    </td>
+
+    <td>
+        {{ form.start }}
+    </td>
+
+    <td>
+        {{ form.end }}
+    </td>
+
+    <td>
+        {{ form.quantity_start }}
+    </td>
+
+    <td>
+        {{ form.quantity_end }}
+    </td>
+
+    <td>
+        {{ form.estimated_time }}
+    </td>
+
+    <td>
+        <button type="button"
+                class="btn btn-outline-primary btn-sm w-100"
+                data-bs-toggle="modal"
+                data-bs-target="#workersModal">
+            Wybierz
+        </button>
+
+        <div id="selected-workers-preview"
+             class="selected-workers-preview">
+            Brak
+        </div>
+
+        <div class="d-none">
+            {{ form.persons }}
+        </div>
+    </td>
+
+    <td class="text-end">
+        <button type="submit"
+                form="unit-form"
+                class="btn btn-primary btn-sm">
+            + Dodaj
+        </button>
+
+        </form>
+    </td>
+
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
+<div class="modal fade" id="workersModal" tabindex="-1" aria-labelledby="workersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="workersModalLabel">
+                    Wybierz pracowników
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="workers-grid">
+                    {% for worker in workers %}
+                        <button type="button"
+                                class="worker-tile"
+                                data-worker-id="{{ worker.id }}"
+                                data-worker-name="{{ worker }}">
+                            {{ worker }}
+                        </button>
+                    {% empty %}
+                        <div class="text-muted">
+                            Brak dostępnych pracowników produkcyjnych.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="clear-workers-btn">
+                    Wyczyść
+                </button>
+
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    Zatwierdź
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}
+
 {% block scripts %}
-{% load static %}
-<script src="{% static 'js/production-order-details.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const personSelect = document.querySelector("#id_persons");
+    const workerTiles = document.querySelectorAll(".worker-tile");
+    const preview = document.querySelector("#selected-workers-preview");
+    const clearBtn = document.querySelector("#clear-workers-btn");
+
+    if (!personSelect || !preview) {
+        return;
+    }
+
+    function updatePreview() {
+        const selectedNames = [];
+
+        workerTiles.forEach(tile => {
+            const workerId = tile.dataset.workerId;
+            const option = personSelect.querySelector(`option[value="${workerId}"]`);
+
+            if (tile.classList.contains("selected")) {
+                selectedNames.push(tile.dataset.workerName);
+                if (option) option.selected = true;
+            } else {
+                if (option) option.selected = false;
+            }
+        });
+
+        preview.textContent = selectedNames.length
+            ? selectedNames.join(", ")
+            : "Brak pracowników";
+    }
+
+    workerTiles.forEach(tile => {
+        tile.addEventListener("click", function () {
+            tile.classList.toggle("selected");
+            updatePreview();
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", function () {
+            workerTiles.forEach(tile => tile.classList.remove("selected"));
+            updatePreview();
+        });
+    }
+
+    updatePreview();
+
+    const workersModal = document.getElementById('workersModal');
+
+if (workersModal) {
+    workersModal.addEventListener('hidden.bs.modal', function () {
+        document.activeElement.blur();
+    });
+}
+});
+</script>
 {% endblock %}

@@ -1,0 +1,422 @@
+/* =========================
+   GLOBAL HEADER / NAVBAR
+   Zostaje globalnie, bo base3 z tego korzysta.
+========================= */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.welcome-text {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+#welcome-text a {
+    font-size: 18px;
+    text-decoration: none;
+}
+
+.navbar {
+    background-color: #007bff;
+    padding: 15px 20px;
+}
+
+.nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-list li a {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.nav-list li a:hover {
+    color: #ffcc00;
+}
+
+/* =========================
+   PRODUCTION DETAILS ONLY
+   Wszystko niżej jest ograniczone do .production-page,
+   żeby nie psuło nawigacji/base3.
+========================= */
+
+.production-page {
+    padding: 24px;
+    background: #f5f7fb;
+    min-height: calc(100vh - 70px);
+    color: #111827;
+}
+
+.production-page .page-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.production-page .order-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 14px;
+}
+
+.production-page .order-card,
+.production-page .table-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+}
+
+.production-page .order-card {
+    min-width: 440px;
+    padding: 22px;
+}
+
+.production-page .info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.production-page .info-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.production-page .info-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 5px;
+}
+
+.production-page .nav-tabs-clean {
+    display: flex;
+    gap: 28px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 22px;
+}
+
+.production-page .nav-tabs-clean a {
+    padding: 14px 0;
+    color: #374151;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.production-page .nav-tabs-clean a.active {
+    color: #0d6efd;
+    border-bottom: 3px solid #0d6efd;
+}
+
+.production-page .table-card {
+    padding: 22px;
+}
+
+.production-page .section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.production-page .table {
+    margin-bottom: 0;
+    table-layout: auto;
+}
+
+.production-page .table thead th {
+    background: #f9fafb;
+    color: #374151;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 13px 12px;
+    white-space: nowrap;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.production-page .table tbody td {
+    vertical-align: middle;
+    padding: 13px 12px;
+    font-size: 13px;
+    border-color: #edf0f4;
+}
+
+.production-page .table tbody tr:hover td {
+    background: #fafcff;
+}
+
+.production-page .unit-add-row td {
+    background: #f8fafc !important;
+    padding: 18px !important;
+}
+
+.production-page .unit-inline-form {
+    margin: 0;
+}
+
+.production-page .form-control,
+.production-page .form-select,
+.production-page select,
+.production-page input,
+.production-page textarea {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 9px !important;
+    border: 1px solid #d1d5db !important;
+    background: #fff;
+    font-size: 13px;
+    padding: 6px 9px;
+}
+
+.production-page .form-control:focus,
+.production-page .form-select:focus,
+.production-page select:focus,
+.production-page input:focus,
+.production-page textarea:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, .12);
+    outline: none;
+}
+
+.production-page select[multiple] {
+    display: none;
+}
+
+.production-page .unit-inline-action {
+    display: flex;
+    align-items: end;
+    justify-content: flex-end;
+    height: 100%;
+}
+
+.production-page .unit-inline-action .btn {
+    width: 100%;
+    min-height: 38px;
+    font-weight: 700;
+}
+
+.production-page .selected-workers-preview {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #6b7280;
+    line-height: 1.25;
+    min-height: 14px;
+}
+
+.production-page .worker-badge {
+    display: inline-block;
+    margin: 2px 3px 2px 0;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.production-page .badge-status {
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.production-page .badge-finished {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.production-page .badge-planned {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.production-page .badge-progress {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.production-page .badge-default {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.production-page .btn-sm {
+    font-weight: 700;
+}
+
+/* Modal pracowników */
+.workers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+.worker-tile {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 700;
+    color: #374151;
+    transition: .15s ease;
+}
+
+.worker-tile:hover {
+    border-color: #0d6efd;
+    background: #f8fbff;
+}
+
+.worker-tile.selected {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+    color: #0d6efd;
+    box-shadow: inset 0 0 0 1px #0d6efd;
+}
+
+@media (max-width: 1200px) {
+    .production-page .page-top {
+        flex-direction: column;
+    }
+
+    .production-page .order-card {
+        min-width: auto;
+    }
+
+    .production-page .info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .production-page {
+        padding: 14px;
+    }
+
+    .production-page .order-title {
+        font-size: 24px;
+    }
+
+    .production-page .info-grid,
+    .production-page .unit-inline-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .production-page .nav-tabs-clean {
+        gap: 18px;
+        overflow-x: auto;
+    }
+}
+
+.production-page .unit-add-row td {
+    background: #f8fafc !important;
+    padding: 10px 8px !important;
+    vertical-align: bottom;
+}
+
+.production-page .unit-add-row label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #6b7280;
+    text-transform: uppercase;
+}
+
+
+
+.production-page input[type="datetime-local"] {
+    min-width: 0;
+}
+
+.production-page .selected-workers-preview {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.production-page .unit-inline-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(60px, 0.6fr)
+        minmax(120px, 1fr)
+        minmax(160px, 1.4fr)
+        minmax(170px, 1.4fr)
+        minmax(170px, 1.4fr)
+        minmax(90px, 0.8fr)
+        minmax(90px, 0.8fr)
+        minmax(100px, 0.9fr)
+        minmax(180px, 1.6fr)
+        minmax(100px, 0.8fr);
+
+    gap: 10px;
+    align-items: end;
+}
+
+.production-page .unit-inline-grid > div {
+    min-width: 0;
+}
+
+.production-page .unit-inline-grid label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.production-page .unit-inline-grid input[type="datetime-local"] {
+    min-width: 0;
+}
+
+.production-page .unit-inline-grid input,
+.production-page .unit-inline-grid select,
+.production-page .unit-inline-grid textarea {
+    width: 100%;
+    min-height: 36px;
+    font-size: 12px;
+    padding: 5px 8px;
+}
+
+.production-page .unit-inline-grid .btn {
+    min-height: 36px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.production-page input[type="datetime-local"] {
+    min-width: 0;
+}
+
+.production-page .selected-workers-preview {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.production-page .unit-inline-action {
+    display: flex;
+    align-items: flex-end;
+}.production-page .unit-inline-grid

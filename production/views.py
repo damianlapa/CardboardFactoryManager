@@ -243,7 +243,48 @@ class ProductionDetails(LoginRequiredMixin, View):
     def get(self, request, production_order_id):
         production_order_statuses = PRODUCTION_ORDER_STATUSES
         production_order = ProductionOrder.objects.get(id=production_order_id)
-        production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
+        production_units = ProductionUnit.objects.filter(
+            production_order=production_order
+        ).order_by('sequence')
+
+        today = datetime.datetime.today().date()
+
+        workers = Person.objects.filter(
+            occupancy_type='PRODUCTION',
+            job_end__isnull=True
+        ).order_by('last_name', 'first_name')
+
+        form = ProductionUnitForm(
+            initial={
+                'sequence': production_units.count() + 1,
+                'status': 'FINISHED',
+            },
+            day=today
+        )
+
+        return render(request, 'production/production-details.html', locals())
+
+    def post(self, request, production_order_id):
+        production_order_statuses = PRODUCTION_ORDER_STATUSES
+        production_order = ProductionOrder.objects.get(id=production_order_id)
+        production_units = ProductionUnit.objects.filter(
+            production_order=production_order
+        ).order_by('sequence')
+
+        today = datetime.datetime.today().date()
+        form = ProductionUnitForm(request.POST, day=today)
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.production_order = production_order
+            obj.save()
+            form.save_m2m()
+
+            return redirect(
+                'production-details',
+                production_order_id=production_order.id
+            )
+
         return render(request, 'production/production-details.html', locals())
 
 
