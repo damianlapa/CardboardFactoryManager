@@ -20,6 +20,9 @@ from django.shortcuts import render
 from decimal import Decimal
 import json
 
+from django.utils.dateparse import parse_date
+from django.shortcuts import get_object_or_404
+
 
 def customer_distribution(request):
     try:
@@ -94,6 +97,98 @@ def customer_orders(request):
 
         return JsonResponse(result, safe=False)
 
+
+def warehouse_volume_timeline(date_from=None, date_to=None):
+    from collections import defaultdict
+    from decimal import Decimal
+    import datetime
+    from warehouse.models import WarehouseStockHistory, StockSupplySettlement, StockSupplySell
+
+    if date_to is None:
+        date_to = datetime.date.today()
+
+    if date_from is None:
+        date_from = date_to - datetime.timedelta(days=90)
+
+    events = defaultdict(Decimal)
+
+    in_rows = (
+        WarehouseStockHistory.objects
+        .filter(
+            stock_supply__isnull=False,
+            date__lte=date_to,
+            delta__gt=0,
+        )
+        .select_related("stock_supply")
+    )
+
+    for h in in_rows:
+        events[h.date] += h.stock_supply.proportional_volume(h.delta)
+
+    settlement_rows = (
+        StockSupplySettlement.objects
+        .filter(
+            as_result=False,
+            settlement__settlement_date__lte=date_to,
+        )
+        .select_related("stock_supply", "settlement")
+    )
+
+    for row in settlement_rows:
+        events[row.settlement.settlement_date] -= row.stock_supply.proportional_volume(row.quantity)
+
+    sell_rows = (
+        StockSupplySell.objects
+        .filter(
+            sell__date__lte=date_to,
+        )
+        .select_related("stock_supply", "sell")
+    )
+
+    for row in sell_rows:
+        events[row.sell.date] -= row.stock_supply.proportional_volume(row.quantity)
+
+    current = Decimal("0.0000")
+
+    for date, delta in events.items():
+        if date and date < date_from:
+            current += delta
+
+    labels = []
+    values = []
+
+    day = date_from
+    while day <= date_to:
+        current += events.get(day, Decimal("0.0000"))
+
+        labels.append(day.strftime("%Y-%m-%d"))
+        values.append(float(current.quantize(Decimal("0.0001"))))
+
+        day += datetime.timedelta(days=1)
+
+    return labels, values
+
+
+class WarehouseVolumeChartView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.view_warehouse"
+    login_url = reverse_lazy("login")
+
+    def get(self, request):
+
+        date_from = parse_date(request.GET.get("date_from") or "")
+        date_to = parse_date(request.GET.get("date_to") or "")
+
+        labels, values = warehouse_volume_timeline(
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return render(request, "warehouse/warehouse_volume_chart.html", {
+            "labels": labels,
+            "values": values,
+            "date_from": date_from,
+            "date_to": date_to,
+        })
 
 
 class WarehouseDashboardView(LoginRequiredMixin, View):

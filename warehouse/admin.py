@@ -156,6 +156,8 @@ class StockSupplyAdmin(admin.ModelAdmin):
         "stock_type",
         "quantity",
         "value",
+        "area",
+        "volume",
         "used",
         "delivery_item",
         "delivery_special_item",

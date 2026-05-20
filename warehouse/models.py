@@ -609,6 +609,43 @@ class DeliveryItem(models.Model):
         except Exception as e:
             return 0
 
+    def extract_flute(self, text=""):
+        """
+        Zwraca falę z tekstu: E, EE, B, C, EB, BC albo None.
+
+        Przykłady:
+        - "KLIENT | EB | produkt" -> "EB"
+        - "T30B1TWT0372" -> "B"
+        - "fala BC 1200x800" -> "BC"
+        """
+        import re
+
+        FLUTES = ("BC", "EB", "EE", "C", "B", "E")
+
+        text = (self.order.name or text).upper().strip()
+
+        if not text:
+            return None
+
+        # 1. Najpewniej: format nazw produktów z separatorami |
+        parts = [p.strip() for p in text.split("|")]
+        for part in parts:
+            if part in FLUTES:
+                return part
+
+        # 2. Szukaj całych tokenów
+        for flute in FLUTES:
+            pattern = rf"(?<![A-Z0-9]){flute}(?![A-Z0-9])"
+            if re.search(pattern, text):
+                return flute
+
+        # 3. Fallback dla kodów typu T30B1TWT0372
+        for flute in FLUTES:
+            if flute in text:
+                return flute
+
+        return None
+
 
 class DeliveryPalette(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
@@ -883,6 +920,8 @@ class StockSupply(models.Model):
     name = models.CharField(max_length=64)
     used = models.BooleanField(default=False)
     value = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    area = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    volume = models.DecimalField(max_digits=12, decimal_places=4, default=Decimal("0.0000"))
 
     class Meta:
         ordering = ['-date']
@@ -972,6 +1011,22 @@ class StockSupply(models.Model):
 
         total_value = Decimal(self.value or 0)
         return (total_value * Decimal(avail) / Decimal(qty)).quantize(Decimal("0.01"))
+
+    def proportional_area(self, quantity):
+        if not self.quantity:
+            return Decimal("0.00")
+
+        return (
+                Decimal(self.area or 0) * Decimal(quantity) / Decimal(self.quantity)
+        ).quantize(Decimal("0.01"))
+
+    def proportional_volume(self, quantity):
+        if not self.quantity:
+            return Decimal("0.0000")
+
+        return (
+                Decimal(self.volume or 0) * Decimal(quantity) / Decimal(self.quantity)
+        ).quantize(Decimal("0.0001"))
 
 
 class Stock(models.Model):
