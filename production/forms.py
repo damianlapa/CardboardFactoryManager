@@ -30,17 +30,21 @@ class ProductionUnitForm(forms.ModelForm):
         widgets = {
             "start": forms.DateTimeInput(
                 attrs={
-                    "type": "datetime-local",
-                    "class": "form-control",
+                    "type": "text",
+                    "class": "form-control js-datetime-picker",
+                    "placeholder": "rrrr-mm-dd gg:mm",
+                    "autocomplete": "off",
                 },
-                format="%Y-%m-%dT%H:%M",
+                format="%Y-%m-%d %H:%M",
             ),
             "end": forms.DateTimeInput(
                 attrs={
-                    "type": "datetime-local",
-                    "class": "form-control",
+                    "type": "text",
+                    "class": "form-control js-datetime-picker",
+                    "placeholder": "rrrr-mm-dd gg:mm",
+                    "autocomplete": "off",
                 },
-                format="%Y-%m-%dT%H:%M",
+                format="%Y-%m-%d %H:%M",
             ),
         }
 

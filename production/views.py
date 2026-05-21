@@ -3,6 +3,8 @@ from django.views import View
 
 from django.http import JsonResponse
 
+from django.utils.dateparse import parse_datetime
+
 from django.db.models import Q
 
 from production.models import *
@@ -247,6 +249,9 @@ class ProductionDetails(LoginRequiredMixin, View):
             production_order=production_order
         ).order_by('sequence')
 
+        production_unit_statuses = PRODUCTION_UNIT_STATUSES
+        workstations = WorkStation.objects.all()
+
         today = datetime.datetime.today().date()
 
         workers = Person.objects.filter(
@@ -274,6 +279,9 @@ class ProductionDetails(LoginRequiredMixin, View):
         today = datetime.datetime.today().date()
         form = ProductionUnitForm(request.POST, day=today)
 
+        production_unit_statuses = PRODUCTION_UNIT_STATUSES
+        workstations = WorkStation.objects.all()
+
         if form.is_valid():
             obj = form.save(commit=False)
             obj.production_order = production_order
@@ -286,6 +294,97 @@ class ProductionDetails(LoginRequiredMixin, View):
             )
 
         return render(request, 'production/production-details.html', locals())
+
+
+class UpdateProductionUnitInline(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def post(self, request, unit_id):
+        unit = ProductionUnit.objects.get(id=unit_id)
+
+        field = request.POST.get("field")
+        value = request.POST.get("value")
+
+        allowed_fields = {
+            "sequence",
+            "status",
+            "work_station",
+            "start",
+            "end",
+            "quantity_start",
+            "quantity_end",
+            "estimated_time",
+        }
+
+        if field not in allowed_fields:
+            return JsonResponse({
+                "success": False,
+                "error": "Niedozwolone pole."
+            }, status=400)
+
+        try:
+            if field == "work_station":
+                unit.work_station = WorkStation.objects.get(id=int(value))
+
+            elif field in ("sequence", "quantity_start", "quantity_end", "estimated_time"):
+                setattr(unit, field, int(value) if value else None)
+
+
+            elif field in ("start", "end"):
+
+                if value:
+
+                    dt = datetime.datetime.strptime(value, "%Y-%m-%d %H:%M")
+
+                    if timezone.is_naive(dt):
+                        dt = timezone.make_aware(dt)
+
+                    setattr(unit, field, dt)
+
+                else:
+
+                    setattr(unit, field, None)
+
+            else:
+                setattr(unit, field, value)
+
+            unit.save()
+
+            return JsonResponse({
+                "success": True,
+                "field": field,
+                "value": value,
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            }, status=400)
+
+
+class UpdateProductionUnitPersons(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def post(self, request, unit_id):
+        unit = ProductionUnit.objects.get(id=unit_id)
+
+        raw_ids = request.POST.getlist("persons[]")
+        person_ids = []
+
+        for value in raw_ids:
+            try:
+                person_ids.append(int(value))
+            except ValueError:
+                pass
+
+        persons = Person.objects.filter(id__in=person_ids)
+        unit.persons.set(persons)
+
+        return JsonResponse({
+            "success": True,
+            "persons": [str(p) for p in persons],
+        })
 
 
 class ChangeProductionStatus(LoginRequiredMixin, View):

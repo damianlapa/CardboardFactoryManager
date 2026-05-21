@@ -134,3 +134,16 @@ urlpatterns += [
 urlpatterns += [
     path('month-report/', MonthReport.as_view(), name='month-report')
 ]
+
+urlpatterns += [
+    path(
+        "unit/<int:unit_id>/inline-update/",
+        UpdateProductionUnitInline.as_view(),
+        name="production-unit-inline-update"
+    ),
+    path(
+        "unit/<int:unit_id>/persons-update/",
+        UpdateProductionUnitPersons.as_view(),
+        name="production-unit-persons-update"
+    ),
+]
