@@ -10,6 +10,22 @@
 <div class="action-buttons">
     <a href="{% url 'warehouse:load-transport-document' %}" class="btn">Load Document</a>
   </div>
+<div class="d-flex align-items-center gap-3 mb-3">
+
+    <div class="form-check form-switch">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            id="specialSwitch"
+            {% if special %}checked{% endif %}
+        >
+
+        <label class="form-check-label" for="specialSwitch">
+            Delivery Special
+        </label>
+    </div>
+
+</div>
 {% endif %}
   <table class="deliveries-table">
     <thead>
@@ -91,5 +107,21 @@
   observer.observe(sentinel);
 </script>
 <script src="{% static 'js/warehouse/delivery-delete.js' %}"></script>
+<script>
+document.getElementById('specialSwitch').addEventListener('change', function () {
+
+    const url = new URL(window.location.href);
+
+    if (this.checked) {
+        url.searchParams.set('special', '1');
+    } else {
+        url.searchParams.delete('special');
+    }
+
+    url.searchParams.delete('page');
+
+    window.location.href = url.toString();
+});
+</script>
 {% endblock %}
 

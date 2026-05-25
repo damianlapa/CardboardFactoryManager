@@ -280,6 +280,25 @@
     text-decoration: none;
 }
 
+    /* Bootstrap modal zawsze nad sticky top-bar */
+.modal {
+    z-index: 3000;
+}
+
+.modal-backdrop {
+    z-index: 2990;
+    background-color: #000;
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
+}
+
+/* modal lekko niżej, żeby nie wchodził pod top-bar */
+.modal-dialog {
+    margin-top: 130px;
+}
+
 </style>
 
 </body>
