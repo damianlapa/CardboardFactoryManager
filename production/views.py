@@ -1,6 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
+from django.shortcuts import get_object_or_404
+
 from django.http import JsonResponse
 
 from django.utils.dateparse import parse_datetime
@@ -387,17 +389,26 @@ class UpdateProductionUnitPersons(LoginRequiredMixin, View):
         })
 
 
+from django.http import JsonResponse
+
 class ChangeProductionStatus(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
-    def get(self, request):
-        production_order_id = int(request.GET.get('production-order-id'))
-        status = request.GET.get('status')
-        production_order = ProductionOrder.objects.get(id=production_order_id)
-        production_order.status = status
-        production_order.save()
+    def post(self, request, production_order_id):
+        production_order = get_object_or_404(
+            ProductionOrder,
+            id=production_order_id
+        )
 
-        return redirect('production-details', production_order_id=production_order.id)
+        status = request.POST.get("status")
+
+        production_order.status = status
+        production_order.save(update_fields=["status"])
+
+        return JsonResponse({
+            "success": True,
+            "status": production_order.status
+        })
 
 
 class AddProductionOrder(LoginRequiredMixin, View):

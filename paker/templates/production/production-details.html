@@ -19,22 +19,24 @@
     <div class="page-top">
         <div>
             <h1 class="order-title">{{ production_order }}</h1>
+            <form id="status-form" class="d-flex gap-2 align-items-center">
+    {% csrf_token %}
 
-            <form method="get" action="{% url 'production-details-change' %}" class="d-flex gap-2 align-items-center">
-                <select id="select-status" name="status" class="form-select" style="max-width: 190px;">
-                    {% for s in production_order_statuses %}
-                        <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %}>
-                            {{ s.0 }}
-                        </option>
-                    {% endfor %}
-                </select>
+    <select id="select-status"
+            name="status"
+            class="form-select"
+            style="max-width: 190px;">
+        {% for s in production_order_statuses %}
+            <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %}>
+                {{ s.0 }}
+            </option>
+        {% endfor %}
+    </select>
 
-                <input type="number" value="{{ production_order.id }}" name="production-order-id" hidden>
-
-                <button type="submit" class="btn btn-outline-primary" id="change-btn" disabled>
-                    Change
-                </button>
-            </form>
+    <span id="status-save-info" class="small text-success fw-semibold d-none">
+        Zapisano
+    </span>
+</form>
         </div>
 
         <div class="order-card">
@@ -617,6 +619,53 @@ document.addEventListener("DOMContentLoaded", function () {
             minuteIncrement: 5,
         });
     }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const select = document.getElementById("select-status");
+    const info = document.getElementById("status-save-info");
+
+    if (!select) return;
+
+    select.addEventListener("change", async function () {
+
+        const formData = new FormData();
+        formData.append("status", select.value);
+
+        try {
+            const response = await fetch(
+                "{% url 'production-details-change' production_order.id %}",
+                {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+
+                info.classList.remove("d-none");
+
+                setTimeout(() => {
+                    info.classList.add("d-none");
+                }, 1500);
+
+            } else {
+                alert("Błąd zapisu statusu");
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("Błąd połączenia");
+        }
+    });
 });
 </script>
 {% endblock %}
