@@ -2316,6 +2316,7 @@ class ProductPackagingUpsertAjaxView(PermissionRequiredMixin, View):
             columns = int(request.POST.get("columns") or 0)
             layers = int(request.POST.get("layers") or 0)
             qty_per_pack = int(request.POST.get("qty_per_pack") or 0)
+            additional_info = request.POST.get("additional_info") or ""
         except (TypeError, ValueError):
             return JsonResponse({"success": False, "error": "Nieprawidłowe dane wejściowe."}, status=400)
 
@@ -2334,6 +2335,7 @@ class ProductPackagingUpsertAjaxView(PermissionRequiredMixin, View):
         packaging.columns = columns
         packaging.layers = layers
         packaging.qty_per_pack = qty_per_pack
+        packaging.additional_info = additional_info
 
         try:
             packaging.full_clean()
@@ -2349,6 +2351,7 @@ class ProductPackagingUpsertAjaxView(PermissionRequiredMixin, View):
             "columns": packaging.columns,
             "layers": packaging.layers,
             "qty_per_pack": packaging.qty_per_pack,
+            "aadditional_info": packaging.additional_info,
         })
 
 
