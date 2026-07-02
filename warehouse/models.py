@@ -2106,7 +2106,7 @@ class ProductPackaging(models.Model):
         editable=False,
         help_text="Auto: columns * layers * qty_per_pack",
     )
-
+    additional_info = models.CharField(max_length=200, blank=True, null=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -2137,5 +2137,5 @@ class ProductPackaging(models.Model):
 
     def order_info(self):
         text = (f'Pakowane na paletę: {self.palette}\nSztuki w paczce: {self.qty_per_pack}\n'
-                f'Słupki: {self.columns}\nWartswy: {self.layers}')
+                f'Słupki: {self.columns}\nWartswy: {self.layers}\n{self.additional_info}')
         return text
