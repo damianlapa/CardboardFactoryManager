@@ -5,6 +5,10 @@
 {% endblock %}
 {% block content %}
   <h1>Orders ({{ orders_num }})</h1>
+  <a href="{% url 'warehouse:add-orders' %}">
+  <button class="process-button">Add Order</button>
+    </a>
+  <hr>
   <form method="GET">
     <label for="status">Status:</label>
     <select name="status" id="status">
@@ -17,8 +21,33 @@
     <label for="customer">Customer:</label>
     <input type="text" name="customer" id="customer" value="{{ request.GET.customer }}">
 
+    <label for="status">Provider:</label>
+    <select name="provider" id="provider">
+        <option value="">-- Wybierz dostawcę --</option>
+        {% for provider in providers %}
+        {% if request.GET.provider == provider.name %}
+        <option value="{{ provider.name }}" selected>{{ provider.name }}</option>
+        {% else %}
+        <option value="{{ provider.name }}">{{ provider.name }}</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+
+    <label for="year">Year:</label>
+    <select name="year" id="year">
+        <option value="">-- Wybierz rok --</option>
+        {% for year in years %}
+        {% if request.GET.year == year %}
+        <option value="{{ year }}" selected>{{ year }}</option>
+        {% else %}
+        <option value="{{ year }}">{{ year }}</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+
     <button type="submit">Filtruj</button>
   </form>
+  <hr>
 
   <table>
     <table>

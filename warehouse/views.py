@@ -829,16 +829,11 @@ class OrderListView(PermissionRequiredMixin, View):
         manual = request.GET.get('manual')
         all_orders = request.GET.get('all')
         customer = request.GET.get('customer')
-
-
-        if all_orders:
-            orders = Order.objects.all().order_by(sort_by)
-        else:
-            orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
-
-        if customer:
-            customers = Buyer.objects.filter(name__icontains=customer)
-            orders = Order.objects.filter(delivered=True, finished=False, customer__in=customers).order_by(sort_by)
+        providers = Provider.objects.all()
+        provider = request.GET.get('provider')
+        years = [str(y) for y in range(2022, datetime.date.today().year + 1)]
+        year = request.GET.get('year')
+        status = request.GET.get('status')
 
         if order_direction == 'desc':
             sort_by = f'-{sort_by}'
@@ -857,6 +852,32 @@ class OrderListView(PermissionRequiredMixin, View):
             orders_ = sorted(orders_, key=lambda x: x[0])
 
             orders = [o[1] for o in orders_]
+
+        if all_orders:
+            orders = Order.objects.all().order_by(sort_by)
+        else:
+            orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
+
+        if customer:
+            customers = Buyer.objects.filter(name__icontains=customer)
+            orders = orders.filter(delivered=True, finished=False, customer__in=customers).order_by(sort_by)
+
+        if provider:
+            cardboard_providers = Provider.objects.filter(name__icontains=provider)
+            orders = orders.filter(provider__in=cardboard_providers).order_by(sort_by)
+
+        if year:
+            start = datetime.date(int(year), 1, 1)
+            end = datetime.date(int(year), 12, 31)
+            orders = orders.filter(order_date__lte=end, order_date__gte=start).order_by(sort_by)
+
+        if status:
+            if status == "finished":
+                orders = orders.filter(finished=True).order_by(sort_by)
+            elif status == "delivered":
+                orders = orders.filter(delivered=True).order_by(sort_by)
+            else:
+                orders = orders.order_by(sort_by)
 
         orders_num = len(list(orders))
         return render(request, 'warehouse/order_list.html', locals())
