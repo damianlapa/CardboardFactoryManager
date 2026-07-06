@@ -13,11 +13,7 @@
 <br />
 
 <a href="{% url 'absence-list' %}?month={{ prev_month }}"><button class="monthNavButton" id="nextBtn">PREV</button></a>
-{% if not end_list_condition %}
 <a href="{% url 'absence-list' %}?month={{ next_month }}"><button class="monthNavButton" id="prevBtn">NEXT</button></a>
-{% else %}
-<a href="{% url 'absence-list' %}?month={{ next_month }}"><button disabled class="monthNavButton" id="prevBtn">NEXT</button></a>
-{% endif %}
 
 <br />
 <select id="monthSelect" style="margin-bottom: 5px;">
@@ -41,7 +37,7 @@
             {% if d1 >= 5 %}
                 <td style="background-color: pink">{{ d }}</td>
                 {% for w in workers %}
-                    <td class="day{{ d }} worker{{ w.id }} weekend " style="background-color: orange"></td>
+                    <td data-worker={{w.id}} data-day={{d}} class="day{{ d }} worker{{ w.id }} weekend addabsence" style="background-color: orange"></td>
                 {% endfor %}
             {% else %}
                 <td style="background-color: orange">{{ d }}
@@ -49,7 +45,7 @@
                     {% if day_num >= d %}
                         <td data-worker={{w.id}} data-day={{d}} class="day{{ d }} worker{{ w.id }} addabsence " style="background-color: green"></td>
                     {% else %}
-                        <td class="day{{ d }} worker{{ w.id }}"></td>
+                        <td data-worker={{w.id}} data-day={{d}} class="day{{ d }} worker{{ w.id }} addabsence"></td>
                     {% endif %}
                 {% endfor %}
             {% endif %}

@@ -178,12 +178,14 @@ class AbsencesList(PermissionRequiredMixin, View):
             if month_date.month == datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
                 day_num = datetime.datetime.today().day
             else:
-                day_num = 32
+                day_num = 0
             prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
         month_year = aa.split()
         str_date = f'{month_year[1]}-{months.index(month_year[0]) + 1}-1'
         month_days = month_days_function(datetime.datetime.strptime(str_date, '%Y-%m-%d'))
+
+        print(day_num)
 
         if request.user.is_superuser:
             workers = Person.objects.all().filter(
@@ -275,7 +277,7 @@ class AbsencesList(PermissionRequiredMixin, View):
             end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
         else:
             end_list_condition = next_month == f'{months[0]} {str(datetime.date.today().year + 1)}'
-        end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=31)
+        end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=365)
         z = month_list('01-01-2017', datetime.datetime.strftime(end_plus_31, '%d-%m-%Y'))
 
         return render(request, 'warehousemanager-absenceslist.html', locals())
