@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.views import View
@@ -179,6 +181,10 @@ class AbsencesList(PermissionRequiredMixin, View):
                 day_num = datetime.datetime.today().day
             else:
                 day_num = 0
+                if month_date.year < datetime.datetime.today().year:
+                    day_num = 32
+                if month_date.month <= datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
+                        day_num = 32
             prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
         month_year = aa.split()
