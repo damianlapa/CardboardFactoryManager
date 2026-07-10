@@ -72,6 +72,8 @@ class ProductionOrder(models.Model):
     priority = models.BooleanField(default=False)
     notes = models.CharField(max_length=1000, null=True, blank=True)
     add_date = models.DateTimeField(auto_now_add=True)
+    photopolymer = models.ForeignKey("warehousemanager.Photopolymer", on_delete=models.PROTECT, null=True, blank=True, related_name="orders")
+    punch = models.ForeignKey("warehousemanager.Punch", on_delete=models.PROTECT, null=True, blank=True, related_name="orders")
 
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'

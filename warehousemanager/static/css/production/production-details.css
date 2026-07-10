@@ -448,3 +448,151 @@
 .production-page .table tbody tr.unit-row-error > td:first-child {
     border-left: 4px solid #dc2626;
 }
+
+.production-tools {
+    display: flex;
+    gap: 14px;
+    margin: 12px 0 18px;
+    flex-wrap: wrap;
+}
+
+.tool-card {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+    padding: 13px 16px;
+    border: 1px solid #d8dee6;
+    border-radius: 10px;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.tool-card:hover {
+    border-color: #86b7fe;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.12);
+    transform: translateY(-1px);
+}
+
+.tool-title {
+    margin-bottom: 5px;
+    color: #6c757d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tool-name {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.tool-edit {
+    margin-top: 5px;
+    color: #0d6efd;
+    font-size: 0.75rem;
+}
+
+.production-tool-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(20, 25, 30, 0.55);
+}
+
+.production-tool-modal.is-visible {
+    display: flex;
+}
+
+.production-tool-modal-content {
+    position: relative;
+    width: min(520px, 100%);
+    padding: 24px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.production-tool-modal-content h3 {
+    margin: 0 40px 20px 0;
+}
+
+.production-tool-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    color: #6c757d;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.modal-tool-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.modal-tool-select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 7px;
+    background: #fff;
+}
+
+.modal-tool-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.modal-btn {
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.modal-btn-primary {
+    border-color: #0d6efd;
+    background: #0d6efd;
+    color: #fff;
+}
+
+.modal-btn-secondary {
+    border-color: #ced4da;
+    background: #fff;
+    color: #343a40;
+}
+
+.production-tool-alert {
+    margin-bottom: 12px;
+    padding: 9px 12px;
+    border-radius: 6px;
+}
+
+.production-tool-alert:empty {
+    display: none;
+}
+
+.production-tool-alert.error {
+    display: block;
+    border: 1px solid #f1aeb5;
+    background: #f8d7da;
+    color: #842029;
+}

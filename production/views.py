@@ -268,6 +268,21 @@ class ProductionDetails(LoginRequiredMixin, View):
             },
             day=today
         )
+        punches_data = [
+            {
+                "id": punch.id,
+                "name": str(punch),
+            }
+            for punch in Punch.objects.all()
+        ]
+
+        photopolymers_data = [
+            {
+                "id": photopolymer.id,
+                "name": str(photopolymer),
+            }
+            for photopolymer in Photopolymer.objects.all()
+        ]
 
         return render(request, 'production/production-details.html', locals())
 
@@ -1541,3 +1556,91 @@ class OrderDetailsRedirect(LoginRequiredMixin, View):
             return redirect('warehouse:order-detail-view', order_id=order.id)
         except ObjectDoesNotExist:
             return HttpResponse('notok')
+
+
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from production.models import ProductionOrder
+from warehousemanager.models import Photopolymer, Punch
+
+
+class UpdateProductionOrderToolView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, production_order_id):
+        production_order = get_object_or_404(
+            ProductionOrder,
+            pk=production_order_id
+        )
+
+        tool_type = request.POST.get("tool_type")
+        tool_id = request.POST.get("tool_id") or None
+
+        if tool_type == "punch":
+            punch = None
+
+            if tool_id:
+                punch = get_object_or_404(Punch, pk=tool_id)
+
+            production_order.punch = punch
+            production_order.save(update_fields=["punch"])
+
+            messages.success(request, "Wykrojnik został zapisany.")
+
+        elif tool_type == "photopolymer":
+            photopolymer = None
+
+            if tool_id:
+                photopolymer = get_object_or_404(
+                    Photopolymer,
+                    pk=tool_id
+                )
+
+            production_order.photopolymer = photopolymer
+            production_order.save(update_fields=["photopolymer"])
+
+            messages.success(request, "Fotopolimer został zapisany.")
+
+        else:
+            messages.error(request, "Nieprawidłowy typ narzędzia.")
+
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+from django.views import View
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from production.models import ProductionOrder
+from warehousemanager.models import Punch, Photopolymer
+
+
+class UpdateProductionOrderToolView(LoginRequiredMixin, View):
+
+    def post(self, request, production_order_id):
+        production_order = get_object_or_404(
+            ProductionOrder,
+            pk=production_order_id
+        )
+
+        tool_type = request.POST.get("tool_type")
+        tool_id = request.POST.get("tool_id")
+
+        if tool_type == "punch":
+            production_order.punch = (
+                Punch.objects.get(pk=tool_id)
+                if tool_id else None
+            )
+
+        elif tool_type == "photopolymer":
+            production_order.photopolymer = (
+                Photopolymer.objects.get(pk=tool_id)
+                if tool_id else None
+            )
+
+        production_order.save()
+
+        return redirect(request.META.get("HTTP_REFERER", "/"))

@@ -38,6 +38,35 @@
     </span>
 </form>
         </div>
+        <div class="production-tools">
+    <button
+        type="button"
+        class="tool-card"
+        data-tool-type="punch"
+        data-tool-label="Wykrojnik"
+        data-current-id="{{ production_order.punch_id|default:'' }}"
+    >
+        <div class="tool-title">Wykrojnik</div>
+        <div class="tool-name" id="punchValue">
+            {{ production_order.punch|default:"— brak —" }}
+        </div>
+        <div class="tool-edit">Kliknij, aby zmienić</div>
+    </button>
+
+    <button
+        type="button"
+        class="tool-card"
+        data-tool-type="photopolymer"
+        data-tool-label="Fotopolimer"
+        data-current-id="{{ production_order.photopolymer_id|default:'' }}"
+    >
+        <div class="tool-title">Fotopolimer</div>
+        <div class="tool-name" id="photopolymerValue">
+            {{ production_order.photopolymer|default:"— brak —" }}
+        </div>
+        <div class="tool-edit">Kliknij, aby zmienić</div>
+    </button>
+</div>
 
         <div class="order-card">
             <div class="info-grid">
@@ -61,7 +90,60 @@
                         </span>
                     </div>
                 </div>
+
             </div>
+            <div id="productionToolModal" class="production-tool-modal">
+    <div class="production-tool-modal-content">
+        <button
+            type="button"
+            class="production-tool-modal-close"
+            id="closeProductionToolModal"
+        >
+            &times;
+        </button>
+
+        <h3 id="productionToolModalTitle">Wybierz narzędzie</h3>
+
+        <form
+            method="post"
+            action="{% url 'update_production_order_tool' production_order.id %}"
+            id="productionToolForm"
+        >
+            {% csrf_token %}
+
+            <input type="hidden" name="tool_type" id="productionToolType">
+
+            <label for="productionToolSelect" class="modal-tool-label">
+                Wybierz pozycję
+            </label>
+
+            <select
+                name="tool_id"
+                id="productionToolSelect"
+                class="modal-tool-select"
+            >
+                <option value="">— brak —</option>
+            </select>
+
+            <div class="modal-tool-actions">
+                <button
+                    type="button"
+                    class="modal-btn modal-btn-secondary"
+                    id="cancelProductionToolModal"
+                >
+                    Anuluj
+                </button>
+
+                <button
+                    type="submit"
+                    class="modal-btn modal-btn-primary"
+                >
+                    Zapisz
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
         </div>
     </div>
 
@@ -664,6 +746,87 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (e) {
             console.error(e);
             alert("Błąd połączenia");
+        }
+    });
+});
+</script>
+{{ punches_data|json_script:"punches-data" }}
+{{ photopolymers_data|json_script:"photopolymers-data" }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("productionToolModal");
+    const modalTitle = document.getElementById("productionToolModalTitle");
+    const toolTypeInput = document.getElementById("productionToolType");
+    const toolSelect = document.getElementById("productionToolSelect");
+
+    const closeButton = document.getElementById("closeProductionToolModal");
+    const cancelButton = document.getElementById("cancelProductionToolModal");
+
+    const punches = JSON.parse(
+        document.getElementById("punches-data").textContent
+    );
+
+    const photopolymers = JSON.parse(
+        document.getElementById("photopolymers-data").textContent
+    );
+
+    function closeModal() {
+        modal.classList.remove("is-visible");
+    }
+
+    function openModal(button) {
+        const toolType = button.dataset.toolType;
+        const toolLabel = button.dataset.toolLabel;
+        const currentId = button.dataset.currentId || "";
+
+        const items = toolType === "punch"
+            ? punches
+            : photopolymers;
+
+        toolTypeInput.value = toolType;
+        modalTitle.textContent = "Wybierz: " + toolLabel;
+
+        toolSelect.innerHTML = "";
+
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "— brak —";
+        toolSelect.appendChild(emptyOption);
+
+        items.forEach(function (item) {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = item.name;
+
+            if (String(item.id) === String(currentId)) {
+                option.selected = true;
+            }
+
+            toolSelect.appendChild(option);
+        });
+
+        modal.classList.add("is-visible");
+        toolSelect.focus();
+    }
+
+    document.querySelectorAll(".tool-card").forEach(function (button) {
+        button.addEventListener("click", function () {
+            openModal(button);
+        });
+    });
+
+    closeButton.addEventListener("click", closeModal);
+    cancelButton.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeModal();
         }
     });
 });

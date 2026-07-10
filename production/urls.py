@@ -146,4 +146,12 @@ urlpatterns += [
         UpdateProductionUnitPersons.as_view(),
         name="production-unit-persons-update"
     ),
+    path(
+        "production-order/<int:production_order_id>/tool/update/",
+        UpdateProductionOrderToolView.as_view(),
+        name="update_production_order_tool",
+    ),
 ]
+
+
+
