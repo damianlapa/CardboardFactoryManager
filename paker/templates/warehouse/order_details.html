@@ -34,6 +34,9 @@
     <a href="{% url 'warehouse:generate_order_inline' order_id=order.id %}" target="_blank">
     🧾 Wygeneruj zlecenie (podgląd)
     </a>
+    <a href="{% url 'warehouse:generate_order_inline2' order_id=order.id %}" target="_blank">
+    🧾 Wygeneruj zlecenie (podgląd)
+    </a>
     {% endif %}
     <h1>{{ order }} // {{ order.dimensions }} // {{ order.customer }} // {{ order.product }}</h1>
     {% if perms.warehouse.edit_warehouse %}

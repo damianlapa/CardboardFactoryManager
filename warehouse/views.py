@@ -420,6 +420,11 @@ def parse_wz_pdf(pdf_file):
                 palletes_list.append(palettes)
             if "Nr zam. klienta:" in line:
                 number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                new_num = ""
+                for n in number:
+                    if n.isdigit() or n == '/':
+                        new_num += n
+                number = new_num
                 orders.append([number, cardboard, dimensions, quantity])
             if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
                 line_split = line.split(' ')
@@ -775,6 +780,7 @@ class LoadWZ(PermissionRequiredMixin, View):
         year_orders = {}
 
         for o in orders:
+            print(o, "$$$")
             try:
                 order_num_split, year_num_split = o[0].split('/')
                 if len(year_num_split) == 2:
