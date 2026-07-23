@@ -23,6 +23,20 @@ UNITS = (
     ('SET', 'SET')
 )
 
+FEFCO_CODES = [
+    ("200", "200"),
+    ("201", "201"),
+    ("202", "202"),
+    ("203", "203"),
+    ("215", "215"),
+    ("301", "301"),
+    ("409", "409"),
+    ("410", "410"),
+    ("421", "421"),
+    ("427", "427"),
+    ("471", "471"),
+    ("OTH", "OTH")
+]
 
 class Palette(models.Model):
     name = models.CharField(max_length=32)
@@ -42,6 +56,7 @@ class Provider(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=128, unique=True)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    FEFCO_code = models.CharField(max_length=4, default="201", choices=FEFCO_CODES)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
@@ -346,18 +361,19 @@ class Order(models.Model):
     def setup_values(self):
         flute = self.resolve_flute()
 
-        if flute == "BC":
-            return 5, 7, 12, 7, 4
-        if flute == "EB":
-            return 4, 5, 10, 5, 3
-        if flute == "EE":
-            return 3, 4, 6, 4, 2
-        if flute == "B":
-            return 3, 4, 6, 4, 2
-        if flute == "C":
-            return 3, 4, 7, 4, 2
-        if flute == "E":
-            return 2, 2, 4, 2, 1
+        if self.product.FEFCO_code == "201":
+            if flute == "BC":
+                return 5, 7, 12, 7, 4
+            if flute == "EB":
+                return 4, 5, 10, 5, 3
+            if flute == "EE":
+                return 3, 4, 6, 4, 2
+            if flute == "B":
+                return 3, 4, 6, 4, 2
+            if flute == "C":
+                return 3, 4, 7, 4, 2
+            if flute == "E":
+                return 2, 2, 4, 2, 1
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
