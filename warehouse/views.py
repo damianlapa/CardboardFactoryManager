@@ -419,7 +419,7 @@ def parse_wz_pdf(pdf_file):
                 palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
                 palletes_list.append(palettes)
             if "Nr zam. klienta:" in line:
-                number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                number = line.split("Nr zam. klienta:")[1].strip().split(" ")[0].strip()
                 new_num = ""
                 for n in number:
                     if n.isdigit() or n == '/':
