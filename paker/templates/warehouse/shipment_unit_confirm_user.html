@@ -1,0 +1,101 @@
+{% extends "__base3__.html" %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 40px auto;">
+    <h1>Potwierdzenie pracownika</h1>
+
+    <p>
+        Zlecenie:
+        <strong>{{ order }}</strong>
+    </p>
+
+    <p>
+        Produkt:
+        <strong>{{ order.product|default:"brak produktu" }}</strong>
+    </p>
+
+    {% if error %}
+        <div style="
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #f8d7da;
+            color: #842029;
+            border-radius: 6px;
+        ">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 15px;">
+            <label for="username">Nazwa użytkownika</label>
+
+            <input
+                type="text"
+                name="username"
+                id="username"
+                value="{{ username|default:'' }}"
+                autocomplete="username"
+                required
+                autofocus
+                style="
+                    display: block;
+                    width: 100%;
+                    padding: 10px;
+                    margin-top: 5px;
+                    box-sizing: border-box;
+                "
+            >
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="pin">PIN</label>
+
+            <input
+                type="password"
+                name="pin"
+                id="pin"
+                inputmode="numeric"
+                autocomplete="off"
+                required
+                style="
+                    display: block;
+                    width: 100%;
+                    padding: 10px;
+                    margin-top: 5px;
+                    box-sizing: border-box;
+                    font-size: 20px;
+                    letter-spacing: 5px;
+                "
+            >
+        </div>
+
+        <button
+            type="submit"
+            style="
+                width: 100%;
+                padding: 12px;
+                background: #198754;
+                color: white;
+                border: 0;
+                border-radius: 6px;
+                font-weight: 600;
+                cursor: pointer;
+            "
+        >
+            Potwierdź pracownika
+        </button>
+    </form>
+
+    <p style="margin-top: 20px;">
+        Aktualnie zalogowany użytkownik:
+        <strong>{{ request.user.username }}</strong>
+    </p>
+
+    <a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">
+        Powrót do zlecenia
+    </a>
+</div>
+{% endblock %}

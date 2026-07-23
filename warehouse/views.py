@@ -2798,3 +2798,172 @@ class OrderProfitabilityDataView(LoginRequiredMixin, View):
             "page": page,
             "has_next": page_obj.has_next(),
         })
+
+
+from django.contrib.auth import get_user_model, login
+class ShipmentUnitConfirmUserView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_confirm_user.html"
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        return render(request, self.template_name, {
+            "order": order,
+        })
+
+    def post(self, request, order_id):
+        from warehousemanager.models import Person
+
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        username = (request.POST.get("username") or "").strip()
+        pin = (request.POST.get("pin") or "").strip()
+
+        User = get_user_model()
+
+        try:
+            user = User.objects.get(
+                username=username,
+                is_active=True,
+            )
+
+            print(user)
+
+            person = Person.objects.get(
+                user=user,
+                job_end__isnull=True,
+            )
+            print(person)
+
+        except (User.DoesNotExist, Person.DoesNotExist):
+            return render(request, self.template_name, {
+                "order": order,
+                "username": username,
+                "error": "Nieprawidłowa nazwa użytkownika lub PIN.",
+            })
+
+        print(person.check_pin(pin))
+
+        if not person.pin or not person.check_pin(pin):
+            return render(request, self.template_name, {
+                "order": order,
+                "username": username,
+                "error": "Nieprawidłowa nazwa użytkownika lub PIN.",
+            })
+
+        login(
+            request,
+            user,
+            backend="django.contrib.auth.backends.ModelBackend",
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-create",
+            order_id=order.id,
+        )
+
+
+class ShipmentUnitCreateView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_create.html"
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        packaging = (
+            ProductPackaging.objects
+            .select_related("palette")
+            .filter(product=order.product)
+            .first()
+        )
+
+        palettes = Palette.objects.all().order_by("name")
+
+        return render(request, self.template_name, {
+            "order": order,
+            "packaging": packaging,
+            "palettes": palettes,
+            "default_palette": packaging.palette if packaging else None,
+        })
+
+    def post(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        quantity_raw = request.POST.get("quantity")
+        palette_id = request.POST.get("palette")
+
+        palettes = Palette.objects.all().order_by("name")
+
+        try:
+            quantity = int(quantity_raw)
+        except (TypeError, ValueError):
+            quantity = 0
+
+        palette = None
+
+        if palette_id:
+            palette = Palette.objects.filter(id=palette_id).first()
+
+            if not palette:
+                return render(request, self.template_name, {
+                    "order": order,
+                    "palettes": palettes,
+                    "quantity": quantity_raw,
+                    "error": "Wybrana paleta nie istnieje.",
+                })
+
+        if quantity <= 0:
+            return render(request, self.template_name, {
+                "order": order,
+                "palettes": palettes,
+                "quantity": quantity_raw,
+                "selected_palette_id": palette_id,
+                "error": "Ilość musi być większa od zera.",
+            })
+
+        try:
+            with transaction.atomic():
+                shipment_unit = ShipmentUnit.objects.create(
+                    order=order,
+                    quantity=quantity,
+                    palette=palette,
+                    created_by=request.user,
+                )
+
+            messages.success(
+                request,
+                (
+                    f"Dodano jednostkę wysyłkową: "
+                    f"{shipment_unit.quantity} szt., "
+                    f"paleta: {shipment_unit.palette or 'brak'}."
+                ),
+            )
+
+            return redirect(
+                "warehouse:order-detail-view",
+                order_id=order.id,
+            )
+
+        except Exception as e:
+            logger.exception("[SHIPMENT UNIT CREATE] ERROR")
+
+            return render(request, self.template_name, {
+                "order": order,
+                "palettes": palettes,
+                "quantity": quantity_raw,
+                "selected_palette_id": palette_id,
+                "error": f"Nie udało się zapisać jednostki: {e}",
+            })

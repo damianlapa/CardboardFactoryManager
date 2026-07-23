@@ -1,0 +1,131 @@
+{% extends "__base3__.html" %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto;">
+    <h1>Dodaj jednostkę wysyłkową</h1>
+
+    <table style="width: 100%; margin-bottom: 25px;">
+        <tr>
+            <th style="text-align: left;">Zlecenie</th>
+            <td>{{ order }}</td>
+        </tr>
+
+        <tr>
+            <th style="text-align: left;">Produkt</th>
+            <td>{{ order.product|default:"brak produktu" }}</td>
+        </tr>
+
+        <tr>
+            <th style="text-align: left;">Pracownik</th>
+            <td>{{ request.user.username }}</td>
+        </tr>
+
+        {% if packaging %}
+        <tr>
+            <th style="text-align: left;">Pakowanie</th>
+            <td>
+                {{ packaging.columns }} × {{ packaging.layers }}
+                × {{ packaging.qty_per_pack }}
+            </td>
+        </tr>
+
+        <tr>
+            <th style="text-align: left;">Ilość na palecie</th>
+            <td>{{ packaging.qty_per_pallet }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    {% if error %}
+        <div style="
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #f8d7da;
+            color: #842029;
+            border-radius: 6px;
+        ">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 15px;">
+            <label for="quantity">Ilość sztuk</label>
+
+            <input
+                type="number"
+                name="quantity"
+                id="quantity"
+                min="1"
+                value="{% if quantity %}{{ quantity }}{% elif packaging %}{{ packaging.qty_per_pallet }}{% endif %}"
+                required
+                autofocus
+                style="
+                    display: block;
+                    width: 100%;
+                    padding: 12px;
+                    margin-top: 5px;
+                    box-sizing: border-box;
+                    font-size: 22px;
+                "
+            >
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="palette">Paleta</label>
+
+            <select
+                name="palette"
+                id="palette"
+                style="
+                    display: block;
+                    width: 100%;
+                    padding: 12px;
+                    margin-top: 5px;
+                    box-sizing: border-box;
+                "
+            >
+                <option value="">Automatycznie z pakowania</option>
+
+                {% for palette in palettes %}
+                    <option
+                        value="{{ palette.id }}"
+                        {% if selected_palette_id|stringformat:"s" == palette.id|stringformat:"s" %}
+                            selected
+                        {% elif not selected_palette_id and default_palette.id == palette.id %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ palette }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button
+            type="submit"
+            style="
+                width: 100%;
+                padding: 14px;
+                background: #198754;
+                color: white;
+                border: 0;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 18px;
+                cursor: pointer;
+            "
+        >
+            Zapisz jednostkę wysyłkową
+        </button>
+    </form>
+
+    <p style="margin-top: 20px;">
+        <a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">
+            Anuluj i wróć do zlecenia
+        </a>
+    </p>
+</div>
+{% endblock %}

@@ -189,7 +189,6 @@ class Order(models.Model):
             rounding=ROUND_HALF_UP
         )
 
-
     def other_costs(self):
         month, year = self.order_date.month, self.order_date.year
         month_results = MonthResults.objects.get(month=month, year=year)
@@ -328,6 +327,37 @@ class Order(models.Model):
                 D(value) * D(self.production_work_hours()) + D(self.material_cost())
             )
         return D("0.00")
+
+    def resolve_flute(self):
+        if self.name:
+            if "BC" in self.name:
+                return "BC"
+            if "EB" in self.name:
+                return "EB"
+            if "EE" in self.name:
+                return "EE"
+            if "B" in self.name:
+                return "B"
+            if "C" in self.name:
+                return "C"
+            if "E" in self.name:
+                return "E"
+
+    def setup_values(self):
+        flute = self.resolve_flute()
+
+        if flute == "BC":
+            return 5, 7, 12, 7, 4
+        if flute == "EB":
+            return 4, 5, 10, 5, 3
+        if flute == "EE":
+            return 3, 4, 6, 4, 2
+        if flute == "B":
+            return 3, 4, 6, 4, 2
+        if flute == "C":
+            return 3, 4, 7, 4, 2
+        if flute == "E":
+            return 2, 2, 4, 2, 1
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
@@ -2139,3 +2169,36 @@ class ProductPackaging(models.Model):
         text = (f'Pakowane na paletę: {self.palette}\nSztuki w paczce: {self.qty_per_pack}\n'
                 f'Słupki: {self.columns}\nWartswy: {self.layers}\n{self.additional_info}')
         return text
+
+
+from django.contrib.auth.models import User
+from django.db import models
+
+
+class ShipmentUnit(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name="shipment_units")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.PositiveIntegerField()
+    created = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_shipment_units")
+
+    class Meta:
+        ordering = ["-created"]
+
+    def save(self, *args, **kwargs):
+        if self.order:
+            self.product = self.order.product
+
+            if not self.palette:
+                packaging = ProductPackaging.objects.filter(
+                    product=self.product
+                ).first()
+
+                self.palette = packaging.palette if packaging else None
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.order} - {self.quantity} pcs"
+

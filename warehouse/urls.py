@@ -166,3 +166,16 @@ urlpatterns += [
         name="warehouse-volume-chart",
     ),
 ]
+
+urlpatterns += [
+    path(
+        "order/<int:order_id>/shipment-unit/confirm-user/",
+        ShipmentUnitConfirmUserView.as_view(),
+        name="shipment-unit-confirm-user",
+    ),
+    path(
+        "order/<int:order_id>/shipment-unit/create/",
+        ShipmentUnitCreateView.as_view(),
+        name="shipment-unit-create",
+    ),
+]

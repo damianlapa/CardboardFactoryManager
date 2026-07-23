@@ -103,3 +103,22 @@ tr:hover {
 .refresh-btn:hover i {
     transform: rotate(360deg);
 }
+
+.shipment-unit-btn {
+    display: inline-block;
+    padding: 10px 16px;
+    margin: 6px 8px 6px 0;
+    border: none;
+    border-radius: 6px;
+    background: #198754;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.shipment-unit-btn:hover {
+    background: #157347;
+    color: #fff;
+    text-decoration: none;
+}

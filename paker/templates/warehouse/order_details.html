@@ -53,6 +53,12 @@
     <input type="checkbox" id="order_finished_cbx" {% if order.finished %}checked{% endif %}>
     <label for="order_finished_cbx" class="label" id="finished_cbx">Finished</label>
     {% endif %}
+    <a
+    href="{% url 'warehouse:shipment-unit-confirm-user' order_id=order.id %}"
+    class="shipment-unit-btn"
+>
+    📦 Dodaj jednostkę wysyłkową
+</a>
   </div>
 {% if perms.warehouse.edit_warehouse %}
   <div class="right-header">

@@ -1,3 +1,5 @@
+import math
+
 from django.views import View
 from django.http import HttpResponse
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -245,9 +247,9 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
 
         euro = False
 
-        # data = get_data_by_values(order_provider, num, year, f'20{year}')
+        data = get_data_by_values(order_provider, num, year, f'20{year}')
 
-        data = ["" for _ in range(100)]
+        # data = ["" for _ in range(100)]
 
         if product:
             inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
@@ -273,10 +275,11 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
         if inf_pakowanie:
             ws['A50'] = inf_pakowanie.order_info()
 
-        dane_polimeru = get_polymer_number(data[10].strip())
-        if dane_polimeru:
-            ws['E14'] = dane_polimeru['number']
-            ws['M14'] = dane_polimeru['colors']
+        if data[10]:
+            dane_polimeru = get_polymer_number(data[10].strip())
+            if dane_polimeru:
+                ws['E14'] = dane_polimeru['number']
+                ws['M14'] = dane_polimeru['colors']
 
         # INFORMACJE DODATKOWE
         ws['A29'] = data[25]
@@ -355,6 +358,24 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
             else:
                 print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
 
+        setup_values = order.setup_values()
+        print(wymiary)
+        if setup_values:
+            a, d, h, s, s2 = setup_values
+            a += math.ceil(int(wymiary[1])/2)
+            d += int(wymiary[0])
+            h += int(wymiary[2])
+            s += int(wymiary[1])
+            s2 += int(wymiary[1])
+        else:
+            a, d, h, s, s2 = ("-" for _ in range(5))
+
+        ws['AC71'] = a
+        ws['AC73'] = d
+        ws['AC75'] = h
+        ws['AC77'] = s
+        ws['AC79'] = s2
+
         # KOD QR
         qr_value = request.build_absolute_uri(
             reverse("warehouse:order-detail-view", kwargs={"order_id": order.id})
@@ -376,11 +397,11 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
         qr_buffer.seek(0)
 
         qr_excel_image = OpenpyxlImage(qr_buffer)
-        qr_excel_image.width = 120
-        qr_excel_image.height = 120
+        qr_excel_image.width = 100
+        qr_excel_image.height = 100
 
         # Komórka, w której ma zaczynać się kod QR
-        ws.add_image(qr_excel_image, "A1")
+        ws.add_image(qr_excel_image, "A71")
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()

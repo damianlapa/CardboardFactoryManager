@@ -7,6 +7,7 @@ import decimal
 import math
 import datetime
 from warehousemanager.clear_funcs import work_days_during_period
+from django.contrib.auth.hashers import make_password, check_password
 
 MONTHS = (
     ('1', 'January'),
@@ -159,12 +160,20 @@ class Person(models.Model):
     qualified_workstations = models.ManyToManyField('production.WorkStation', through='WorkStationQualification', blank=True,
         related_name='qualified_persons'
     )
+    pin = models.CharField(max_length=128, blank=True, default='')
 
     class Meta:
         ordering = ['last_name', 'first_name']
 
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
+
+    def set_pin(self, raw_pin):
+        self.pin = make_password(str(raw_pin))
+
+    def check_pin(self, raw_pin):
+        print(str(raw_pin), self.pin, str(raw_pin) == self.pin)
+        return check_password(str(raw_pin), self.pin)
 
     def contract(self, date=None):
         contracts = list(Contract.objects.filter(worker=self).order_by('date_start'))
@@ -181,7 +190,6 @@ class Person(models.Model):
                     else:
                         return contracts[-1].salary
         return 0
-
 
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
@@ -223,8 +231,6 @@ class Person(models.Model):
         else:
             return 0
 
-
-
     # new
     def worker_vacations(self, year=2024):
         result = {}
@@ -248,28 +254,6 @@ class Person(models.Model):
             days += (limit - vacations_summary)
 
         return days
-
-
-
-    # def vacation_days(self, year):
-    #     r = 0
-    #     if year == '2021':
-    #         r += self.amount_2021 + self.yearly_vacation_limit
-    #     else:
-    #         r += self.yearly_vacation_limit + self.vacation_days(str(int(year) - 1))
-    #     for a in Absence.objects.filter(worker=self, absence_date__gt=datetime.date(2020, 12, 31)):
-    #         if a.absence_type == 'UW':
-    #             r -= 1
-    #     return r
-    #
-    # def vacation_last_from_year(self, year):
-    #     r = 0
-    #     if year == '2020':
-    #         r = self.amount_2021
-    #     else:
-    #         r = self.vacation_days(str(year)) - self.amount_2021
-    #
-    #     return r
 
     def end_year_vacation(self, year):
         if year < 2020:
@@ -327,9 +311,6 @@ class Person(models.Model):
         used_vacation = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end,
                                                absence_type__in=['UW', 'UŻ'])
         return len(used_vacation)
-
-    def vacation_from_last_year(self):
-        pass
 
     def status(self):
         if self.job_end:
