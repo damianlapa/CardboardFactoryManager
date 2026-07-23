@@ -227,6 +227,12 @@ class GenerateOrderInlineView(PermissionRequiredMixin, View):
         response['Content-Disposition'] = f'inline; filename="{nazwa_zlecenia}.xlsx"'
         return response
 
+import qrcode
+
+from io import BytesIO
+from openpyxl import load_workbook
+from openpyxl.drawing.image import Image as OpenpyxlImage
+from django.urls import reverse
 
 class GenerateOrderInlineView2(PermissionRequiredMixin, View):
     permission_required = "warehouse.add_order"
@@ -349,6 +355,32 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
             else:
                 print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
 
+        # KOD QR
+        qr_value = request.build_absolute_uri(
+            reverse("warehouse:order-detail-view", kwargs={"order_id": order.id})
+        )
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(qr_value)
+        qr.make(fit=True)
+
+        qr_pil_image = qr.make_image(fill_color="black", back_color="white")
+
+        qr_buffer = BytesIO()
+        qr_pil_image.save(qr_buffer, format="PNG")
+        qr_buffer.seek(0)
+
+        qr_excel_image = OpenpyxlImage(qr_buffer)
+        qr_excel_image.width = 120
+        qr_excel_image.height = 120
+
+        # Komórka, w której ma zaczynać się kod QR
+        ws.add_image(qr_excel_image, "A1")
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()
