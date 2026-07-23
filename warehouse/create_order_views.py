@@ -359,7 +359,6 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
                 print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
 
         setup_values = order.setup_values()
-        print(wymiary)
         if setup_values:
             a, d, h, s, s2 = setup_values
             a += math.ceil(int(wymiary[1])/2)
@@ -397,8 +396,8 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
         qr_buffer.seek(0)
 
         qr_excel_image = OpenpyxlImage(qr_buffer)
-        qr_excel_image.width = 100
-        qr_excel_image.height = 100
+        qr_excel_image.width = 150
+        qr_excel_image.height = 150
 
         # Komórka, w której ma zaczynać się kod QR
         ws.add_image(qr_excel_image, "A71")
