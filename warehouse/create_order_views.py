@@ -396,11 +396,11 @@ class GenerateOrderInlineView2(PermissionRequiredMixin, View):
         qr_buffer.seek(0)
 
         qr_excel_image = OpenpyxlImage(qr_buffer)
-        qr_excel_image.width = 150
-        qr_excel_image.height = 150
+        qr_excel_image.width = 122
+        qr_excel_image.height = 122
 
         # Komórka, w której ma zaczynać się kod QR
-        ws.add_image(qr_excel_image, "A71")
+        ws.add_image(qr_excel_image, "B72")
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()
