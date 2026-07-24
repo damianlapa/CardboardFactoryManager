@@ -563,7 +563,7 @@ class EmployeeWorkTimeReportView(BaseLoginRequiredMixin, EmployeeWorkTimeBaseMix
     template_name = "whm/employees/employee_work_time_report.html"
 
     def get(self, request):
-        main_user = request.user.username == 'damian'
+        main_user = request.user.username == 'damian' or request.user.is_superuser
         default_start, default_end = self._default_range()
 
         start = self._safe_parse_date(request.GET.get("start"), default_start)
