@@ -2539,193 +2539,236 @@ def refresh_warehouses_values(request):
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
+from decimal import Decimal, InvalidOperation
 
-# class OrderProfitabilityListView(PermissionRequiredMixin, View):
-#     permission_required = 'warehouse.add_order'
-#     login_url = reverse_lazy('login')
-#
-#     def get(self, request):
-#         from warehousemanager.models import LocalSetting, Person
-#         work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
-#         value = str(work_hour_value.value) if work_hour_value else "192"
-#         customers = Buyer.objects.filter(name__icontains=request.GET.get('customer'))
-#
-#         today = datetime.date.today()
-#
-#         persons = Person.objects.all()
-#         person_id = int(request.GET.get("person", 1))
-#
-#         year = int(request.GET.get("year", today.year))
-#         month = int(request.GET.get("month", today.month))
-#
-#         if not customers:
-#
-#             orders = (
-#                 Order.objects
-#                 .filter(order_date__year=year, order_date__month=month)
-#                 .select_related("provider", "customer", "product")
-#                 .order_by("-order_date", "-id")
-#             )
-#
-#         else:
-#             orders = (
-#                 Order.objects
-#                 .filter(customer__in=customers)
-#                 .select_related("provider", "customer", "product")
-#                 .order_by("-order_date", "-id")
-#             )
-#
-#         if person_id:
-#             person_to_orders = Person.objects.filter(id=person_id).first()
-#
-#             orders = Order.produced_by_person(person_to_orders)
-#
-#         summary = {
-#                     "order": "SUMA",
-#                     "sold_qty": 0,
-#                     "settled_qty": 0,
-#                     "sales": 0,
-#                     "production_cost": 0,
-#                     "result": 0,
-#                 }
-#
-#         rows = []
-#
-#         for order in orders:
-#             sold_qty = order.sold_quantity()
-#             settled_qty = order.settled_quantity()
-#
-#             sales = order.expected_total_sales()
-#             production_cost = order.production_alternative_cost()
-#             result = sales - production_cost
-#             status = order.sales_profitability_status()
-#
-#             if sold_qty > 0 and settled_qty > 0 and production_cost != D('0.00'):
-#
-#                 summary["sold_qty"] += sold_qty
-#                 summary["settled_qty"] = int(summary["settled_qty"]) + int(settled_qty)
-#                 summary["sales"] += sales
-#                 summary["production_cost"] += production_cost
-#                 summary["result"] += result
-#
-#                 rows.append({
-#                     "order": order,
-#                     "sold_qty": sold_qty,
-#                     "settled_qty": settled_qty,
-#                     "sales": sales,
-#                     "production_cost": production_cost,
-#                     "result": result,
-#                     "is_profit": result >= 0,
-#                     "status": status,
-#                 })
-#
-#         months = [
-#             (1, "Styczeń"),
-#             (2, "Luty"),
-#             (3, "Marzec"),
-#             (4, "Kwiecień"),
-#             (5, "Maj"),
-#             (6, "Czerwiec"),
-#             (7, "Lipiec"),
-#             (8, "Sierpień"),
-#             (9, "Wrzesień"),
-#             (10, "Październik"),
-#             (11, "Listopad"),
-#             (12, "Grudzień"),
-#         ]
-#
-#         years = range(today.year - 3, today.year + 1)
-#
-#         return render(request, "warehouse/order_profitability_list.html", {
-#             "rows": rows,
-#             "month": month,
-#             "year": year,
-#             "months": months,
-#             "years": years,
-#             "value": value,
-#             "summary": summary,
-#             "persons": persons,
-#             "person_id": person_id
-#         })
+from decimal import Decimal, InvalidOperation
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
+from django.utils.dateparse import parse_date
+from django.views import View
+
+from production.models import ProductionOrder, ProductionUnit
+from warehouse.models import Order, Product
+from warehousemanager.models import LocalSetting
+
+
 class OrderProfitabilityListView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")
     template_name = "warehouse/order_profitability_list.html"
 
+    @staticmethod
+    def get_setting_decimal(name, default):
+        setting = LocalSetting.objects.filter(name=name).first()
+
+        if not setting:
+            return Decimal(str(default))
+
+        try:
+            return Decimal(str(setting.value).replace(",", "."))
+        except (InvalidOperation, TypeError, ValueError):
+            return Decimal(str(default))
+
     def get(self, request):
         from warehousemanager.models import Person
 
-        value_setting = LocalSetting.objects.filter(name="work_hour_value").first()
-        value = value_setting.value if value_setting else 192
+        production_hourly_rate = self.get_setting_decimal(
+            "production_work_hour_value",
+            "57.00",
+        )
 
-        persons = Person.objects.all().order_by("first_name", "last_name")
+        fully_loaded_hourly_rate = self.get_setting_decimal(
+            "work_hour_value",
+            "192.00",
+        )
+
+        if fully_loaded_hourly_rate < production_hourly_rate:
+            fully_loaded_hourly_rate = production_hourly_rate
+
+        persons = Person.objects.all().order_by(
+            "first_name",
+            "last_name",
+        )
 
         date_from = request.GET.get("date_from", "")
         date_to = request.GET.get("date_to", "")
         customer = request.GET.get("customer", "").strip()
         person_id = request.GET.get("person")
+        product_id = request.GET.get("product")
+        group_by = request.GET.get("group_by", "orders")
+
+        if group_by not in {"orders", "products"}:
+            group_by = "orders"
+
+        selected_person_id = None
+
+        if person_id:
+            try:
+                selected_person_id = int(person_id)
+            except (TypeError, ValueError):
+                selected_person_id = None
+
+        selected_product = None
+        selected_product_id = None
+
+        if product_id:
+            try:
+                selected_product_id = int(product_id)
+                selected_product = Product.objects.filter(
+                    pk=selected_product_id
+                ).first()
+
+                if not selected_product:
+                    selected_product_id = None
+
+            except (TypeError, ValueError):
+                selected_product_id = None
+                selected_product = None
 
         has_filters = any([
-            request.GET.get("person"),
-            request.GET.get("customer"),
-            request.GET.get("date_from"),
-            request.GET.get("date_to"),
+            selected_person_id,
+            customer,
+            date_from,
+            date_to,
+            selected_product_id,
         ])
 
         return render(request, self.template_name, {
             "persons": persons,
-            "person_id": int(person_id) if person_id else None,
+            "person_id": selected_person_id,
             "customer": customer,
             "date_from": date_from,
             "date_to": date_to,
-            "value": value,
+            "group_by": group_by,
+            "product_id": selected_product_id,
+            "selected_product": selected_product,
+            "production_hourly_rate": production_hourly_rate,
+            "fully_loaded_hourly_rate": fully_loaded_hourly_rate,
             "has_filters": has_filters,
         })
 
 
 class OrderProfitabilityDataView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")
-    PAGE_SIZE = 10
+    PAGE_SIZE = 50
+
+    @staticmethod
+    def get_setting_decimal(name, default):
+        setting = LocalSetting.objects.filter(name=name).first()
+
+        if not setting:
+            return Decimal(str(default))
+
+        try:
+            return Decimal(str(setting.value).replace(",", "."))
+        except (InvalidOperation, TypeError, ValueError):
+            return Decimal(str(default))
+
+    def get_rates(self):
+        production_hourly_rate = self.get_setting_decimal(
+            "production_work_hour_value",
+            "57.00",
+        )
+
+        fully_loaded_hourly_rate = self.get_setting_decimal(
+            "work_hour_value",
+            "192.00",
+        )
+
+        if fully_loaded_hourly_rate < production_hourly_rate:
+            fully_loaded_hourly_rate = production_hourly_rate
+
+        return production_hourly_rate, fully_loaded_hourly_rate
 
     def get_base_queryset(self, request):
         from warehousemanager.models import Person
 
         person_id = request.GET.get("person")
         customer = request.GET.get("customer", "").strip()
-        date_from = parse_date(request.GET.get("date_from") or "")
-        date_to = parse_date(request.GET.get("date_to") or "")
+        product_id = request.GET.get("product")
+
+        date_from = parse_date(
+            request.GET.get("date_from") or ""
+        )
+
+        date_to = parse_date(
+            request.GET.get("date_to") or ""
+        )
 
         qs = (
             Order.objects
-            .select_related("provider", "customer", "product")
+            .select_related(
+                "provider",
+                "customer",
+                "product",
+            )
             .order_by("-order_date", "-id")
         )
 
         if person_id:
-            person = Person.objects.filter(id=person_id).first()
+            try:
+                person_id = int(person_id)
+            except (TypeError, ValueError):
+                return Order.objects.none()
+
+            person = Person.objects.filter(
+                pk=person_id
+            ).first()
+
             if not person:
                 return Order.objects.none()
 
             qs = (
                 Order.produced_by_person(person)
-                .select_related("provider", "customer", "product")
+                .select_related(
+                    "provider",
+                    "customer",
+                    "product",
+                )
                 .order_by("-order_date", "-id")
             )
 
         if customer:
-            qs = qs.filter(customer__name__icontains=customer)
+            qs = qs.filter(
+                customer__name__icontains=customer
+            )
+
+        if product_id:
+            try:
+                product_id = int(product_id)
+            except (TypeError, ValueError):
+                return Order.objects.none()
+
+            qs = qs.filter(
+                product_id=product_id
+            )
 
         if date_from:
-            qs = qs.filter(order_date__gte=date_from)
+            qs = qs.filter(
+                order_date__gte=date_from
+            )
 
         if date_to:
-            qs = qs.filter(order_date__lte=date_to)
+            qs = qs.filter(
+                order_date__lte=date_to
+            )
 
         return qs
 
+    def get_production_order(self, order):
+        return (
+            ProductionOrder.objects
+            .filter(
+                id_number=f"{order.provider} {order.order_id}"
+            )
+            .first()
+        )
+
     def order_has_production_time(self, order):
-        production_order = ProductionOrder.objects.filter(
-            id_number=f"{order.provider} {order.order_id}"
-        ).first()
+        production_order = self.get_production_order(order)
 
         if not production_order:
             return False
@@ -2736,67 +2779,284 @@ class OrderProfitabilityDataView(LoginRequiredMixin, View):
             end__isnull=False,
         ).exists()
 
-    def build_row(self, order):
-        settled_qty = order.settled_quantity()
-        sold_qty = order.sold_quantity()
+    def build_order_row(
+        self,
+        order,
+        production_hourly_rate,
+        fully_loaded_hourly_rate,
+    ):
+        settled_qty = int(
+            order.settled_quantity() or 0
+        )
 
-        # tylko rozliczone
+        sold_qty = int(
+            order.sold_quantity() or 0
+        )
+
         if settled_qty <= 0:
             return None
 
-        # tylko choć częściowo sprzedane
         if sold_qty <= 0:
             return None
 
-        # tylko takie, które mają czasy produkcji
+        if not order.product_id:
+            return None
+
         if not self.order_has_production_time(order):
             return None
 
-        sales = Decimal(order.real_sales_value() or 0)
-        production_cost = Decimal(order.production_alternative_cost() or 0)
+        material_cost = Decimal(
+            str(order.material_cost() or 0)
+        )
 
-        # tylko z kosztem produkcji
-        if production_cost <= 0:
+        work_hours = Decimal(
+            str(order.production_work_hours() or 0)
+        )
+
+        sales = Decimal(
+            str(order.real_sales_value() or 0)
+        )
+
+        if work_hours <= 0:
             return None
 
-        result = sales - production_cost
+        labor_cost = (
+            work_hours
+            * production_hourly_rate
+        )
+
+        production_cost = (
+            material_cost
+            + labor_cost
+        )
+
+        production_result = (
+            sales
+            - production_cost
+        )
+
+        additional_cost = (
+            fully_loaded_hourly_rate
+            - production_hourly_rate
+        ) * work_hours
+
+        fully_loaded_cost = (
+            production_cost
+            + additional_cost
+        )
+
+        fully_loaded_result = (
+            sales
+            - fully_loaded_cost
+        )
+
         status = order.sales_profitability_status()
 
         return {
+            "row_type": "order",
             "id": order.id,
+            "product_id": order.product_id,
             "order": f"{order.provider} {order.order_id}",
-            "order_url": reverse("warehouse:order-detail-view", args=[order.id]),
-            "order_date": order.order_date.strftime("%d.%m.%Y") if order.order_date else "",
-            "customer": str(order.customer),
-            "product": order.product.name if order.product else "",
-            "settled_qty": int(settled_qty),
-            "sold_qty": int(sold_qty),
-            "production_cost": float(production_cost),
+            "order_url": reverse(
+                "warehouse:order-detail-view",
+                args=[order.id],
+            ),
+            "order_date": (
+                order.order_date.strftime("%d.%m.%Y")
+                if order.order_date
+                else ""
+            ),
+            "customer": (
+                str(order.customer)
+                if order.customer
+                else ""
+            ),
+            "product": (
+                order.product.name
+                if order.product
+                else ""
+            ),
+            "orders_count": 1,
+            "settled_qty": settled_qty,
+            "sold_qty": sold_qty,
+            "material_cost": float(material_cost),
+            "work_hours": float(work_hours),
+            "labor_cost": float(labor_cost),
             "sales": float(sales),
-            "result": float(result),
+            "production_result": float(production_result),
+            "additional_cost": float(additional_cost),
+            "fully_loaded_cost": float(fully_loaded_cost),
+            "fully_loaded_result": float(fully_loaded_result),
             "status": status,
-            "is_profit": result >= 0,
+            "is_production_profit": production_result >= 0,
+            "is_fully_loaded_profit": fully_loaded_result >= 0,
         }
 
-    def get(self, request):
-        page = int(request.GET.get("page", 1))
-
-        qs = self.get_base_queryset(request)
-
-        paginator = Paginator(qs, self.PAGE_SIZE)
-        page_obj = paginator.get_page(page)
+    def build_order_rows(self, request):
+        (
+            production_hourly_rate,
+            fully_loaded_hourly_rate,
+        ) = self.get_rates()
 
         rows = []
 
-        for order in page_obj.object_list:
-            row = self.build_row(order)
+        for order in self.get_base_queryset(request):
+            row = self.build_order_row(
+                order=order,
+                production_hourly_rate=production_hourly_rate,
+                fully_loaded_hourly_rate=fully_loaded_hourly_rate,
+            )
+
             if row:
                 rows.append(row)
 
+        return rows
+
+    def aggregate_product_rows(self, order_rows):
+        products = {}
+
+        for row in order_rows:
+            product_id = row.get("product_id")
+
+            if not product_id:
+                continue
+
+            if product_id not in products:
+                products[product_id] = {
+                    "row_type": "product",
+                    "product_id": product_id,
+                    "product": row["product"],
+                    "customers": set(),
+                    "orders_count": 0,
+                    "settled_qty": 0,
+                    "sold_qty": 0,
+                    "material_cost": Decimal("0.00"),
+                    "work_hours": Decimal("0.00"),
+                    "labor_cost": Decimal("0.00"),
+                    "sales": Decimal("0.00"),
+                    "production_result": Decimal("0.00"),
+                    "additional_cost": Decimal("0.00"),
+                    "fully_loaded_cost": Decimal("0.00"),
+                    "fully_loaded_result": Decimal("0.00"),
+                }
+
+            product = products[product_id]
+
+            if row["customer"]:
+                product["customers"].add(
+                    row["customer"]
+                )
+
+            product["orders_count"] += 1
+            product["settled_qty"] += row["settled_qty"]
+            product["sold_qty"] += row["sold_qty"]
+
+            for field in (
+                "material_cost",
+                "work_hours",
+                "labor_cost",
+                "sales",
+                "production_result",
+                "additional_cost",
+                "fully_loaded_cost",
+                "fully_loaded_result",
+            ):
+                product[field] += Decimal(
+                    str(row[field])
+                )
+
+        result = []
+
+        decimal_fields = (
+            "material_cost",
+            "work_hours",
+            "labor_cost",
+            "sales",
+            "production_result",
+            "additional_cost",
+            "fully_loaded_cost",
+            "fully_loaded_result",
+        )
+
+        for product in products.values():
+            product["customer"] = ", ".join(
+                sorted(product.pop("customers"))
+            )
+
+            product["is_production_profit"] = (
+                product["production_result"] >= 0
+            )
+
+            product["is_fully_loaded_profit"] = (
+                product["fully_loaded_result"] >= 0
+            )
+
+            for field in decimal_fields:
+                product[field] = float(
+                    product[field]
+                )
+
+            result.append(product)
+
+        return sorted(
+            result,
+            key=lambda item: (
+                item["product"] or ""
+            ).lower(),
+        )
+
+    def get(self, request):
+        try:
+            page = max(
+                int(request.GET.get("page", 1)),
+                1,
+            )
+        except (TypeError, ValueError):
+            page = 1
+
+        group_by = request.GET.get(
+            "group_by",
+            "orders",
+        )
+
+        if group_by not in {"orders", "products"}:
+            group_by = "orders"
+
+        order_rows = self.build_order_rows(request)
+
+        if group_by == "products":
+            all_rows = self.aggregate_product_rows(
+                order_rows
+            )
+        else:
+            all_rows = order_rows
+
+        paginator = Paginator(
+            all_rows,
+            self.PAGE_SIZE,
+        )
+
+        page_obj = paginator.get_page(page)
+
+        (
+            production_hourly_rate,
+            fully_loaded_hourly_rate,
+        ) = self.get_rates()
+
         return JsonResponse({
-            "rows": rows,
-            "page": page,
+            "rows": list(page_obj.object_list),
+            "page": page_obj.number,
             "has_next": page_obj.has_next(),
+            "has_previous": page_obj.has_previous(),
+            "num_pages": paginator.num_pages,
+            "total_rows": paginator.count,
+            "group_by": group_by,
+            "production_hourly_rate": float(
+                production_hourly_rate
+            ),
+            "fully_loaded_hourly_rate": float(
+                fully_loaded_hourly_rate
+            ),
         })
 
 
