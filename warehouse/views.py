@@ -3086,6 +3086,8 @@ class ShipmentUnitConfirmUserView(LoginRequiredMixin, View):
         username = (request.POST.get("username") or "").strip()
         pin = (request.POST.get("pin") or "").strip()
 
+        print(username, pin)
+
         User = get_user_model()
 
         try:
@@ -3098,7 +3100,7 @@ class ShipmentUnitConfirmUserView(LoginRequiredMixin, View):
 
             person = Person.objects.get(
                 user=user,
-                job_end__isnull=True,
+                # job_end__isnull=True,
             )
             print(person)
 

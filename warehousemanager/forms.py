@@ -68,3 +68,70 @@ class GluerNumberForm(forms.ModelForm):
     class Meta:
         model = GluerNumber
         fields = "__all__"
+
+
+from django import forms
+
+
+class PersonPinForm(forms.Form):
+    current_pin = forms.CharField(
+        label="Obecny PIN",
+        required=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "inputmode": "numeric",
+                "autocomplete": "off",
+                "placeholder": "Obecny PIN",
+            }
+        ),
+    )
+
+    new_pin = forms.CharField(
+        label="Nowy PIN",
+        widget=forms.PasswordInput(
+            attrs={
+                "inputmode": "numeric",
+                "autocomplete": "new-password",
+                "placeholder": "Nowy PIN",
+            }
+        ),
+    )
+
+    new_pin_repeat = forms.CharField(
+        label="Powtórz nowy PIN",
+        widget=forms.PasswordInput(
+            attrs={
+                "inputmode": "numeric",
+                "autocomplete": "new-password",
+                "placeholder": "Powtórz nowy PIN",
+            }
+        ),
+    )
+
+    def clean_new_pin(self):
+        pin = str(self.cleaned_data["new_pin"]).strip()
+
+        if not pin.isdigit():
+            raise forms.ValidationError("PIN może zawierać tylko cyfry.")
+
+        if len(pin) < 4:
+            raise forms.ValidationError("PIN musi mieć co najmniej 4 cyfry.")
+
+        if len(pin) > 8:
+            raise forms.ValidationError("PIN może mieć maksymalnie 8 cyfr.")
+
+        return pin
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        new_pin = cleaned_data.get("new_pin")
+        new_pin_repeat = cleaned_data.get("new_pin_repeat")
+
+        if new_pin and new_pin_repeat and new_pin != new_pin_repeat:
+            self.add_error(
+                "new_pin_repeat",
+                "Podane nowe PIN-y nie są identyczne.",
+            )
+
+        return cleaned_data

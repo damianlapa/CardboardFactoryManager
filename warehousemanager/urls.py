@@ -4,6 +4,7 @@ from warehousemanager.customer_views import *
 from warehousemanager.absence_views import ProductionEffectiveWorkHoursView
 from warehousemanager.employee_views import (EmployeeListView, EmployeeWorkTimeReportView,
                                              EmployeeProductionUnitsAjaxView)
+from warehousemanager.views import PersonPinChangeView
 
 
 urlpatterns = [
@@ -34,5 +35,15 @@ urlpatterns += [
         "employees/work-time-report/person/<int:person_id>/units/",
         EmployeeProductionUnitsAjaxView.as_view(),
         name="employee_production_units_ajax",
+    ),
+]
+
+urlpatterns += [
+    # ...
+
+    path(
+        "profile/pin/",
+        PersonPinChangeView.as_view(),
+        name="person-pin-change",
     ),
 ]

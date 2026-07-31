@@ -32,6 +32,7 @@ from .models import (
     StockAlias,
     ProductSellOrderPart,
     ProductPackaging,
+    ShipmentUnit,
 )
 
 
@@ -547,3 +548,6 @@ class ProductPackagingAdmin(admin.ModelAdmin):
     search_fields = ("product__name", "palette__name")
     autocomplete_fields = ["product", "palette"]
     ordering = ("product__name",)
+
+
+admin.site.register(ShipmentUnit)

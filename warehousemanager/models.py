@@ -172,8 +172,13 @@ class Person(models.Model):
         self.pin = make_password(str(raw_pin))
 
     def check_pin(self, raw_pin):
-        print(str(raw_pin), self.pin, str(raw_pin) == self.pin)
+        if not self.pin:
+            return False
+
         return check_password(str(raw_pin), self.pin)
+
+    def has_pin(self):
+        return bool(self.pin)
 
     def contract(self, date=None):
         contracts = list(Contract.objects.filter(worker=self).order_by('date_start'))

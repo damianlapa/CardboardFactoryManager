@@ -2245,3 +2245,101 @@ class NoteDeleteView(PermissionRequiredMixin, View):
         note = Note.objects.get(id=note_id)
         note.delete()
         return redirect('deliveries-calendar')
+
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect, render
+from django.views import View
+
+from warehousemanager.forms import PersonPinForm
+from warehousemanager.models import Person
+
+
+class PersonPinChangeView(LoginRequiredMixin, View):
+    login_url = "login"
+    template_name = "whm/person_pin_change.html"
+
+    def get_person(self, request):
+        return Person.objects.filter(
+            user=request.user,
+            # job_end__isnull=True,
+        ).first()
+
+    def get(self, request):
+
+        print('%%%%')
+        person = self.get_person(request)
+
+        if not person:
+            messages.error(
+                request,
+                "Zalogowany użytkownik nie ma przypisanego aktywnego pracownika.",
+            )
+            return redirect("/")
+
+        form = PersonPinForm()
+
+        return render(request, self.template_name, {
+            "form": form,
+            "person": person,
+            "has_pin": person.has_pin(),
+        })
+
+    def post(self, request):
+        person = self.get_person(request)
+
+        if not person:
+            messages.error(
+                request,
+                "Zalogowany użytkownik nie ma przypisanego aktywnego pracownika.",
+            )
+            return redirect("/")
+
+        form = PersonPinForm(request.POST)
+        has_pin = person.has_pin()
+
+        if form.is_valid():
+            current_pin = (
+                form.cleaned_data.get("current_pin") or ""
+            ).strip()
+
+            new_pin = form.cleaned_data["new_pin"]
+
+            # Zmiana istniejącego PIN-u wymaga obecnego PIN-u
+            if has_pin:
+                if not current_pin:
+                    form.add_error(
+                        "current_pin",
+                        "Podaj obecny PIN.",
+                    )
+
+                elif not person.check_pin(current_pin):
+                    form.add_error(
+                        "current_pin",
+                        "Obecny PIN jest nieprawidłowy.",
+                    )
+
+                elif current_pin == new_pin:
+                    form.add_error(
+                        "new_pin",
+                        "Nowy PIN musi być inny niż obecny.",
+                    )
+
+            if not form.errors:
+                person.set_pin(new_pin)
+                person.save(update_fields=["pin"])
+
+                messages.success(
+                    request,
+                    "PIN został ustawiony." if not has_pin
+                    else "PIN został zmieniony.",
+                )
+
+                return redirect("person-pin-change")
+
+        return render(request, self.template_name, {
+            "form": form,
+            "person": person,
+            "has_pin": has_pin,
+        })
