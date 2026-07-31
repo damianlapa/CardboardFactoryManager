@@ -188,4 +188,20 @@ urlpatterns += [
         ShipmentUnitsPrintAllView.as_view(),
         name="shipment-units-print-all",
     ),
+    path(
+        "shipment-unit/<int:shipment_unit_id>/edit/",
+        ShipmentUnitUpdateView.as_view(),
+        name="shipment-unit-update",
+    ),
+
+    path(
+        "shipment-unit/<int:shipment_unit_id>/delete/",
+        ShipmentUnitDeleteView.as_view(),
+        name="shipment-unit-delete",
+    ),
+    path(
+        "loading/scan/<str:token>/",
+        ShipmentUnitLoadingScanView.as_view(),
+        name="shipment_unit_loading_scan",
+    ),
 ]

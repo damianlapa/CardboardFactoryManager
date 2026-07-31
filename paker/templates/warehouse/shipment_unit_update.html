@@ -1,0 +1,212 @@
+{% extends "__base3__.html" %}
+
+{% block content %}
+
+<style>
+    .shipment-edit-page {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .shipment-edit-card {
+        padding: 24px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .shipment-edit-card h1 {
+        margin-top: 0;
+    }
+
+    .shipment-edit-info {
+        width: 100%;
+        margin-bottom: 25px;
+        border-collapse: collapse;
+    }
+
+    .shipment-edit-info th,
+    .shipment-edit-info td {
+        padding: 8px 4px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+
+    .shipment-edit-info th {
+        width: 40%;
+        color: #555;
+    }
+
+    .shipment-edit-field {
+        margin-bottom: 18px;
+    }
+
+    .shipment-edit-field label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .shipment-edit-field input,
+    .shipment-edit-field select {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #bbb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .shipment-edit-field input {
+        font-size: 22px;
+    }
+
+    .shipment-edit-error {
+        padding: 12px;
+        margin-bottom: 18px;
+        border-radius: 6px;
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .shipment-edit-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .shipment-edit-save,
+    .shipment-edit-cancel {
+        flex: 1;
+        box-sizing: border-box;
+        padding: 13px;
+        border-radius: 6px;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .shipment-edit-save {
+        border: 0;
+        background: #198754;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .shipment-edit-save:hover {
+        background: #157347;
+    }
+
+    .shipment-edit-cancel {
+        border: 1px solid #aaa;
+        background: #fff;
+        color: #333;
+    }
+</style>
+
+<div class="shipment-edit-page">
+    <div class="shipment-edit-card">
+        <h1>
+            Edytuj jednostkę #{{ shipment_unit.id }}
+        </h1>
+
+        <table class="shipment-edit-info">
+            <tr>
+                <th>Zlecenie</th>
+                <td>{{ shipment_unit.order }}</td>
+            </tr>
+
+            <tr>
+                <th>Produkt</th>
+                <td>{{ shipment_unit.product|default:"Brak" }}</td>
+            </tr>
+
+            <tr>
+                <th>Utworzył</th>
+                <td>
+                    {% if shipment_unit.created_by.get_full_name %}
+                        {{ shipment_unit.created_by.get_full_name }}
+                    {% else %}
+                        {{ shipment_unit.created_by.username }}
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Data utworzenia</th>
+                <td>{{ shipment_unit.created|date:"d.m.Y H:i" }}</td>
+            </tr>
+        </table>
+
+        {% if error %}
+            <div class="shipment-edit-error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="shipment-edit-field">
+                <label for="quantity">
+                    Ilość sztuk
+                </label>
+
+                <input
+                    type="number"
+                    name="quantity"
+                    id="quantity"
+                    min="1"
+                    value="{% if quantity %}{{ quantity }}{% else %}{{ shipment_unit.quantity }}{% endif %}"
+                    required
+                    autofocus
+                >
+            </div>
+
+            <div class="shipment-edit-field">
+                <label for="palette">
+                    Paleta
+                </label>
+
+                <select name="palette" id="palette">
+                    <option value="">
+                        Automatycznie z pakowania
+                    </option>
+
+                    {% for palette in palettes %}
+                        <option
+                            value="{{ palette.id }}"
+                            {% if selected_palette_id|stringformat:"s" == palette.id|stringformat:"s" %}
+                                selected
+                            {% elif not selected_palette_id and shipment_unit.palette_id == palette.id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ palette }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="shipment-edit-actions">
+                <a
+                    href="{% url 'warehouse:shipment-unit-create' order_id=shipment_unit.order_id %}"
+                    class="shipment-edit-cancel"
+                >
+                    Anuluj
+                </a>
+
+                <button
+                    type="submit"
+                    class="shipment-edit-save"
+                >
+                    Zapisz zmiany
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

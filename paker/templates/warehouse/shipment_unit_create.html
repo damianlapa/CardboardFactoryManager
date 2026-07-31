@@ -3,6 +3,134 @@
 {% block content %}
 
 <style>
+    .shipment-history {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid #eee;
+}
+
+.shipment-history-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.shipment-history-header h2 {
+    margin: 0;
+}
+
+.shipment-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shipment-history-item {
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.shipment-history-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.shipment-history-badge {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.history-update {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+.history-delete {
+    background: #f8d7da;
+    color: #842029;
+}
+
+.shipment-history-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    gap: 10px 20px;
+}
+
+.shipment-history-details > div {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 650px) {
+    .shipment-history-details {
+        grid-template-columns: 1fr;
+    }
+}
+    .shipment-item-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-width: 105px;
+}
+
+.shipment-item-actions form {
+    margin: 0;
+}
+
+.shipment-action-button {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 9px 13px;
+    border: 0;
+    border-radius: 6px;
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.shipment-print-button {
+    background: #0d6efd;
+}
+
+.shipment-print-button:hover {
+    background: #0b5ed7;
+    color: #fff;
+}
+
+.shipment-edit-button {
+    background: #f0ad4e;
+    color: #212529;
+}
+
+.shipment-edit-button:hover {
+    background: #e59b2f;
+    color: #212529;
+}
+
+.shipment-delete-button {
+    background: #dc3545;
+}
+
+.shipment-delete-button:hover {
+    background: #bb2d3b;
+}
     .shipment-print-all-button {
     display: inline-block;
     padding: 10px 15px;
@@ -549,19 +677,144 @@
                             </div>
 
                             <div class="shipment-item-actions">
-                                <a
-                                    href="{% url 'warehouse:shipment-unit-print' shipment_unit_id=shipment_unit.id %}"
-                                    class="shipment-print-button"
-                                    target="_blank"
-                                >
-                                    Drukuj
-                                </a>
-                            </div>
+    <a
+        href="{% url 'warehouse:shipment-unit-print' shipment_unit_id=shipment_unit.id %}"
+        class="shipment-action-button shipment-print-button"
+        target="_blank"
+    >
+        Drukuj
+    </a>
+
+    {% if request.user.is_superuser or shipment_unit.created_by_id == request.user.id %}
+        <a
+            href="{% url 'warehouse:shipment-unit-update' shipment_unit_id=shipment_unit.id %}"
+            class="shipment-action-button shipment-edit-button"
+        >
+            Edytuj
+        </a>
+
+        <form
+            method="post"
+            action="{% url 'warehouse:shipment-unit-delete' shipment_unit_id=shipment_unit.id %}"
+            onsubmit="return confirm('Czy na pewno usunąć jednostkę #{{ shipment_unit.id }}?');"
+        >
+            {% csrf_token %}
+
+            <button
+                type="submit"
+                class="shipment-action-button shipment-delete-button"
+            >
+                Usuń
+            </button>
+        </form>
+    {% endif %}
+</div>
 
                         </article>
                     {% endfor %}
 
                 </div>
+            <div class="shipment-history">
+    <div class="shipment-history-header">
+        <h2>Historia zmian</h2>
+
+        <span class="shipment-counter">
+            {{ shipment_unit_history|length }}
+        </span>
+    </div>
+
+    {% if shipment_unit_history %}
+        <div class="shipment-history-list">
+            {% for history in shipment_unit_history %}
+                <article class="shipment-history-item">
+                    <div class="shipment-history-top">
+                        <strong>
+                            Jednostka #{{ history.shipment_unit_original_id }}
+                        </strong>
+
+                        {% if history.action == "UPDATE" %}
+                            <span class="shipment-history-badge history-update">
+                                Edycja
+                            </span>
+                        {% elif history.action == "DELETE" %}
+                            <span class="shipment-history-badge history-delete">
+                                Usunięcie
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="shipment-history-details">
+                        <div>
+                            <span class="shipment-attribute-label">
+                                Ilość przed operacją
+                            </span>
+
+                            <strong>{{ history.quantity }} szt.</strong>
+                        </div>
+
+                        <div>
+                            <span class="shipment-attribute-label">
+                                Paleta przed operacją
+                            </span>
+
+                            <strong>{{ history.palette|default:"Brak" }}</strong>
+                        </div>
+
+                        <div>
+                            <span class="shipment-attribute-label">
+                                Produkt
+                            </span>
+
+                            <strong>{{ history.product|default:"Brak" }}</strong>
+                        </div>
+
+                        <div>
+                            <span class="shipment-attribute-label">
+                                Operację wykonał
+                            </span>
+
+                            <strong>
+                                {% if history.changed_by.get_full_name %}
+                                    {{ history.changed_by.get_full_name }}
+                                {% else %}
+                                    {{ history.changed_by.username }}
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span class="shipment-attribute-label">
+                                Data operacji
+                            </span>
+
+                            <strong>
+                                {{ history.changed_at|date:"d.m.Y H:i:s" }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span class="shipment-attribute-label">
+                                Aktualny status
+                            </span>
+
+                            <strong>
+                                {% if history.shipment_unit %}
+                                    Jednostka istnieje
+                                {% else %}
+                                    Jednostka usunięta
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="shipment-empty">
+            Brak zmian i usunięć.
+        </div>
+    {% endif %}
+</div>
             {% else %}
                 <div class="shipment-empty">
                     Nie dodano jeszcze żadnej jednostki wysyłkowej.

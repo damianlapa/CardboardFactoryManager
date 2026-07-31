@@ -1,128 +1,376 @@
-{% extends "__base3__.html" %}
+{% extends "warehouse/__print__.html" %}
 
 {% block content %}
 
 <style>
-    .print-page {
-        max-width: 800px;
-        margin: 30px auto;
-        padding: 25px;
+    @page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
         background: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #000;
     }
 
-    .print-title {
-        margin-bottom: 25px;
+
+    .palette-label {
+        width: 281mm;
+        height: 194mm;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 56mm 1fr;
+        border-top: 1.5px solid #000;
+        border-left: 1.5px solid #000;
+    }
+
+    .label-cell {
+        border-right: 1.5px solid #000;
+        border-bottom: 1.5px solid #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         text-align: center;
+        overflow: hidden;
     }
 
-    .print-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 18px;
+    .left-column {
+        display: grid;
+        grid-template-rows:
+            12mm 12mm
+            12mm 12mm
+            12mm 12mm
+            12mm 12mm
+            12mm 12mm
+            12mm 12mm
+            12mm 1fr;
     }
 
-    .print-table th,
-    .print-table td {
-        padding: 12px;
-        border: 1px solid #222;
+    .left-label {
+        font-size: 14px;
+        font-weight: 500;
+        padding: 2mm;
+    }
+
+    .left-value {
+        font-size: 16px;
+        font-weight: 700;
+        padding: 2mm;
+    }
+
+    .storage-title {
+        font-size: 12px;
+        line-height: 1.15;
+        padding: 2mm;
+    }
+
+    .storage-info {
+        align-items: flex-start;
+        padding: 3mm 2mm;
+        font-size: 7px;
+        line-height: 1.25;
         text-align: left;
     }
 
-    .print-table th {
-        width: 35%;
+    .right-column {
+        display: grid;
+        grid-template-rows:
+            29mm
+            35mm
+            18mm
+            18mm
+            14mm
+            1fr
+            29mm;
+    }
+
+    .company-header {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+    }
+
+    .company-name {
+        font-size: 31px;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    .company-address {
+        padding: 2mm;
+        font-size: 13px;
+        line-height: 1.25;
+    }
+
+    .company-extra {
+        padding: 2mm;
+    }
+
+    .customer-name {
+        font-size: 36px;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 3mm;
+    }
+
+    .two-columns {
+        display: grid;
+        grid-template-columns: 50mm 1fr;
+    }
+
+    .field-box {
+        flex-direction: column;
+        gap: 2mm;
+        padding: 2mm;
+    }
+
+    .field-label {
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .field-value {
+        font-size: 21px;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .quantity-value {
+        font-size: 25px;
+    }
+
+    .series-row {
+        display: grid;
+        grid-template-columns: 50mm 1fr;
+    }
+
+    .series-value {
+        font-size: 25px;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .main-empty-field {
+    position: relative;
+    padding: 4mm;
+    justify-content: center;
+    align-items: center;
+}
+
+    .qr-code {
+        position: absolute;
+        right: 5mm;
+        bottom: 5mm;
+        width: 35mm;
+        height: 35mm;
+    }
+
+    .footer-field {
+        padding: 3mm;
+        justify-content: flex-start;
+        align-items: flex-start;
     }
 
     .print-actions {
-        margin-top: 25px;
+        margin: 15px;
         text-align: center;
     }
 
     .print-button {
-        padding: 12px 24px;
         border: 0;
         border-radius: 6px;
-        background: #0d6efd;
+        padding: 12px 24px;
+        background: #212529;
         color: #fff;
-        font-size: 17px;
+        font-size: 16px;
         cursor: pointer;
     }
 
     @media print {
+        .print-actions,
         header,
         nav,
-        footer,
-        .print-actions {
+        footer {
             display: none !important;
         }
 
-        body {
+        .palette-label {
             margin: 0;
-            background: #fff;
-        }
-
-        .print-page {
-            max-width: none;
-            margin: 0;
-            padding: 0;
-            box-shadow: none;
         }
     }
 </style>
 
-<div class="print-page">
+<div class="print-actions">
+    <button
+        type="button"
+        class="print-button"
+        onclick="window.print()"
+    >
+        Drukuj paletówkę
+    </button>
+</div>
 
-    <h1 class="print-title">
-        Jednostka wysyłkowa #{{ shipment_unit.id }}
-    </h1>
+<div class="palette-label">
 
-    <table class="print-table">
-        <tr>
-            <th>Zlecenie</th>
-            <td>{{ shipment_unit.order }}</td>
-        </tr>
+    <div class="left-column">
+        <div class="label-cell left-label">
+            DATA PRODUKCJI
+        </div>
 
-        <tr>
-            <th>Produkt</th>
-            <td>{{ shipment_unit.product|default:"Brak" }}</td>
-        </tr>
+        <div class="label-cell left-value">
+            {% if order.production_date %}
+                {{ order.production_date|date:"d.m.Y" }}
+            {% else %}
+                {{ shipment_unit.created|date:"d.m.Y" }}
+            {% endif %}
+        </div>
 
-        <tr>
-            <th>Ilość</th>
-            <td>{{ shipment_unit.quantity }} szt.</td>
-        </tr>
+        <div class="label-cell left-label">
+            DATA WYSYŁKI
+        </div>
 
-        <tr>
-            <th>Paleta</th>
-            <td>{{ shipment_unit.palette|default:"Brak" }}</td>
-        </tr>
+        <div class="label-cell left-value">
 
-        <tr>
-            <th>Pracownik</th>
-            <td>
-                {% if shipment_unit.created_by.get_full_name %}
-                    {{ shipment_unit.created_by.get_full_name }}
-                {% else %}
-                    {{ shipment_unit.created_by.username }}
-                {% endif %}
-            </td>
-        </tr>
+        </div>
 
-        <tr>
-            <th>Data utworzenia</th>
-            <td>{{ shipment_unit.created|date:"d.m.Y H:i" }}</td>
-        </tr>
-    </table>
+        <div class="label-cell left-label">
+            WAGA
+        </div>
 
-    <div class="print-actions">
-        <button
-            type="button"
-            class="print-button"
-            onclick="window.print()"
-        >
-            Drukuj
-        </button>
+        <div class="label-cell left-value">
+            {% if shipment_unit.weight %}
+                {{ shipment_unit.weight }} kg
+            {% else %}
+                —
+            {% endif %}
+        </div>
+
+        <div class="label-cell left-label">
+            WYSOKOŚĆ
+        </div>
+
+        <div class="label-cell left-value">
+            {% if shipment_unit.height %}
+                {{ shipment_unit.height }} mm
+            {% else %}
+                —
+            {% endif %}
+        </div>
+
+        <div class="label-cell left-label">
+            SPAKOWAŁ
+        </div>
+
+        <div class="label-cell left-value">
+                {{ shipment_unit.created_by.id }}
+        </div>
+
+        <div class="label-cell left-label">
+            PALETA
+        </div>
+
+        <div class="label-cell left-value">
+            {{ shipment_unit.palette|default:"—" }}
+        </div>
+
+        <div class="label-cell storage-title">
+            INFORMACJE O<br>
+            PRZECHOWYWANIU
+        </div>
+
+        <div class="label-cell storage-info">
+            <div>
+                <strong>
+                    Zalecenia i warunki przechowywania wyrobów z tektury falistej:
+                </strong>
+                <br><br>
+
+                1) Temperatura 5–30°C. Wilgotność względna 30–70%.<br>
+                2) Chronić przed zamoczeniem i bezpośrednim promieniowaniem słonecznym.<br>
+                3) Nie dopuszczać do gwałtownych zmian temperatury i wilgotności.<br>
+                4) Uwaga! Wyrób podatny na uszkodzenia – zachować ostrożność
+                podczas magazynowania i przemieszczania.
+            </div>
+        </div>
     </div>
 
+    <div class="right-column">
+
+        <div class="company-header">
+            <div class="label-cell company-name">
+                PAKER SP. Z O. O.
+            </div>
+
+            <div class="label-cell company-address">
+                UL. LOTNICZA 1<br>
+                55-200 STANOWICE<br>
+                NIP: 8961533894<br>
+                REGON: 022135310<br>
+                KRS: 0000461325
+            </div>
+
+            <div class="label-cell company-extra">
+            </div>
+        </div>
+
+        <div class="label-cell customer-name">
+            {{ order.customer }}
+        </div>
+
+        <div class="two-columns">
+            <div class="label-cell field-box">
+                <div class="field-label">Produkt</div>
+            </div>
+
+            <div class="label-cell field-box">
+                <div class="field-value">
+                    {{ shipment_unit.product|default:order.product }}
+                </div>
+            </div>
+        </div>
+
+        <div class="two-columns">
+            <div class="label-cell field-box">
+                <div class="field-label">ILOŚĆ SZTUK</div>
+            </div>
+
+            <div class="label-cell field-box">
+                <div class="field-value quantity-value">
+                    {{ shipment_unit.quantity }}
+                </div>
+            </div>
+        </div>
+
+        <div class="series-row">
+            <div class="label-cell field-box">
+                <div class="field-label">Numer serii</div>
+            </div>
+
+            <div class="label-cell series-value">
+                {{ order.id }}/{{ order.order_year }}
+            </div>
+        </div>
+
+        <div class="label-cell main-empty-field" style="text-align: center;">
+            <img src="data:image/png;base64,{{ barcode }}">
+            <img
+        src="data:image/png;base64,{{ qr_code }}"
+        class="qr-code"
+        alt="Kod QR palety"
+    >
+        </div>
+
+
+        <div class="label-cell footer-field">
+        </div>
+
+    </div>
 </div>
 
 {% endblock %}

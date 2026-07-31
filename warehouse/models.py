@@ -2198,6 +2198,7 @@ class ShipmentUnit(models.Model):
     quantity = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_shipment_units")
+    # shipped = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]
@@ -2217,4 +2218,75 @@ class ShipmentUnit(models.Model):
 
     def __str__(self):
         return f"{self.order} - {self.quantity} pcs"
+
+
+from django.conf import settings
+
+
+class ShipmentUnitHistory(models.Model):
+    ACTION_UPDATE = "UPDATE"
+    ACTION_DELETE = "DELETE"
+
+    ACTION_CHOICES = (
+        (ACTION_UPDATE, "Edycja"),
+        (ACTION_DELETE, "Usunięcie"),
+    )
+
+    shipment_unit = models.ForeignKey(
+        "ShipmentUnit",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="history",
+    )
+
+    # ID pozostaje zapisane również po usunięciu ShipmentUnit
+    shipment_unit_original_id = models.PositiveIntegerField()
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.PROTECT,
+        related_name="shipment_unit_history",
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    palette = models.ForeignKey(
+        Palette,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    quantity = models.PositiveIntegerField()
+
+    action = models.CharField(
+        max_length=16,
+        choices=ACTION_CHOICES,
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="shipment_unit_changes",
+    )
+
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]
+        verbose_name = "historia jednostki wysyłkowej"
+        verbose_name_plural = "historie jednostek wysyłkowych"
+
+    def __str__(self):
+        return (
+            f"{self.get_action_display()} "
+            f"ShipmentUnit #{self.shipment_unit_original_id} "
+            f"przez {self.changed_by}"
+        )
 

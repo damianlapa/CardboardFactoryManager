@@ -44,8 +44,54 @@ from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 import logging
+from django.core.exceptions import PermissionDenied
 
 logger = logging.getLogger(__name__)
+
+
+def create_shipment_unit_history(*, shipment_unit, user, action):
+    return ShipmentUnitHistory.objects.create(
+        shipment_unit=shipment_unit,
+        shipment_unit_original_id=shipment_unit.id,
+        order=shipment_unit.order,
+        product=shipment_unit.product,
+        palette=shipment_unit.palette,
+        quantity=shipment_unit.quantity,
+        action=action,
+        changed_by=user,
+    )
+
+
+class ShipmentUnitOwnerRequiredMixin:
+    shipment_unit_url_kwarg = "shipment_unit_id"
+
+    def get_shipment_unit(self):
+        if not hasattr(self, "_shipment_unit"):
+            self._shipment_unit = get_object_or_404(
+                ShipmentUnit.objects.select_related(
+                    "order",
+                    "product",
+                    "palette",
+                    "created_by",
+                ),
+                id=self.kwargs[self.shipment_unit_url_kwarg],
+            )
+
+        return self._shipment_unit
+
+    def check_shipment_unit_permission(self):
+        shipment_unit = self.get_shipment_unit()
+        user = self.request.user
+
+        if user.is_superuser:
+            return
+
+        if shipment_unit.created_by_id == user.id:
+            return
+
+        raise PermissionDenied(
+            "Nie masz uprawnień do zmiany tej jednostki wysyłkowej."
+        )
 
 
 def _check_undo_password(request):
@@ -3157,6 +3203,17 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             .filter(product=order.product)
             .first()
         )
+        shipment_unit_history = (
+            ShipmentUnitHistory.objects
+            .filter(order=order)
+            .select_related(
+                "shipment_unit",
+                "product",
+                "palette",
+                "changed_by",
+            )
+            .order_by("-changed_at", "-id")
+        )
 
         context = {
             "order": order,
@@ -3164,6 +3221,7 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             "palettes": Palette.objects.all().order_by("name"),
             "default_palette": packaging.palette if packaging else None,
             "shipment_units": self.get_shipment_units(order),
+            "shipment_unit_history": shipment_unit_history,
         }
 
         context.update(kwargs)
@@ -3291,6 +3349,9 @@ class ShipmentUnitPrintView(LoginRequiredMixin, View):
         shipment_unit = get_object_or_404(
             ShipmentUnit.objects.select_related(
                 "order",
+                "order__provider",
+                "order__customer",
+                "order__product",
                 "product",
                 "palette",
                 "created_by",
@@ -3298,9 +3359,72 @@ class ShipmentUnitPrintView(LoginRequiredMixin, View):
             id=shipment_unit_id,
         )
 
-        return render(request, self.template_name, {
-            "shipment_unit": shipment_unit,
-        })
+        from barcode import Code128
+        from barcode.writer import ImageWriter
+        from io import BytesIO
+        import base64
+
+        import qrcode
+
+        from django.core import signing
+        from django.urls import reverse
+
+        buffer = BytesIO()
+        if shipment_unit.order.id:
+            code = f'{shipment_unit.order.provider.id}-{shipment_unit.order.id}-{shipment_unit.id}'
+        else:
+            code = str(shipment_unit.id)
+        Code128(code, writer=ImageWriter()).write(buffer, options={"module_height": 5, "font_size": 7,})
+
+        barcode_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        token = signing.dumps(
+            {
+                "shipment_unit_id": shipment_unit.id,
+            },
+            salt="shipment-unit-loading",
+        )
+
+        scan_path = reverse(
+            "warehouse:shipment_unit_loading_scan",
+            kwargs={"token": token},
+        )
+
+        scan_url = request.build_absolute_uri(scan_path)
+
+        qr_buffer = BytesIO()
+
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+
+        qr.add_data(scan_url)
+        qr.make(fit=True)
+
+        qr_image = qr.make_image(
+            fill_color="black",
+            back_color="white",
+        )
+
+        qr_image.save(qr_buffer, format="PNG")
+
+        qr_base64 = base64.b64encode(
+            qr_buffer.getvalue()
+        ).decode("utf-8")
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "shipment_unit": shipment_unit,
+                "order": shipment_unit.order,
+                "barcode": barcode_base64,
+                "qr_code": qr_base64,
+            },
+        )
 
 
 class ShipmentUnitsPrintAllView(LoginRequiredMixin, View):
@@ -3329,3 +3453,187 @@ class ShipmentUnitsPrintAllView(LoginRequiredMixin, View):
             "order": order,
             "shipment_units": shipment_units,
         })
+
+
+class ShipmentUnitUpdateView(
+    LoginRequiredMixin,
+    ShipmentUnitOwnerRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_update.html"
+
+    def get_context(self, shipment_unit, **kwargs):
+        context = {
+            "shipment_unit": shipment_unit,
+            "order": shipment_unit.order,
+            "palettes": Palette.objects.all().order_by("name"),
+        }
+
+        context.update(kwargs)
+        return context
+
+    def get(self, request, shipment_unit_id):
+        self.check_shipment_unit_permission()
+
+        shipment_unit = self.get_shipment_unit()
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(shipment_unit),
+        )
+
+    def post(self, request, shipment_unit_id):
+        self.check_shipment_unit_permission()
+
+        shipment_unit = self.get_shipment_unit()
+
+        quantity_raw = request.POST.get("quantity")
+        palette_id = request.POST.get("palette")
+
+        try:
+            quantity = int(quantity_raw)
+        except (TypeError, ValueError):
+            quantity = 0
+
+        if quantity <= 0:
+            return render(
+                request,
+                self.template_name,
+                self.get_context(
+                    shipment_unit,
+                    quantity=quantity_raw,
+                    selected_palette_id=palette_id,
+                    error="Ilość musi być większa od zera.",
+                ),
+            )
+
+        palette = None
+
+        if palette_id:
+            palette = Palette.objects.filter(id=palette_id).first()
+
+            if not palette:
+                return render(
+                    request,
+                    self.template_name,
+                    self.get_context(
+                        shipment_unit,
+                        quantity=quantity_raw,
+                        selected_palette_id=palette_id,
+                        error="Wybrana paleta nie istnieje.",
+                    ),
+                )
+
+        # Nie zapisujemy historii, jeśli faktycznie nic się nie zmieniło
+        quantity_changed = shipment_unit.quantity != quantity
+        palette_changed = shipment_unit.palette_id != (
+            palette.id if palette else None
+        )
+
+        if not quantity_changed and not palette_changed:
+            messages.info(
+                request,
+                f"Nie wprowadzono zmian w jednostce #{shipment_unit.id}.",
+            )
+
+            return redirect(
+                "warehouse:shipment-unit-create",
+                order_id=shipment_unit.order_id,
+            )
+
+        with transaction.atomic():
+            # Historia przechowuje stan przed zmianą
+            create_shipment_unit_history(
+                shipment_unit=shipment_unit,
+                user=request.user,
+                action=ShipmentUnitHistory.ACTION_UPDATE,
+            )
+
+            shipment_unit.quantity = quantity
+            shipment_unit.palette = palette
+            shipment_unit.save()
+
+        messages.success(
+            request,
+            f"Jednostka #{shipment_unit.id} została zaktualizowana.",
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-create",
+            order_id=shipment_unit.order_id,
+        )
+
+
+class ShipmentUnitDeleteView(
+    LoginRequiredMixin,
+    ShipmentUnitOwnerRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, shipment_unit_id):
+        self.check_shipment_unit_permission()
+
+        shipment_unit = self.get_shipment_unit()
+
+        order_id = shipment_unit.order_id
+        deleted_unit_id = shipment_unit.id
+
+        with transaction.atomic():
+            create_shipment_unit_history(
+                shipment_unit=shipment_unit,
+                user=request.user,
+                action=ShipmentUnitHistory.ACTION_DELETE,
+            )
+
+            shipment_unit.delete()
+
+        messages.success(
+            request,
+            f"Jednostka #{deleted_unit_id} została usunięta.",
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-create",
+            order_id=order_id,
+        )
+
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core import signing
+from django.http import Http404
+from django.shortcuts import get_object_or_404, render
+from django.views import View
+
+
+class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/loading_scan.html"
+
+    def get(self, request, token):
+        try:
+            payload = signing.loads(
+                token,
+                salt="shipment-unit-loading",
+            )
+        except signing.BadSignature:
+            raise Http404("Nieprawidłowy kod palety")
+
+        shipment_unit = get_object_or_404(
+            ShipmentUnit.objects.select_related(
+                "order",
+                "order__customer",
+            ),
+            id=payload["shipment_unit_id"],
+        )
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "shipment_unit": shipment_unit,
+                "order": shipment_unit.order,
+            },
+        )
