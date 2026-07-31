@@ -3070,9 +3070,11 @@ class ShipmentUnitConfirmUserView(LoginRequiredMixin, View):
             Order.objects.select_related("product"),
             id=order_id,
         )
+        user = request.user
 
         return render(request, self.template_name, {
             "order": order,
+            "user": user
         })
 
     def post(self, request, order_id):
