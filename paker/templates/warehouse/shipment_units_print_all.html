@@ -1,0 +1,190 @@
+{% extends "__base3__.html" %}
+
+{% block content %}
+
+<style>
+    .print-all-page {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+        background: #fff;
+    }
+
+    .print-all-header {
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .print-all-header h1 {
+        margin-bottom: 8px;
+    }
+
+    .print-unit {
+        padding: 18px;
+        margin-bottom: 18px;
+        border: 2px solid #000;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-unit-title {
+        margin: 0 0 15px 0;
+        font-size: 24px;
+    }
+
+    .print-unit-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .print-unit-table th,
+    .print-unit-table td {
+        padding: 9px;
+        border: 1px solid #333;
+        text-align: left;
+    }
+
+    .print-unit-table th {
+        width: 32%;
+    }
+
+    .print-all-actions {
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .print-all-button {
+        padding: 12px 25px;
+        border: 0;
+        border-radius: 6px;
+        background: #212529;
+        color: #fff;
+        font-size: 17px;
+        cursor: pointer;
+    }
+
+    .print-empty {
+        padding: 30px;
+        border: 2px dashed #aaa;
+        text-align: center;
+    }
+
+    @media print {
+        header,
+        nav,
+        footer,
+        .print-all-actions {
+            display: none !important;
+        }
+
+        body {
+            margin: 0;
+            background: #fff;
+        }
+
+        .print-all-page {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .print-unit {
+            margin: 0 0 10mm 0;
+        }
+    }
+</style>
+
+<div class="print-all-page">
+
+    <div class="print-all-header">
+        <h1>Jednostki wysyłkowe</h1>
+
+        <div>
+            Zlecenie:
+            <strong>{{ order }}</strong>
+        </div>
+
+        <div>
+            Produkt:
+            <strong>{{ order.product|default:"Brak" }}</strong>
+        </div>
+
+        <div>
+            Liczba jednostek:
+            <strong>{{ shipment_units|length }}</strong>
+        </div>
+    </div>
+
+    {% if shipment_units %}
+        <div class="print-all-actions">
+            <button
+                type="button"
+                class="print-all-button"
+                onclick="window.print()"
+            >
+                Drukuj wszystkie
+            </button>
+        </div>
+
+        {% for shipment_unit in shipment_units %}
+            <section class="print-unit">
+                <h2 class="print-unit-title">
+                    Jednostka #{{ shipment_unit.id }}
+                </h2>
+
+                <table class="print-unit-table">
+                    <tr>
+                        <th>Zlecenie</th>
+                        <td>{{ shipment_unit.order }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Produkt</th>
+                        <td>
+                            {{ shipment_unit.product|default:"Brak" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Ilość</th>
+                        <td>
+                            {{ shipment_unit.quantity }} szt.
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Paleta</th>
+                        <td>
+                            {{ shipment_unit.palette|default:"Brak" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Pracownik</th>
+                        <td>
+                            {% if shipment_unit.created_by.get_full_name %}
+                                {{ shipment_unit.created_by.get_full_name }}
+                            {% else %}
+                                {{ shipment_unit.created_by.username }}
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Data utworzenia</th>
+                        <td>
+                            {{ shipment_unit.created|date:"d.m.Y H:i" }}
+                        </td>
+                    </tr>
+                </table>
+            </section>
+        {% endfor %}
+    {% else %}
+        <div class="print-empty">
+            Brak jednostek wysyłkowych do wydrukowania.
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,131 +1,606 @@
 {% extends "__base3__.html" %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 40px auto;">
-    <h1>Dodaj jednostkę wysyłkową</h1>
 
-    <table style="width: 100%; margin-bottom: 25px;">
-        <tr>
-            <th style="text-align: left;">Zlecenie</th>
-            <td>{{ order }}</td>
-        </tr>
+<style>
+    .shipment-print-all-button {
+    display: inline-block;
+    padding: 10px 15px;
+    border-radius: 6px;
+    background: #212529;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
 
-        <tr>
-            <th style="text-align: left;">Produkt</th>
-            <td>{{ order.product|default:"brak produktu" }}</td>
-        </tr>
+.shipment-print-all-button:hover {
+    background: #000;
+    color: #fff;
+}
+    .shipment-page {
+        max-width: 1400px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
 
-        <tr>
-            <th style="text-align: left;">Pracownik</th>
-            <td>{{ request.user.username }}</td>
-        </tr>
+    .shipment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 25px;
+    }
 
-        {% if packaging %}
-        <tr>
-            <th style="text-align: left;">Pakowanie</th>
-            <td>
-                {{ packaging.columns }} × {{ packaging.layers }}
-                × {{ packaging.qty_per_pack }}
-            </td>
-        </tr>
+    .shipment-header h1 {
+        margin: 0 0 8px 0;
+    }
 
-        <tr>
-            <th style="text-align: left;">Ilość na palecie</th>
-            <td>{{ packaging.qty_per_pallet }}</td>
-        </tr>
-        {% endif %}
-    </table>
+    .shipment-order-info {
+        color: #555;
+    }
 
-    {% if error %}
-        <div style="
-            padding: 12px;
-            margin-bottom: 15px;
-            background: #f8d7da;
-            color: #842029;
-            border-radius: 6px;
-        ">
-            {{ error }}
+    .shipment-layout {
+        display: grid;
+        grid-template-columns: minmax(360px, 450px) minmax(500px, 1fr);
+        gap: 25px;
+        align-items: start;
+    }
+
+    .shipment-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 22px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .shipment-card h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .shipment-info-table {
+        width: 100%;
+        margin-bottom: 25px;
+        border-collapse: collapse;
+    }
+
+    .shipment-info-table th,
+    .shipment-info-table td {
+        padding: 8px 4px;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+    }
+
+    .shipment-info-table th {
+        width: 42%;
+        text-align: left;
+        color: #555;
+    }
+
+    .shipment-form-field {
+        margin-bottom: 18px;
+    }
+
+    .shipment-form-field label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .shipment-form-field input,
+    .shipment-form-field select {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        box-sizing: border-box;
+        border: 1px solid #bbb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .shipment-form-field input {
+        font-size: 22px;
+    }
+
+    .shipment-submit {
+        width: 100%;
+        padding: 14px;
+        border: 0;
+        border-radius: 6px;
+        background: #198754;
+        color: #fff;
+        font-weight: 600;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .shipment-submit:hover {
+        background: #157347;
+    }
+
+    .shipment-error {
+        padding: 12px;
+        margin-bottom: 15px;
+        background: #f8d7da;
+        color: #842029;
+        border-radius: 6px;
+    }
+
+    .shipment-message {
+        padding: 12px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .shipment-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .shipment-list-header h2 {
+        margin: 0;
+    }
+
+    .shipment-counter {
+        display: inline-flex;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 10px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        background: #e9ecef;
+        font-weight: 600;
+    }
+
+    .shipment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .shipment-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 20px;
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+    }
+
+    .shipment-item-title {
+        margin-bottom: 10px;
+        font-size: 19px;
+        font-weight: 700;
+    }
+
+    .shipment-item-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+        gap: 8px 20px;
+    }
+
+    .shipment-attribute {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .shipment-attribute-label {
+        margin-bottom: 2px;
+        color: #777;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .shipment-attribute-value {
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .shipment-item-actions {
+        display: flex;
+        align-items: center;
+    }
+
+    .shipment-print-button {
+        display: inline-block;
+        padding: 10px 15px;
+        border: 0;
+        border-radius: 6px;
+        background: #0d6efd;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .shipment-print-button:hover {
+        background: #0b5ed7;
+        color: #fff;
+    }
+
+    .shipment-empty {
+        padding: 40px 20px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        text-align: center;
+        color: #777;
+    }
+
+    .shipment-back {
+        display: inline-block;
+        margin-top: 20px;
+    }
+
+    .shipment-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 18px;
+    border-radius: 6px;
+    background: #f1f3f5;
+}
+
+.shipment-summary strong {
+    font-size: 20px;
+}
+
+    @media (max-width: 1000px) {
+        .shipment-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 650px) {
+        .shipment-page {
+            padding: 0 10px;
+        }
+
+        .shipment-header {
+            flex-direction: column;
+        }
+
+        .shipment-item {
+            grid-template-columns: 1fr;
+        }
+
+        .shipment-item-details {
+            grid-template-columns: 1fr;
+        }
+
+        .shipment-item-actions {
+            align-items: stretch;
+        }
+
+        .shipment-print-button {
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="shipment-page">
+
+    <div class="shipment-header">
+        <div>
+            <h1>Jednostki wysyłkowe</h1>
+
+            <div class="shipment-order-info">
+                Zlecenie:
+                <strong>{{ order }}</strong>
+
+                {% if order.product %}
+                    · Produkt:
+                    <strong>{{ order.product }}</strong>
+                {% endif %}
+            </div>
         </div>
+
+        <a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">
+            Powrót do zlecenia
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="shipment-message">
+                {{ message }}
+            </div>
+        {% endfor %}
     {% endif %}
 
-    <form method="post">
-        {% csrf_token %}
+    <div class="shipment-layout">
 
-        <div style="margin-bottom: 15px;">
-            <label for="quantity">Ilość sztuk</label>
+        <!-- LEWA KOLUMNA -->
+        <section class="shipment-card">
+            <h2>Dodaj pozycję</h2>
 
-            <input
-                type="number"
-                name="quantity"
-                id="quantity"
-                min="1"
-                value="{% if quantity %}{{ quantity }}{% elif packaging %}{{ packaging.qty_per_pallet }}{% endif %}"
-                required
-                autofocus
-                style="
-                    display: block;
-                    width: 100%;
-                    padding: 12px;
-                    margin-top: 5px;
-                    box-sizing: border-box;
-                    font-size: 22px;
-                "
-            >
-        </div>
+            <table class="shipment-info-table">
+                <tr>
+                    <th>Zlecenie</th>
+                    <td>{{ order }}</td>
+                </tr>
 
-        <div style="margin-bottom: 20px;">
-            <label for="palette">Paleta</label>
+                <tr>
+                    <th>Produkt</th>
+                    <td>{{ order.product|default:"Brak produktu" }}</td>
+                </tr>
 
-            <select
-                name="palette"
-                id="palette"
-                style="
-                    display: block;
-                    width: 100%;
-                    padding: 12px;
-                    margin-top: 5px;
-                    box-sizing: border-box;
-                "
-            >
-                <option value="">Automatycznie z pakowania</option>
-
-                {% for palette in palettes %}
-                    <option
-                        value="{{ palette.id }}"
-                        {% if selected_palette_id|stringformat:"s" == palette.id|stringformat:"s" %}
-                            selected
-                        {% elif not selected_palette_id and default_palette.id == palette.id %}
-                            selected
+                <tr>
+                    <th>Pracownik</th>
+                    <td>
+                        {% if request.user.get_full_name %}
+                            {{ request.user.get_full_name }}
+                        {% else %}
+                            {{ request.user.username }}
                         {% endif %}
+                    </td>
+                </tr>
+
+                {% if packaging %}
+                    <tr>
+                        <th>Pakowanie</th>
+                        <td>
+                            {{ packaging.columns }}
+                            × {{ packaging.layers }}
+                            × {{ packaging.qty_per_pack }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Ilość na palecie</th>
+                        <td>{{ packaging.qty_per_pallet }}</td>
+                    </tr>
+                {% endif %}
+            </table>
+
+            {% if error %}
+                <div class="shipment-error">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="shipment-form-field">
+                    <label for="quantity">
+                        Ilość sztuk
+                    </label>
+
+                    <input
+                        type="number"
+                        name="quantity"
+                        id="quantity"
+                        min="1"
+                        value="{% if quantity %}{{ quantity }}{% elif packaging %}{{ packaging.qty_per_pallet }}{% endif %}"
+                        required
+                        autofocus
                     >
-                        {{ palette }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+                </div>
 
-        <button
-            type="submit"
-            style="
-                width: 100%;
-                padding: 14px;
-                background: #198754;
-                color: white;
-                border: 0;
-                border-radius: 6px;
-                font-weight: 600;
-                font-size: 18px;
-                cursor: pointer;
-            "
-        >
-            Zapisz jednostkę wysyłkową
-        </button>
-    </form>
+                <div class="shipment-form-field">
+                    <div class="shipment-form-field">
+    <label for="units_count">
+        Liczba jednostek
+    </label>
 
-    <p style="margin-top: 20px;">
-        <a href="{% url 'warehouse:order-detail-view' order_id=order.id %}">
-            Anuluj i wróć do zlecenia
-        </a>
-    </p>
+    <input
+        type="number"
+        name="units_count"
+        id="units_count"
+        min="1"
+        max="100"
+        value="{{ units_count|default:1 }}"
+        required
+    >
+
+    <small style="display: block; margin-top: 5px; color: #666;">
+        Każda jednostka zostanie utworzona z taką samą ilością sztuk.
+    </small>
 </div>
+                    <label for="palette">
+                        Paleta
+                    </label>
+
+                    <select name="palette" id="palette">
+                        <option value="">
+                            Automatycznie z pakowania
+                        </option>
+
+                        {% for palette in palettes %}
+                            <option
+                                value="{{ palette.id }}"
+                                {% if selected_palette_id|stringformat:"s" == palette.id|stringformat:"s" %}
+                                    selected
+                                {% elif not selected_palette_id and default_palette and default_palette.id == palette.id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ palette }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="shipment-summary">
+    <span>Łączna ilość:</span>
+    <strong id="totalQuantity">0 szt.</strong>
+</div>
+
+                <button
+                    type="submit"
+                    class="shipment-submit"
+                >
+                    Dodaj jednostkę wysyłkową
+                </button>
+            </form>
+        </section>
+
+        <!-- PRAWA KOLUMNA -->
+        <section class="shipment-card">
+            <div class="shipment-list-header">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <h2>Dodane pozycje</h2>
+
+        <span class="shipment-counter">
+            {{ shipment_units|length }}
+        </span>
+    </div>
+
+    {% if shipment_units %}
+        <a
+            href="{% url 'warehouse:shipment-units-print-all' order_id=order.id %}"
+            class="shipment-print-all-button"
+            target="_blank"
+        >
+            Drukuj wszystkie
+        </a>
+    {% endif %}
+</div>
+
+            {% if shipment_units %}
+                <div class="shipment-list">
+
+                    {% for shipment_unit in shipment_units %}
+                        <article class="shipment-item">
+
+                            <div>
+                                <div class="shipment-item-title">
+                                    Jednostka #{{ shipment_unit.id }}
+                                </div>
+
+                                <div class="shipment-item-details">
+
+                                    <div class="shipment-attribute">
+                                        <span class="shipment-attribute-label">
+                                            Ilość
+                                        </span>
+
+                                        <span class="shipment-attribute-value">
+                                            {{ shipment_unit.quantity }} szt.
+                                        </span>
+                                    </div>
+
+                                    <div class="shipment-attribute">
+                                        <span class="shipment-attribute-label">
+                                            Paleta
+                                        </span>
+
+                                        <span class="shipment-attribute-value">
+                                            {{ shipment_unit.palette|default:"Brak" }}
+                                        </span>
+                                    </div>
+
+                                    <div class="shipment-attribute">
+                                        <span class="shipment-attribute-label">
+                                            Produkt
+                                        </span>
+
+                                        <span class="shipment-attribute-value">
+                                            {{ shipment_unit.product|default:"Brak" }}
+                                        </span>
+                                    </div>
+
+                                    <div class="shipment-attribute">
+                                        <span class="shipment-attribute-label">
+                                            Pracownik
+                                        </span>
+
+                                        <span class="shipment-attribute-value">
+                                            {% if shipment_unit.created_by.get_full_name %}
+                                                {{ shipment_unit.created_by.get_full_name }}
+                                            {% else %}
+                                                {{ shipment_unit.created_by.username }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+
+                                    <div class="shipment-attribute">
+                                        <span class="shipment-attribute-label">
+                                            Data dodania
+                                        </span>
+
+                                        <span class="shipment-attribute-value">
+                                            {{ shipment_unit.created|date:"d.m.Y H:i" }}
+                                        </span>
+                                    </div>
+
+                                    <div class="shipment-attribute">
+                                        <span class="shipment-attribute-label">
+                                            Zlecenie
+                                        </span>
+
+                                        <span class="shipment-attribute-value">
+                                            {{ shipment_unit.order }}
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="shipment-item-actions">
+                                <a
+                                    href="{% url 'warehouse:shipment-unit-print' shipment_unit_id=shipment_unit.id %}"
+                                    class="shipment-print-button"
+                                    target="_blank"
+                                >
+                                    Drukuj
+                                </a>
+                            </div>
+
+                        </article>
+                    {% endfor %}
+
+                </div>
+            {% else %}
+                <div class="shipment-empty">
+                    Nie dodano jeszcze żadnej jednostki wysyłkowej.
+                </div>
+            {% endif %}
+        </section>
+
+    </div>
+
+    <a
+        class="shipment-back"
+        href="{% url 'warehouse:order-detail-view' order_id=order.id %}"
+    >
+        ← Anuluj i wróć do zlecenia
+    </a>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const quantityInput = document.getElementById("quantity");
+    const unitsCountInput = document.getElementById("units_count");
+    const totalQuantity = document.getElementById("totalQuantity");
+
+    function updateTotal() {
+        const quantity = parseInt(quantityInput.value, 10) || 0;
+        const unitsCount = parseInt(unitsCountInput.value, 10) || 0;
+        const total = quantity * unitsCount;
+
+        totalQuantity.textContent = total.toLocaleString("pl-PL") + " szt.";
+    }
+
+    quantityInput.addEventListener("input", updateTotal);
+    unitsCountInput.addEventListener("input", updateTotal);
+
+    updateTotal();
+});
+</script>
 {% endblock %}

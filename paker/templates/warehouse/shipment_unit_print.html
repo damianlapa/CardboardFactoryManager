@@ -1,0 +1,128 @@
+{% extends "__base3__.html" %}
+
+{% block content %}
+
+<style>
+    .print-page {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 25px;
+        background: #fff;
+    }
+
+    .print-title {
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 18px;
+    }
+
+    .print-table th,
+    .print-table td {
+        padding: 12px;
+        border: 1px solid #222;
+        text-align: left;
+    }
+
+    .print-table th {
+        width: 35%;
+    }
+
+    .print-actions {
+        margin-top: 25px;
+        text-align: center;
+    }
+
+    .print-button {
+        padding: 12px 24px;
+        border: 0;
+        border-radius: 6px;
+        background: #0d6efd;
+        color: #fff;
+        font-size: 17px;
+        cursor: pointer;
+    }
+
+    @media print {
+        header,
+        nav,
+        footer,
+        .print-actions {
+            display: none !important;
+        }
+
+        body {
+            margin: 0;
+            background: #fff;
+        }
+
+        .print-page {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+        }
+    }
+</style>
+
+<div class="print-page">
+
+    <h1 class="print-title">
+        Jednostka wysyłkowa #{{ shipment_unit.id }}
+    </h1>
+
+    <table class="print-table">
+        <tr>
+            <th>Zlecenie</th>
+            <td>{{ shipment_unit.order }}</td>
+        </tr>
+
+        <tr>
+            <th>Produkt</th>
+            <td>{{ shipment_unit.product|default:"Brak" }}</td>
+        </tr>
+
+        <tr>
+            <th>Ilość</th>
+            <td>{{ shipment_unit.quantity }} szt.</td>
+        </tr>
+
+        <tr>
+            <th>Paleta</th>
+            <td>{{ shipment_unit.palette|default:"Brak" }}</td>
+        </tr>
+
+        <tr>
+            <th>Pracownik</th>
+            <td>
+                {% if shipment_unit.created_by.get_full_name %}
+                    {{ shipment_unit.created_by.get_full_name }}
+                {% else %}
+                    {{ shipment_unit.created_by.username }}
+                {% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <th>Data utworzenia</th>
+            <td>{{ shipment_unit.created|date:"d.m.Y H:i" }}</td>
+        </tr>
+    </table>
+
+    <div class="print-actions">
+        <button
+            type="button"
+            class="print-button"
+            onclick="window.print()"
+        >
+            Drukuj
+        </button>
+    </div>
+
+</div>
+
+{% endblock %}

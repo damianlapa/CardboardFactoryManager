@@ -3138,12 +3138,19 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")
     template_name = "warehouse/shipment_unit_create.html"
 
-    def get(self, request, order_id):
-        order = get_object_or_404(
-            Order.objects.select_related("product"),
-            id=order_id,
+    def get_shipment_units(self, order):
+        return (
+            ShipmentUnit.objects
+            .filter(order=order)
+            .select_related(
+                "product",
+                "palette",
+                "created_by",
+            )
+            .order_by("-created", "-id")
         )
 
+    def get_context(self, order, **kwargs):
         packaging = (
             ProductPackaging.objects
             .select_related("palette")
@@ -3151,14 +3158,29 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             .first()
         )
 
-        palettes = Palette.objects.all().order_by("name")
-
-        return render(request, self.template_name, {
+        context = {
             "order": order,
             "packaging": packaging,
-            "palettes": palettes,
+            "palettes": Palette.objects.all().order_by("name"),
             "default_palette": packaging.palette if packaging else None,
-        })
+            "shipment_units": self.get_shipment_units(order),
+        }
+
+        context.update(kwargs)
+
+        return context
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(order),
+        )
 
     def post(self, request, order_id):
         order = get_object_or_404(
@@ -3167,14 +3189,18 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
         )
 
         quantity_raw = request.POST.get("quantity")
+        units_count_raw = request.POST.get("units_count", "1")
         palette_id = request.POST.get("palette")
-
-        palettes = Palette.objects.all().order_by("name")
 
         try:
             quantity = int(quantity_raw)
         except (TypeError, ValueError):
             quantity = 0
+
+        try:
+            units_count = int(units_count_raw)
+        except (TypeError, ValueError):
+            units_count = 0
 
         palette = None
 
@@ -3182,52 +3208,124 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             palette = Palette.objects.filter(id=palette_id).first()
 
             if not palette:
-                return render(request, self.template_name, {
-                    "order": order,
-                    "palettes": palettes,
-                    "quantity": quantity_raw,
-                    "error": "Wybrana paleta nie istnieje.",
-                })
+                return render(
+                    request,
+                    self.template_name,
+                    self.get_context(
+                        order,
+                        quantity=quantity_raw,
+                        units_count=units_count_raw,
+                        selected_palette_id=palette_id,
+                        error="Wybrana paleta nie istnieje.",
+                    ),
+                )
 
         if quantity <= 0:
-            return render(request, self.template_name, {
-                "order": order,
-                "palettes": palettes,
-                "quantity": quantity_raw,
-                "selected_palette_id": palette_id,
-                "error": "Ilość musi być większa od zera.",
-            })
+            return render(
+                request,
+                self.template_name,
+                self.get_context(
+                    order,
+                    quantity=quantity_raw,
+                    units_count=units_count_raw,
+                    selected_palette_id=palette_id,
+                    error="Ilość sztuk musi być większa od zera.",
+                ),
+            )
 
-        try:
-            with transaction.atomic():
-                shipment_unit = ShipmentUnit.objects.create(
+        if units_count <= 0:
+            return render(
+                request,
+                self.template_name,
+                self.get_context(
+                    order,
+                    quantity=quantity_raw,
+                    units_count=units_count_raw,
+                    selected_palette_id=palette_id,
+                    error="Liczba jednostek musi być większa od zera.",
+                ),
+            )
+
+        if units_count > 100:
+            return render(
+                request,
+                self.template_name,
+                self.get_context(
+                    order,
+                    quantity=quantity_raw,
+                    units_count=units_count_raw,
+                    selected_palette_id=palette_id,
+                    error="Jednorazowo możesz dodać maksymalnie 100 jednostek.",
+                ),
+            )
+
+        with transaction.atomic():
+            for _ in range(units_count):
+                ShipmentUnit.objects.create(
                     order=order,
                     quantity=quantity,
                     palette=palette,
                     created_by=request.user,
                 )
 
-            messages.success(
-                request,
-                (
-                    f"Dodano jednostkę wysyłkową: "
-                    f"{shipment_unit.quantity} szt., "
-                    f"paleta: {shipment_unit.palette or 'brak'}."
-                ),
+        messages.success(
+            request,
+            (
+                f"Dodano {units_count} "
+                f"{'jednostkę' if units_count == 1 else 'jednostki/jednostek'} "
+                f"po {quantity} szt."
+            ),
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-create",
+            order_id=order.id,
+        )
+
+
+class ShipmentUnitPrintView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_print.html"
+
+    def get(self, request, shipment_unit_id):
+        shipment_unit = get_object_or_404(
+            ShipmentUnit.objects.select_related(
+                "order",
+                "product",
+                "palette",
+                "created_by",
+            ),
+            id=shipment_unit_id,
+        )
+
+        return render(request, self.template_name, {
+            "shipment_unit": shipment_unit,
+        })
+
+
+class ShipmentUnitsPrintAllView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_units_print_all.html"
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        shipment_units = (
+            ShipmentUnit.objects
+            .filter(order=order)
+            .select_related(
+                "order",
+                "product",
+                "palette",
+                "created_by",
             )
+            .order_by("created", "id")
+        )
 
-            return redirect(
-                "warehouse:order-detail-view",
-                order_id=order.id,
-            )
-
-        except Exception as e:
-            logger.exception("[SHIPMENT UNIT CREATE] ERROR")
-
-            return render(request, self.template_name, {
-                "order": order,
-                "palettes": palettes,
-                "quantity": quantity_raw,
-                "selected_palette_id": palette_id,
-                "error": f"Nie udało się zapisać jednostki: {e}",
-            })
+        return render(request, self.template_name, {
+            "order": order,
+            "shipment_units": shipment_units,
+        })

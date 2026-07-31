@@ -178,4 +178,14 @@ urlpatterns += [
         ShipmentUnitCreateView.as_view(),
         name="shipment-unit-create",
     ),
+    path(
+        "shipment-unit/<int:shipment_unit_id>/print/",
+        ShipmentUnitPrintView.as_view(),
+        name="shipment-unit-print",
+    ),
+    path(
+        "order/<int:order_id>/shipment-units/print/",
+        ShipmentUnitsPrintAllView.as_view(),
+        name="shipment-units-print-all",
+    ),
 ]
