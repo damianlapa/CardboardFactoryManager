@@ -112,6 +112,24 @@ class Order(models.Model):
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
 
+    def production_date_result(self):
+        from production.models import ProductionOrder, ProductionUnit
+
+        production_order = ProductionOrder.objects.filter(
+            id_number=f"{self.provider} {self.order_id}"
+        ).first()
+
+        if not production_order:
+            return Decimal("0.00")
+
+        units = (
+            ProductionUnit.objects
+            .filter(production_order=production_order)
+        )
+
+        if units:
+            return list(units)[-1].end
+
     @classmethod
     def produced_by_person(cls, person):
         from production.models import ProductionOrder

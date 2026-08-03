@@ -3341,11 +3341,27 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
         )
 
 
-class ShipmentUnitPrintView(LoginRequiredMixin, View):
-    login_url = reverse_lazy("login")
-    template_name = "warehouse/shipment_unit_print.html"
 
-    def get(self, request, shipment_unit_id):
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import FileResponse
+from django.urls import reverse_lazy
+from django.views import View
+
+from warehouse.models import ShipmentUnit
+from warehouse.services.shipment_unit_pdf import ShipmentUnitPDF
+
+
+class ShipmentUnitPrintView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def get(
+        self,
+        request,
+        shipment_unit_id,
+    ):
         shipment_unit = get_object_or_404(
             ShipmentUnit.objects.select_related(
                 "order",
@@ -3359,72 +3375,26 @@ class ShipmentUnitPrintView(LoginRequiredMixin, View):
             id=shipment_unit_id,
         )
 
-        from barcode import Code128
-        from barcode.writer import ImageWriter
-        from io import BytesIO
-        import base64
+        pdf_buffer = ShipmentUnitPDF(
+            request=request,
+            shipment_unit=shipment_unit,
+        ).build()
 
-        import qrcode
-
-        from django.core import signing
-        from django.urls import reverse
-
-        buffer = BytesIO()
-        if shipment_unit.order.id:
-            code = f'{shipment_unit.order.provider.id}-{shipment_unit.order.id}-{shipment_unit.id}'
-        else:
-            code = str(shipment_unit.id)
-        Code128(code, writer=ImageWriter()).write(buffer, options={"module_height": 5, "font_size": 7,})
-
-        barcode_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-        token = signing.dumps(
-            {
-                "shipment_unit_id": shipment_unit.id,
-            },
-            salt="shipment-unit-loading",
+        filename = (
+            f"paletowka-"
+            f"{shipment_unit.id}.pdf"
         )
 
-        scan_path = reverse(
-            "warehouse:shipment-unit-loading-scan",
-            kwargs={"token": token},
+        response = FileResponse(
+            pdf_buffer,
+            content_type="application/pdf",
         )
 
-        scan_url = request.build_absolute_uri(scan_path)
-
-        qr_buffer = BytesIO()
-
-        qr = qrcode.QRCode(
-            version=None,
-            error_correction=qrcode.constants.ERROR_CORRECT_M,
-            box_size=8,
-            border=2,
+        response["Content-Disposition"] = (
+            f'inline; filename="{filename}"'
         )
 
-        qr.add_data(scan_url)
-        qr.make(fit=True)
-
-        qr_image = qr.make_image(
-            fill_color="black",
-            back_color="white",
-        )
-
-        qr_image.save(qr_buffer, format="PNG")
-
-        qr_base64 = base64.b64encode(
-            qr_buffer.getvalue()
-        ).decode("utf-8")
-
-        return render(
-            request,
-            self.template_name,
-            {
-                "shipment_unit": shipment_unit,
-                "order": shipment_unit.order,
-                "barcode": barcode_base64,
-                "qr_code": qr_base64,
-            },
-        )
+        return response
 
 
 class ShipmentUnitsPrintAllView(LoginRequiredMixin, View):
