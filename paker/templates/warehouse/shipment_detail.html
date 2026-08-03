@@ -173,6 +173,11 @@
             </div>
 
             <div>
+                Seria:
+                {{ item.shipment_unit.order.id }}/{{ item.shipment_unit.order.year }}
+            </div>
+
+            <div>
                 Produkt:
                 {{ item.shipment_unit.product|default:item.shipment_unit.order.product }}
             </div>
