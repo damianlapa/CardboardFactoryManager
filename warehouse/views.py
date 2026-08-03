@@ -3386,7 +3386,7 @@ class ShipmentUnitPrintView(LoginRequiredMixin, View):
         )
 
         scan_path = reverse(
-            "warehouse:shipment_unit_loading_scan",
+            "warehouse:shipment-unit-loading-scan",
             kwargs={"token": token},
         )
 
@@ -3607,33 +3607,401 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 
+def get_active_shipment(user):
+    shipment, _created = Shipment.objects.get_or_create(
+        created_by=user,
+        status=Shipment.STATUS_DRAFT,
+    )
+
+    return shipment
+
+
+from django.core import signing
+from django.db import IntegrityError, transaction
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views import View
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")
     template_name = "warehouse/loading_scan.html"
 
-    def get(self, request, token):
+    def get_shipment_unit(self, token):
         try:
             payload = signing.loads(
                 token,
                 salt="shipment-unit-loading",
             )
         except signing.BadSignature:
-            raise Http404("Nieprawidłowy kod palety")
+            raise Http404("Nieprawidłowy kod palety.")
 
-        shipment_unit = get_object_or_404(
+        shipment_unit_id = payload.get("shipment_unit_id")
+
+        if not shipment_unit_id:
+            raise Http404(
+                "Kod nie zawiera identyfikatora palety."
+            )
+
+        return get_object_or_404(
             ShipmentUnit.objects.select_related(
                 "order",
                 "order__customer",
+                "order__provider",
+                "order__product",
+                "product",
+                "palette",
+                "created_by",
             ),
-            id=payload["shipment_unit_id"],
+            id=shipment_unit_id,
+        )
+
+    def get_context(self, request, shipment_unit, token):
+        active_shipment = get_active_shipment(request.user)
+
+        shipment_items = (
+            active_shipment.items
+            .select_related(
+                "shipment_unit",
+                "shipment_unit__order",
+                "shipment_unit__order__customer",
+                "shipment_unit__order__product",
+                "shipment_unit__product",
+                "shipment_unit__palette",
+                "scanned_by",
+            )
+            .order_by("-scanned_at", "-id")
+        )
+
+        existing_item = (
+            ShipmentItem.objects
+            .select_related("shipment")
+            .filter(shipment_unit=shipment_unit)
+            .first()
+        )
+
+        return {
+            "shipment_unit": shipment_unit,
+            "order": shipment_unit.order,
+            "token": token,
+            "active_shipment": active_shipment,
+            "shipment_items": shipment_items,
+            "existing_item": existing_item,
+            "already_in_active_shipment": bool(
+                existing_item
+                and existing_item.shipment_id
+                == active_shipment.id
+            ),
+            "used_in_other_shipment": bool(
+                existing_item
+                and existing_item.shipment_id
+                != active_shipment.id
+            ),
+        }
+
+    def get(self, request, token):
+        shipment_unit = self.get_shipment_unit(token)
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                request,
+                shipment_unit,
+                token,
+            ),
+        )
+
+    def post(self, request, token):
+        shipment_unit = self.get_shipment_unit(token)
+
+        try:
+            with transaction.atomic():
+                active_shipment = (
+                    Shipment.objects
+                    .select_for_update()
+                    .get(
+                        created_by=request.user,
+                        status=Shipment.STATUS_DRAFT,
+                    )
+                )
+
+                existing_item = (
+                    ShipmentItem.objects
+                    .select_for_update()
+                    .filter(shipment_unit=shipment_unit)
+                    .select_related("shipment")
+                    .first()
+                )
+
+                if existing_item:
+                    if (
+                        existing_item.shipment_id
+                        == active_shipment.id
+                    ):
+                        messages.info(
+                            request,
+                            (
+                                f"Paleta #{shipment_unit.id} "
+                                "jest już w tym załadunku."
+                            ),
+                        )
+                    else:
+                        messages.error(
+                            request,
+                            (
+                                f"Paleta #{shipment_unit.id} "
+                                "została już przypisana do "
+                                f"wysyłki #{existing_item.shipment_id}."
+                            ),
+                        )
+
+                    return redirect(
+                        "warehouse:shipment-unit-loading-scan",
+                        token=token,
+                    )
+
+                ShipmentItem.objects.create(
+                    shipment=active_shipment,
+                    shipment_unit=shipment_unit,
+                    scanned_by=request.user,
+                )
+
+        except Shipment.DoesNotExist:
+            active_shipment = get_active_shipment(
+                request.user
+            )
+
+            try:
+                ShipmentItem.objects.create(
+                    shipment=active_shipment,
+                    shipment_unit=shipment_unit,
+                    scanned_by=request.user,
+                )
+            except IntegrityError:
+                messages.error(
+                    request,
+                    "Ta paleta została już wykorzystana.",
+                )
+
+                return redirect(
+                    "warehouse:shipment-unit-loading-scan",
+                    token=token,
+                )
+
+        except IntegrityError:
+            messages.error(
+                request,
+                "Ta paleta została już przypisana do wysyłki.",
+            )
+
+            return redirect(
+                "warehouse:shipment-unit-loading-scan",
+                token=token,
+            )
+
+        messages.success(
+            request,
+            (
+                f"Dodano paletę #{shipment_unit.id} "
+                "do aktywnego załadunku."
+            ),
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-loading-scan",
+            token=token,
+        )
+
+
+class ShipmentItemDeleteView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, item_id):
+        item = get_object_or_404(
+            ShipmentItem.objects.select_related(
+                "shipment",
+                "shipment_unit",
+            ),
+            id=item_id,
+            shipment__created_by=request.user,
+            shipment__status=Shipment.STATUS_DRAFT,
+        )
+
+        shipment_id = item.shipment_id
+        shipment_unit_id = item.shipment_unit_id
+
+        item.delete()
+
+        messages.success(
+            request,
+            (
+                f"Usunięto paletę #{shipment_unit_id} "
+                f"z załadunku #{shipment_id}."
+            ),
+        )
+
+        return redirect(
+            "warehouse:shipment-detail",
+            shipment_id=shipment_id,
+        )
+
+
+class ActiveShipmentView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_detail.html"
+
+    def get(self, request):
+        shipment = get_active_shipment(request.user)
+
+        items = (
+            shipment.items
+            .select_related(
+                "shipment_unit",
+                "shipment_unit__order",
+                "shipment_unit__order__customer",
+                "shipment_unit__order__product",
+                "shipment_unit__product",
+                "shipment_unit__palette",
+                "scanned_by",
+            )
+            .order_by("-scanned_at", "-id")
         )
 
         return render(
             request,
             self.template_name,
             {
-                "shipment_unit": shipment_unit,
-                "order": shipment_unit.order,
+                "shipment": shipment,
+                "items": items,
+            },
+        )
+
+
+from django.utils import timezone
+
+
+class ShipmentConfirmView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, shipment_id):
+        car_number = (
+            request.POST.get("car_number") or ""
+        ).strip()
+
+        driver_name = (
+            request.POST.get("driver_name") or ""
+        ).strip()
+
+        notes = (
+            request.POST.get("notes") or ""
+        ).strip()
+
+        try:
+            with transaction.atomic():
+                shipment = get_object_or_404(
+                    Shipment.objects.select_for_update(),
+                    id=shipment_id,
+                    created_by=request.user,
+                    status=Shipment.STATUS_DRAFT,
+                )
+
+                if not shipment.items.exists():
+                    messages.error(
+                        request,
+                        (
+                            "Nie można potwierdzić pustego "
+                            "załadunku."
+                        ),
+                    )
+
+                    return redirect(
+                        "warehouse:active-shipment"
+                    )
+
+                if not car_number:
+                    messages.error(
+                        request,
+                        "Podaj numer rejestracyjny pojazdu.",
+                    )
+
+                    return redirect(
+                        "warehouse:active-shipment"
+                    )
+
+                shipment.car_number = car_number
+                shipment.driver_name = driver_name
+                shipment.notes = notes
+                shipment.status = Shipment.STATUS_CONFIRMED
+                shipment.confirmed_by = request.user
+                shipment.confirmed_at = timezone.now()
+
+                shipment.save(
+                    update_fields=[
+                        "car_number",
+                        "driver_name",
+                        "notes",
+                        "status",
+                        "confirmed_by",
+                        "confirmed_at",
+                    ]
+                )
+
+        except Exception as e:
+            messages.error(
+                request,
+                f"Nie udało się potwierdzić załadunku: {e}",
+            )
+
+            return redirect(
+                "warehouse:active-shipment"
+            )
+
+        messages.success(
+            request,
+            f"Załadunek #{shipment.id} został potwierdzony.",
+        )
+
+        return redirect(
+            "warehouse:shipment-detail",
+            shipment_id=shipment.id,
+        )
+
+class ShipmentDetailView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    template_name = "warehouse/shipment_detail.html"
+
+    def get(self, request, shipment_id):
+        shipment = get_object_or_404(
+            Shipment.objects.select_related(
+                "created_by",
+                "confirmed_by",
+            ),
+            id=shipment_id,
+        )
+
+        items = (
+            shipment.items
+            .select_related(
+                "shipment_unit",
+                "shipment_unit__order",
+                "shipment_unit__order__customer",
+                "shipment_unit__order__product",
+                "shipment_unit__product",
+                "shipment_unit__palette",
+                "scanned_by",
+            )
+            .order_by("-scanned_at", "-id")
+        )
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "shipment": shipment,
+                "items": items,
             },
         )

@@ -199,9 +199,36 @@ urlpatterns += [
         ShipmentUnitDeleteView.as_view(),
         name="shipment-unit-delete",
     ),
+]
+
+urlpatterns += [
     path(
         "loading/scan/<str:token>/",
         ShipmentUnitLoadingScanView.as_view(),
-        name="shipment_unit_loading_scan",
+        name="shipment-unit-loading-scan",
+    ),
+
+    path(
+        "shipments/active/",
+        ActiveShipmentView.as_view(),
+        name="active-shipment",
+    ),
+
+    path(
+        "shipments/<int:shipment_id>/",
+        ShipmentDetailView.as_view(),
+        name="shipment-detail",
+    ),
+
+    path(
+        "shipments/<int:shipment_id>/confirm/",
+        ShipmentConfirmView.as_view(),
+        name="shipment-confirm",
+    ),
+
+    path(
+        "shipment-items/<int:item_id>/delete/",
+        ShipmentItemDeleteView.as_view(),
+        name="shipment-item-delete",
     ),
 ]

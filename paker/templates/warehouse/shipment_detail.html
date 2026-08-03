@@ -1,0 +1,275 @@
+{% extends "warehouse/__mobile_loading_base__.html" %}
+
+{% block title %}
+    Załadunek #{{ shipment.id }}
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .shipment-page {
+        max-width: 850px;
+        margin: 0 auto;
+        padding: 16px;
+    }
+
+    .shipment-header {
+        margin-bottom: 18px;
+        padding: 16px;
+        border-radius: 10px;
+        background: #212529;
+        color: #fff;
+    }
+
+    .shipment-header h1 {
+        margin: 0 0 8px;
+    }
+
+    .shipment-summary {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .summary-card {
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .summary-value {
+        margin-top: 5px;
+        font-size: 25px;
+        font-weight: 700;
+    }
+
+    .shipment-item {
+        margin-bottom: 12px;
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .shipment-item-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .remove-button {
+        margin-top: 10px;
+        border: 0;
+        border-radius: 6px;
+        padding: 9px 12px;
+        background: #dc3545;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .confirm-form {
+        margin-top: 24px;
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+    }
+
+    .form-field {
+        margin-bottom: 14px;
+    }
+
+    .form-field label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 700;
+    }
+
+    .form-field input,
+    .form-field textarea {
+        width: 100%;
+        border: 1px solid #bbb;
+        border-radius: 6px;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .confirm-button {
+        width: 100%;
+        border: 0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #198754;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+</style>
+
+<div class="shipment-page">
+
+    <div class="shipment-header">
+        <h1>
+            Załadunek #{{ shipment.id }}
+        </h1>
+
+        <div>
+            Status: {{ shipment.get_status_display }}
+        </div>
+
+        {% if shipment.confirmed_at %}
+            <div>
+                Potwierdzono:
+                {{ shipment.confirmed_at|date:"d.m.Y H:i" }}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="shipment-summary">
+
+        <div class="summary-card">
+            <div>Liczba palet</div>
+            <div class="summary-value">
+                {{ shipment.units_count }}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div>Łączna liczba sztuk</div>
+            <div class="summary-value">
+                {{ shipment.total_quantity }}
+            </div>
+        </div>
+
+    </div>
+
+    {% for item in items %}
+
+        <div class="shipment-item">
+
+            <div class="shipment-item-header">
+                <span>
+                    Paleta #{{ item.shipment_unit.id }}
+                </span>
+
+                <span>
+                    {{ item.shipment_unit.quantity }} szt.
+                </span>
+            </div>
+
+            <div>
+                Klient:
+                {{ item.shipment_unit.order.customer }}
+            </div>
+
+            <div>
+                Zlecenie:
+                {{ item.shipment_unit.order }}
+            </div>
+
+            <div>
+                Produkt:
+                {{ item.shipment_unit.product|default:item.shipment_unit.order.product }}
+            </div>
+
+            <div>
+                Paleta:
+                {{ item.shipment_unit.palette|default:"—" }}
+            </div>
+
+            <div>
+                Zeskanował:
+                {{ item.scanned_by }}
+                {{ item.scanned_at|date:"d.m.Y H:i" }}
+            </div>
+
+            {% if shipment.status == "draft" %}
+                <form
+                    method="post"
+                    action="{% url 'warehouse:shipment-item-delete' item.id %}"
+                >
+                    {% csrf_token %}
+
+                    <button
+                        type="submit"
+                        class="remove-button"
+                    >
+                        Usuń z załadunku
+                    </button>
+                </form>
+            {% endif %}
+
+        </div>
+
+    {% empty %}
+
+        <p>
+            Nie zeskanowano jeszcze żadnych palet.
+        </p>
+
+    {% endfor %}
+
+    {% if shipment.status == "draft" %}
+
+        <form
+            method="post"
+            action="{% url 'warehouse:shipment-confirm' shipment.id %}"
+            class="confirm-form"
+        >
+            {% csrf_token %}
+
+            <div class="form-field">
+                <label for="car_number">
+                    Numer rejestracyjny
+                </label>
+
+                <input
+                    type="text"
+                    id="car_number"
+                    name="car_number"
+                    required
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="driver_name">
+                    Kierowca
+                </label>
+
+                <input
+                    type="text"
+                    id="driver_name"
+                    name="driver_name"
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="notes">
+                    Uwagi
+                </label>
+
+                <textarea
+                    id="notes"
+                    name="notes"
+                    rows="3"
+                ></textarea>
+            </div>
+
+            <button
+                type="submit"
+                class="confirm-button"
+            >
+                Potwierdź zakończenie załadunku
+            </button>
+        </form>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

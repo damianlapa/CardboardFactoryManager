@@ -2290,3 +2290,133 @@ class ShipmentUnitHistory(models.Model):
             f"przez {self.changed_by}"
         )
 
+
+from django.conf import settings
+from django.db import models
+from django.db.models import Q
+
+
+class Shipment(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_CONFIRMED = "confirmed"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = (
+        (STATUS_DRAFT, "W trakcie załadunku"),
+        (STATUS_CONFIRMED, "Potwierdzony"),
+        (STATUS_CANCELLED, "Anulowany"),
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_shipments",
+    )
+
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="confirmed_shipments",
+    )
+
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+    )
+
+    car_number = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+    )
+
+    driver_name = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    shipment_units = models.ManyToManyField(
+        "ShipmentUnit",
+        through="ShipmentItem",
+        related_name="shipments",
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["created_by"],
+                condition=Q(status="draft"),
+                name="one_draft_shipment_per_user",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Shipment #{self.id} [{self.get_status_display()}]"
+
+    @property
+    def units_count(self):
+        return self.items.count()
+
+    @property
+    def total_quantity(self):
+        return (
+            self.items.aggregate(
+                total=models.Sum("shipment_unit__quantity")
+            )["total"]
+            or 0
+        )
+
+
+class ShipmentItem(models.Model):
+    shipment = models.ForeignKey(
+        Shipment,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    shipment_unit = models.ForeignKey(
+        "ShipmentUnit",
+        on_delete=models.PROTECT,
+        related_name="shipment_items",
+    )
+
+    scanned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="scanned_shipment_items",
+    )
+
+    scanned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["scanned_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shipment_unit"],
+                name="shipment_unit_used_only_once",
+            ),
+            models.UniqueConstraint(
+                fields=["shipment", "shipment_unit"],
+                name="unique_unit_in_shipment",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Shipment #{self.shipment_id} "
+            f"– unit #{self.shipment_unit_id}"
+        )
+

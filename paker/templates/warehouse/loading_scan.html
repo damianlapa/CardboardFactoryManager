@@ -1,0 +1,216 @@
+{% extends "warehouse/__mobile_loading_base__.html" %}
+{% block title %}
+    Skanowanie palety
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .loading-page {
+        max-width: 650px;
+        margin: 0 auto;
+        padding: 16px;
+    }
+
+    .scan-status {
+        margin-bottom: 16px;
+        padding: 14px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+    .scan-status.success {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .scan-status.warning {
+        background: #fff3cd;
+        color: #664d03;
+    }
+
+    .scan-status.error {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .unit-card {
+        overflow: hidden;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+    }
+
+    .unit-header {
+        padding: 16px;
+        background: #212529;
+        color: #fff;
+        text-align: center;
+    }
+
+    .unit-id {
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .unit-row {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        border-bottom: 1px solid #eee;
+    }
+
+    .unit-row:last-child {
+        border-bottom: 0;
+    }
+
+    .unit-label {
+        padding: 12px;
+        background: #f5f5f5;
+        font-weight: 600;
+    }
+
+    .unit-value {
+        padding: 12px;
+        font-weight: 600;
+    }
+
+    .loading-button {
+        display: block;
+        width: 100%;
+        margin-top: 18px;
+        border: 0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #198754;
+        color: #fff;
+        font-size: 19px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .shipment-link {
+        display: block;
+        margin-top: 12px;
+        border-radius: 8px;
+        padding: 14px;
+        background: #212529;
+        color: #fff;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .summary {
+        margin-top: 20px;
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+</style>
+
+<div class="loading-page">
+
+    {% if used_in_other_shipment %}
+        <div class="scan-status error">
+            Ta paleta jest już przypisana do wysyłki
+            #{{ existing_item.shipment_id }}.
+        </div>
+
+    {% elif already_in_active_shipment %}
+        <div class="scan-status warning">
+            Ta paleta znajduje się już w aktywnym
+            załadunku.
+        </div>
+
+    {% else %}
+        <div class="scan-status success">
+            Paleta została poprawnie rozpoznana.
+        </div>
+    {% endif %}
+
+    <div class="unit-card">
+
+        <div class="unit-header">
+            <div>PALETA</div>
+
+            <div class="unit-id">
+                #{{ shipment_unit.id }}
+            </div>
+        </div>
+
+        <div class="unit-row">
+            <div class="unit-label">Klient</div>
+            <div class="unit-value">
+                {{ order.customer }}
+            </div>
+        </div>
+
+        <div class="unit-row">
+            <div class="unit-label">Zlecenie</div>
+            <div class="unit-value">
+                {{ order }}
+            </div>
+        </div>
+
+        <div class="unit-row">
+            <div class="unit-label">Produkt</div>
+            <div class="unit-value">
+                {{ shipment_unit.product|default:order.product }}
+            </div>
+        </div>
+
+        <div class="unit-row">
+            <div class="unit-label">Ilość</div>
+            <div class="unit-value">
+                {{ shipment_unit.quantity }} szt.
+            </div>
+        </div>
+
+        <div class="unit-row">
+            <div class="unit-label">Rodzaj palety</div>
+            <div class="unit-value">
+                {{ shipment_unit.palette|default:"—" }}
+            </div>
+        </div>
+
+    </div>
+
+    {% if not existing_item %}
+        <form method="post">
+            {% csrf_token %}
+
+            <button
+                type="submit"
+                class="loading-button"
+            >
+                Dodaj do załadunku
+            </button>
+        </form>
+    {% endif %}
+
+    <a
+        href="{% url 'warehouse:active-shipment' %}"
+        class="shipment-link"
+    >
+        Otwórz aktywny załadunek
+        ({{ active_shipment.units_count }} palet)
+    </a>
+
+    <div class="summary">
+        <strong>
+            Aktywny załadunek #{{ active_shipment.id }}
+        </strong>
+
+        <div>
+            Palety: {{ active_shipment.units_count }}
+        </div>
+
+        <div>
+            Sztuki: {{ active_shipment.total_quantity }}
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
