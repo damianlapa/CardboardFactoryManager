@@ -10,33 +10,44 @@
     .shipment-page {
         max-width: 850px;
         margin: 0 auto;
-        padding: 16px;
     }
 
     .shipment-header {
         margin-bottom: 18px;
         padding: 16px;
-        border-radius: 10px;
+        border-radius: 12px;
         background: #212529;
         color: #fff;
     }
 
     .shipment-header h1 {
         margin: 0 0 8px;
+        font-size: 25px;
+    }
+
+    .shipment-header-row {
+        margin-top: 4px;
+        color: #dee2e6;
+        font-size: 14px;
     }
 
     .shipment-summary {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
-        margin-bottom: 18px;
+        margin-bottom: 24px;
     }
 
     .summary-card {
         padding: 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        border: 1px solid var(--border, #ddd);
+        border-radius: 10px;
         background: #fff;
+    }
+
+    .summary-label {
+        color: #6c757d;
+        font-size: 13px;
     }
 
     .summary-value {
@@ -45,11 +56,201 @@
         font-weight: 700;
     }
 
+    .section-title {
+        margin: 0 0 14px;
+        font-size: 21px;
+    }
+
+    /*
+     * Pogrupowane podsumowanie wysyłki
+     */
+
+    .shipment-grouped-summary {
+        margin-bottom: 24px;
+    }
+
+    .customer-summary {
+        margin-bottom: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border, #ddd);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .customer-summary-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        background: #343a40;
+        color: #fff;
+    }
+
+    .customer-summary-label {
+        margin-bottom: 3px;
+        color: #ced4da;
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+
+    .customer-summary-name {
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    .customer-totals {
+        flex-shrink: 0;
+        text-align: right;
+    }
+
+    .customer-total-palettes {
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .customer-total-quantity {
+        margin-top: 3px;
+        color: #ced4da;
+        font-size: 13px;
+    }
+
+    .customer-products {
+        padding: 12px;
+    }
+
+    .product-summary {
+        margin-bottom: 12px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+    }
+
+    .product-summary:last-child {
+        margin-bottom: 0;
+    }
+
+    .product-summary-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px;
+        background: #f1f3f5;
+    }
+
+    .product-summary-name {
+        font-weight: 700;
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    .product-summary-quantity {
+        flex-shrink: 0;
+        font-size: 18px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .product-summary-details {
+        padding: 12px;
+    }
+
+    .product-detail {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .product-detail + .product-detail {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+    }
+
+    .detail-label {
+        color: #6c757d;
+    }
+
+    .palette-detail {
+        display: block;
+    }
+
+    .palette-types {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 8px;
+    }
+
+    .palette-type {
+        display: inline-block;
+        border-radius: 20px;
+        padding: 7px 10px;
+        background: #e9ecef;
+        font-size: 13px;
+    }
+
+    .empty-summary {
+        padding: 18px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        color: #666;
+        text-align: center;
+    }
+
+    /*
+     * Lista pojedynczych palet
+     */
+
+    .items-section {
+        margin-top: 24px;
+    }
+
+    .items-toggle {
+        width: 100%;
+        border: 1px solid #adb5bd;
+        border-radius: 10px;
+        padding: 14px 16px;
+        background: #fff;
+        color: #212529;
+        font-size: 16px;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .items-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .items-toggle-icon {
+        font-size: 20px;
+        transition: transform 0.2s ease;
+    }
+
+    .items-toggle.is-open .items-toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    .shipment-items {
+        display: none;
+        margin-top: 12px;
+    }
+
+    .shipment-items.is-open {
+        display: block;
+    }
+
     .shipment-item {
         margin-bottom: 12px;
         padding: 14px;
         border: 1px solid #ddd;
-        border-radius: 8px;
+        border-radius: 10px;
         background: #fff;
     }
 
@@ -57,26 +258,50 @@
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-size: 18px;
         font-weight: 700;
     }
 
+    .shipment-item-data {
+        display: grid;
+        gap: 5px;
+        font-size: 14px;
+        line-height: 1.35;
+    }
+
+    .shipment-item-data strong {
+        color: #495057;
+    }
+
     .remove-button {
-        margin-top: 10px;
+        width: 100%;
+        min-height: 44px;
+        margin-top: 12px;
         border: 0;
-        border-radius: 6px;
-        padding: 9px 12px;
+        border-radius: 8px;
+        padding: 10px 12px;
         background: #dc3545;
         color: #fff;
+        font-weight: 700;
         cursor: pointer;
     }
+
+    /*
+     * Formularz potwierdzenia
+     */
 
     .confirm-form {
         margin-top: 24px;
         padding: 16px;
         border: 1px solid #ddd;
-        border-radius: 10px;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .confirm-form-title {
+        margin: 0 0 16px;
+        font-size: 20px;
     }
 
     .form-field {
@@ -85,7 +310,7 @@
 
     .form-field label {
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
         font-weight: 700;
     }
 
@@ -93,21 +318,94 @@
     .form-field textarea {
         width: 100%;
         border: 1px solid #bbb;
-        border-radius: 6px;
+        border-radius: 8px;
         padding: 12px;
+        background: #fff;
+        color: #212529;
         font-size: 16px;
+    }
+
+    .form-field textarea {
+        resize: vertical;
     }
 
     .confirm-button {
         width: 100%;
+        min-height: 54px;
         border: 0;
-        border-radius: 8px;
-        padding: 16px;
+        border-radius: 9px;
+        padding: 15px 16px;
         background: #198754;
         color: #fff;
         font-size: 18px;
         font-weight: 700;
         cursor: pointer;
+    }
+
+    .confirmed-data {
+        margin-top: 24px;
+        padding: 16px;
+        border: 1px solid #badbcc;
+        border-radius: 12px;
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .confirmed-data h2 {
+        margin: 0 0 10px;
+        font-size: 19px;
+    }
+
+    .confirmed-data-row {
+        margin-top: 5px;
+    }
+
+    @media (max-width: 520px) {
+        .shipment-summary {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .summary-value {
+            font-size: 21px;
+        }
+
+        .customer-summary-header {
+            display: block;
+        }
+
+        .customer-totals {
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .customer-total-palettes,
+        .customer-total-quantity {
+            display: inline-block;
+        }
+
+        .customer-total-quantity {
+            margin-left: 8px;
+        }
+
+        .product-summary-header {
+            display: block;
+        }
+
+        .product-summary-quantity {
+            margin-top: 7px;
+        }
+
+        .shipment-item-header {
+            display: block;
+        }
+
+        .shipment-item-header span {
+            display: block;
+        }
+
+        .shipment-item-header span + span {
+            margin-top: 4px;
+        }
     }
 </style>
 
@@ -118,12 +416,19 @@
             Załadunek #{{ shipment.id }}
         </h1>
 
-        <div>
+        <div class="shipment-header-row">
             Status: {{ shipment.get_status_display }}
         </div>
 
+        {% if shipment.created_at %}
+            <div class="shipment-header-row">
+                Utworzono:
+                {{ shipment.created_at|date:"d.m.Y H:i" }}
+            </div>
+        {% endif %}
+
         {% if shipment.confirmed_at %}
-            <div>
+            <div class="shipment-header-row">
                 Potwierdzono:
                 {{ shipment.confirmed_at|date:"d.m.Y H:i" }}
             </div>
@@ -133,14 +438,20 @@
     <div class="shipment-summary">
 
         <div class="summary-card">
-            <div>Liczba palet</div>
+            <div class="summary-label">
+                Liczba palet
+            </div>
+
             <div class="summary-value">
                 {{ shipment.units_count }}
             </div>
         </div>
 
         <div class="summary-card">
-            <div>Łączna liczba sztuk</div>
+            <div class="summary-label">
+                Łączna liczba sztuk
+            </div>
+
             <div class="summary-value">
                 {{ shipment.total_quantity }}
             </div>
@@ -148,76 +459,240 @@
 
     </div>
 
-    {% for item in items %}
+    <div class="shipment-grouped-summary">
 
-        <div class="shipment-item">
+        <h2 class="section-title">
+            Podsumowanie wysyłki
+        </h2>
 
-            <div class="shipment-item-header">
+        {% for customer_group in shipment_summary %}
+
+            <section class="customer-summary">
+
+                <div class="customer-summary-header">
+
+                    <div>
+                        <div class="customer-summary-label">
+                            Klient
+                        </div>
+
+                        <div class="customer-summary-name">
+                            {{ customer_group.customer_name }}
+                        </div>
+                    </div>
+
+                    <div class="customer-totals">
+                        <div class="customer-total-palettes">
+                            {{ customer_group.palettes_count }}
+                            palet
+                        </div>
+
+                        <div class="customer-total-quantity">
+                            {{ customer_group.total_quantity }}
+                            szt.
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="customer-products">
+
+                    {% for product in customer_group.products %}
+
+                        <div class="product-summary">
+
+                            <div class="product-summary-header">
+
+                                <div class="product-summary-name">
+                                    {{ product.product_name }}
+                                </div>
+
+                                <div class="product-summary-quantity">
+                                    {{ product.total_quantity }} szt.
+                                </div>
+
+                            </div>
+
+                            <div class="product-summary-details">
+
+                                <div class="product-detail">
+
+                                    <span class="detail-label">
+                                        Liczba palet
+                                    </span>
+
+                                    <strong>
+                                        {{ product.palettes_count }}
+                                    </strong>
+
+                                </div>
+
+                                <div class="product-detail palette-detail">
+
+                                    <span class="detail-label">
+                                        Typy palet
+                                    </span>
+
+                                    <div class="palette-types">
+
+                                        {% for palette_type in product.palette_types %}
+
+                                            <span class="palette-type">
+                                                {{ palette_type.name }}:
+                                                <strong>
+                                                    {{ palette_type.quantity }}
+                                                </strong>
+                                            </span>
+
+                                        {% empty %}
+
+                                            <span class="palette-type">
+                                                Brak informacji
+                                            </span>
+
+                                        {% endfor %}
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% empty %}
+
+                        <div class="empty-summary">
+                            Brak produktów dla tego klienta.
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </section>
+
+        {% empty %}
+
+            <div class="empty-summary">
+                Brak palet w wysyłce.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+    <div class="items-section">
+
+        <button
+            type="button"
+            class="items-toggle"
+            id="items-toggle"
+            aria-expanded="false"
+            aria-controls="shipment-items"
+        >
+            <span class="items-toggle-row">
                 <span>
-                    Paleta #{{ item.shipment_unit.id }}
+                    Pokaż zeskanowane palety
+                    ({{ shipment.units_count }})
                 </span>
 
-                <span>
-                    {{ item.shipment_unit.quantity }} szt.
+                <span class="items-toggle-icon">
+                    ▼
                 </span>
-            </div>
+            </span>
+        </button>
 
-            <div>
-                Klient:
-                {{ item.shipment_unit.order.customer }}
-            </div>
+        <div
+            class="shipment-items"
+            id="shipment-items"
+        >
 
-            <div>
-                Zlecenie:
-                {{ item.shipment_unit.order }}
-            </div>
+            {% for item in items %}
 
-            <div>
-                Seria:
-                {{ item.shipment_unit.order.id }}/{{ item.shipment_unit.order.order_year }}
-            </div>
+                <div class="shipment-item">
 
-            <div>
-                Produkt:
-                {{ item.shipment_unit.product|default:item.shipment_unit.order.product }}
-            </div>
+                    <div class="shipment-item-header">
+                        <span>
+                            Paleta #{{ item.shipment_unit.id }}
+                        </span>
 
-            <div>
-                Paleta:
-                {{ item.shipment_unit.palette|default:"—" }}
-            </div>
+                        <span>
+                            {{ item.shipment_unit.quantity }} szt.
+                        </span>
+                    </div>
 
-            <div>
-                Zeskanował:
-                {{ item.scanned_by }}
-                {{ item.scanned_at|date:"d.m.Y H:i" }}
-            </div>
+                    <div class="shipment-item-data">
 
-            {% if shipment.status == "draft" %}
-                <form
-                    method="post"
-                    action="{% url 'warehouse:shipment-item-delete' item.id %}"
-                >
-                    {% csrf_token %}
+                        <div>
+                            <strong>Klient:</strong>
+                            {{ item.shipment_unit.order.customer }}
+                        </div>
 
-                    <button
-                        type="submit"
-                        class="remove-button"
-                    >
-                        Usuń z załadunku
-                    </button>
-                </form>
-            {% endif %}
+                        <div>
+                            <strong>Zlecenie:</strong>
+                            {{ item.shipment_unit.order }}
+                        </div>
+
+                        <div>
+                            <strong>Seria:</strong>
+                            {{ item.shipment_unit.order.id }}/{{ item.shipment_unit.order.order_year }}
+                        </div>
+
+                        <div>
+                            <strong>Produkt:</strong>
+                            {{ item.shipment_unit.product|default:item.shipment_unit.order.product }}
+                        </div>
+
+                        <div>
+                            <strong>Paleta:</strong>
+                            {{ item.shipment_unit.palette|default:"—" }}
+                        </div>
+
+                        <div>
+                            <strong>Zeskanował:</strong>
+                            {{ item.scanned_by }}
+                        </div>
+
+                        <div>
+                            <strong>Data skanowania:</strong>
+                            {{ item.scanned_at|date:"d.m.Y H:i" }}
+                        </div>
+
+                    </div>
+
+                    {% if shipment.status == "draft" %}
+
+                        <form
+                            method="post"
+                            action="{% url 'warehouse:shipment-item-delete' item.id %}"
+                        >
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="remove-button"
+                                onclick="return confirm('Usunąć tę paletę z załadunku?');"
+                            >
+                                Usuń z załadunku
+                            </button>
+                        </form>
+
+                    {% endif %}
+
+                </div>
+
+            {% empty %}
+
+                <div class="empty-summary">
+                    Nie zeskanowano jeszcze żadnych palet.
+                </div>
+
+            {% endfor %}
 
         </div>
 
-    {% empty %}
-
-        <p>
-            Nie zeskanowano jeszcze żadnych palet.
-        </p>
-
-    {% endfor %}
+    </div>
 
     {% if shipment.status == "draft" %}
 
@@ -228,6 +703,10 @@
         >
             {% csrf_token %}
 
+            <h2 class="confirm-form-title">
+                Zakończenie załadunku
+            </h2>
+
             <div class="form-field">
                 <label for="car_number">
                     Numer rejestracyjny
@@ -237,6 +716,7 @@
                     type="text"
                     id="car_number"
                     name="car_number"
+                    autocomplete="off"
                     required
                 >
             </div>
@@ -250,6 +730,7 @@
                     type="text"
                     id="driver_name"
                     name="driver_name"
+                    autocomplete="name"
                 >
             </div>
 
@@ -268,13 +749,90 @@
             <button
                 type="submit"
                 class="confirm-button"
+                onclick="return confirm('Czy na pewno zakończyć i potwierdzić załadunek?');"
             >
                 Potwierdź zakończenie załadunku
             </button>
         </form>
 
+    {% else %}
+
+        <div class="confirmed-data">
+
+            <h2>
+                Załadunek potwierdzony
+            </h2>
+
+            {% if shipment.car_number %}
+                <div class="confirmed-data-row">
+                    <strong>Numer rejestracyjny:</strong>
+                    {{ shipment.car_number }}
+                </div>
+            {% endif %}
+
+            {% if shipment.driver_name %}
+                <div class="confirmed-data-row">
+                    <strong>Kierowca:</strong>
+                    {{ shipment.driver_name }}
+                </div>
+            {% endif %}
+
+            {% if shipment.confirmed_by %}
+                <div class="confirmed-data-row">
+                    <strong>Potwierdził:</strong>
+                    {{ shipment.confirmed_by }}
+                </div>
+            {% endif %}
+
+            {% if shipment.confirmed_at %}
+                <div class="confirmed-data-row">
+                    <strong>Data potwierdzenia:</strong>
+                    {{ shipment.confirmed_at|date:"d.m.Y H:i" }}
+                </div>
+            {% endif %}
+
+            {% if shipment.notes %}
+                <div class="confirmed-data-row">
+                    <strong>Uwagi:</strong>
+                    {{ shipment.notes }}
+                </div>
+            {% endif %}
+
+        </div>
+
     {% endif %}
 
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleButton = document.getElementById("items-toggle");
+        const itemsContainer = document.getElementById("shipment-items");
+
+        if (!toggleButton || !itemsContainer) {
+            return;
+        }
+
+        toggleButton.addEventListener("click", function () {
+            const isOpen = itemsContainer.classList.toggle("is-open");
+
+            toggleButton.classList.toggle("is-open", isOpen);
+            toggleButton.setAttribute(
+                "aria-expanded",
+                isOpen ? "true" : "false"
+            );
+
+            const label = toggleButton.querySelector(
+                ".items-toggle-row > span:first-child"
+            );
+
+            if (label) {
+                label.textContent = isOpen
+                    ? "Ukryj zeskanowane palety ({{ shipment.units_count }})"
+                    : "Pokaż zeskanowane palety ({{ shipment.units_count }})";
+            }
+        });
+    });
+</script>
 
 {% endblock %}

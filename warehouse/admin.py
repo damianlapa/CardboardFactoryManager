@@ -33,7 +33,9 @@ from .models import (
     ProductSellOrderPart,
     ProductPackaging,
     ShipmentUnit,
-    ShipmentUnitHistory
+    ShipmentUnitHistory,
+    Shipment,
+    ShipmentItem
 )
 
 
@@ -553,3 +555,5 @@ class ProductPackagingAdmin(admin.ModelAdmin):
 
 admin.site.register(ShipmentUnit)
 admin.site.register(ShipmentUnitHistory)
+admin.site.register(Shipment)
+admin.site.register(ShipmentItem)

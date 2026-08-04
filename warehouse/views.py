@@ -3594,6 +3594,109 @@ from django.views import View
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from collections import defaultdict
+
+
+def build_shipment_summary(items):
+    """
+    Grupowanie:
+    klient -> produkt
+
+    Dla każdego produktu:
+    - suma sztuk,
+    - liczba jednostek/palet,
+    - liczba poszczególnych typów palet.
+    """
+
+    grouped = {}
+
+    for item in items:
+        shipment_unit = item.shipment_unit
+        order = shipment_unit.order
+
+        customer = order.customer
+        product = shipment_unit.product or order.product
+        palette = shipment_unit.palette
+
+        customer_id = customer.id
+        customer_name = str(customer)
+
+        if product:
+            product_id = product.id
+            product_name = str(product)
+        else:
+            product_id = None
+            product_name = "Brak produktu"
+
+        palette_name = (
+            str(palette)
+            if palette
+            else "Bez określonej palety"
+        )
+
+        if customer_id not in grouped:
+            grouped[customer_id] = {
+                "customer": customer,
+                "customer_name": customer_name,
+                "total_quantity": 0,
+                "palettes_count": 0,
+                "products": {},
+            }
+
+        customer_group = grouped[customer_id]
+
+        product_key = product_id or f"none-{product_name}"
+
+        if product_key not in customer_group["products"]:
+            customer_group["products"][product_key] = {
+                "product": product,
+                "product_name": product_name,
+                "total_quantity": 0,
+                "palettes_count": 0,
+                "palette_types": defaultdict(int),
+            }
+
+        product_group = customer_group["products"][product_key]
+
+        quantity = int(shipment_unit.quantity or 0)
+
+        product_group["total_quantity"] += quantity
+        product_group["palettes_count"] += 1
+        product_group["palette_types"][palette_name] += 1
+
+        customer_group["total_quantity"] += quantity
+        customer_group["palettes_count"] += 1
+
+    result = []
+
+    for customer_group in grouped.values():
+        products = []
+
+        for product_group in customer_group["products"].values():
+            product_group["palette_types"] = [
+                {
+                    "name": palette_name,
+                    "quantity": palette_quantity,
+                }
+                for palette_name, palette_quantity
+                in sorted(product_group["palette_types"].items())
+            ]
+
+            products.append(product_group)
+
+        products.sort(
+            key=lambda row: row["product_name"].lower()
+        )
+
+        customer_group["products"] = products
+        result.append(customer_group)
+
+    result.sort(
+        key=lambda row: row["customer_name"].lower()
+    )
+
+    return result
+
 
 class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")
@@ -3826,7 +3929,7 @@ class ActiveShipmentView(LoginRequiredMixin, View):
     def get(self, request):
         shipment = get_active_shipment(request.user)
 
-        items = (
+        items = list(
             shipment.items
             .select_related(
                 "shipment_unit",
@@ -3840,12 +3943,15 @@ class ActiveShipmentView(LoginRequiredMixin, View):
             .order_by("-scanned_at", "-id")
         )
 
+        shipment_summary = build_shipment_summary(items)
+
         return render(
             request,
             self.template_name,
             {
                 "shipment": shipment,
                 "items": items,
+                "shipment_summary": shipment_summary,
             },
         )
 
@@ -3941,7 +4047,6 @@ class ShipmentConfirmView(LoginRequiredMixin, View):
 
 class ShipmentDetailView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")
-
     template_name = "warehouse/shipment_detail.html"
 
     def get(self, request, shipment_id):
@@ -3953,7 +4058,7 @@ class ShipmentDetailView(LoginRequiredMixin, View):
             id=shipment_id,
         )
 
-        items = (
+        items = list(
             shipment.items
             .select_related(
                 "shipment_unit",
@@ -3967,11 +4072,14 @@ class ShipmentDetailView(LoginRequiredMixin, View):
             .order_by("-scanned_at", "-id")
         )
 
+        shipment_summary = build_shipment_summary(items)
+
         return render(
             request,
             self.template_name,
             {
                 "shipment": shipment,
                 "items": items,
+                "shipment_summary": shipment_summary,
             },
         )
