@@ -4083,3 +4083,94 @@ class ShipmentDetailView(LoginRequiredMixin, View):
                 "shipment_summary": shipment_summary,
             },
         )
+
+
+from django.core.paginator import Paginator
+from django.db.models import Count, Sum, Q
+from django.db.models.functions import Coalesce
+
+class ShipmentListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_list.html"
+    archive_page_size = 20
+
+    def get(self, request):
+        search = (request.GET.get("q") or "").strip()
+
+        base_queryset = (
+            Shipment.objects
+            .select_related(
+                "created_by",
+                "confirmed_by",
+            )
+            .annotate(
+                annotated_units_count=Count(
+                    "items",
+                    distinct=True,
+                ),
+                annotated_total_quantity=Coalesce(
+                    Sum("items__shipment_unit__quantity"),
+                    0,
+                ),
+            )
+        )
+
+        active_shipments = (
+            base_queryset
+            .filter(status=Shipment.STATUS_DRAFT)
+            .order_by("-created_at", "-id")
+        )
+
+        archived_shipments = (
+            base_queryset
+            .exclude(status=Shipment.STATUS_DRAFT)
+        )
+
+        if search:
+            archive_filters = (
+                Q(car_number__icontains=search)
+                | Q(driver_name__icontains=search)
+                | Q(created_by__username__icontains=search)
+                | Q(created_by__first_name__icontains=search)
+                | Q(created_by__last_name__icontains=search)
+                | Q(confirmed_by__username__icontains=search)
+            )
+
+            if search.isdigit():
+                archive_filters |= Q(id=int(search))
+
+            archived_shipments = archived_shipments.filter(
+                archive_filters
+            )
+
+        archived_shipments = archived_shipments.order_by(
+            "-confirmed_at",
+            "-created_at",
+            "-id",
+        )
+
+        paginator = Paginator(
+            archived_shipments,
+            self.archive_page_size,
+        )
+
+        archive_page = paginator.get_page(
+            request.GET.get("page", 1)
+        )
+
+        own_active_shipment = (
+            active_shipments
+            .filter(created_by=request.user)
+            .first()
+        )
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "active_shipments": active_shipments,
+                "archive_page": archive_page,
+                "search": search,
+                "own_active_shipment": own_active_shipment,
+            },
+        )

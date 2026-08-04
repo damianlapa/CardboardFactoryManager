@@ -1,0 +1,642 @@
+{% extends "warehouse/__mobile_loading_base__.html" %}
+
+{% block title %}
+    Załadunki
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .shipments-page {
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 18px;
+    }
+
+    .page-title {
+        margin: 0;
+        font-size: 26px;
+    }
+
+    .page-subtitle {
+        margin-top: 5px;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    .section {
+        margin-bottom: 28px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: 21px;
+    }
+
+    .section-count {
+        display: inline-block;
+        border-radius: 20px;
+        padding: 5px 10px;
+        background: #e9ecef;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .own-shipment-notice {
+        margin-bottom: 14px;
+        border: 1px solid #badbcc;
+        border-radius: 10px;
+        padding: 13px;
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .own-shipment-notice strong {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .shipment-card {
+        display: block;
+        margin-bottom: 12px;
+        overflow: hidden;
+        border: 1px solid #d9dde1;
+        border-radius: 12px;
+        background: #fff;
+        color: #212529;
+        text-decoration: none;
+    }
+
+    .shipment-card:active {
+        background: #f8f9fa;
+    }
+
+    .shipment-card-own {
+        border: 2px solid #198754;
+    }
+
+    .shipment-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        background: #212529;
+        color: #fff;
+    }
+
+    .shipment-card-own .shipment-card-header {
+        background: #146c43;
+    }
+
+    .shipment-number {
+        font-size: 19px;
+        font-weight: 700;
+    }
+
+    .shipment-date {
+        margin-top: 4px;
+        color: #ced4da;
+        font-size: 12px;
+    }
+
+    .shipment-status {
+        flex-shrink: 0;
+        border-radius: 20px;
+        padding: 6px 10px;
+        background: rgba(255, 255, 255, 0.18);
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .shipment-card-body {
+        padding: 14px;
+    }
+
+    .shipment-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .shipment-metric {
+        border-radius: 8px;
+        padding: 11px;
+        background: #f1f3f5;
+    }
+
+    .metric-label {
+        color: #6c757d;
+        font-size: 12px;
+    }
+
+    .metric-value {
+        margin-top: 3px;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .shipment-data {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    .shipment-data-row {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 8px;
+    }
+
+    .shipment-data-label {
+        color: #6c757d;
+    }
+
+    .shipment-data-value {
+        min-width: 0;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .open-label {
+        margin-top: 13px;
+        border-top: 1px solid #eee;
+        padding-top: 11px;
+        color: #198754;
+        font-weight: 700;
+        text-align: right;
+    }
+
+    .archive-search {
+        margin-bottom: 14px;
+        padding: 14px;
+        border: 1px solid #d9dde1;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .search-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 700;
+    }
+
+    .search-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+    }
+
+    .search-input {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid #adb5bd;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .search-button {
+        border: 0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        background: #212529;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .clear-search {
+        display: inline-block;
+        margin-top: 9px;
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .archive-card .shipment-card-header {
+        background: #495057;
+    }
+
+    .archive-card.cancelled .shipment-card-header {
+        background: #842029;
+    }
+
+    .empty-state {
+        border: 1px dashed #adb5bd;
+        border-radius: 12px;
+        padding: 24px 16px;
+        color: #6c757d;
+        text-align: center;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+    .pagination-link,
+    .pagination-current {
+        display: flex;
+        min-width: 42px;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #adb5bd;
+        border-radius: 8px;
+        padding: 8px 12px;
+        background: #fff;
+        color: #212529;
+        text-decoration: none;
+    }
+
+    .pagination-current {
+        border-color: #212529;
+        background: #212529;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+        .section-header {
+            align-items: flex-start;
+        }
+
+        .shipment-data-row {
+            grid-template-columns: 90px 1fr;
+        }
+
+        .search-row {
+            grid-template-columns: 1fr;
+        }
+
+        .search-button {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="shipments-page">
+
+    <header class="page-header">
+        <h1 class="page-title">
+            Załadunki
+        </h1>
+
+        <div class="page-subtitle">
+            Aktualnie prowadzone oraz zakończone wysyłki
+        </div>
+    </header>
+
+    <section class="section">
+
+        <div class="section-header">
+            <h2 class="section-title">
+                Aktualne załadunki
+            </h2>
+
+            <span class="section-count">
+                {{ active_shipments|length }}
+            </span>
+        </div>
+
+        {% if own_active_shipment %}
+            <div class="own-shipment-notice">
+                <strong>
+                    Masz aktywny załadunek
+                    #{{ own_active_shipment.id }}
+                </strong>
+
+                Kolejne skanowane palety będą dodawane do tego
+                załadunku.
+            </div>
+        {% endif %}
+
+        {% for shipment in active_shipments %}
+
+            <a
+                href="{% url 'warehouse:shipment-detail' shipment.id %}"
+                class="shipment-card
+                    {% if shipment.created_by_id == request.user.id %}
+                        shipment-card-own
+                    {% endif %}
+                "
+            >
+
+                <div class="shipment-card-header">
+
+                    <div>
+                        <div class="shipment-number">
+                            Załadunek #{{ shipment.id }}
+
+                            {% if shipment.created_by_id == request.user.id %}
+                                · Twój
+                            {% endif %}
+                        </div>
+
+                        <div class="shipment-date">
+                            Rozpoczęto:
+                            {{ shipment.created_at|date:"d.m.Y H:i" }}
+                        </div>
+                    </div>
+
+                    <div class="shipment-status">
+                        {{ shipment.get_status_display }}
+                    </div>
+
+                </div>
+
+                <div class="shipment-card-body">
+
+                    <div class="shipment-metrics">
+
+                        <div class="shipment-metric">
+                            <div class="metric-label">
+                                Palety
+                            </div>
+
+                            <div class="metric-value">
+                                {{ shipment.annotated_units_count }}
+                            </div>
+                        </div>
+
+                        <div class="shipment-metric">
+                            <div class="metric-label">
+                                Sztuki
+                            </div>
+
+                            <div class="metric-value">
+                                {{ shipment.annotated_total_quantity }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="shipment-data">
+
+                        <div class="shipment-data-row">
+                            <div class="shipment-data-label">
+                                Utworzył
+                            </div>
+
+                            <div class="shipment-data-value">
+                                {{ shipment.created_by.get_full_name|default:shipment.created_by.username }}
+                            </div>
+                        </div>
+
+                        {% if shipment.car_number %}
+                            <div class="shipment-data-row">
+                                <div class="shipment-data-label">
+                                    Samochód
+                                </div>
+
+                                <div class="shipment-data-value">
+                                    {{ shipment.car_number }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+                    <div class="open-label">
+                        Otwórz załadunek →
+                    </div>
+
+                </div>
+
+            </a>
+
+        {% empty %}
+
+            <div class="empty-state">
+                Obecnie nie ma żadnych aktywnych załadunków.
+            </div>
+
+        {% endfor %}
+
+    </section>
+
+    <section class="section">
+
+        <div class="section-header">
+            <h2 class="section-title">
+                Archiwum
+            </h2>
+        </div>
+
+        <form
+            method="get"
+            class="archive-search"
+        >
+            <label
+                for="shipment-search"
+                class="search-label"
+            >
+                Znajdź wysyłkę
+            </label>
+
+            <div class="search-row">
+                <input
+                    type="search"
+                    id="shipment-search"
+                    name="q"
+                    value="{{ search }}"
+                    class="search-input"
+                    placeholder="Numer, auto, kierowca..."
+                >
+
+                <button
+                    type="submit"
+                    class="search-button"
+                >
+                    Szukaj
+                </button>
+            </div>
+
+            {% if search %}
+                <a
+                    href="{% url 'warehouse:shipment-list' %}"
+                    class="clear-search"
+                >
+                    Wyczyść wyszukiwanie
+                </a>
+            {% endif %}
+        </form>
+
+        {% for shipment in archive_page %}
+
+            <a
+                href="{% url 'warehouse:shipment-detail' shipment.id %}"
+                class="shipment-card archive-card
+                    {% if shipment.status == 'cancelled' %}
+                        cancelled
+                    {% endif %}
+                "
+            >
+
+                <div class="shipment-card-header">
+
+                    <div>
+                        <div class="shipment-number">
+                            Wysyłka #{{ shipment.id }}
+                        </div>
+
+                        <div class="shipment-date">
+                            {% if shipment.confirmed_at %}
+                                Zakończono:
+                                {{ shipment.confirmed_at|date:"d.m.Y H:i" }}
+                            {% else %}
+                                Utworzono:
+                                {{ shipment.created_at|date:"d.m.Y H:i" }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="shipment-status">
+                        {{ shipment.get_status_display }}
+                    </div>
+
+                </div>
+
+                <div class="shipment-card-body">
+
+                    <div class="shipment-metrics">
+
+                        <div class="shipment-metric">
+                            <div class="metric-label">
+                                Palety
+                            </div>
+
+                            <div class="metric-value">
+                                {{ shipment.annotated_units_count }}
+                            </div>
+                        </div>
+
+                        <div class="shipment-metric">
+                            <div class="metric-label">
+                                Sztuki
+                            </div>
+
+                            <div class="metric-value">
+                                {{ shipment.annotated_total_quantity }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="shipment-data">
+
+                        {% if shipment.car_number %}
+                            <div class="shipment-data-row">
+                                <div class="shipment-data-label">
+                                    Samochód
+                                </div>
+
+                                <div class="shipment-data-value">
+                                    {{ shipment.car_number }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if shipment.driver_name %}
+                            <div class="shipment-data-row">
+                                <div class="shipment-data-label">
+                                    Kierowca
+                                </div>
+
+                                <div class="shipment-data-value">
+                                    {{ shipment.driver_name }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if shipment.confirmed_by %}
+                            <div class="shipment-data-row">
+                                <div class="shipment-data-label">
+                                    Potwierdził
+                                </div>
+
+                                <div class="shipment-data-value">
+                                    {{ shipment.confirmed_by.get_full_name|default:shipment.confirmed_by.username }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+                    <div class="open-label">
+                        Zobacz szczegóły →
+                    </div>
+
+                </div>
+
+            </a>
+
+        {% empty %}
+
+            <div class="empty-state">
+                {% if search %}
+                    Nie znaleziono wysyłek pasujących do:
+                    „{{ search }}”.
+                {% else %}
+                    Archiwum wysyłek jest puste.
+                {% endif %}
+            </div>
+
+        {% endfor %}
+
+        {% if archive_page.paginator.num_pages > 1 %}
+
+            <nav
+                class="pagination"
+                aria-label="Strony archiwum"
+            >
+
+                {% if archive_page.has_previous %}
+                    <a
+                        href="?page={{ archive_page.previous_page_number }}{% if search %}&q={{ search|urlencode }}{% endif %}"
+                        class="pagination-link"
+                    >
+                        ←
+                    </a>
+                {% endif %}
+
+                <span class="pagination-current">
+                    {{ archive_page.number }}
+                    /
+                    {{ archive_page.paginator.num_pages }}
+                </span>
+
+                {% if archive_page.has_next %}
+                    <a
+                        href="?page={{ archive_page.next_page_number }}{% if search %}&q={{ search|urlencode }}{% endif %}"
+                        class="pagination-link"
+                    >
+                        →
+                    </a>
+                {% endif %}
+
+            </nav>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}

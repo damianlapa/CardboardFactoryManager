@@ -231,4 +231,13 @@ urlpatterns += [
         ShipmentItemDeleteView.as_view(),
         name="shipment-item-delete",
     ),
+
+]
+
+urlpatterns += [
+    path(
+        "shipments/",
+        ShipmentListView.as_view(),
+        name="shipment-list",
+    ),
 ]
