@@ -31,7 +31,7 @@ from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
 from warehouse.services.stock_moves import rebuild_ws_history_from_date
 from warehouse.models import attach_origin_orders_to_sell
-from warehousemanager.functions import  visit_counter
+from warehousemanager.functions import visit_counter
 from django.utils.dateparse import parse_date
 import datetime
 import secrets
@@ -3732,6 +3732,7 @@ class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
         )
 
     def get_context(self, request, shipment_unit, token):
+        visit_counter(request.user, "add_shipment_unit")
         active_shipment = get_active_shipment(request.user)
 
         shipment_items = (
