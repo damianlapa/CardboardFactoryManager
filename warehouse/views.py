@@ -3578,9 +3578,12 @@ from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 def get_active_shipment(user):
+    from warehousemanager.models import Person
+    worker = Person.objects.filter(user=user).first()
     shipment, _created = Shipment.objects.get_or_create(
         created_by=user,
         status=Shipment.STATUS_DRAFT,
+        driver=worker if worker else "",
     )
 
     return shipment
