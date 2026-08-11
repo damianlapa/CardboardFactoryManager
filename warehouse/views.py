@@ -3583,7 +3583,7 @@ def get_active_shipment(user):
     shipment, _created = Shipment.objects.get_or_create(
         created_by=user,
         status=Shipment.STATUS_DRAFT,
-        driver=worker if worker else "",
+        driver_name=worker if worker else "",
     )
 
     return shipment
