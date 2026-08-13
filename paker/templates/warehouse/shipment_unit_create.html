@@ -3,6 +3,42 @@
 {% block content %}
 
 <style>
+    .shipped-units-section {
+    margin-top: 18px;
+    border-top: 1px solid #ddd;
+    padding-top: 14px;
+}
+
+.shipped-units-details {
+    border: 1px solid #d6d8db;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.shipped-units-details summary {
+    padding: 14px;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+}
+
+.shipped-units-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.shipped-units-details summary::after {
+    content: "▼";
+    float: right;
+    transition: transform 0.2s ease;
+}
+
+.shipped-units-details[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.shipped-units-list {
+    padding: 0 12px 12px;
+}
     .shipment-item-title {
     display: flex;
     align-items: center;
@@ -644,40 +680,184 @@
 </div>
 
             {% if shipment_units %}
-                <div class="shipment-list">
 
-                    {% for shipment_unit in shipment_units %}
-                        <article class="
-    shipment-item
-    {% if shipment_unit.is_shipped %}
-        shipment-item-shipped
-    {% elif shipment_unit.is_loading %}
-        shipment-item-loading
-    {% endif %}
-">
+    <div class="shipment-list">
+
+        {% for shipment_unit in shipment_units %}
+            {% if not shipment_unit.is_shipped %}
+
+                <article class="
+                    shipment-item
+                    {% if shipment_unit.is_loading %}
+                        shipment-item-loading
+                    {% endif %}
+                ">
+
+                    <div>
+
+                        <div class="shipment-item-title">
+
+                            <span>
+                                Jednostka #{{ shipment_unit.id }}
+                            </span>
+
+                            {% if shipment_unit.is_loading %}
+                                <span class="shipment-status shipment-status-loading">
+                                    W ZAŁADUNKU
+                                </span>
+                            {% else %}
+                                <span class="shipment-status shipment-status-ready">
+                                    GOTOWA
+                                </span>
+                            {% endif %}
+
+                        </div>
+
+                        <div class="shipment-item-details">
+
+                            <div class="shipment-attribute">
+                                <span class="shipment-attribute-label">
+                                    Ilość
+                                </span>
+
+                                <span class="shipment-attribute-value">
+                                    {{ shipment_unit.quantity }} szt.
+                                </span>
+                            </div>
+
+                            <div class="shipment-attribute">
+                                <span class="shipment-attribute-label">
+                                    Paleta
+                                </span>
+
+                                <span class="shipment-attribute-value">
+                                    {{ shipment_unit.palette|default:"Brak" }}
+                                </span>
+                            </div>
+
+                            <div class="shipment-attribute">
+                                <span class="shipment-attribute-label">
+                                    Produkt
+                                </span>
+
+                                <span class="shipment-attribute-value">
+                                    {{ shipment_unit.product|default:"Brak" }}
+                                </span>
+                            </div>
+
+                            <div class="shipment-attribute">
+                                <span class="shipment-attribute-label">
+                                    Pracownik
+                                </span>
+
+                                <span class="shipment-attribute-value">
+                                    {% if shipment_unit.created_by.get_full_name %}
+                                        {{ shipment_unit.created_by.get_full_name }}
+                                    {% else %}
+                                        {{ shipment_unit.created_by.username }}
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="shipment-attribute">
+                                <span class="shipment-attribute-label">
+                                    Data dodania
+                                </span>
+
+                                <span class="shipment-attribute-value">
+                                    {{ shipment_unit.created|date:"d.m.Y H:i" }}
+                                </span>
+                            </div>
+
+                            <div class="shipment-attribute">
+                                <span class="shipment-attribute-label">
+                                    Zlecenie
+                                </span>
+
+                                <span class="shipment-attribute-value">
+                                    {{ shipment_unit.order }}
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="shipment-item-actions">
+
+                        <a
+                            href="{% url 'warehouse:shipment-unit-print' shipment_unit_id=shipment_unit.id %}"
+                            class="shipment-action-button shipment-print-button"
+                            target="_blank"
+                        >
+                            Drukuj
+                        </a>
+
+                        {% if request.user.is_superuser or shipment_unit.created_by_id == request.user.id %}
+
+                            <a
+                                href="{% url 'warehouse:shipment-unit-update' shipment_unit_id=shipment_unit.id %}"
+                                class="shipment-action-button shipment-edit-button"
+                            >
+                                Edytuj
+                            </a>
+
+                            <form
+                                method="post"
+                                action="{% url 'warehouse:shipment-unit-delete' shipment_unit_id=shipment_unit.id %}"
+                                onsubmit="return confirm('Czy na pewno usunąć jednostkę #{{ shipment_unit.id }}?');"
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="shipment-action-button shipment-delete-button"
+                                >
+                                    Usuń
+                                </button>
+
+                            </form>
+
+                        {% endif %}
+
+                    </div>
+
+                </article>
+
+            {% endif %}
+        {% endfor %}
+
+    </div>
+
+
+    <div class="shipped-units-section">
+
+        <details class="shipped-units-details">
+
+            <summary>
+                Wysłane jednostki
+            </summary>
+
+            <div class="shipped-units-list">
+
+                {% for shipment_unit in shipment_units %}
+                    {% if shipment_unit.is_shipped %}
+
+                        <article class="shipment-item shipment-item-shipped">
 
                             <div>
+
                                 <div class="shipment-item-title">
-    <span>
-        Jednostka #{{ shipment_unit.id }}
-    </span>
 
-    {% if shipment_unit.is_shipped %}
-        <span class="shipment-status shipment-status-shipped">
-            WYSŁANA
-        </span>
+                                    <span>
+                                        Jednostka #{{ shipment_unit.id }}
+                                    </span>
 
-    {% elif shipment_unit.is_loading %}
-        <span class="shipment-status shipment-status-loading">
-            W ZAŁADUNKU
-        </span>
+                                    <span class="shipment-status shipment-status-shipped">
+                                        WYSŁANA
+                                    </span>
 
-    {% else %}
-        <span class="shipment-status shipment-status-ready">
-            GOTOWA
-        </span>
-    {% endif %}
-</div>
+                                </div>
 
                                 <div class="shipment-item-details">
 
@@ -746,156 +926,39 @@
                                     </div>
 
                                 </div>
+
                             </div>
 
                             <div class="shipment-item-actions">
-    <a
-        href="{% url 'warehouse:shipment-unit-print' shipment_unit_id=shipment_unit.id %}"
-        class="shipment-action-button shipment-print-button"
-        target="_blank"
-    >
-        Drukuj
-    </a>
 
-    {% if not shipment_unit.is_shipped %}
-    {% if request.user.is_superuser or shipment_unit.created_by_id == request.user.id %}
+                                <a
+                                    href="{% url 'warehouse:shipment-unit-print' shipment_unit_id=shipment_unit.id %}"
+                                    class="shipment-action-button shipment-print-button"
+                                    target="_blank"
+                                >
+                                    Drukuj
+                                </a>
 
-        <a
-            href="{% url 'warehouse:shipment-unit-update' shipment_unit_id=shipment_unit.id %}"
-            class="shipment-action-button shipment-edit-button"
-        >
-            Edytuj
-        </a>
-
-        <form
-            method="post"
-            action="{% url 'warehouse:shipment-unit-delete' shipment_unit_id=shipment_unit.id %}"
-            onsubmit="return confirm('Czy na pewno usunąć jednostkę #{{ shipment_unit.id }}?');"
-        >
-            {% csrf_token %}
-
-            <button
-                type="submit"
-                class="shipment-action-button shipment-delete-button"
-            >
-                Usuń
-            </button>
-        </form>
-
-    {% endif %}
-{% endif %}
-</div>
+                            </div>
 
                         </article>
-                    {% endfor %}
 
-                </div>
-            <div class="shipment-history">
-    <div class="shipment-history-header">
-        <h2>Historia zmian</h2>
+                    {% endif %}
+                {% endfor %}
 
-        <span class="shipment-counter">
-            {{ shipment_unit_history|length }}
-        </span>
+            </div>
+
+        </details>
+
     </div>
 
-    {% if shipment_unit_history %}
-        <div class="shipment-history-list">
-            {% for history in shipment_unit_history %}
-                <article class="shipment-history-item">
-                    <div class="shipment-history-top">
-                        <strong>
-                            Jednostka #{{ history.shipment_unit_original_id }}
-                        </strong>
+{% else %}
 
-                        {% if history.action == "UPDATE" %}
-                            <span class="shipment-history-badge history-update">
-                                Edycja
-                            </span>
-                        {% elif history.action == "DELETE" %}
-                            <span class="shipment-history-badge history-delete">
-                                Usunięcie
-                            </span>
-                        {% endif %}
-                    </div>
+    <div class="shipment-empty">
+        Nie dodano jeszcze żadnej jednostki wysyłkowej.
+    </div>
 
-                    <div class="shipment-history-details">
-                        <div>
-                            <span class="shipment-attribute-label">
-                                Ilość przed operacją
-                            </span>
-
-                            <strong>{{ history.quantity }} szt.</strong>
-                        </div>
-
-                        <div>
-                            <span class="shipment-attribute-label">
-                                Paleta przed operacją
-                            </span>
-
-                            <strong>{{ history.palette|default:"Brak" }}</strong>
-                        </div>
-
-                        <div>
-                            <span class="shipment-attribute-label">
-                                Produkt
-                            </span>
-
-                            <strong>{{ history.product|default:"Brak" }}</strong>
-                        </div>
-
-                        <div>
-                            <span class="shipment-attribute-label">
-                                Operację wykonał
-                            </span>
-
-                            <strong>
-                                {% if history.changed_by.get_full_name %}
-                                    {{ history.changed_by.get_full_name }}
-                                {% else %}
-                                    {{ history.changed_by.username }}
-                                {% endif %}
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span class="shipment-attribute-label">
-                                Data operacji
-                            </span>
-
-                            <strong>
-                                {{ history.changed_at|date:"d.m.Y H:i:s" }}
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span class="shipment-attribute-label">
-                                Aktualny status
-                            </span>
-
-                            <strong>
-                                {% if history.shipment_unit %}
-                                    Jednostka istnieje
-                                {% else %}
-                                    Jednostka usunięta
-                                {% endif %}
-                            </strong>
-                        </div>
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="shipment-empty">
-            Brak zmian i usunięć.
-        </div>
-    {% endif %}
-</div>
-            {% else %}
-                <div class="shipment-empty">
-                    Nie dodano jeszcze żadnej jednostki wysyłkowej.
-                </div>
-            {% endif %}
+{% endif %}
         </section>
 
     </div>
