@@ -3185,6 +3185,16 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
     template_name = "warehouse/shipment_unit_create.html"
 
     def get_shipment_units(self, order):
+        shipped_items = ShipmentItem.objects.filter(
+            shipment_unit_id=OuterRef("pk"),
+            shipment__status=Shipment.STATUS_CONFIRMED,
+        )
+
+        loading_items = ShipmentItem.objects.filter(
+            shipment_unit_id=OuterRef("pk"),
+            shipment__status=Shipment.STATUS_DRAFT,
+        )
+
         return (
             ShipmentUnit.objects
             .filter(order=order)
@@ -3192,6 +3202,10 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
                 "product",
                 "palette",
                 "created_by",
+            )
+            .annotate(
+                is_shipped=Exists(shipped_items),
+                is_loading=Exists(loading_items),
             )
             .order_by("-created", "-id")
         )
@@ -3578,12 +3592,9 @@ from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 def get_active_shipment(user):
-    from warehousemanager.models import Person
-    worker = Person.objects.filter(user=user).first()
     shipment, _created = Shipment.objects.get_or_create(
         created_by=user,
-        status=Shipment.STATUS_DRAFT,
-        driver_name=worker if worker else "",
+        status=Shipment.STATUS_DRAFT
     )
 
     return shipment
@@ -4092,6 +4103,7 @@ class ShipmentDetailView(LoginRequiredMixin, View):
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import Coalesce
+
 
 class ShipmentListView(LoginRequiredMixin, View):
     login_url = reverse_lazy("login")

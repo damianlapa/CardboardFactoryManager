@@ -3,6 +3,53 @@
 {% block content %}
 
 <style>
+    .shipment-item-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* jednostka jest aktualnie ładowana */
+.shipment-item-loading {
+    border-color: #ffc107;
+    background: #fff8df;
+}
+
+/* jednostka została już wysłana */
+.shipment-item-shipped {
+    border-color: #adb5bd;
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.shipment-item-shipped .shipment-attribute-value {
+    color: #6c757d;
+}
+
+.shipment-status {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.shipment-status-ready {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.shipment-status-loading {
+    background: #ffc107;
+    color: #212529;
+}
+
+.shipment-status-shipped {
+    background: #6c757d;
+    color: #fff;
+}
     .shipment-history {
     margin-top: 30px;
     padding-top: 25px;
@@ -600,12 +647,37 @@
                 <div class="shipment-list">
 
                     {% for shipment_unit in shipment_units %}
-                        <article class="shipment-item">
+                        <article class="
+    shipment-item
+    {% if shipment_unit.is_shipped %}
+        shipment-item-shipped
+    {% elif shipment_unit.is_loading %}
+        shipment-item-loading
+    {% endif %}
+">
 
                             <div>
                                 <div class="shipment-item-title">
-                                    Jednostka #{{ shipment_unit.id }}
-                                </div>
+    <span>
+        Jednostka #{{ shipment_unit.id }}
+    </span>
+
+    {% if shipment_unit.is_shipped %}
+        <span class="shipment-status shipment-status-shipped">
+            WYSŁANA
+        </span>
+
+    {% elif shipment_unit.is_loading %}
+        <span class="shipment-status shipment-status-loading">
+            W ZAŁADUNKU
+        </span>
+
+    {% else %}
+        <span class="shipment-status shipment-status-ready">
+            GOTOWA
+        </span>
+    {% endif %}
+</div>
 
                                 <div class="shipment-item-details">
 
@@ -685,7 +757,9 @@
         Drukuj
     </a>
 
+    {% if not shipment_unit.is_shipped %}
     {% if request.user.is_superuser or shipment_unit.created_by_id == request.user.id %}
+
         <a
             href="{% url 'warehouse:shipment-unit-update' shipment_unit_id=shipment_unit.id %}"
             class="shipment-action-button shipment-edit-button"
@@ -707,7 +781,9 @@
                 Usuń
             </button>
         </form>
+
     {% endif %}
+{% endif %}
 </div>
 
                         </article>
