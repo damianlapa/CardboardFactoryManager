@@ -2682,6 +2682,11 @@ class OrderProfitabilityListView(LoginRequiredMixin, View):
             selected_product_id,
         ])
 
+        if not has_filters:
+            visit_counter(request.user, f"opfr")
+        else:
+            visit_counter(request.user, f"opfr: {selected_person_id}/{customer}/{date_from}/{date_to}/{selected_product_id}")
+
         return render(request, self.template_name, {
             "persons": persons,
             "person_id": selected_person_id,
