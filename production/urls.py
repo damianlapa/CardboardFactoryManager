@@ -153,5 +153,13 @@ urlpatterns += [
     ),
 ]
 
+urlpatterns += [
+    path(
+            "effectivity/workstations/",
+            WorkstationEffectivityView.as_view(),
+            name="workstation_effectivity",
+        ),
+]
+
 
 

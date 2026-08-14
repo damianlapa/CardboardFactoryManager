@@ -1,0 +1,304 @@
+{% extends "__base3__.html" %}
+{% load l10n %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+        <h2 class="mb-1">
+            Zajętość stanowisk
+        </h2>
+
+        <div class="text-muted">
+            Wykorzystanie stanowisk produkcyjnych i roboczogodziny
+        </div>
+    </div>
+
+
+    <!-- FILTR -->
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+
+            <form method="get" class="row align-items-end">
+
+                <div class="col-md-3 mb-3">
+                    <label for="date_from" class="form-label">
+                        Data od
+                    </label>
+
+                    <input
+                        type="date"
+                        id="date_from"
+                        name="date_from"
+                        class="form-control"
+                        value="{{ date_from|date:'Y-m-d' }}"
+                    >
+                </div>
+
+
+                <div class="col-md-3 mb-3">
+                    <label for="date_to" class="form-label">
+                        Data do
+                    </label>
+
+                    <input
+                        type="date"
+                        id="date_to"
+                        name="date_to"
+                        class="form-control"
+                        value="{{ date_to|date:'Y-m-d' }}"
+                    >
+                </div>
+
+
+                <div class="col-md-3 mb-3">
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Pokaż
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- PODSUMOWANIE -->
+
+    <div class="d-flex flex-wrap gap-4 mb-4">
+
+        <div>
+            <small class="text-muted d-block">
+                Okres
+            </small>
+
+            <strong>
+                {{ date_from|date:"d.m.Y" }}
+                -
+                {{ date_to|date:"d.m.Y" }}
+            </strong>
+        </div>
+
+
+        <div>
+            <small class="text-muted d-block">
+                Dni robocze
+            </small>
+
+            <strong>
+                {{ statistics.working_days }}
+            </strong>
+        </div>
+
+
+        <div>
+            <small class="text-muted d-block">
+                Dostępność dzienna
+            </small>
+
+            <strong>
+                7 h 25 min
+            </strong>
+        </div>
+
+    </div>
+
+
+    <!-- LISTA STANOWISK -->
+
+    {% for item in statistics.stations %}
+
+        <div class="card shadow-sm mb-3">
+
+            <div class="card-body">
+
+                <div class="row align-items-center">
+
+                    <!-- NAZWA -->
+
+                    <div class="col-lg-2 mb-3 mb-lg-0">
+
+                        <h5 class="mb-1">
+                            {{ item.station.name }}
+                        </h5>
+
+                        <small class="text-muted">
+                            {{ item.units_count }} operacji
+                        </small>
+
+                    </div>
+
+
+                    <!-- ZAJĘTOŚĆ -->
+
+                    <div class="col-lg-4 mb-3 mb-lg-0">
+
+                        <div
+                            class="d-flex justify-content-between mb-1"
+                        >
+                            <span class="text-muted">
+                                Zajętość
+                            </span>
+
+                            <strong>
+                                {{ item.occupancy_percent }}%
+                            </strong>
+                        </div>
+
+
+                        <div class="progress" style="height: 20px;">
+    <div
+        class="
+            progress-bar
+            {% if item.occupancy_percent >= 90 %}
+                bg-danger
+            {% elif item.occupancy_percent >= 70 %}
+                bg-warning
+            {% else %}
+                bg-success
+            {% endif %}
+        "
+        role="progressbar"
+        style="width: {{ item.occupancy_percent|unlocalize }}%;"
+        aria-valuenow="{{ item.occupancy_percent|unlocalize }}"
+        aria-valuemin="0"
+        aria-valuemax="100"
+    >
+    </div>
+</div>
+
+                    </div>
+
+
+                    <!-- CZAS -->
+
+                    <div class="col-lg-2 text-lg-center mb-3 mb-lg-0">
+
+                        <small class="text-muted d-block">
+                            Zajęte
+                        </small>
+
+                        <strong>
+                            {{ item.occupied_hours|floatformat:2 }} h
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ROBOCZOGODZINY -->
+
+                    <div class="col-lg-2 text-lg-center mb-3 mb-lg-0">
+
+                        <small class="text-muted d-block">
+                            Roboczogodziny
+                        </small>
+
+                        <strong>
+                            {{ item.worker_hours|floatformat:2 }} h
+                        </strong>
+
+                    </div>
+
+
+                    <!-- DOSTĘPNOŚĆ -->
+
+                    <div class="col-lg-2 text-lg-center">
+
+                        <small class="text-muted d-block">
+                            Dostępne
+                        </small>
+
+                        <strong>
+                            {{ item.available_hours|floatformat:2 }} h
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OBSADA -->
+
+                {% if item.persons_distribution %}
+
+                    <hr>
+
+
+                    <div class="row">
+
+                        <div class="col-lg-2">
+                            <small class="text-muted">
+                                Obsada
+                            </small>
+                        </div>
+
+
+                        <div class="col-lg-10">
+
+                            <div class="d-flex flex-wrap gap-4">
+
+                                {% for distribution in item.persons_distribution %}
+
+                                    <div>
+
+                                        <small class="text-muted d-block">
+
+                                            {% if distribution.persons == 0 %}
+
+                                                Bez osób
+
+                                            {% elif distribution.persons == 1 %}
+
+                                                1 osoba
+
+                                            {% else %}
+
+                                                {{ distribution.persons }} osoby
+
+                                            {% endif %}
+
+                                        </small>
+
+
+                                        <strong>
+                                            {{ distribution.hours|floatformat:2 }} h
+                                        </strong>
+
+                                        <span class="text-muted">
+                                            /
+                                            {{ distribution.worker_hours|floatformat:2 }}
+                                            rbh
+                                        </span>
+
+                                    </div>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% empty %}
+
+        <div class="alert alert-info">
+            Brak zajętych stanowisk w wybranym okresie.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}
