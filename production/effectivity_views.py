@@ -285,11 +285,19 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
             date_to=date_to,
         )
 
-        available_minutes = (
-                len(working_days)
-                * self.WORKDAY_MINUTES
-        )
+        available_minutes = 0
 
+        for day in working_days:
+
+            work_intervals = self.get_work_intervals_for_day(
+                day
+            )
+
+            for start, end in work_intervals:
+                available_minutes += (
+                                             end - start
+                                     ).total_seconds() / 60
+                
         units = (
             ProductionUnit.objects
             .filter(
@@ -353,10 +361,29 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
             date_to,
             available_minutes,
     ):
-        station_intervals = []
+        """
+        Wszystkie statystyki liczymy z jednej osi czasu.
 
-        worker_minutes = 0
-        persons_distribution = defaultdict(float)
+        Dzięki temu:
+
+        SUM(czas obsady) == occupied_minutes
+
+        oraz:
+
+        worker_minutes ==
+            1 * czas_z_1_osoba +
+            2 * czas_z_2_osobami +
+            3 * czas_z_3_osobami +
+            ...
+        """
+
+        events = defaultdict(list)
+
+        active_unit_ids = set()
+
+        # ---------------------------------------------------------
+        # Budujemy zdarzenia START / END
+        # ---------------------------------------------------------
 
         for unit in units:
 
@@ -370,39 +397,157 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
             if not unit_intervals:
                 continue
 
-            persons_count = len(
-                unit.persons.all()
-            )
+            active_unit_ids.add(unit.id)
+
+            # WAŻNE:
+            # zapamiętujemy konkretne osoby, a nie tylko ich liczbę.
+            #
+            # Jeśli Jan jest jednocześnie przypisany do dwóch
+            # ProductionUnit na tym samym stanowisku,
+            # nadal liczymy jednego Jana.
+            person_ids = {
+                person.id
+                for person in unit.persons.all()
+            }
 
             for start, end in unit_intervals:
-                minutes = (
-                                  end - start
-                          ).total_seconds() / 60
+                events[start].append({
+                    "type": "start",
+                    "unit_id": unit.id,
+                    "persons": person_ids,
+                })
 
-                station_intervals.append(
-                    (start, end)
-                )
+                events[end].append({
+                    "type": "end",
+                    "unit_id": unit.id,
+                    "persons": person_ids,
+                })
 
-                worker_minutes += (
-                        minutes * persons_count
-                )
+        # Brak produkcji
+        if not events:
+            return {
+                "station": station,
 
-                persons_distribution[
-                    persons_count
-                ] += minutes
+                "available_minutes": round(
+                    available_minutes,
+                    2,
+                ),
 
-        # Stanowisko może mieć kilka nachodzących ProductionUnit.
-        # Dla zajętości maszyny nie możemy liczyć ich podwójnie.
-        merged_intervals = self.merge_intervals(
-            station_intervals
-        )
+                "available_hours": round(
+                    available_minutes / 60,
+                    2,
+                ),
 
-        occupied_minutes = sum(
-            (
-                    end - start
-            ).total_seconds() / 60
-            for start, end in merged_intervals
-        )
+                "occupied_minutes": 0,
+                "occupied_hours": 0,
+
+                "occupancy_percent": 0,
+                "progress_percent": 0,
+
+                "worker_minutes": 0,
+                "worker_hours": 0,
+
+                "persons_distribution": [],
+
+                "units_count": 0,
+            }
+
+        # ---------------------------------------------------------
+        # OŚ CZASU
+        # ---------------------------------------------------------
+
+        timestamps = sorted(events.keys())
+
+        # unit_id -> set(person_ids)
+        active_units = {}
+
+        occupied_minutes = 0
+        worker_minutes = 0
+
+        persons_distribution = defaultdict(float)
+
+        for index, timestamp in enumerate(timestamps):
+
+            # -----------------------------------------------------
+            # Najpierw kończymy jednostki kończące się w tym czasie
+            # -----------------------------------------------------
+
+            for event in events[timestamp]:
+
+                if event["type"] == "end":
+                    active_units.pop(
+                        event["unit_id"],
+                        None,
+                    )
+
+            # -----------------------------------------------------
+            # Następnie uruchamiamy nowe
+            # -----------------------------------------------------
+
+            for event in events[timestamp]:
+
+                if event["type"] == "start":
+                    active_units[
+                        event["unit_id"]
+                    ] = event["persons"]
+
+            # Nie ma kolejnego punktu czasu
+            if index + 1 >= len(timestamps):
+                continue
+
+            next_timestamp = timestamps[index + 1]
+
+            if next_timestamp <= timestamp:
+                continue
+
+            # Jeżeli żadna jednostka nie działa,
+            # stanowisko jest wolne.
+            if not active_units:
+                continue
+
+            minutes = (
+                              next_timestamp - timestamp
+                      ).total_seconds() / 60
+
+            if minutes <= 0:
+                continue
+
+            # -----------------------------------------------------
+            # UNIKALNE osoby obecne na stanowisku
+            # -----------------------------------------------------
+
+            active_person_ids = set()
+
+            for persons in active_units.values():
+                active_person_ids.update(persons)
+
+            persons_count = len(active_person_ids)
+
+            # -----------------------------------------------------
+            # ZAJĘTOŚĆ STANOWISKA
+            # -----------------------------------------------------
+
+            occupied_minutes += minutes
+
+            # -----------------------------------------------------
+            # ROZKŁAD OBSADY
+            # -----------------------------------------------------
+
+            persons_distribution[
+                persons_count
+            ] += minutes
+
+            # -----------------------------------------------------
+            # ROBOCZOGODZINY
+            # -----------------------------------------------------
+
+            worker_minutes += (
+                    minutes * persons_count
+            )
+
+        # ---------------------------------------------------------
+        # PROCENT ZAJĘTOŚCI
+        # ---------------------------------------------------------
 
         occupancy_percent = (
             occupied_minutes
@@ -412,6 +557,10 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
             else 0
         )
 
+        # ---------------------------------------------------------
+        # ROZKŁAD OBSADY DO TEMPLATE
+        # ---------------------------------------------------------
+
         distribution = []
 
         for persons, minutes in sorted(
@@ -419,8 +568,17 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
         ):
             distribution.append({
                 "persons": persons,
-                "minutes": round(minutes, 2),
-                "hours": round(minutes / 60, 2),
+
+                "minutes": round(
+                    minutes,
+                    2,
+                ),
+
+                "hours": round(
+                    minutes / 60,
+                    2,
+                ),
+
                 "worker_hours": round(
                     minutes * persons / 60,
                     2,
@@ -455,6 +613,11 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
                 1,
             ),
 
+            "progress_percent": min(
+                round(occupancy_percent, 1),
+                100,
+            ),
+
             "worker_minutes": round(
                 worker_minutes,
                 2,
@@ -467,5 +630,7 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
 
             "persons_distribution": distribution,
 
-            "units_count": len(units),
+            "units_count": len(
+                active_unit_ids
+            ),
         }
