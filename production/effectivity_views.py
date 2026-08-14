@@ -1,5 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
+from warehousemanager.functions import visit_counter
 
 from production.models import WorkStation
 
@@ -159,6 +160,7 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
     WORKDAY_MINUTES = 8 * 60 - 35  # 445 minut
 
     def get(self, request, *args, **kwargs):
+        visit_counter(request.user, "Workstation occupancy")
         today = datetime.date.today()
 
         date_from = self.parse_date(
@@ -297,7 +299,7 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
                 available_minutes += (
                                              end - start
                                      ).total_seconds() / 60
-                
+
         units = (
             ProductionUnit.objects
             .filter(
