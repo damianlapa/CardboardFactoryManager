@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Zajętość stanowisk
+    </title>
+
+    <style>
+
+        @page {
+            size: A4;
+            margin: 14mm 12mm 14mm 12mm;
+
+            @bottom-right {
+                content: "Strona " counter(page) " / " counter(pages);
+                font-size: 8pt;
+                color: #777;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
+            color: #222;
+            line-height: 1.35;
+        }
+
+        h1 {
+            font-size: 20pt;
+            margin: 0 0 4px 0;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 18px;
+        }
+
+        .summary {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .summary td {
+            width: 33.333%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+        }
+
+        .label {
+            font-size: 8pt;
+            color: #777;
+            margin-bottom: 2px;
+        }
+
+        .value {
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        .station {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #ccc;
+
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .station-header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+        }
+
+        .station-header td {
+            vertical-align: middle;
+        }
+
+        .station-name {
+            font-size: 13pt;
+            font-weight: bold;
+        }
+
+        .operations {
+            color: #777;
+            font-size: 8pt;
+        }
+
+        .occupancy {
+            text-align: right;
+            font-size: 13pt;
+            font-weight: bold;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            margin: 5px 0 10px 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #666;
+        }
+
+        .metrics {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        .metrics td {
+            width: 33.333%;
+            text-align: center;
+            padding: 5px;
+            border-right: 1px solid #ddd;
+        }
+
+        .metrics td:last-child {
+            border-right: none;
+        }
+
+        .metric-label {
+            color: #777;
+            font-size: 8pt;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .staff-title {
+            font-weight: bold;
+            margin: 8px 0 4px 0;
+        }
+
+        .staff {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .staff th {
+            text-align: left;
+            font-size: 8pt;
+            color: #666;
+            border-bottom: 1px solid #ddd;
+            padding: 4px;
+        }
+
+        .staff td {
+            padding: 4px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <h1>
+        Zajętość stanowisk
+    </h1>
+
+    <div class="subtitle">
+        Wykorzystanie stanowisk produkcyjnych i roboczogodziny
+    </div>
+
+
+    <table class="summary">
+
+        <tr>
+
+            <td>
+
+                <div class="label">
+                    Okres
+                </div>
+
+                <div class="value">
+                    {{ date_from|date:"d.m.Y" }}
+                    -
+                    {{ date_to|date:"d.m.Y" }}
+                </div>
+
+            </td>
+
+
+            <td>
+
+                <div class="label">
+                    Dni robocze
+                </div>
+
+                <div class="value">
+                    {{ statistics.working_days }}
+                </div>
+
+            </td>
+
+
+            <td>
+
+                <div class="label">
+                    Dostępność dzienna
+                </div>
+
+                <div class="value">
+                    7 h 25 min
+                </div>
+
+            </td>
+
+        </tr>
+
+    </table>
+
+
+    {% for item in statistics.stations %}
+
+        <div class="station">
+
+            <table class="station-header">
+
+                <tr>
+
+                    <td>
+
+                        <div class="station-name">
+                            {{ item.station.name }}
+                        </div>
+
+                        <div class="operations">
+                            {{ item.units_count }} operacji
+                        </div>
+
+                    </td>
+
+
+                    <td class="occupancy">
+                        {{ item.occupancy_percent }}%
+                    </td>
+
+                </tr>
+
+            </table>
+
+
+            <div class="progress">
+
+                <div
+                    class="progress-bar"
+                    style="width: {{ item.progress_percent }}%;"
+                ></div>
+
+            </div>
+
+
+            <table class="metrics">
+
+                <tr>
+
+                    <td>
+
+                        <div class="metric-label">
+                            Zajęte
+                        </div>
+
+                        <div class="metric-value">
+                            {{ item.occupied_hours|floatformat:2 }} h
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        <div class="metric-label">
+                            Roboczogodziny
+                        </div>
+
+                        <div class="metric-value">
+                            {{ item.worker_hours|floatformat:2 }} h
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        <div class="metric-label">
+                            Dostępne
+                        </div>
+
+                        <div class="metric-value">
+                            {{ item.available_hours|floatformat:2 }} h
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            </table>
+
+
+            {% if item.persons_distribution %}
+
+                <div class="staff-title">
+                    Obsada
+                </div>
+
+                <table class="staff">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Liczba osób
+                            </th>
+
+                            <th class="text-right">
+                                Czas
+                            </th>
+
+                            <th class="text-right">
+                                Roboczogodziny
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for distribution in item.persons_distribution %}
+
+                            <tr>
+
+                                <td>
+
+                                    {% if distribution.persons == 0 %}
+
+                                        Bez przypisanych osób
+
+                                    {% elif distribution.persons == 1 %}
+
+                                        1 osoba
+
+                                    {% else %}
+
+                                        {{ distribution.persons }} osoby/osób
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td class="text-right">
+                                    {{ distribution.hours|floatformat:2 }} h
+                                </td>
+
+
+                                <td class="text-right">
+                                    {{ distribution.worker_hours|floatformat:2 }} rbh
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            {% endif %}
+
+        </div>
+
+    {% endfor %}
+
+</body>
+
+</html>

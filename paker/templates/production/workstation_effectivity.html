@@ -60,6 +60,12 @@
                     >
                         Pokaż
                     </button>
+                    <a
+    href="{% url 'workstation_effectivity_pdf' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"
+    class="btn btn-outline-danger"
+>
+    Eksport PDF
+</a>
                 </div>
 
             </form>

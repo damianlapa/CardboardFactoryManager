@@ -636,3 +636,61 @@ class WorkstationEffectivityView(PermissionRequiredMixin, View):
                 active_unit_ids
             ),
         }
+
+
+from django.http import HttpResponse
+
+from production.services.workstation_effectivity_pdf import (
+    WorkstationEffectivityPDF,
+)
+
+
+class WorkstationEffectivityPdfView(
+    WorkstationEffectivityView,
+):
+    def get(self, request, *args, **kwargs):
+        today = datetime.date.today()
+
+        date_from = self.parse_date(
+            request.GET.get("date_from"),
+            today.replace(day=1),
+        )
+
+        date_to = self.parse_date(
+            request.GET.get("date_to"),
+            today,
+        )
+
+        if date_from > date_to:
+            date_from, date_to = (
+                date_to,
+                date_from,
+            )
+
+        statistics = self.get_statistics(
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        pdf = WorkstationEffectivityPDF(
+            statistics=statistics,
+            date_from=date_from,
+            date_to=date_to,
+        ).build()
+
+        filename = (
+            "zajetosc_stanowisk_"
+            f"{date_from:%Y-%m-%d}_"
+            f"{date_to:%Y-%m-%d}.pdf"
+        )
+
+        response = HttpResponse(
+            pdf.getvalue(),
+            content_type="application/pdf",
+        )
+
+        response["Content-Disposition"] = (
+            f'attachment; filename="{filename}"'
+        )
+
+        return response

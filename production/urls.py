@@ -159,6 +159,11 @@ urlpatterns += [
             WorkstationEffectivityView.as_view(),
             name="workstation_effectivity",
         ),
+    path(
+            "effectivity/workstations/pdf/",
+            WorkstationEffectivityPdfView.as_view(),
+            name="workstation_effectivity_pdf",
+        ),
 ]
 
 
