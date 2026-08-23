@@ -2,7 +2,7 @@
 # from django.db import transaction
 # from django.shortcuts import redirect
 # from django.urls import reverse
-# from django.views.generic import CreateView, UpdateView, ListView, DetailView
+# from django.modern_views.generic import CreateView, UpdateView, ListView, DetailView
 # from .models import ProductComplexAssembly, WarehouseStock, WarehouseStockHistory, ProductComplexParts, StockType, Stock, StockSupply, Warehouse
 # from .forms import ProductComplexAssemblyForm, PartsFormSet
 #

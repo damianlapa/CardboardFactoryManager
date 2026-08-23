@@ -1,0 +1,273 @@
+/* ========================================================== */
+/* PAGE HEADER                                                */
+/* ========================================================== */
+
+.app-page-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+}
+
+
+.app-page-title {
+
+    margin: 0;
+
+    font-size: 24px;
+
+    line-height: 1.2;
+
+    font-weight: 700;
+
+    color: var(--app-text);
+}
+
+
+.app-page-description {
+
+    margin-top: 5px;
+
+    color: var(--app-text-secondary);
+}
+
+
+/* ========================================================== */
+/* CARD                                                       */
+/* ========================================================== */
+
+.app-card {
+
+    background: var(--app-surface);
+
+    border: 1px solid var(--app-border);
+
+    border-radius: var(--app-radius);
+
+    box-shadow: var(--app-shadow-sm);
+}
+
+
+.app-card__header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 16px 18px;
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.app-card__title {
+
+    margin: 0;
+
+    font-size: 16px;
+
+    font-weight: 650;
+}
+
+
+.app-card__body {
+
+    padding: 18px;
+}
+
+
+/* ========================================================== */
+/* BUTTON                                                     */
+/* ========================================================== */
+
+.app-btn {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    min-height: 38px;
+
+    padding: 7px 13px;
+
+    border: 1px solid transparent;
+
+    border-radius: var(--app-radius-sm);
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background-color .15s ease,
+        border-color .15s ease,
+        color .15s ease;
+}
+
+
+.app-btn-primary {
+
+    background: var(--app-primary);
+
+    border-color: var(--app-primary);
+
+    color: #ffffff;
+}
+
+
+.app-btn-primary:hover {
+
+    background: var(--app-primary-hover);
+
+    border-color: var(--app-primary-hover);
+
+    color: #ffffff;
+}
+
+
+.app-btn-secondary {
+
+    background: var(--app-surface);
+
+    border-color: var(--app-border-strong);
+
+    color: var(--app-text);
+}
+
+
+.app-btn-secondary:hover {
+
+    background: var(--app-surface-hover);
+
+    color: var(--app-text);
+}
+
+
+/* ========================================================== */
+/* USER                                                       */
+/* ========================================================== */
+
+.app-user {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 5px 9px;
+
+    border-radius: var(--app-radius-sm);
+
+    color: var(--app-text-secondary);
+
+    text-decoration: none;
+}
+
+
+.app-user:hover {
+
+    background: var(--app-surface-hover);
+
+    color: var(--app-text);
+}
+
+
+.app-user__icon {
+
+    width: 28px;
+
+    height: 28px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+.app-header-action {
+
+    position: relative;
+
+    width: 34px;
+
+    height: 34px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: var(--app-radius-sm);
+
+    color: var(--app-text-secondary);
+
+    text-decoration: none;
+}
+
+
+.app-header-action:hover {
+
+    background: var(--app-surface-hover);
+
+    color: var(--app-text);
+}
+
+
+.app-counter {
+
+    position: absolute;
+
+    top: 1px;
+
+    right: 1px;
+
+    min-width: 15px;
+
+    height: 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0 3px;
+
+    border-radius: 8px;
+
+    background: var(--app-danger);
+
+    color: white;
+
+    font-size: 9px;
+
+    font-weight: 700;
+}

@@ -136,13 +136,18 @@ USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
 
+MEDIA_ROOT = "media/paker/"
 
-MEDIA_ROOT = 'media/paker/'
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = "/static/"
+
+# Globalne statiki projektu
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# Wynik collectstatic - nie edytujemy ręcznie
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')

@@ -1,4 +1,4 @@
-# warehouse/views.py
+# warehouse/modern_views.py
 
 from django.views.generic import ListView
 from warehouse.services.products import safe_get_or_create_product

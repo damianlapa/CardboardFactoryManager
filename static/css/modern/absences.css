@@ -1,0 +1,1007 @@
+/* ========================================================== */
+/* PAGE ACTIONS                                               */
+/* ========================================================== */
+
+.app-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+/* ========================================================== */
+/* TOOLBAR                                                    */
+/* ========================================================== */
+
+.absence-toolbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+
+    margin-bottom: 16px;
+
+    padding: 12px 14px;
+}
+
+
+.absence-toolbar__spacer {
+    flex: 1;
+}
+
+
+/* ========================================================== */
+/* FILTERS                                                    */
+/* ========================================================== */
+
+.absence-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+
+.absence-filter-label {
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+.absence-filter-select {
+    height: 38px;
+
+    min-width: 150px;
+
+    padding: 0 34px 0 11px;
+
+    border: 1px solid var(--app-border-strong);
+
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+
+    color: var(--app-text);
+
+    font-family: inherit;
+    font-size: 13px;
+
+    outline: none;
+
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease;
+}
+
+
+.absence-filter-select:focus {
+    border-color: var(--app-primary);
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .1);
+}
+
+
+/* ========================================================== */
+/* MONTH NAVIGATION                                           */
+/* ========================================================== */
+
+.absence-month-button {
+    flex: 0 0 auto;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--app-border-strong);
+
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+
+    color: var(--app-text-secondary);
+
+    text-decoration: none;
+
+    transition:
+        background .15s ease,
+        color .15s ease,
+        border-color .15s ease;
+}
+
+
+.absence-month-button:hover {
+    background: var(--app-surface-hover);
+
+    border-color: var(--app-primary);
+
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* CALENDAR                                                   */
+/* ========================================================== */
+
+.absence-calendar-card {
+    overflow: hidden;
+
+    margin-bottom: 20px;
+}
+
+
+.absence-calendar-scroll {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+
+/* ========================================================== */
+/* TABLE                                                      */
+/* ========================================================== */
+
+.modern-absence-table {
+    width: 100%;
+
+    min-width: 800px;
+
+    margin: 0;
+
+    border: 0;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    background: var(--app-surface);
+
+    table-layout: fixed;
+}
+
+
+.modern-absence-table th,
+.modern-absence-table td {
+    box-sizing: border-box;
+
+    border: 0;
+
+    border-right: 1px solid var(--app-border);
+    border-bottom: 1px solid var(--app-border);
+
+    text-align: center;
+    vertical-align: middle;
+}
+
+
+.modern-absence-table tr:last-child td {
+    border-bottom: 0;
+}
+
+
+.modern-absence-table th:last-child,
+.modern-absence-table td:last-child {
+    border-right: 0;
+}
+
+
+/* ========================================================== */
+/* TABLE HEADER                                               */
+/* ========================================================== */
+
+.modern-absence-table thead th {
+    position: sticky;
+
+    top: 0;
+
+    z-index: 20;
+
+    height: 54px;
+
+    padding: 7px;
+
+    background: #f8fafc;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: .04em;
+}
+
+
+.absence-day-header {
+    position: sticky !important;
+
+    left: 0;
+
+    z-index: 30 !important;
+
+    width: 58px;
+    min-width: 58px;
+}
+
+
+.absence-worker-header {
+    min-width: 100px;
+}
+
+
+.absence-worker-name {
+    overflow: hidden;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* ========================================================== */
+/* DAY COLUMN                                                 */
+/* ========================================================== */
+
+.absence-day-cell {
+    position: sticky;
+
+    left: 0;
+
+    z-index: 10;
+
+    width: 58px;
+    min-width: 58px;
+    height: 38px;
+
+    padding: 0;
+
+    background: #ffffff;
+
+    color: var(--app-text-secondary);
+
+    font-weight: 700;
+}
+
+
+.absence-day-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100%;
+}
+
+
+.absence-day-cell--weekend {
+    background: #fff7ed;
+
+    color: #c2410c;
+}
+
+
+.absence-day-cell--today {
+    background: #eff6ff;
+
+    color: var(--app-primary);
+
+    box-shadow:
+        inset 3px 0 0 var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* CELLS                                                      */
+/* ========================================================== */
+
+.absence-cell {
+    position: relative;
+
+    height: 38px;
+
+    padding: 0;
+
+    background: #ffffff;
+
+    color: var(--app-text);
+
+    cursor: pointer;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    transition:
+        filter .1s ease,
+        box-shadow .1s ease,
+        background-color .1s ease;
+}
+
+
+.absence-cell:hover {
+    z-index: 5;
+
+    box-shadow:
+        inset 0 0 0 2px var(--app-primary);
+
+    filter: brightness(.98);
+}
+
+
+.absence-cell--past {
+    background: #dcfce7;
+}
+
+
+.absence-cell--weekend {
+    background: #ffedd5;
+}
+
+
+.absence-cell--today {
+    box-shadow:
+        inset 0 0 0 1px var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* DYNAMIC STATES                                             */
+/* ========================================================== */
+
+.absence-cell--holiday {
+    background: #fbcfe8;
+
+    color: #9d174d;
+}
+
+
+.absence-cell--absence {
+    background: #ef4444;
+
+    color: #ffffff;
+}
+
+
+.absence-cell--overtime {
+    background: #86efac;
+
+    color: #14532d;
+}
+
+
+.absence-cell--partial {
+    background: #92400e;
+
+    color: #ffffff;
+}
+
+
+.absence-cell--excluded {
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            #f8fafc,
+            #f8fafc 5px,
+            #e2e8f0 5px,
+            #e2e8f0 10px
+        );
+
+    color: var(--app-text-muted);
+
+    cursor: default;
+}
+
+
+.absence-cell--excluded:hover {
+    box-shadow: none;
+
+    filter: none;
+}
+
+
+/* ========================================================== */
+/* LEGEND                                                     */
+/* ========================================================== */
+
+.absence-legend {
+    max-width: 100%;
+
+    overflow: hidden;
+}
+
+
+.absence-legend__description {
+    margin-top: 3px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.absence-legend__icon {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+.absence-legend__body {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(220px, 1fr));
+
+    gap: 0;
+
+    padding: 8px 14px 14px;
+}
+
+
+.absence-legend-item {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    min-height: 45px;
+
+    padding: 6px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.absence-legend-symbol {
+    flex: 0 0 auto;
+
+    min-width: 34px;
+    height: 28px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 5px;
+
+    border-radius: 5px;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+
+/* ========================================================== */
+/* LEGEND COLORS                                              */
+/* ========================================================== */
+
+.legend-holiday {
+    background: #fbcfe8;
+}
+
+
+.legend-weekend {
+    background: #fed7aa;
+}
+
+
+.legend-present {
+    background: #86efac;
+}
+
+
+.legend-overtime {
+    background: #86efac;
+
+    color: #14532d;
+}
+
+
+.legend-partial {
+    background: #92400e;
+
+    color: #ffffff;
+}
+
+
+.legend-late {
+    background: #fde047;
+
+    color: #111827;
+}
+
+
+.legend-absence {
+    background: #ef4444;
+
+    color: #ffffff;
+}
+
+
+.legend-delegation {
+    background: #3b82f6;
+
+    color: #ffffff;
+}
+
+
+.legend-other {
+    background: #8b5cf6;
+
+    color: #ffffff;
+}
+
+
+.legend-excluded {
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            #f8fafc,
+            #f8fafc 4px,
+            #e2e8f0 4px,
+            #e2e8f0 8px
+        );
+
+    color: var(--app-text-secondary);
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE                                                 */
+/* ========================================================== */
+
+@media (max-width: 900px) {
+
+    .app-page-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .app-page-actions {
+        width: 100%;
+
+        flex-wrap: wrap;
+    }
+
+
+    .absence-toolbar {
+        align-items: stretch;
+
+        flex-wrap: wrap;
+    }
+
+
+    .absence-filter-group {
+        flex: 1 1 180px;
+    }
+
+
+    .absence-filter-select {
+        width: 100%;
+    }
+
+
+    .absence-toolbar__spacer {
+        display: none;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .absence-toolbar {
+        gap: 8px;
+    }
+
+
+    .absence-month-button {
+        align-self: flex-end;
+    }
+
+
+    .absence-toolbar .app-btn {
+        width: 100%;
+    }
+
+
+    .absence-legend__body {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* ========================================================== */
+/* DAY EDITOR MODAL                                           */
+/* ========================================================== */
+
+.absence-modal {
+    border: 0;
+
+    border-radius: var(--app-radius-lg);
+
+    box-shadow:
+        0 20px 60px rgba(15, 23, 42, .18);
+}
+
+
+.absence-modal .modal-header {
+    padding: 18px 20px;
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.absence-modal .modal-body {
+    padding: 20px;
+}
+
+
+.absence-modal .modal-footer {
+    padding: 14px 20px;
+
+    border-top: 1px solid var(--app-border);
+}
+
+
+.absence-modal__title {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    color: var(--app-text);
+}
+
+
+.absence-modal__subtitle {
+    margin-top: 3px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+/* ========================================================== */
+/* MODAL SECTIONS                                             */
+/* ========================================================== */
+
+.absence-modal-section + .absence-modal-section {
+    margin-top: 24px;
+
+    padding-top: 22px;
+
+    border-top: 1px solid var(--app-border);
+}
+
+
+.absence-modal-section__header {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 11px;
+
+    margin-bottom: 16px;
+}
+
+
+.absence-modal-section__icon {
+    flex: 0 0 auto;
+
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: #fee2e2;
+
+    color: #dc2626;
+}
+
+
+.absence-modal-section__icon--overtime {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.absence-modal-section__title {
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+.absence-modal-section__description {
+    margin-top: 2px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+}
+
+
+/* ========================================================== */
+/* FORM                                                       */
+/* ========================================================== */
+
+.absence-form-field {
+    margin-top: 13px;
+}
+
+
+.absence-form-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.absence-form-control {
+    width: 100%;
+
+    min-height: 40px;
+
+    padding: 8px 11px;
+
+    border: 1px solid var(--app-border-strong);
+
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+
+    color: var(--app-text);
+
+    font-family: inherit;
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease;
+}
+
+
+.absence-form-control:focus {
+    border-color: var(--app-primary);
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .1);
+}
+
+
+textarea.absence-form-control {
+    resize: vertical;
+}
+
+
+.absence-input-group {
+    display: flex;
+}
+
+
+.absence-input-group
+.absence-form-control {
+    border-radius:
+        var(--app-radius-sm)
+        0
+        0
+        var(--app-radius-sm);
+}
+
+
+.absence-input-addon {
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 12px;
+
+    border:
+        1px
+        solid
+        var(--app-border-strong);
+
+    border-left: 0;
+
+    border-radius:
+        0
+        var(--app-radius-sm)
+        var(--app-radius-sm)
+        0;
+
+    background: #f8fafc;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+/* ========================================================== */
+/* SWITCH                                                     */
+/* ========================================================== */
+
+.absence-switch {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    user-select: none;
+}
+
+
+.absence-switch input {
+    position: absolute;
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+
+.absence-switch__control {
+    position: relative;
+
+    flex: 0 0 auto;
+
+    width: 38px;
+    height: 22px;
+
+    border-radius: 20px;
+
+    background: #cbd5e1;
+
+    transition: background .15s ease;
+}
+
+
+.absence-switch__control::after {
+    content: "";
+
+    position: absolute;
+
+    top: 3px;
+    left: 3px;
+
+    width: 16px;
+    height: 16px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, .2);
+
+    transition: transform .15s ease;
+}
+
+
+.absence-switch input:checked
++ .absence-switch__control {
+    background: var(--app-primary);
+}
+
+
+.absence-switch input:checked
++ .absence-switch__control::after {
+    transform: translateX(16px);
+}
+
+
+.absence-switch__label {
+    color: var(--app-text);
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* ========================================================== */
+/* EXTRA HOURS                                                */
+/* ========================================================== */
+
+.absence-extra-hours-fields {
+    margin-top: 14px;
+
+    padding: 14px;
+
+    border-radius: var(--app-radius-sm);
+
+    background: #f8fafc;
+}
+
+
+.absence-checkbox {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 13px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+
+    cursor: pointer;
+}
+
+
+.absence-help {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 7px;
+
+    margin-top: 13px;
+
+    color: var(--app-text-muted);
+
+    font-size: 11px;
+
+    line-height: 1.45;
+}
+
+
+.absence-help i {
+    margin-top: 2px;
+
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* ERROR                                                      */
+/* ========================================================== */
+
+.absence-modal-error {
+    margin-bottom: 15px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #fecaca;
+
+    border-radius: var(--app-radius-sm);
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    font-size: 12px;
+}

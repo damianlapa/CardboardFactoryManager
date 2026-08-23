@@ -27,7 +27,7 @@ urlpatterns += [
     path('absence-delete/', AbsenceDelete.as_view(), name='absence-delete'),
 ]
 
-# ajax views
+# ajax modern_views
 urlpatterns += [
     path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
 ]

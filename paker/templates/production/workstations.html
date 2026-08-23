@@ -1,54 +1,1049 @@
-{% extends '__base2__.html' %}
-{% block title %}Workstations{% endblock %}
+{% extends '__base_modern__.html' %}
+
+{% block title %}Stanowiska produkcyjne{% endblock %}
+
+{% block page_title %}
+    Stanowiska produkcyjne
+{% endblock %}
+
+
 {% block content %}
-<a href="{% url 'oee-view' year=2025 month=5 %}">x</a>
-<div style="width: 82%; box-sizing: border-box; float: left">
 
-{% for s in stations %}
+<div class="app-page-header">
 
-<div class="conatianer-90 border-solid-2 bg-white height-100" style="margin: 10px;">
-    <a href="{% url 'workstation-details' workstation_id=s.id %}" class="no-decor">
-    <div style="float: left; width: 33%; height: 100%; border-right: solid 3px black; box-sizing: border-box;"  {% if s.currently_in_production != "UNOCCUPIED" %}class="bg-green white"{% else %}class="black"{% endif %}>
-        <h1>{{ s }}</h1>
+    <div>
+        <h1 class="app-page-title">
+            Stanowiska produkcyjne
+        </h1>
+
+        <div class="app-page-description">
+            Aktualny stan produkcji i obsady stanowisk
+        </div>
     </div>
+
+    <div class="app-page-actions">
+        <a
+            href="{% url 'oee-view' year=2025 month=5 %}"
+            class="app-btn app-btn-secondary"
+        >
+            <i class="fa-solid fa-chart-line"></i>
+            OEE
         </a>
-    <div style="float: left; width: 67%; height: 100%" class="black">
-        <div style="height: 50%; border-bottom: solid 3px grey; box-sizing: border-box; padding: 5px;">
-            <div style="box-sizing: border-box; width: 25%; float: left;">
-                {% if s.currently_in_production != 'UNOCCUPIED' %}
-                <span class="live-blink bold" style="color: white;">LIVE</span>
-                {% else %}
-                <span style="color: white;">.</span>
-                {% endif %}
-            </div>
-            <div style="box-sizing: border-box; width: 75%; float: left;">
-                <div style="box-sizing: border-box; width: 75%; float: left; text-align: left;">
-                {{ s.currently_in_production }}
-                </div>
-                <div style="box-sizing: border-box; width: 25%; float: left; text-align: left;">
-                    {{ s.currently_in_production.planned_end|date:"d M Y, H:i:s" }}
-                </div>
-                <div style="clear: both;"></div>
-            </div>
-            <div style="clear: both;"></div>
-        </div>
-        <div style="height: 50%; box-sizing: border-box; padding: 5px;">
-            <div style="box-sizing: border-box; width: 25%; float: left;"><span>NEXT:</span></div>
-            <div style="box-sizing: border-box; width: 75%; float: left; text-align: left;">{{ s.first_planned }}</div>
-            <div style="clear: both;"></div>
-        </div>
     </div>
-    <div style="clear: both"></div>
+
 </div>
-    {% endfor %}
+
+
+<div class="workstations-layout">
+
+
+    <!-- ====================================================== -->
+    <!-- WORKSTATIONS                                           -->
+    <!-- ====================================================== -->
+
+    <section class="workstations-main">
+
+        <div class="workstations-list">
+
+            {% for s in stations %}
+
+                <article
+                    class="
+                        workstation-card
+                        {% if s.currently_in_production != 'UNOCCUPIED' %}
+                            workstation-card--active
+                        {% else %}
+                            workstation-card--idle
+                        {% endif %}
+                    "
+                >
+
+                    <!-- STATION -->
+                    <a
+                        href="{% url 'workstation-details' workstation_id=s.id %}"
+                        class="workstation-card__station"
+                    >
+
+                        <div class="workstation-card__station-icon">
+
+                            {% if s.currently_in_production != 'UNOCCUPIED' %}
+                                <i class="fa-solid fa-industry"></i>
+                            {% else %}
+                                <i class="fa-solid fa-pause"></i>
+                            {% endif %}
+
+                        </div>
+
+                        <div class="workstation-card__station-data">
+
+                            <div class="workstation-card__label">
+                                Stanowisko
+                            </div>
+
+                            <h2 class="workstation-card__name">
+                                {{ s }}
+                            </h2>
+
+                            {% if s.currently_in_production != 'UNOCCUPIED' %}
+
+                                <span class="workstation-status workstation-status--live">
+                                    <span class="workstation-status__dot"></span>
+                                    LIVE
+                                </span>
+
+                            {% else %}
+
+                                <span class="workstation-status workstation-status--idle">
+                                    Wolne
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                        <div class="workstation-card__arrow">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+
+                    </a>
+
+
+                    <!-- PRODUCTION DATA -->
+                    <div class="workstation-card__content">
+
+
+                        <!-- CURRENT -->
+                        <div class="production-row production-row--current">
+
+                            <div class="production-row__icon">
+
+                                <i class="fa-solid fa-play"></i>
+
+                            </div>
+
+
+                            <div class="production-row__body">
+
+                                <div class="production-row__header">
+
+                                    <span class="production-row__title">
+                                        Aktualnie
+                                    </span>
+
+                                    {% if s.currently_in_production != 'UNOCCUPIED' %}
+
+                                        <span class="production-row__badge production-row__badge--active">
+                                            W produkcji
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                {% if s.currently_in_production != 'UNOCCUPIED' %}
+
+                                    <div class="production-row__value">
+                                        {{ s.currently_in_production }}
+                                    </div>
+
+                                    {% if s.currently_in_production.planned_end %}
+
+                                        <div class="production-row__meta">
+
+                                            <i class="fa-regular fa-clock"></i>
+
+                                            Planowane zakończenie:
+
+                                            <strong>
+                                                {{ s.currently_in_production.planned_end|date:"d.m.Y H:i" }}
+                                            </strong>
+
+                                        </div>
+
+                                    {% endif %}
+
+                                {% else %}
+
+                                    <div class="production-row__empty">
+                                        Brak aktywnego zlecenia
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- NEXT -->
+                        <div class="production-row">
+
+                            <div class="production-row__icon production-row__icon--next">
+
+                                <i class="fa-solid fa-forward-step"></i>
+
+                            </div>
+
+
+                            <div class="production-row__body">
+
+                                <div class="production-row__header">
+
+                                    <span class="production-row__title">
+                                        Następne
+                                    </span>
+
+                                </div>
+
+
+                                {% if s.first_planned %}
+
+                                    <div class="production-row__value production-row__value--secondary">
+                                        {{ s.first_planned }}
+                                    </div>
+
+                                {% else %}
+
+                                    <div class="production-row__empty">
+                                        Brak zaplanowanego zlecenia
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            {% empty %}
+
+                <div class="app-empty-state">
+
+                    <div class="app-empty-state__icon">
+                        <i class="fa-solid fa-industry"></i>
+                    </div>
+
+                    <div class="app-empty-state__title">
+                        Brak stanowisk
+                    </div>
+
+                    <div class="app-empty-state__description">
+                        Nie znaleziono stanowisk produkcyjnych.
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- ====================================================== -->
+    <!-- WORKERS                                                -->
+    <!-- ====================================================== -->
+
+    <aside class="workers-panel">
+
+        <div class="app-card workers-card">
+
+            <div class="app-card__header">
+
+                <div>
+
+                    <h2 class="app-card__title">
+                        Pracownicy
+                    </h2>
+
+                    <div class="workers-card__subtitle">
+                        Aktualna obsada
+                    </div>
+
+                </div>
+
+                <div class="workers-card__icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+
+            </div>
+
+
+            <div class="workers-list">
+
+                {% for w in workers_data %}
+
+                    <div class="worker-item">
+
+                        <div class="worker-item__avatar">
+
+                            <i class="fa-solid fa-user"></i>
+
+                        </div>
+
+
+                        <div class="worker-item__content">
+
+                            <div class="worker-item__name">
+                                {{ w.0 }}
+                            </div>
+
+
+                            {% if w.1 == 'Free' %}
+
+                                <div class="worker-status worker-status--free">
+
+                                    <span class="worker-status__dot"></span>
+
+                                    Wolny
+
+                                </div>
+
+                            {% else %}
+
+                                <div class="worker-status worker-status--busy">
+
+                                    <span class="worker-status__dot"></span>
+
+                                    {{ w.1 }}
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                {% empty %}
+
+                    <div class="workers-empty">
+                        Brak danych o pracownikach.
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </aside>
+
 </div>
-<div style="width: 18%; box-sizing: border-box; float: left">
-{% for w in workers_data %}
-    <div class="{% if w.1 == 'Free' %}white{% else %}red{% endif %}" style="padding: 10px; font-weight: bold; font-size: 15px;">
-        {{ w.0 }} - {{ w.1 }}
-    </div>
-{% endfor %}
-</div>
-<div style="clear: both;"></div>
+
+{% endblock %}
+
+
+{% block style %}
+
+<style>
+
+/* ========================================================== */
+/* LAYOUT                                                     */
+/* ========================================================== */
+
+.workstations-layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        300px;
+
+    gap: 24px;
+
+    align-items: start;
+}
+
+
+.workstations-main {
+    min-width: 0;
+}
+
+
+.workstations-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+
+/* ========================================================== */
+/* WORKSTATION CARD                                           */
+/* ========================================================== */
+
+.workstation-card {
+    display: grid;
+
+    grid-template-columns:
+        minmax(230px, 30%)
+        minmax(0, 1fr);
+
+    overflow: hidden;
+
+    background: var(--app-surface);
+
+    border: 1px solid var(--app-border);
+
+    border-radius: var(--app-radius-lg);
+
+    box-shadow: var(--app-shadow-sm);
+
+    transition:
+        box-shadow .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
+}
+
+
+.workstation-card:hover {
+    border-color: var(--app-border-strong);
+
+    box-shadow: var(--app-shadow);
+}
+
+
+.workstation-card--active {
+    border-left: 4px solid var(--app-success);
+}
+
+
+.workstation-card--idle {
+    border-left: 4px solid var(--app-border-strong);
+}
+
+
+/* ========================================================== */
+/* STATION SIDE                                               */
+/* ========================================================== */
+
+.workstation-card__station {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    min-width: 0;
+
+    padding: 22px 20px;
+
+    border-right: 1px solid var(--app-border);
+
+    color: var(--app-text);
+
+    text-decoration: none;
+
+    background: #fbfcfe;
+
+    transition: background .15s ease;
+}
+
+
+.workstation-card__station:hover {
+    background: var(--app-primary-soft);
+
+    color: var(--app-text);
+}
+
+
+.workstation-card__station-icon {
+    flex: 0 0 auto;
+
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eef2f7;
+
+    color: var(--app-text-secondary);
+
+    font-size: 18px;
+}
+
+
+.workstation-card--active
+.workstation-card__station-icon {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.workstation-card__station-data {
+    min-width: 0;
+
+    flex: 1;
+}
+
+
+.workstation-card__label {
+    margin-bottom: 3px;
+
+    color: var(--app-text-muted);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: .08em;
+
+    text-transform: uppercase;
+}
+
+
+.workstation-card__name {
+    margin: 0 0 9px;
+
+    font-size: 21px;
+
+    line-height: 1.2;
+
+    font-weight: 700;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.workstation-card__arrow {
+    flex: 0 0 auto;
+
+    color: var(--app-text-muted);
+
+    font-size: 13px;
+}
+
+
+/* ========================================================== */
+/* STATUS                                                     */
+/* ========================================================== */
+
+.workstation-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: .04em;
+
+    text-transform: uppercase;
+}
+
+
+.workstation-status--live {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.workstation-status--idle {
+    background: #f1f5f9;
+
+    color: #64748b;
+}
+
+
+.workstation-status__dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    animation: workstation-live 1.5s infinite;
+}
+
+
+@keyframes workstation-live {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, .45);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+
+/* ========================================================== */
+/* PRODUCTION                                                 */
+/* ========================================================== */
+
+.workstation-card__content {
+    display: grid;
+
+    grid-template-rows:
+        1fr
+        1fr;
+}
+
+
+.production-row {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 14px;
+
+    min-width: 0;
+
+    padding: 17px 20px;
+}
+
+
+.production-row + .production-row {
+    border-top: 1px solid var(--app-border);
+}
+
+
+.production-row__icon {
+    flex: 0 0 auto;
+
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    font-size: 12px;
+}
+
+
+.production-row__icon--next {
+    background: #eff6ff;
+
+    color: var(--app-primary);
+}
+
+
+.production-row__body {
+    min-width: 0;
+
+    flex: 1;
+}
+
+
+.production-row__header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 5px;
+}
+
+
+.production-row__title {
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+
+    font-weight: 650;
+
+    text-transform: uppercase;
+
+    letter-spacing: .05em;
+}
+
+
+.production-row__badge {
+    padding: 3px 7px;
+
+    border-radius: 20px;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+}
+
+
+.production-row__badge--active {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.production-row__value {
+    color: var(--app-text);
+
+    font-size: 15px;
+
+    line-height: 1.4;
+
+    font-weight: 600;
+}
+
+
+.production-row__value--secondary {
+    font-weight: 500;
+}
+
+
+.production-row__meta {
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 6px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.production-row__empty {
+    color: var(--app-text-muted);
+
+    font-size: 13px;
+}
+
+
+/* ========================================================== */
+/* WORKERS                                                    */
+/* ========================================================== */
+
+.workers-panel {
+    position: sticky;
+
+    top: 74px;
+}
+
+
+.workers-card {
+    overflow: hidden;
+}
+
+
+.workers-card__subtitle {
+    margin-top: 3px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.workers-card__icon {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+.workers-list {
+    display: flex;
+
+    flex-direction: column;
+}
+
+
+.worker-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 12px 15px;
+}
+
+
+.worker-item + .worker-item {
+    border-top: 1px solid var(--app-border);
+}
+
+
+.worker-item__avatar {
+    flex: 0 0 auto;
+
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1f5f9;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.worker-item__content {
+    min-width: 0;
+}
+
+
+.worker-item__name {
+    margin-bottom: 3px;
+
+    color: var(--app-text);
+
+    font-size: 13px;
+
+    font-weight: 650;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+.worker-status {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 11px;
+
+    line-height: 1.3;
+}
+
+
+.worker-status__dot {
+    flex: 0 0 auto;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+}
+
+
+.worker-status--free {
+    color: #15803d;
+}
+
+
+.worker-status--free
+.worker-status__dot {
+    background: #22c55e;
+}
+
+
+.worker-status--busy {
+    color: var(--app-danger);
+}
+
+
+.worker-status--busy
+.worker-status__dot {
+    background: var(--app-danger);
+}
+
+
+.workers-empty {
+    padding: 20px;
+
+    color: var(--app-text-muted);
+
+    text-align: center;
+
+    font-size: 13px;
+}
+
+
+/* ========================================================== */
+/* EMPTY STATE                                                */
+/* ========================================================== */
+
+.app-empty-state {
+    padding: 60px 30px;
+
+    border: 1px dashed var(--app-border-strong);
+
+    border-radius: var(--app-radius-lg);
+
+    background: var(--app-surface);
+
+    text-align: center;
+}
+
+
+.app-empty-state__icon {
+    margin-bottom: 12px;
+
+    color: var(--app-text-muted);
+
+    font-size: 30px;
+}
+
+
+.app-empty-state__title {
+    margin-bottom: 4px;
+
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+
+.app-empty-state__description {
+    color: var(--app-text-secondary);
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE                                                 */
+/* ========================================================== */
+
+@media (max-width: 1150px) {
+
+    .workstations-layout {
+        grid-template-columns:
+            minmax(0, 1fr)
+            240px;
+    }
+
+
+    .workstation-card {
+        grid-template-columns:
+            230px
+            minmax(0, 1fr);
+    }
+
+}
+
+
+@media (max-width: 900px) {
+
+    .workstations-layout {
+        grid-template-columns: 1fr;
+    }
+
+
+    .workers-panel {
+        position: static;
+    }
+
+
+    .workstation-card {
+        grid-template-columns: 1fr;
+    }
+
+
+    .workstation-card__station {
+        border-right: 0;
+
+        border-bottom: 1px solid var(--app-border);
+    }
+
+
+    .workers-list {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+
+    .worker-item:nth-child(2) {
+        border-top: 0;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .app-page-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .workstation-card__content {
+        grid-template-rows: auto;
+    }
+
+
+    .production-row {
+        padding: 15px;
+    }
+
+
+    .workers-list {
+        grid-template-columns: 1fr;
+    }
+
+
+    .worker-item:nth-child(2) {
+        border-top: 1px solid var(--app-border);
+    }
+
+}
+
+</style>
 
 {% endblock %}
