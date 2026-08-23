@@ -24,6 +24,9 @@ from warehousemanager.modern_views.vacations import (
 from warehousemanager.modern_views.employees import (
     ModernEmployeeListView,
 )
+from warehousemanager.modern_views.punches import (
+    ModernPunchListView,
+)
 
 
 urlpatterns = [
@@ -170,6 +173,26 @@ urlpatterns = [
         "legacy/vacations/<int:person_id>/",
         PersonsVacations.as_view(),
         name="legacy-vacation-person",
+    ),
+
+    # ============================================================
+    # PUNCHES
+    # ACTIVE: MODERN
+    # ============================================================
+
+    path(
+        "punches/",
+        ModernPunchListView.as_view(),
+        name="punches",
+    ),
+
+
+    # Legacy fallback
+
+    path(
+        "legacy/punches/",
+        PunchesList.as_view(),
+        name="legacy-punches",
     ),
 
 

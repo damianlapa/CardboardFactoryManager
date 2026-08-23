@@ -1,0 +1,613 @@
+/* ========================================================== */
+/* PAGE ACTIONS                                               */
+/* ========================================================== */
+
+.app-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+/* ========================================================== */
+/* TOOLBAR                                                    */
+/* ========================================================== */
+
+.punch-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 14px;
+
+    margin-bottom: 14px;
+
+    padding: 12px 14px;
+}
+
+
+.punch-toolbar__actions {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.punch-status-badge {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 7px;
+
+    min-height: 30px;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.punch-status-badge--active {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.punch-status-badge--all {
+    background: #f1f5f9;
+
+    color: #475569;
+}
+
+
+/* ========================================================== */
+/* FILTERS                                                    */
+/* ========================================================== */
+
+.punch-filters {
+    margin-bottom: 14px;
+
+    overflow: hidden;
+}
+
+
+.punch-section-description {
+    margin-top: 3px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.punch-clear-filters {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 6px 9px;
+
+    border: 0;
+
+    border-radius: var(--app-radius-sm);
+
+    background: transparent;
+
+    color: var(--app-text-secondary);
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background-color .15s ease,
+        color .15s ease;
+}
+
+
+.punch-clear-filters:hover {
+    background: var(--app-surface-hover);
+
+    color: var(--app-primary);
+}
+
+
+.punch-filters__body {
+    display: grid;
+
+    grid-template-columns:
+        170px
+        minmax(250px, 1fr)
+        240px
+        240px
+        240px;
+
+    gap: 12px;
+
+    padding: 14px;
+}
+
+
+.punch-filter-field {
+    min-width: 0;
+}
+
+
+.punch-filter-field--wide {
+    min-width: 220px;
+}
+
+
+.punch-filter-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+.punch-filter-control {
+    width: 100%;
+    height: 38px;
+
+    min-width: 0;
+
+    padding: 0 10px;
+
+    border: 1px solid var(--app-border-strong);
+
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+
+    color: var(--app-text);
+
+    font-family: inherit;
+    font-size: 13px;
+
+    outline: none;
+
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease;
+}
+
+
+.punch-filter-control:focus {
+    border-color: var(--app-primary);
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .1);
+}
+
+
+/* ========================================================== */
+/* SEARCH                                                     */
+/* ========================================================== */
+
+.punch-search {
+    position: relative;
+}
+
+
+.punch-search > i {
+    position: absolute;
+
+    top: 50%;
+    left: 11px;
+
+    transform: translateY(-50%);
+
+    color: var(--app-text-muted);
+
+    font-size: 11px;
+
+    pointer-events: none;
+}
+
+
+.punch-search
+.punch-filter-control {
+    padding-left: 31px;
+}
+
+
+/* ========================================================== */
+/* RANGE                                                      */
+/* ========================================================== */
+
+.punch-range {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto
+        minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 6px;
+}
+
+
+.punch-range > span {
+    color: var(--app-text-muted);
+
+    font-size: 11px;
+}
+
+
+/* ========================================================== */
+/* TABLE CARD                                                 */
+/* ========================================================== */
+
+.punch-list-card {
+    overflow: hidden;
+}
+
+
+.punch-result-count {
+    min-width: 34px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 9px;
+
+    border-radius: 20px;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+
+.punch-table-scroll {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+
+/* ========================================================== */
+/* TABLE                                                      */
+/* ========================================================== */
+
+.punch-table {
+    width: 100%;
+
+    min-width: 1200px;
+
+    border-collapse: collapse;
+
+    background: var(--app-surface);
+}
+
+
+.punch-table th {
+    padding: 11px 12px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    background: #f8fafc;
+
+    color: var(--app-text-secondary);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-align: left;
+
+    text-transform: uppercase;
+
+    letter-spacing: .04em;
+
+    white-space: nowrap;
+}
+
+
+.punch-table td {
+    padding: 11px 12px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    color: var(--app-text);
+
+    font-size: 12px;
+
+    vertical-align: middle;
+}
+
+
+.punch-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+.punch-row {
+    cursor: pointer;
+
+    transition: background-color .12s ease;
+}
+
+
+.punch-row:hover {
+    background: #f8fafc;
+}
+
+
+.punch-row:focus {
+    outline: 2px solid var(--app-primary);
+    outline-offset: -2px;
+}
+
+
+/* ========================================================== */
+/* TABLE VALUES                                               */
+/* ========================================================== */
+
+.punch-type-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 25px;
+
+    padding: 3px 8px;
+
+    border-radius: 20px;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+.punch-identifier {
+    color: var(--app-text);
+
+    white-space: nowrap;
+}
+
+
+.punch-name {
+    font-weight: 600;
+}
+
+
+.punch-number {
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+}
+
+
+.punch-cardboard {
+    display: inline-flex;
+
+    padding: 3px 7px;
+
+    border-radius: 5px;
+
+    background: #f8fafc;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+.punch-muted {
+    color: var(--app-text-muted);
+}
+
+
+/* ========================================================== */
+/* CUSTOMERS                                                  */
+/* ========================================================== */
+
+.punch-customers {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 4px;
+}
+
+
+.punch-customer {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 23px;
+
+    padding: 2px 7px;
+
+    border-radius: 20px;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+
+    font-size: 10px;
+    font-weight: 650;
+
+    white-space: nowrap;
+}
+
+
+/* ========================================================== */
+/* ACTION                                                     */
+/* ========================================================== */
+
+.punch-action-cell {
+    width: 52px;
+
+    text-align: right;
+}
+
+
+.punch-details-button {
+    width: 32px;
+    height: 32px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: var(--app-radius-sm);
+
+    color: var(--app-text-muted);
+
+    text-decoration: none;
+
+    transition:
+        background .15s ease,
+        color .15s ease;
+}
+
+
+.punch-details-button:hover {
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* EMPTY STATES                                               */
+/* ========================================================== */
+
+.punch-empty,
+.punch-no-results {
+    padding: 50px 24px;
+
+    text-align: center;
+}
+
+
+.punch-empty__icon,
+.punch-no-results__icon {
+    margin-bottom: 10px;
+
+    color: var(--app-text-muted);
+
+    font-size: 28px;
+}
+
+
+.punch-empty__title,
+.punch-no-results__title {
+    margin-bottom: 4px;
+
+    color: var(--app-text);
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+
+.punch-empty__description,
+.punch-no-results__description {
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE                                                 */
+/* ========================================================== */
+
+@media (max-width: 1450px) {
+
+    .punch-filters__body {
+        grid-template-columns:
+            170px
+            minmax(250px, 1fr)
+            repeat(3, 210px);
+    }
+
+}
+
+
+@media (max-width: 1200px) {
+
+    .punch-filters__body {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+
+    .punch-filter-field--wide {
+        min-width: 0;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .app-page-header {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .app-page-actions {
+        width: 100%;
+    }
+
+
+    .app-page-actions .app-btn {
+        width: 100%;
+    }
+
+
+    .punch-toolbar {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .punch-toolbar__actions {
+        width: 100%;
+    }
+
+
+    .punch-toolbar__actions .app-btn {
+        width: 100%;
+
+        justify-content: center;
+    }
+
+
+    .punch-filters__body {
+        grid-template-columns: 1fr;
+    }
+
+}

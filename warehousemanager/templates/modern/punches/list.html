@@ -1,0 +1,620 @@
+{% extends "__base_modern__.html" %}
+{% load static %}
+
+{% block title %}Wykrojniki{% endblock %}
+
+{% block page_title %}
+    Wykrojniki
+{% endblock %}
+
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/punches.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+
+        <h1 class="app-page-title">
+            Wykrojniki
+        </h1>
+
+        <div class="app-page-description">
+            Kartoteka wykrojników produkcyjnych
+        </div>
+
+    </div>
+
+
+    <div class="app-page-actions">
+
+        {% if perms.warehousemanager.add_punch %}
+
+            <a
+                href="{% url 'punch-add' %}"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Dodaj wykrojnik
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- TOOLBAR                                                 -->
+<!-- ======================================================= -->
+
+<div class="punch-toolbar app-card">
+
+    <div class="punch-toolbar__status">
+
+        {% if include_inactive %}
+
+            <span class="punch-status-badge punch-status-badge--all">
+                <i class="fa-solid fa-layer-group"></i>
+                Wszystkie wykrojniki
+            </span>
+
+        {% else %}
+
+            <span class="punch-status-badge punch-status-badge--active">
+                <i class="fa-solid fa-circle-check"></i>
+                Tylko aktywne
+            </span>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="punch-toolbar__actions">
+
+        {% if include_inactive %}
+
+            <a
+                href="{% url 'punches' %}"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-circle-check"></i>
+                Tylko aktywne
+            </a>
+
+        {% else %}
+
+            <a
+                href="{% url 'punches' %}?all=1"
+                class="app-btn app-btn-secondary"
+            >
+                <i class="fa-solid fa-layer-group"></i>
+                Pokaż wszystkie
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- FILTERS                                                 -->
+<!-- ======================================================= -->
+
+<div class="punch-filters app-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Filtry
+            </h2>
+
+            <div class="punch-section-description">
+                Filtry działają bez przeładowania strony
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="punch-clear-filters"
+            id="punchClearFilters"
+        >
+            <i class="fa-solid fa-rotate-left"></i>
+            Wyczyść
+        </button>
+
+    </div>
+
+
+    <div class="punch-filters__body">
+
+
+        <!-- TYPE -->
+
+        <div class="punch-filter-field">
+
+            <label
+                for="punchTypeFilter"
+                class="punch-filter-label"
+            >
+                Typ
+            </label>
+
+            <select
+                id="punchTypeFilter"
+                class="punch-filter-control"
+            >
+
+                <option value="">
+                    Wszystkie typy
+                </option>
+
+                {% for punch_type in punch_types %}
+
+                    <option value="{{ punch_type.value }}">
+                        {{ punch_type.label }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- NAME -->
+
+        <div class="punch-filter-field punch-filter-field--wide">
+
+            <label
+                for="punchNameFilter"
+                class="punch-filter-label"
+            >
+                Nazwa
+            </label>
+
+            <div class="punch-search">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="search"
+                    id="punchNameFilter"
+                    class="punch-filter-control"
+                    placeholder="Szukaj po nazwie lub identyfikatorze"
+                    autocomplete="off"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- WIDTH -->
+
+        <div class="punch-filter-field">
+
+            <label class="punch-filter-label">
+                Szerokość
+            </label>
+
+            <div class="punch-range">
+
+                <input
+                    type="number"
+                    id="punchWidthMin"
+                    class="punch-filter-control"
+                    placeholder="od"
+                    min="0"
+                >
+
+                <span>–</span>
+
+                <input
+                    type="number"
+                    id="punchWidthMax"
+                    class="punch-filter-control"
+                    placeholder="do"
+                    min="0"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- LENGTH -->
+
+        <div class="punch-filter-field">
+
+            <label class="punch-filter-label">
+                Długość
+            </label>
+
+            <div class="punch-range">
+
+                <input
+                    type="number"
+                    id="punchLengthMin"
+                    class="punch-filter-control"
+                    placeholder="od"
+                    min="0"
+                >
+
+                <span>–</span>
+
+                <input
+                    type="number"
+                    id="punchLengthMax"
+                    class="punch-filter-control"
+                    placeholder="do"
+                    min="0"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- HEIGHT -->
+
+        <div class="punch-filter-field">
+
+            <label class="punch-filter-label">
+                Wysokość
+            </label>
+
+            <div class="punch-range">
+
+                <input
+                    type="number"
+                    id="punchHeightMin"
+                    class="punch-filter-control"
+                    placeholder="od"
+                    min="0"
+                >
+
+                <span>–</span>
+
+                <input
+                    type="number"
+                    id="punchHeightMax"
+                    class="punch-filter-control"
+                    placeholder="do"
+                    min="0"
+                >
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- RESULTS                                                 -->
+<!-- ======================================================= -->
+
+<div class="punch-list-card app-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Lista wykrojników
+            </h2>
+
+            <div
+                class="punch-section-description"
+                id="punchResultsDescription"
+            >
+                Dostępnych wykrojników:
+                {{ punches|length }}
+            </div>
+
+        </div>
+
+
+        <div
+            class="punch-result-count"
+            id="punchResultCount"
+        >
+            {{ punches|length }}
+        </div>
+
+    </div>
+
+
+    {% if punches %}
+
+        <div class="punch-table-scroll">
+
+            <table
+                class="punch-table"
+                id="punchTable"
+            >
+
+                <thead>
+
+                    <tr>
+
+                        <th>Typ</th>
+                        <th>Identyfikator</th>
+                        <th>Szerokość</th>
+                        <th>Długość</th>
+                        <th>Wysokość</th>
+                        <th>Nazwa</th>
+                        <th>Fala</th>
+                        <th>Format</th>
+                        <th>Klienci</th>
+                        <th></th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for row in punches %}
+
+                        <tr
+                            class="punch-row"
+                            data-punch-row
+                            data-punch-id="{{ row.punch.id }}"
+                            data-type="{{ row.punch.type|default:'' }}"
+                            data-name="{{ row.punch.name|default:'' }}"
+                            data-identifier="{{ row.identifier|default:'' }}"
+                            data-width="{{ row.dimensions.width|default:'' }}"
+                            data-length="{{ row.dimensions.length|default:'' }}"
+                            data-height="{{ row.dimensions.height|default:'' }}"
+                            data-href="{% url 'punch-details' row.punch.id %}"
+                            tabindex="0"
+                            role="link"
+                        >
+
+                            <!-- TYPE -->
+
+                            <td>
+
+                                <span class="punch-type-badge">
+                                    {{ row.type_label }}
+                                </span>
+
+                            </td>
+
+
+                            <!-- IDENTIFIER -->
+
+                            <td>
+
+                                <strong class="punch-identifier">
+                                    {{ row.identifier|default:"—" }}
+                                </strong>
+
+                            </td>
+
+
+                            <!-- WIDTH -->
+
+                            <td class="punch-number">
+
+                                {% if row.dimensions.width is not None %}
+                                    {{ row.dimensions.width }}
+                                {% else %}
+                                    <span class="punch-muted">—</span>
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- LENGTH -->
+
+                            <td class="punch-number">
+
+                                {% if row.dimensions.length is not None %}
+                                    {{ row.dimensions.length }}
+                                {% else %}
+                                    <span class="punch-muted">—</span>
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- HEIGHT -->
+
+                            <td class="punch-number">
+
+                                {% if row.dimensions.height is not None %}
+                                    {{ row.dimensions.height }}
+                                {% else %}
+                                    <span class="punch-muted">—</span>
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- NAME -->
+
+                            <td>
+
+                                {% if row.punch.name %}
+
+                                    <span class="punch-name">
+                                        {{ row.punch.name }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="punch-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- CARDBOARD / FLUTE -->
+
+                            <td>
+
+                                {% if row.punch.cardboard %}
+
+                                    <span class="punch-cardboard">
+                                        {{ row.punch.cardboard }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="punch-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- FORMAT -->
+
+                            <td class="punch-number">
+
+                                {% if row.format.label %}
+
+                                    {{ row.format.label }}
+
+                                {% else %}
+
+                                    <span class="punch-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- CUSTOMERS -->
+
+                            <td>
+
+                                {% if row.customers %}
+
+                                    <div class="punch-customers">
+
+                                        {% for customer in row.customers %}
+
+                                            <span class="punch-customer">
+                                                {{ customer }}
+                                            </span>
+
+                                        {% endfor %}
+
+                                    </div>
+
+                                {% else %}
+
+                                    <span class="punch-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ACTION -->
+
+                            <td class="punch-action-cell">
+
+                                <a
+                                    href="{% url 'punch-details' row.punch.id %}"
+                                    class="punch-details-button"
+                                    title="Szczegóły wykrojnika"
+                                    aria-label="Szczegóły wykrojnika"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <div
+            class="punch-no-results"
+            id="punchNoResults"
+            hidden
+        >
+
+            <div class="punch-no-results__icon">
+                <i class="fa-solid fa-filter-circle-xmark"></i>
+            </div>
+
+            <div class="punch-no-results__title">
+                Brak wyników
+            </div>
+
+            <div class="punch-no-results__description">
+                Żaden wykrojnik nie spełnia wybranych kryteriów.
+            </div>
+
+        </div>
+
+    {% else %}
+
+        <div class="punch-empty">
+
+            <div class="punch-empty__icon">
+                <i class="fa-solid fa-scissors"></i>
+            </div>
+
+            <div class="punch-empty__title">
+                Brak wykrojników
+            </div>
+
+            <div class="punch-empty__description">
+                Nie znaleziono wykrojników.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{% static 'js/modern/punches.js' %}"></script>
+
+{% endblock %}
