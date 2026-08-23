@@ -1,0 +1,473 @@
+/* ========================================================== */
+/* TOOLBAR                                                    */
+/* ========================================================== */
+
+.employee-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-bottom: 18px;
+    padding: 12px 14px;
+}
+
+
+.employee-toolbar__actions {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.employee-filter-badge {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 7px;
+
+    min-height: 30px;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.employee-filter-badge--active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+
+.employee-filter-badge--all {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+
+/* ========================================================== */
+/* CARD                                                       */
+/* ========================================================== */
+
+.employee-list-card {
+    overflow: hidden;
+}
+
+
+.employee-section-description {
+    margin-top: 3px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.employee-count {
+    min-width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 9px;
+
+    border-radius: 20px;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+
+/* ========================================================== */
+/* TABLE                                                      */
+/* ========================================================== */
+
+.employee-table-scroll {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+
+.employee-table {
+    width: 100%;
+    min-width: 900px;
+
+    border-collapse: collapse;
+
+    background: var(--app-surface);
+}
+
+
+.employee-table th {
+    padding: 0;
+
+    border-bottom: 1px solid var(--app-border);
+
+    background: #f8fafc;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-align: left;
+
+    text-transform: uppercase;
+
+    letter-spacing: .04em;
+}
+
+
+.employee-table th:not([data-sort]) {
+    padding: 11px 14px;
+}
+
+
+.employee-table td {
+    padding: 13px 14px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    color: var(--app-text);
+
+    font-size: 13px;
+
+    vertical-align: middle;
+}
+
+
+.employee-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+.employee-row {
+    transition: background .12s ease;
+
+    cursor: pointer;
+}
+
+
+.employee-row:hover {
+    background: #f8fafc;
+}
+
+
+.employee-row:focus {
+    outline: 2px solid var(--app-primary);
+    outline-offset: -2px;
+}
+
+
+/* ========================================================== */
+/* SORT                                                       */
+/* ========================================================== */
+
+.employee-sort-button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 11px 14px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: inherit;
+
+    font: inherit;
+
+    text-align: left;
+
+    text-transform: inherit;
+
+    letter-spacing: inherit;
+
+    cursor: pointer;
+}
+
+
+.employee-sort-button:hover {
+    color: var(--app-primary);
+}
+
+
+.employee-sort-icon {
+    color: var(--app-text-muted);
+
+    font-size: 9px;
+}
+
+
+.employee-sort-button.is-active
+.employee-sort-icon {
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* PERSON                                                     */
+/* ========================================================== */
+
+.employee-person {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.employee-avatar {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+}
+
+
+.employee-person__name {
+    color: var(--app-text);
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+/* ========================================================== */
+/* VALUES                                                     */
+/* ========================================================== */
+
+.employee-department {
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.employee-date {
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+}
+
+
+.employee-muted {
+    color: var(--app-text-muted);
+}
+
+
+/* ========================================================== */
+/* STATUS                                                     */
+/* ========================================================== */
+
+.employee-status {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    min-height: 25px;
+
+    padding: 3px 8px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+.employee-status__dot {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: currentColor;
+}
+
+
+.employee-status--active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+
+.employee-status--inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+
+/* ========================================================== */
+/* MEDICAL                                                    */
+/* ========================================================== */
+
+.employee-medical {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    min-height: 25px;
+
+    padding: 3px 8px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+.employee-medical--valid {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+
+.employee-medical--expired {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+
+/* ========================================================== */
+/* ACTION                                                     */
+/* ========================================================== */
+
+.employee-action-heading,
+.employee-action-cell {
+    width: 52px;
+}
+
+
+.employee-action-cell {
+    text-align: right;
+}
+
+
+.employee-details-button {
+    width: 32px;
+    height: 32px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: var(--app-radius-sm);
+
+    color: var(--app-text-muted);
+
+    text-decoration: none;
+
+    transition:
+        background .15s ease,
+        color .15s ease;
+}
+
+
+.employee-details-button:hover {
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* EMPTY                                                      */
+/* ========================================================== */
+
+.employee-empty {
+    padding: 48px 24px;
+
+    text-align: center;
+}
+
+
+.employee-empty__icon {
+    margin-bottom: 10px;
+
+    color: var(--app-text-muted);
+
+    font-size: 28px;
+}
+
+
+.employee-empty__title {
+    margin-bottom: 4px;
+
+    color: var(--app-text);
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+
+.employee-empty__description {
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE                                                 */
+/* ========================================================== */
+
+@media (max-width: 700px) {
+
+    .employee-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .employee-toolbar__actions {
+        width: 100%;
+    }
+
+
+    .employee-toolbar__actions .app-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+}

@@ -20,7 +20,7 @@ urlpatterns = [
 
 # absences
 urlpatterns += [
-    path('absences-list/', AbsencesList.as_view(), name='absence-list'),
+    # path('absences-list/', AbsencesList.as_view(), name='absence-list'),
     path('absences/', AbsencesAndHolidays.as_view(), name='absences'),
     path('add-absence/', AbsenceAdd.as_view(), name='add-absence'),
     path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
@@ -101,8 +101,8 @@ urlpatterns += [
 
 # vacations
 urlpatterns += [
-    path('vacations/', AvailableVacation.as_view(), name='vacations'),
-    path('persons-vacations/<int:person_id>/', PersonsVacations.as_view(), name='persons-vacations')
+    # path('vacations/', AvailableVacation.as_view(), name='vacations'),
+    # path('persons-vacations/<int:person_id>/', PersonsVacations.as_view(), name='persons-vacations')
 ]
 
 # profile

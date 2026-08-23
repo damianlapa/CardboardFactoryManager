@@ -28,7 +28,7 @@
 
     <div class="app-page-actions">
 
-        <a href="{% url 'modern-vacation-list' %}"
+        <a href="{% url 'vacations' %}"
            class="app-btn app-btn-secondary">
 
             <i class="fa-solid fa-umbrella-beach"></i>
@@ -188,8 +188,8 @@
             data-year="{{ selected_year }}"
             data-month="{{ selected_month }}"
             data-contract-type="{{ contract_type }}"
-            data-data-url="{% url 'modern-absence-calendar-data' %}"
-            data-update-url="{% url 'modern-absence-day-update' %}"
+            data-data-url="{% url 'absence-calendar-data' %}"
+            data-update-url="{% url 'absence-day-update' %}"
         >
 
             <thead>

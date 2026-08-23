@@ -3,36 +3,36 @@ import datetime
 from warehousemanager.models import Person
 
 
-def get_employee_list(
-    *,
-    include_inactive=False,
-):
+def get_employee_list(*, include_inactive=False):
     today = datetime.date.today()
 
-    workers = Person.objects.all()
+    employees = Person.objects.all()
 
     if not include_inactive:
-        workers = workers.filter(
-            job_end__isnull=True
+        employees = employees.filter(
+            job_end__isnull=True,
         )
 
-    workers = workers.order_by(
+    employees = employees.order_by(
         "last_name",
         "first_name",
     )
 
     rows = []
 
-    for worker in workers:
+    for employee in employees:
         employment_end = (
-            worker.job_end
+            employee.job_end
             or today
         )
 
-        employment_days = (
-            employment_end
-            - worker.job_start
-        ).days
+        if employee.job_start:
+            employment_days = max(
+                (employment_end - employee.job_start).days,
+                0,
+            )
+        else:
+            employment_days = 0
 
         years = employment_days // 365
         months = (
@@ -49,26 +49,16 @@ def get_employee_list(
             )
 
         medical_expired = (
-            not worker.medical_examination
-            or worker.medical_examination < today
+            not employee.medical_examination
+            or employee.medical_examination < today
         )
 
         rows.append({
-            "worker": worker,
-
-            "seniority": {
-                "years": years,
-                "months": months,
-                "days": employment_days,
-                "label": seniority_label,
-            },
-
-            "is_active": (
-                worker.job_end is None
-            ),
-
-            "medical_expired":
-                medical_expired,
+            "employee": employee,
+            "seniority_days": employment_days,
+            "seniority_label": seniority_label,
+            "is_active": employee.job_end is None,
+            "medical_expired": medical_expired,
         })
 
     return rows

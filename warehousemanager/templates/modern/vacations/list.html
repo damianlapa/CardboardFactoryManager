@@ -132,7 +132,7 @@
                             <td>
 
                                 <a
-                                    href="{% url 'modern-vacation-detail' balance.worker.id %}?year={{ year }}"
+                                    href="{% url 'vacation-person' balance.worker.id %}?year={{ year }}"
                                     class="vacation-worker-link"
                                 >
                                     <span class="vacation-worker-avatar">
@@ -238,7 +238,7 @@
                             <td class="vacation-action-cell">
 
                                 <a
-                                    href="{% url 'modern-vacation-detail' balance.worker.id %}?year={{ year }}"
+                                    href="{% url 'vacation-person' balance.worker.id %}?year={{ year }}"
                                     class="vacation-details-button"
                                     title="Szczegóły urlopu"
                                 >
