@@ -32,6 +32,12 @@ from warehousemanager.modern_views.punches import (
     ModernPunchUpdateView,
 )
 
+from warehousemanager.modern_views.colors import (
+    ModernBucketDetailView,
+    ModernColorDetailView,
+    ModernColorListView,
+)
+
 
 urlpatterns = [
 
@@ -245,6 +251,46 @@ urlpatterns = [
         "legacy/punch/<int:punch_id>/delete/",
         PunchDelete.as_view(),
         name="legacy-punch-delete",
+    ),
+
+    # COLORS - MODERN
+
+    path(
+        "colors/",
+        ModernColorListView.as_view(),
+        name="colors",
+    ),
+
+    path(
+        "colors/<int:color_id>/",
+        ModernColorDetailView.as_view(),
+        name="color-details",
+    ),
+
+    path(
+        "colors/bucket/<int:bucket_id>/",
+        ModernBucketDetailView.as_view(),
+        name="bucket-details",
+    ),
+
+    # COLORS - LEGACY
+
+    path(
+        "legacy/colors/",
+        ColorListView.as_view(),
+        name="legacy-colors",
+    ),
+
+    path(
+        "legacy/colors/<int:color_id>/",
+        ColorDetail.as_view(),
+        name="legacy-color-details",
+    ),
+
+    path(
+        "legacy/colors/bucket/<int:bucket_id>/",
+        BucketDetail.as_view(),
+        name="legacy-bucket-details",
     ),
 
 

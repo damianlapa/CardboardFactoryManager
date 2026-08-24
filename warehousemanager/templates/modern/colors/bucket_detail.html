@@ -1,0 +1,367 @@
+{% extends "__base_modern__.html" %}
+{% load static %}
+
+{% block title %}
+    Wiadro #{{ bucket.id }}
+{% endblock %}
+
+{% block page_title %}
+    Wiadro farby
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/colors.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+
+        <a
+            href="{% url 'color-details' color.id %}"
+            class="color-back-link"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+            Wróć do koloru
+        </a>
+
+
+        <div class="color-title-row">
+
+            <span
+                class="color-title-sample"
+                style="--color-value: {{ color_hex }};"
+            ></span>
+
+            <div>
+
+                <h1 class="app-page-title">
+                    Wiadro #{{ bucket.id }}
+                </h1>
+
+                <div class="app-page-description">
+                    {{ color }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="app-page-actions">
+
+        <a
+            href="{% url 'bucketQRcode' bucket.id %}"
+            class="app-btn app-btn-secondary"
+        >
+            <i class="fa-solid fa-qrcode"></i>
+            Pobierz etykietę QR
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="color-metrics">
+
+    <div class="app-card color-metric">
+        <div class="color-metric__label">
+            Aktualny stan
+        </div>
+
+        <div class="color-metric__value">
+            {{ bucket.weight|floatformat:1 }}
+            <span>kg</span>
+        </div>
+    </div>
+
+
+    <div class="app-card color-metric">
+        <div class="color-metric__label">
+            Zużyto
+        </div>
+
+        <div class="color-metric__value">
+            {{ total_usage|floatformat:1 }}
+            <span>kg</span>
+        </div>
+    </div>
+
+
+    <div class="app-card color-metric">
+        <div class="color-metric__label">
+            Data produkcji
+        </div>
+
+        <div class="color-metric__date">
+            {{ bucket.production_date|date:"d.m.Y"|default:"—" }}
+        </div>
+    </div>
+
+
+    <div class="app-card color-metric">
+        <div class="color-metric__label">
+            Data ważności
+        </div>
+
+        <div class="color-metric__date">
+            {{ bucket.expiration_date|date:"d.m.Y"|default:"—" }}
+        </div>
+    </div>
+
+</div>
+
+
+<div class="color-detail-grid">
+
+    <section>
+
+        <form
+            method="post"
+            class="app-card color-usage-form"
+        >
+
+            {% csrf_token %}
+
+            <div class="app-card__header">
+
+                <div>
+                    <h2 class="app-card__title">
+                        Rejestruj zużycie
+                    </h2>
+
+                    <div class="color-section-description">
+                        Zapisz stan wiadra po produkcji
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="color-form-body">
+
+                <div class="color-form-field">
+
+                    <label for="usageDate">
+                        Data
+                    </label>
+
+                    <input
+                        type="date"
+                        id="usageDate"
+                        name="usage_date"
+                        value="{{ today|date:'Y-m-d' }}"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="color-form-field">
+
+                    <label for="weightBefore">
+                        Masa przed użyciem
+                    </label>
+
+                    <div class="color-input-group">
+
+                        <input
+                            type="number"
+                            id="weightBefore"
+                            name="weight_before"
+                            value="{{ bucket.weight }}"
+                            min="0"
+                            step="0.1"
+                            required
+                            readonly
+                        >
+
+                        <span>kg</span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="color-form-field">
+
+                    <label for="weightAfter">
+                        Masa po użyciu
+                    </label>
+
+                    <div class="color-input-group">
+
+                        <input
+                            type="number"
+                            id="weightAfter"
+                            name="weight_after"
+                            min="0"
+                            max="{{ bucket.weight }}"
+                            step="0.1"
+                            required
+                        >
+
+                        <span>kg</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="color-form-actions">
+
+                <button
+                    type="submit"
+                    class="app-btn app-btn-primary"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    Zapisz zużycie
+                </button>
+
+            </div>
+
+        </form>
+
+
+        <div class="app-card color-section">
+
+            <div class="app-card__header">
+
+                <div>
+                    <h2 class="app-card__title">
+                        Historia
+                    </h2>
+
+                    <div class="color-section-description">
+                        Zmiany masy tego wiadra
+                    </div>
+                </div>
+
+            </div>
+
+
+            {% if history %}
+
+                <div class="color-table-scroll">
+
+                    <table class="color-table">
+
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Przed</th>
+                                <th>Po</th>
+                                <th>Zużycie</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for item in history %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ item.date|date:"d.m.Y" }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.before|floatformat:1 }} kg
+                                    </td>
+
+                                    <td>
+                                        {{ item.after|floatformat:1 }} kg
+                                    </td>
+
+                                    <td>
+                                        <strong>
+                                            {{ item.used|floatformat:1 }} kg
+                                        </strong>
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="color-empty">
+                    Brak historii użycia.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+    <aside>
+
+        <div class="app-card color-section">
+
+            <div class="app-card__header">
+
+                <div>
+                    <h2 class="app-card__title">
+                        Informacje
+                    </h2>
+                </div>
+
+            </div>
+
+
+            <div class="color-info-list">
+
+                <div>
+                    <span>Kolor</span>
+                    <strong>{{ color }}</strong>
+                </div>
+
+                <div>
+                    <span>Dostawca</span>
+                    <strong>
+                        {{ bucket.provider|default:"—" }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Produkcja</span>
+                    <strong>
+                        {{ bucket.production_date|date:"d.m.Y"|default:"—" }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Ważność</span>
+                    <strong>
+                        {{ bucket.expiration_date|date:"d.m.Y"|default:"—" }}
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+{% endblock %}
