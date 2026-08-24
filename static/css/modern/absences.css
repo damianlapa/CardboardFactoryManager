@@ -202,12 +202,12 @@
 
     padding: 7px;
 
-    background: #f8fafc;
+    background: #f1f5f9;
 
-    color: var(--app-text-secondary);
+    color: #334155;
 
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 750;
 
     text-transform: uppercase;
 
@@ -259,9 +259,9 @@
 
     background: #ffffff;
 
-    color: var(--app-text-secondary);
+    color: #475569;
 
-    font-weight: 700;
+    font-weight: 750;
 }
 
 
@@ -275,19 +275,19 @@
 
 
 .absence-day-cell--weekend {
-    background: #fff7ed;
+    background: #fed7aa;
 
-    color: #c2410c;
+    color: #9a3412;
 }
 
 
 .absence-day-cell--today {
-    background: #eff6ff;
+    background: #dbeafe;
 
-    color: var(--app-primary);
+    color: #1d4ed8;
 
     box-shadow:
-        inset 3px 0 0 var(--app-primary);
+        inset 3px 0 0 #2563eb;
 }
 
 
@@ -309,7 +309,7 @@
     cursor: pointer;
 
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 750;
 
     transition:
         filter .1s ease,
@@ -322,55 +322,59 @@
     z-index: 5;
 
     box-shadow:
-        inset 0 0 0 2px var(--app-primary);
+        inset 0 0 0 2px #1d4ed8;
 
-    filter: brightness(.98);
+    filter: brightness(.92);
 }
 
 
 .absence-cell--past {
-    background: #dcfce7;
-}
-
-
-.absence-cell--weekend {
-    background: #ffedd5;
-}
-
-
-.absence-cell--today {
-    box-shadow:
-        inset 0 0 0 1px var(--app-primary);
-}
-
-
-/* ========================================================== */
-/* DYNAMIC STATES                                             */
-/* ========================================================== */
-
-.absence-cell--holiday {
-    background: #fbcfe8;
-
-    color: #9d174d;
-}
-
-
-.absence-cell--absence {
-    background: #ef4444;
-
-    color: #ffffff;
-}
-
-
-.absence-cell--overtime {
     background: #86efac;
 
     color: #14532d;
 }
 
 
+.absence-cell--weekend {
+    background: #fdba74;
+
+    color: #7c2d12;
+}
+
+
+.absence-cell--today {
+    box-shadow:
+        inset 0 0 0 2px #2563eb;
+}
+
+
+/* ========================================================== */
+/* DYNAMIC STATES - HIGH CONTRAST                             */
+/* ========================================================== */
+
+.absence-cell--holiday {
+    background: #f9a8d4;
+
+    color: #831843;
+}
+
+
+.absence-cell--absence {
+    background: #dc2626;
+
+    color: #ffffff;
+}
+
+
+.absence-cell--overtime {
+    background: #22c55e;
+
+    color: #052e16;
+}
+
+
 .absence-cell--partial {
-    background: #92400e;
+    background: #b45309;
 
     color: #ffffff;
 }
@@ -380,13 +384,13 @@
     background:
         repeating-linear-gradient(
             -45deg,
-            #f8fafc,
-            #f8fafc 5px,
-            #e2e8f0 5px,
-            #e2e8f0 10px
+            #f1f5f9,
+            #f1f5f9 5px,
+            #cbd5e1 5px,
+            #cbd5e1 10px
         );
 
-    color: var(--app-text-muted);
+    color: #64748b;
 
     cursor: default;
 }
@@ -466,78 +470,89 @@
 .absence-legend-symbol {
     flex: 0 0 auto;
 
-    min-width: 34px;
-    height: 28px;
+    min-width: 38px;
+    height: 30px;
 
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    padding: 0 5px;
+    padding: 0 6px;
 
-    border-radius: 5px;
+    border: 1px solid rgba(15, 23, 42, .12);
+
+    border-radius: 6px;
 
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 800;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .15);
 }
 
 
 /* ========================================================== */
-/* LEGEND COLORS                                              */
+/* LEGEND COLORS - HIGH CONTRAST                              */
 /* ========================================================== */
 
 .legend-holiday {
-    background: #fbcfe8;
+    background: #f9a8d4;
+
+    color: #831843;
 }
 
 
 .legend-weekend {
-    background: #fed7aa;
+    background: #fdba74;
+
+    color: #7c2d12;
 }
 
 
 .legend-present {
-    background: #86efac;
-}
-
-
-.legend-overtime {
     background: #86efac;
 
     color: #14532d;
 }
 
 
+.legend-overtime {
+    background: #22c55e;
+
+    color: #052e16;
+}
+
+
 .legend-partial {
-    background: #92400e;
+    background: #b45309;
 
     color: #ffffff;
 }
 
 
 .legend-late {
-    background: #fde047;
+    background: #facc15;
 
-    color: #111827;
+    color: #422006;
 }
 
 
 .legend-absence {
-    background: #ef4444;
+    background: #dc2626;
 
     color: #ffffff;
 }
 
 
 .legend-delegation {
-    background: #3b82f6;
+    background: #2563eb;
 
     color: #ffffff;
 }
 
 
 .legend-other {
-    background: #8b5cf6;
+    background: #7c3aed;
 
     color: #ffffff;
 }
@@ -547,13 +562,13 @@
     background:
         repeating-linear-gradient(
             -45deg,
-            #f8fafc,
-            #f8fafc 4px,
-            #e2e8f0 4px,
-            #e2e8f0 8px
+            #f1f5f9,
+            #f1f5f9 4px,
+            #cbd5e1 4px,
+            #cbd5e1 8px
         );
 
-    color: var(--app-text-secondary);
+    color: #475569;
 }
 
 
@@ -623,6 +638,7 @@
     }
 
 }
+
 
 /* ========================================================== */
 /* DAY EDITOR MODAL                                           */
