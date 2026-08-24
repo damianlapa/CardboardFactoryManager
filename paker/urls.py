@@ -61,8 +61,8 @@ urlpatterns += [
 ]
 # persons
 urlpatterns += [
-    path('persons/', PersonListView.as_view(), name='persons'),
-    path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
+    # path('persons/', PersonListView.as_view(), name='persons'),
+    # path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
 ]
 
 # polymers

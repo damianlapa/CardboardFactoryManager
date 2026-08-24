@@ -1,6 +1,22 @@
 import datetime
 
-from warehousemanager.models import Person
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
+
+from paker.access.employees import (
+    can_edit_employee,
+    can_view_absences,
+    can_view_contracts,
+    can_view_employee,
+    can_view_employment_data,
+    can_view_salary,
+    can_view_vacations,
+    can_view_work_time,
+)
+from warehousemanager.models import (
+    Contract,
+    Person,
+)
 
 
 def get_employee_list(*, include_inactive=False):
@@ -62,3 +78,69 @@ def get_employee_list(*, include_inactive=False):
         })
 
     return rows
+
+
+def get_employee_details(
+    *,
+    user,
+    employee_id,
+):
+    employee = get_object_or_404(
+        Person,
+        id=employee_id,
+    )
+
+    if not can_view_employee(
+        user,
+        employee,
+    ):
+        raise PermissionDenied
+
+    access = {
+        "can_edit": can_edit_employee(user),
+
+        "can_view_employment_data":
+            can_view_employment_data(
+                user,
+                employee,
+            ),
+
+        "can_view_contracts":
+            can_view_contracts(user),
+
+        "can_view_salary":
+            can_view_salary(user),
+
+        "can_view_absences":
+            can_view_absences(
+                user,
+                employee,
+            ),
+
+        "can_view_vacations":
+            can_view_vacations(
+                user,
+                employee,
+            ),
+
+        "can_view_work_time":
+            can_view_work_time(
+                user,
+                employee,
+            ),
+    }
+
+    contracts = []
+
+    if access["can_view_contracts"]:
+        contracts = (
+            Contract.objects
+            .filter(worker=employee)
+            .order_by("-date_start")
+        )
+
+    return {
+        "employee": employee,
+        "contracts": contracts,
+        "access": access,
+    }
