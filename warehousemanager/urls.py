@@ -25,7 +25,11 @@ from warehousemanager.modern_views.employees import (
     ModernEmployeeListView,
 )
 from warehousemanager.modern_views.punches import (
+    ModernPunchCreateView,
+    ModernPunchDeleteView,
+    ModernPunchDetailView,
     ModernPunchListView,
+    ModernPunchUpdateView,
 )
 
 
@@ -176,8 +180,7 @@ urlpatterns = [
     ),
 
     # ============================================================
-    # PUNCHES
-    # ACTIVE: MODERN
+    # PUNCHES - MODERN
     # ============================================================
 
     path(
@@ -186,13 +189,62 @@ urlpatterns = [
         name="punches",
     ),
 
+    path(
+        "punches/add/",
+        ModernPunchCreateView.as_view(),
+        name="punch-add",
+    ),
 
-    # Legacy fallback
+    path(
+        "punch/<int:punch_id>/",
+        ModernPunchDetailView.as_view(),
+        name="punch-details",
+    ),
+
+    path(
+        "punch/<int:punch_id>/edit/",
+        ModernPunchUpdateView.as_view(),
+        name="punch-edit",
+    ),
+
+    path(
+        "punch/<int:punch_id>/delete/",
+        ModernPunchDeleteView.as_view(),
+        name="punch-delete",
+    ),
+
+    # ============================================================
+    # PUNCHES - LEGACY FALLBACK
+    # ============================================================
 
     path(
         "legacy/punches/",
         PunchesList.as_view(),
         name="legacy-punches",
+    ),
+
+    path(
+        "legacy/punches/add/",
+        PunchAdd.as_view(),
+        name="legacy-punch-add",
+    ),
+
+    path(
+        "legacy/punch/<int:punch_id>/",
+        PunchDetails.as_view(),
+        name="legacy-punch-details",
+    ),
+
+    path(
+        "legacy/punch/<int:punch_id>/edit/",
+        PunchEdit.as_view(),
+        name="legacy-punch-edit",
+    ),
+
+    path(
+        "legacy/punch/<int:punch_id>/delete/",
+        PunchDelete.as_view(),
+        name="legacy-punch-delete",
     ),
 
 

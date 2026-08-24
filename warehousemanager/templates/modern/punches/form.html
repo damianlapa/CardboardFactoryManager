@@ -1,0 +1,592 @@
+{% extends "__base_modern__.html" %}
+{% load static %}
+
+{% block title %}
+    {% if is_edit %}
+        Edycja wykrojnika
+    {% else %}
+        Nowy wykrojnik
+    {% endif %}
+{% endblock %}
+
+
+{% block page_title %}
+    {% if is_edit %}
+        Edycja wykrojnika
+    {% else %}
+        Nowy wykrojnik
+    {% endif %}
+{% endblock %}
+
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/punches.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+
+        {% if is_edit %}
+
+            <a
+                href="{% url 'punch-details' punch.id %}"
+                class="punch-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Wróć do wykrojnika
+            </a>
+
+        {% else %}
+
+            <a
+                href="{% url 'punches' %}"
+                class="punch-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Wróć do wykrojników
+            </a>
+
+        {% endif %}
+
+
+        <h1 class="app-page-title">
+
+            {% if is_edit %}
+                Edycja wykrojnika
+            {% else %}
+                Dodaj wykrojnik
+            {% endif %}
+
+        </h1>
+
+
+        <div class="app-page-description">
+
+            {% if is_edit %}
+                {{ punch.punch_name }}
+            {% else %}
+                Wprowadź dane nowego wykrojnika
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<form
+    method="post"
+    class="punch-form"
+    novalidate
+>
+
+    {% csrf_token %}
+
+
+    {% if form.non_field_errors %}
+
+        <div class="punch-form-errors">
+
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- IDENTIFICATION                                      -->
+    <!-- =================================================== -->
+
+    <div class="app-card punch-form-card">
+
+        <div class="app-card__header">
+
+            <div>
+
+                <h2 class="app-card__title">
+                    Identyfikacja
+                </h2>
+
+                <div class="punch-section-description">
+                    Typ, numer i nazwa wykrojnika
+                </div>
+
+            </div>
+
+            <div class="punch-section-icon">
+                <i class="fa-solid fa-tag"></i>
+            </div>
+
+        </div>
+
+
+        <div class="punch-form-grid">
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.type.id_for_label }}">
+                    Typ
+                </label>
+
+                {{ form.type }}
+
+                {% for error in form.type.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.type_letter.id_for_label }}">
+                    Litera identyfikatora
+                </label>
+
+                {{ form.type_letter }}
+
+                {% for error in form.type_letter.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.type_num.id_for_label }}">
+                    Numer identyfikatora
+                </label>
+
+                {{ form.type_num }}
+
+                {% for error in form.type_num.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field punch-form-field--wide">
+
+                <label for="{{ form.name.id_for_label }}">
+                    Nazwa
+                </label>
+
+                {{ form.name }}
+
+                {% for error in form.name.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- DIMENSIONS                                          -->
+    <!-- =================================================== -->
+
+    <div class="app-card punch-form-card">
+
+        <div class="app-card__header">
+
+            <div>
+
+                <h2 class="app-card__title">
+                    Wymiary
+                </h2>
+
+                <div class="punch-section-description">
+                    Parametry konstrukcyjne wykrojnika
+                </div>
+
+            </div>
+
+            <div class="punch-section-icon">
+                <i class="fa-solid fa-ruler-combined"></i>
+            </div>
+
+        </div>
+
+
+        <div class="punch-form-grid punch-form-grid--three">
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.dimension_one.id_for_label }}">
+                    Szerokość
+                </label>
+
+                {{ form.dimension_one }}
+
+                {% for error in form.dimension_one.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.dimension_two.id_for_label }}">
+                    Długość
+                </label>
+
+                {{ form.dimension_two }}
+
+                {% for error in form.dimension_two.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.dimension_three.id_for_label }}">
+                    Wysokość
+                </label>
+
+                {{ form.dimension_three }}
+
+                {% for error in form.dimension_three.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.quantity.id_for_label }}">
+                    Ilość
+                </label>
+
+                {{ form.quantity }}
+
+                {% for error in form.quantity.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- FORMAT                                              -->
+    <!-- =================================================== -->
+
+    <div class="app-card punch-form-card">
+
+        <div class="app-card__header">
+
+            <div>
+
+                <h2 class="app-card__title">
+                    Format i fala
+                </h2>
+
+                <div class="punch-section-description">
+                    Parametry arkusza oraz ustawienie kierunku fali
+                </div>
+
+            </div>
+
+            <div class="punch-section-icon">
+                <i class="fa-solid fa-expand"></i>
+            </div>
+
+        </div>
+
+
+        <div class="punch-form-grid punch-form-grid--three">
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.size_one.id_for_label }}">
+                    Format 1
+                </label>
+
+                {{ form.size_one }}
+
+                {% for error in form.size_one.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.size_two.id_for_label }}">
+                    Format 2
+                </label>
+
+                {{ form.size_two }}
+
+                {% for error in form.size_two.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.cardboard.id_for_label }}">
+                    Fala
+                </label>
+
+                {{ form.cardboard }}
+
+                {% for error in form.cardboard.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-checkbox">
+
+                {{ form.wave_direction }}
+
+                <label for="{{ form.wave_direction.id_for_label }}">
+                    Odwrócony kierunek formatu
+                </label>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- PRESSURE                                            -->
+    <!-- =================================================== -->
+
+    <div class="app-card punch-form-card">
+
+        <div class="app-card__header">
+
+            <div>
+
+                <h2 class="app-card__title">
+                    Docisk
+                </h2>
+
+                <div class="punch-section-description">
+                    Parametry docisku
+                </div>
+
+            </div>
+
+            <div class="punch-section-icon">
+                <i class="fa-solid fa-compress"></i>
+            </div>
+
+        </div>
+
+
+        <div class="punch-form-grid punch-form-grid--three">
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.pressure_large.id_for_label }}">
+                    Duży docisk
+                </label>
+
+                {{ form.pressure_large }}
+
+                {% for error in form.pressure_large.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.pressure_small.id_for_label }}">
+                    Mały docisk
+                </label>
+
+                {{ form.pressure_small }}
+
+                {% for error in form.pressure_small.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- CUSTOMERS                                           -->
+    <!-- =================================================== -->
+
+    <div class="app-card punch-form-card">
+
+        <div class="app-card__header">
+
+            <div>
+
+                <h2 class="app-card__title">
+                    Klienci
+                </h2>
+
+                <div class="punch-section-description">
+                    Klienci korzystający z tego wykrojnika
+                </div>
+
+            </div>
+
+            <div class="punch-section-icon">
+                <i class="fa-solid fa-building"></i>
+            </div>
+
+        </div>
+
+
+        <div class="punch-form-section">
+
+            <div class="punch-form-field">
+
+                <label for="{{ form.customers.id_for_label }}">
+                    Klienci
+                </label>
+
+                {{ form.customers }}
+
+                {% for error in form.customers.errors %}
+                    <div class="punch-field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {% if is_edit and form.active %}
+
+        <div class="app-card punch-form-card">
+
+            <div class="punch-form-section">
+
+                <div class="punch-form-checkbox">
+
+                    {{ form.active }}
+
+                    <label for="{{ form.active.id_for_label }}">
+                        Wykrojnik aktywny
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- ACTIONS                                             -->
+    <!-- =================================================== -->
+
+    <div class="punch-form-actions">
+
+        {% if is_edit %}
+
+            <a
+                href="{% url 'punch-details' punch.id %}"
+                class="app-btn app-btn-secondary"
+            >
+                Anuluj
+            </a>
+
+        {% else %}
+
+            <a
+                href="{% url 'punches' %}"
+                class="app-btn app-btn-secondary"
+            >
+                Anuluj
+            </a>
+
+        {% endif %}
+
+
+        <button
+            type="submit"
+            class="app-btn app-btn-primary"
+        >
+            <i class="fa-solid fa-check"></i>
+
+            {% if is_edit %}
+                Zapisz zmiany
+            {% else %}
+                Dodaj wykrojnik
+            {% endif %}
+        </button>
+
+    </div>
+
+</form>
+
+{% endblock %}
