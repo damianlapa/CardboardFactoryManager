@@ -130,6 +130,18 @@ def get_month_context(
 ):
     today = datetime.date.today()
 
+    current_week_start = (
+            today
+            - datetime.timedelta(
+        days=today.weekday()
+    )
+    )
+
+    current_week_end = (
+            current_week_start
+            + datetime.timedelta(days=6)
+    )
+
     year = year or today.year
     month = month or today.month
 
@@ -184,14 +196,24 @@ def get_month_context(
         for day in raw_week:
             week.append({
                 "date": day,
+
                 "weekday_name":
                     POLISH_WEEKDAYS[
                         day.weekday()
                     ],
+
                 "is_current_month":
                     day.month == month,
+
                 "is_today":
                     day == today,
+
+                "is_current_week": (
+                        current_week_start
+                        <= day
+                        <= current_week_end
+                ),
+
                 "events":
                     events_by_day.get(
                         day,

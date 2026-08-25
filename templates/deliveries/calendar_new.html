@@ -168,7 +168,7 @@
         <div class="calendar-view-switch">
 
             <a
-    href="{% url 'deliveries-calendar' %}?view=month&year={{ year }}&month={{ month }}"
+    href="{% url 'deliveries-calendar' %}?view=month&year={{ today.year }}&month={{ today.month }}"
     class="
         calendar-view-switch__button
         {% if calendar_view == 'month' %}
@@ -182,7 +182,7 @@
 
 
             <a
-    href="{% url 'deliveries-calendar' %}?view=week&date={% if calendar_view == 'month' %}{{ year }}-{{ month|stringformat:'02d' }}-01{% else %}{{ week_start|date:'Y-m-d' }}{% endif %}"
+    href="{% url 'deliveries-calendar' %}?view=week&date={{ today|date:'Y-m-d' }}"
     class="
         calendar-view-switch__button
         {% if calendar_view == 'week' %}
@@ -304,21 +304,28 @@
                     {% for day in week %}
 
                         <button
-                            type="button"
-                            class="
-                                calendar-day
+    type="button"
+    class="
+        calendar-day
 
-                                {% if not day.is_current_month %}
-                                    calendar-day--outside
-                                {% endif %}
+        {% if not day.is_current_month %}
+            calendar-day--outside
+        {% endif %}
 
-                                {% if day.is_today %}
-                                    calendar-day--today
-                                {% endif %}
-                            "
-                            data-calendar-day
-                            data-date="{{ day.date|date:'Y-m-d' }}"
-                        >
+        {% if day.is_today %}
+            calendar-day--today
+        {% endif %}
+
+        {% if day.is_current_week %}
+            calendar-day--current-week
+        {% endif %}
+    "
+    data-calendar-day
+    data-date="{{ day.date|date:'Y-m-d' }}"
+    {% if day.is_today %}
+        data-calendar-today
+    {% endif %}
+>
 
                             <div class="calendar-day__header">
 

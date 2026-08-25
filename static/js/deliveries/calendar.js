@@ -951,3 +951,23 @@
     );
 
 })();
+
+/* ====================================================== */
+/* CURRENT WEEK FOCUS                                     */
+/* ====================================================== */
+
+const todayCell = document.querySelector(
+    "[data-calendar-today]"
+);
+
+if (todayCell) {
+    requestAnimationFrame(
+        () => {
+            todayCell.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "nearest",
+            });
+        }
+    );
+}
