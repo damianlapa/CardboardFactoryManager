@@ -29,6 +29,7 @@
     data-detail-url-template="{% url 'calendar-event-detail' 999999 %}"
     data-update-url-template="{% url 'calendar-event-update' 999999 %}"
     data-complete-url-template="{% url 'calendar-event-complete' 999999 %}"
+    data-reopen-url-template="{% url 'calendar-event-reopen' 999999 %}"
     data-delete-url-template="{% url 'calendar-event-delete' 999999 %}"
 >
 
@@ -373,14 +374,16 @@
             {% for day in days %}
 
                 <section
-                    class="
-                        calendar-week-day
+    class="
+        calendar-week-day
 
-                        {% if day.is_today %}
-                            calendar-week-day--today
-                        {% endif %}
-                    "
-                >
+        {% if day.is_today %}
+            calendar-week-day--today
+        {% endif %}
+    "
+    data-calendar-day
+    data-date="{{ day.date|date:'Y-m-d' }}"
+>
 
 
                     <!-- DAY HEADER -->
@@ -752,13 +755,16 @@
 
 
                     <button
-                        type="button"
-                        class="app-btn calendar-btn-success"
-                        id="calendarEventCompleteButton"
-                    >
-                        <i class="fa-solid fa-check"></i>
-                        Oznacz jako zrealizowaną
-                    </button>
+    type="button"
+    class="app-btn calendar-btn-success"
+    id="calendarEventCompleteButton"
+>
+    <i class="fa-solid fa-check"></i>
+
+    <span id="calendarEventCompleteLabel">
+        Oznacz jako zrealizowaną
+    </span>
+</button>
 
 
                     <button

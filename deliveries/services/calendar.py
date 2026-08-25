@@ -524,3 +524,22 @@ def delete_event(event_id):
     )
 
     event.delete()
+
+
+def reopen_event(event_id):
+    event = get_event(event_id)
+
+    if event.event_type != "ZREALIZOWANA DOSTAWA":
+        raise ValueError(
+            "Tylko zrealizowaną dostawę można przywrócić do planowanych."
+        )
+
+    event.event_type = "PLANOWANA DOSTAWA"
+
+    event.save(
+        update_fields=[
+            "event_type",
+        ]
+    )
+
+    return event

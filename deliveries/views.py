@@ -32,7 +32,7 @@ from django.urls import reverse_lazy
 from django.views import View
 
 from deliveries.services.calendar import (
-    get_month_context, create_event, get_events_for_day, get_week_context
+    get_month_context, get_week_context
 )
 
 from deliveries.services.calendar import (
@@ -43,6 +43,7 @@ from deliveries.services.calendar import (
     get_events_for_day,
     serialize_event,
     update_event,
+    reopen_event
 )
 
 
@@ -446,4 +447,37 @@ class CalendarEventDeleteView(
 
         return JsonResponse({
             "success": True,
+        })
+
+
+class CalendarEventReopenView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(
+        self,
+        request,
+        event_id,
+    ):
+        try:
+            event = reopen_event(
+                event_id
+            )
+
+        except ValueError as error:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": str(error),
+                },
+                status=400,
+            )
+
+        return JsonResponse({
+            "success": True,
+            "event": serialize_event(
+                event
+            ),
         })

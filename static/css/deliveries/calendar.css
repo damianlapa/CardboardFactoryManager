@@ -1774,3 +1774,15 @@ button.calendar-modal-event {
         inset 0 2px 0 #dbeafe,
         inset 0 -2px 0 #dbeafe;
 }
+
+.calendar-btn-warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.calendar-btn-warning:hover {
+    border-color: #f59e0b;
+    background: #fef3c7;
+    color: #78350f;
+}

@@ -49,4 +49,10 @@ urlpatterns += [
         CalendarEventDeleteView.as_view(),
         name="calendar-event-delete",
     ),
+
+    path(
+        "calendar/event/<int:event_id>/reopen/",
+        CalendarEventReopenView.as_view(),
+        name="calendar-event-reopen",
+    ),
 ]

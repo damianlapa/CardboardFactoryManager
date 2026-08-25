@@ -34,12 +34,15 @@
     const completeUrlTemplate =
         calendar.dataset.completeUrlTemplate;
 
+    const reopenUrlTemplate =
+        calendar.dataset.reopenUrlTemplate;
+
     const deleteUrlTemplate =
         calendar.dataset.deleteUrlTemplate;
 
 
     /* ====================================================== */
-    /* MODAL ELEMENTS                                         */
+    /* MODAL                                                  */
     /* ====================================================== */
 
     const backdrop = document.querySelector(
@@ -88,16 +91,8 @@
         "#calendarEventDay"
     );
 
-    const createTypeInput = document.querySelector(
-        "#calendarEventType"
-    );
-
     const createTitleInput = document.querySelector(
         "#calendarEventTitle"
-    );
-
-    const createDetailsInput = document.querySelector(
-        "#calendarEventDetails"
     );
 
     const createError = document.querySelector(
@@ -106,7 +101,7 @@
 
 
     /* ====================================================== */
-    /* EVENT DETAIL VIEW                                      */
+    /* DETAIL VIEW                                            */
     /* ====================================================== */
 
     const detailView = document.querySelector(
@@ -133,6 +128,10 @@
         "#calendarEventCompleteButton"
     );
 
+    const detailCompleteLabel = document.querySelector(
+        "#calendarEventCompleteLabel"
+    );
+
     const detailEditButton = document.querySelector(
         "#calendarEventEditButton"
     );
@@ -143,7 +142,7 @@
 
 
     /* ====================================================== */
-    /* EDIT FORM                                              */
+    /* EDIT VIEW                                              */
     /* ====================================================== */
 
     const editView = document.querySelector(
@@ -180,7 +179,7 @@
 
 
     /* ====================================================== */
-    /* GLOBAL ADD BUTTON                                      */
+    /* OTHER ELEMENTS                                         */
     /* ====================================================== */
 
     const globalAddButton = document.querySelector(
@@ -274,76 +273,118 @@
     }
 
 
+    function refreshCalendar() {
+        window.location.reload();
+    }
+
+
     /* ====================================================== */
     /* VIEW SWITCHING                                         */
     /* ====================================================== */
 
     function showDayView() {
-        dayView.hidden = false;
+        if (dayView) {
+            dayView.hidden = false;
+        }
 
-        detailView.hidden = true;
+        if (detailView) {
+            detailView.hidden = true;
+        }
 
-        editView.hidden = true;
+        if (editView) {
+            editView.hidden = true;
+        }
 
-        modalTitle.textContent =
-            "Wydarzenia";
+        if (modalTitle) {
+            modalTitle.textContent =
+                "Wydarzenia";
+        }
     }
 
 
     function showDetailView() {
-        dayView.hidden = true;
+        if (dayView) {
+            dayView.hidden = true;
+        }
 
-        detailView.hidden = false;
+        if (detailView) {
+            detailView.hidden = false;
+        }
 
-        editView.hidden = true;
+        if (editView) {
+            editView.hidden = true;
+        }
 
-        modalTitle.textContent =
-            "Szczegóły wydarzenia";
+        if (modalTitle) {
+            modalTitle.textContent =
+                "Szczegóły wydarzenia";
+        }
     }
 
 
     function showEditView() {
-        dayView.hidden = true;
+        if (dayView) {
+            dayView.hidden = true;
+        }
 
-        detailView.hidden = true;
+        if (detailView) {
+            detailView.hidden = true;
+        }
 
-        editView.hidden = false;
+        if (editView) {
+            editView.hidden = false;
+        }
 
-        modalTitle.textContent =
-            "Edytuj wydarzenie";
+        if (modalTitle) {
+            modalTitle.textContent =
+                "Edytuj wydarzenie";
+        }
     }
 
 
     /* ====================================================== */
-    /* MODAL                                                  */
+    /* MODAL OPEN / CLOSE                                     */
     /* ====================================================== */
 
     function openModal(dateString) {
-        selectedDate = dateString;
+        if (!backdrop) {
+            return;
+        }
 
+        selectedDate = dateString;
         selectedEventId = null;
         selectedEventData = null;
 
-        createDayInput.value =
-            dateString;
+        if (createDayInput) {
+            createDayInput.value =
+                dateString;
+        }
 
-        modalDate.textContent =
-            formatDate(dateString);
+        if (modalDate) {
+            modalDate.textContent =
+                formatDate(dateString);
+        }
+
+        if (createError) {
+            createError.hidden = true;
+        }
+
+        showDayView();
 
         backdrop.hidden = false;
 
         document.body.style.overflow =
             "hidden";
 
-        createError.hidden = true;
-
-        showDayView();
-
         loadEvents();
     }
 
 
     function closeModal() {
+        if (!backdrop) {
+            return;
+        }
+
         backdrop.hidden = true;
 
         document.body.style.overflow = "";
@@ -352,12 +393,11 @@
         selectedEventId = null;
         selectedEventData = null;
 
-        createForm.reset();
+        createForm?.reset();
+        editForm?.reset();
 
-        createError.hidden = true;
-
-        if (editForm) {
-            editForm.reset();
+        if (createError) {
+            createError.hidden = true;
         }
 
         if (editError) {
@@ -411,8 +451,15 @@
                 return;
             }
 
+            const dateString =
+                day.dataset.date;
+
+            if (!dateString) {
+                return;
+            }
+
             openModal(
-                day.dataset.date
+                dateString
             );
         }
     );
@@ -425,16 +472,28 @@
                 todayString()
             );
 
-            createTitleInput?.focus();
+            window.setTimeout(
+                () => {
+                    createTitleInput?.focus();
+                },
+                0
+            );
         }
     );
 
 
     /* ====================================================== */
-    /* LOAD DAY EVENTS                                        */
+    /* LOAD EVENTS                                            */
     /* ====================================================== */
 
     async function loadEvents() {
+        if (
+            !eventsContainer
+            || !selectedDate
+        ) {
+            return;
+        }
+
         eventsContainer.innerHTML = `
             <div class="calendar-modal-empty">
                 Ładowanie...
@@ -480,8 +539,10 @@
 
 
     function renderEvents(events) {
-        eventCount.textContent =
-            String(events.length);
+        if (eventCount) {
+            eventCount.textContent =
+                String(events.length);
+        }
 
         if (!events.length) {
             eventsContainer.innerHTML = `
@@ -545,7 +606,7 @@
     /* EVENT CLICK                                            */
     /* ====================================================== */
 
-    eventsContainer.addEventListener(
+    eventsContainer?.addEventListener(
         "click",
         (event) => {
             const eventButton =
@@ -565,7 +626,7 @@
 
 
     /* ====================================================== */
-    /* EVENT DETAIL                                           */
+    /* DETAIL                                                 */
     /* ====================================================== */
 
     async function loadEventDetail(
@@ -611,28 +672,81 @@
             showDetailView();
 
         } catch (error) {
-            createError.textContent =
-                error.message;
-
-            createError.hidden = false;
+            window.alert(
+                error.message
+            );
         }
     }
 
 
     function renderEventDetail(event) {
-        detailType.textContent =
-            event.type_label;
+        if (detailType) {
+            detailType.textContent =
+                event.type_label;
+        }
 
-        detailTitle.textContent =
-            event.title;
+        if (detailTitle) {
+            detailTitle.textContent =
+                event.title;
+        }
 
-        detailDetails.textContent =
-            event.details
-            || "Brak dodatkowych informacji.";
+        if (detailDetails) {
+            detailDetails.textContent =
+                event.details
+                || "Brak dodatkowych informacji.";
+        }
 
-        if (detailCompleteButton) {
-            detailCompleteButton.hidden =
-                event.is_completed;
+        if (
+            detailCompleteButton
+            && detailCompleteLabel
+        ) {
+            detailCompleteButton.hidden = false;
+
+            const icon =
+                detailCompleteButton.querySelector(
+                    "i"
+                );
+
+            if (event.is_completed) {
+                detailCompleteButton.dataset.action =
+                    "reopen";
+
+                detailCompleteLabel.textContent =
+                    "Cofnij realizację";
+
+                detailCompleteButton.classList.remove(
+                    "calendar-btn-success"
+                );
+
+                detailCompleteButton.classList.add(
+                    "calendar-btn-warning"
+                );
+
+                if (icon) {
+                    icon.className =
+                        "fa-solid fa-rotate-left";
+                }
+
+            } else {
+                detailCompleteButton.dataset.action =
+                    "complete";
+
+                detailCompleteLabel.textContent =
+                    "Oznacz jako zrealizowaną";
+
+                detailCompleteButton.classList.remove(
+                    "calendar-btn-warning"
+                );
+
+                detailCompleteButton.classList.add(
+                    "calendar-btn-success"
+                );
+
+                if (icon) {
+                    icon.className =
+                        "fa-solid fa-check";
+                }
+            }
         }
     }
 
@@ -648,15 +762,17 @@
 
 
     /* ====================================================== */
-    /* CREATE EVENT                                           */
+    /* CREATE                                                 */
     /* ====================================================== */
 
-    createForm.addEventListener(
+    createForm?.addEventListener(
         "submit",
         async (event) => {
             event.preventDefault();
 
-            createError.hidden = true;
+            if (createError) {
+                createError.hidden = true;
+            }
 
             const formData =
                 new FormData(createForm);
@@ -689,30 +805,22 @@
                     );
                 }
 
-                const savedDay =
-                    createDayInput.value;
-
-                createForm.reset();
-
-                createDayInput.value =
-                    savedDay;
-
-                createTitleInput.focus();
-
-                await loadEvents();
+                refreshCalendar();
 
             } catch (error) {
-                createError.textContent =
-                    error.message;
+                if (createError) {
+                    createError.textContent =
+                        error.message;
 
-                createError.hidden = false;
+                    createError.hidden = false;
+                }
             }
         }
     );
 
 
     /* ====================================================== */
-    /* EDIT EVENT                                             */
+    /* EDIT                                                   */
     /* ====================================================== */
 
     detailEditButton?.addEventListener(
@@ -722,23 +830,34 @@
                 return;
             }
 
-            editDayInput.value =
-                selectedEventData.day;
+            if (editDayInput) {
+                editDayInput.value =
+                    selectedEventData.day;
+            }
 
-            editTypeInput.value =
-                selectedEventData.type;
+            if (editTypeInput) {
+                editTypeInput.value =
+                    selectedEventData.type;
+            }
 
-            editTitleInput.value =
-                selectedEventData.title;
+            if (editTitleInput) {
+                editTitleInput.value =
+                    selectedEventData.title;
+            }
 
-            editDetailsInput.value =
-                selectedEventData.details || "";
+            if (editDetailsInput) {
+                editDetailsInput.value =
+                    selectedEventData.details
+                    || "";
+            }
 
-            editError.hidden = true;
+            if (editError) {
+                editError.hidden = true;
+            }
 
             showEditView();
 
-            editTitleInput.focus();
+            editTitleInput?.focus();
         }
     );
 
@@ -760,7 +879,9 @@
                 return;
             }
 
-            editError.hidden = true;
+            if (editError) {
+                editError.hidden = true;
+            }
 
             const formData =
                 new FormData(editForm);
@@ -796,27 +917,22 @@
                     );
                 }
 
-                selectedEventData =
-                    data.event;
-
-                renderEventDetail(
-                    selectedEventData
-                );
-
-                showDetailView();
+                refreshCalendar();
 
             } catch (error) {
-                editError.textContent =
-                    error.message;
+                if (editError) {
+                    editError.textContent =
+                        error.message;
 
-                editError.hidden = false;
+                    editError.hidden = false;
+                }
             }
         }
     );
 
 
     /* ====================================================== */
-    /* COMPLETE EVENT                                         */
+    /* COMPLETE / REOPEN                                      */
     /* ====================================================== */
 
     detailCompleteButton?.addEventListener(
@@ -826,19 +942,32 @@
                 return;
             }
 
+            const action =
+                detailCompleteButton.dataset.action;
+
+            const isReopen =
+                action === "reopen";
+
             const confirmed =
                 window.confirm(
-                    "Oznaczyć wydarzenie jako zrealizowaną dostawę?"
+                    isReopen
+                        ? "Cofnąć realizację tej dostawy?"
+                        : "Oznaczyć wydarzenie jako zrealizowaną dostawę?"
                 );
 
             if (!confirmed) {
                 return;
             }
 
+            const urlTemplate =
+                isReopen
+                    ? reopenUrlTemplate
+                    : completeUrlTemplate;
+
             try {
                 const response = await fetch(
                     buildUrl(
-                        completeUrlTemplate,
+                        urlTemplate,
                         selectedEventId
                     ),
                     {
@@ -863,16 +992,15 @@
                 ) {
                     throw new Error(
                         data.error
-                        || "Nie udało się oznaczyć wydarzenia."
+                        || (
+                            isReopen
+                                ? "Nie udało się cofnąć realizacji."
+                                : "Nie udało się oznaczyć wydarzenia jako zrealizowane."
+                        )
                     );
                 }
 
-                selectedEventData =
-                    data.event;
-
-                renderEventDetail(
-                    selectedEventData
-                );
+                refreshCalendar();
 
             } catch (error) {
                 window.alert(
@@ -884,7 +1012,7 @@
 
 
     /* ====================================================== */
-    /* DELETE EVENT                                           */
+    /* DELETE                                                 */
     /* ====================================================== */
 
     detailDeleteButton?.addEventListener(
@@ -935,12 +1063,7 @@
                     );
                 }
 
-                selectedEventId = null;
-                selectedEventData = null;
-
-                showDayView();
-
-                await loadEvents();
+                refreshCalendar();
 
             } catch (error) {
                 window.alert(
@@ -950,24 +1073,25 @@
         }
     );
 
-})();
 
-/* ====================================================== */
-/* CURRENT WEEK FOCUS                                     */
-/* ====================================================== */
+    /* ====================================================== */
+    /* CURRENT DAY FOCUS                                      */
+    /* ====================================================== */
 
-const todayCell = document.querySelector(
-    "[data-calendar-today]"
-);
-
-if (todayCell) {
-    requestAnimationFrame(
-        () => {
-            todayCell.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-                inline: "nearest",
-            });
-        }
+    const todayCell = document.querySelector(
+        "[data-calendar-today]"
     );
-}
+
+    if (todayCell) {
+        requestAnimationFrame(
+            () => {
+                todayCell.scrollIntoView({
+                    behavior: "auto",
+                    block: "center",
+                    inline: "nearest",
+                });
+            }
+        );
+    }
+
+})();
