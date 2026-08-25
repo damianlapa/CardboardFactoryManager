@@ -13,6 +13,8 @@ from warehousemanager.models import (
     Person,
 )
 
+from deliveries.models import Event
+
 
 POLISH_WEEKDAYS = {
     0: "Poniedziałek",
@@ -145,7 +147,68 @@ def get_production_dashboard_data():
 
 
 def get_delivery_dashboard_data():
-    return {}
+    today = date.today()
+
+    delivery_types = [
+        "PLANOWANA DOSTAWA",
+        "ZREALIZOWANA DOSTAWA",
+        "SPEDYCJA",
+        "ODBIÓR OSOBISTY",
+    ]
+
+    events = (
+        Event.objects
+        .filter(
+            day=today,
+            event_type__in=delivery_types,
+        )
+        .order_by(
+            "event_type",
+            "title",
+        )
+    )
+
+    rows = []
+
+    for event in events:
+        rows.append({
+            "event": event,
+            "type": event.event_type,
+            "title": event.title,
+            "details": event.details,
+            "is_completed":
+                event.event_type == "ZREALIZOWANA DOSTAWA",
+        })
+
+    return {
+        "count": len(rows),
+
+        "planned_count": sum(
+            1
+            for row in rows
+            if row["type"] == "PLANOWANA DOSTAWA"
+        ),
+
+        "completed_count": sum(
+            1
+            for row in rows
+            if row["is_completed"]
+        ),
+
+        "shipping_count": sum(
+            1
+            for row in rows
+            if row["type"] == "SPEDYCJA"
+        ),
+
+        "pickup_count": sum(
+            1
+            for row in rows
+            if row["type"] == "ODBIÓR OSOBISTY"
+        ),
+
+        "rows": rows,
+    }
 
 
 def get_absence_dashboard_data():

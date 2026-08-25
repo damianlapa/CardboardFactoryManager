@@ -115,11 +115,11 @@
                         </span>
 
                         <strong>
-                            —
+                            {{ deliveries.count }}
                         </strong>
 
                         <small>
-                            zaplanowanych
+                            wydarzeń logistycznych
                         </small>
 
                     </div>
@@ -255,40 +255,192 @@
 
             {% if access.deliveries %}
 
-                <section class="dashboard-section">
+            <section class="dashboard-section">
 
-                    <div class="dashboard-section-header">
+                <div class="dashboard-section-header">
 
-                        <div>
-                            <h2>Dostawy</h2>
+                    <div>
+                        <h2>Dostawy i logistyka</h2>
 
-                            <p>
-                                Zaplanowane na dzisiaj
-                            </p>
-                        </div>
-
+                        <p>
+                            Dzisiejsze wydarzenia
+                        </p>
                     </div>
 
+                    <a
+                        href="{% url 'deliveries-calendar' %}"
+                        class="dashboard-section-link"
+                    >
+                        Kalendarz
 
-                    <div class="dashboard-card dashboard-placeholder">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
 
-                        <div class="dashboard-placeholder-icon">
-                            <i class="fa-solid fa-truck"></i>
+                </div>
+
+
+                <div class="dashboard-card">
+
+                    {% if deliveries.rows %}
+
+                        <div class="dashboard-delivery-summary">
+
+                            <div>
+                                <span>Planowane</span>
+
+                                <strong>
+                                    {{ deliveries.planned_count }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Zrealizowane</span>
+
+                                <strong class="dashboard-delivery-summary__processed">
+                                    {{ deliveries.completed_count }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Spedycja</span>
+
+                                <strong>
+                                    {{ deliveries.shipping_count }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Odbiory</span>
+
+                                <strong>
+                                    {{ deliveries.pickup_count }}
+                                </strong>
+                            </div>
+
                         </div>
 
-                        <strong>
-                            Dzisiejsze dostawy
-                        </strong>
 
-                        <span>
-                            Dane dostaw podłączymy w kolejnym kroku.
-                        </span>
+                        <div class="dashboard-delivery-list">
 
-                    </div>
+                            {% for row in deliveries.rows %}
 
-                </section>
+                                <div class="dashboard-delivery-item">
 
-            {% endif %}
+                                    <div class="dashboard-delivery-main">
+
+                                        <div
+                                            class="
+                                                dashboard-delivery-icon
+
+                                                {% if row.type == 'ZREALIZOWANA DOSTAWA' %}
+                                                    dashboard-delivery-icon--processed
+                                                {% elif row.type == 'PLANOWANA DOSTAWA' %}
+                                                    dashboard-delivery-icon--pending
+                                                {% elif row.type == 'SPEDYCJA' %}
+                                                    dashboard-delivery-icon--shipping
+                                                {% else %}
+                                                    dashboard-delivery-icon--pickup
+                                                {% endif %}
+                                            "
+                                        >
+
+                                            {% if row.type == "SPEDYCJA" %}
+                                                <i class="fa-solid fa-truck-fast"></i>
+                                            {% elif row.type == "ODBIÓR OSOBISTY" %}
+                                                <i class="fa-solid fa-box"></i>
+                                            {% else %}
+                                                <i class="fa-solid fa-truck"></i>
+                                            {% endif %}
+
+                                        </div>
+
+
+                                        <div class="dashboard-delivery-info">
+
+                                            <strong>
+                                                {{ row.title }}
+                                            </strong>
+
+                                            <span>
+                                                {{ row.type }}
+                                            </span>
+
+                                            {% if row.details %}
+
+                                                <small>
+                                                    {{ row.details }}
+                                                </small>
+
+                                            {% endif %}
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="dashboard-delivery-status">
+
+                                        {% if row.is_completed %}
+
+                                            <span class="dashboard-status dashboard-status--success">
+                                                <i class="fa-solid fa-check"></i>
+                                                Zrealizowana
+                                            </span>
+
+                                        {% elif row.type == "PLANOWANA DOSTAWA" %}
+
+                                            <span class="dashboard-status dashboard-status--warning">
+                                                <i class="fa-solid fa-clock"></i>
+                                                Planowana
+                                            </span>
+
+                                        {% elif row.type == "SPEDYCJA" %}
+
+                                            <span class="dashboard-status dashboard-status--info">
+                                                Spedycja
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="dashboard-status dashboard-status--neutral">
+                                                Odbiór
+                                            </span>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="dashboard-empty">
+
+                            <div class="dashboard-empty-icon">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+
+                            <strong>
+                                Brak wydarzeń logistycznych
+                            </strong>
+
+                            <span>
+                                Na dzisiaj nie ma zaplanowanych dostaw ani odbiorów.
+                            </span>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </section>
+
+        {% endif %}
 
 
             <!-- ABSENCES -->
