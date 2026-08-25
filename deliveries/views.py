@@ -32,7 +32,7 @@ from django.urls import reverse_lazy
 from django.views import View
 
 from deliveries.services.calendar import (
-    get_month_context, create_event, get_events_for_day
+    get_month_context, create_event, get_events_for_day, get_week_context
 )
 
 from deliveries.services.calendar import (
@@ -56,26 +56,84 @@ class CalendarView(
     def get(self, request):
         today = datetime.date.today()
 
-        year = request.GET.get("year")
-        month = request.GET.get("month")
-
-        try:
-            year = int(year)
-        except (TypeError, ValueError):
-            year = today.year
-
-        try:
-            month = int(month)
-        except (TypeError, ValueError):
-            month = today.month
-
-        if month < 1 or month > 12:
-            month = today.month
-
-        context = get_month_context(
-            year=year,
-            month=month,
+        calendar_view = (
+            request.GET.get(
+                "view",
+                "month",
+            )
         )
+
+        if calendar_view == "week":
+            date_raw = (
+                request.GET.get(
+                    "date"
+                )
+            )
+
+            try:
+                selected_date = (
+                    datetime.date.fromisoformat(
+                        date_raw
+                    )
+                    if date_raw
+                    else today
+                )
+
+            except (
+                TypeError,
+                ValueError,
+            ):
+                selected_date = today
+
+            context = (
+                get_week_context(
+                    selected_date=
+                        selected_date,
+                )
+            )
+
+        else:
+            year_raw = (
+                request.GET.get(
+                    "year"
+                )
+            )
+
+            month_raw = (
+                request.GET.get(
+                    "month"
+                )
+            )
+
+            try:
+                year = int(
+                    year_raw
+                )
+            except (
+                TypeError,
+                ValueError,
+            ):
+                year = today.year
+
+            try:
+                month = int(
+                    month_raw
+                )
+            except (
+                TypeError,
+                ValueError,
+            ):
+                month = today.month
+
+            if not 1 <= month <= 12:
+                month = today.month
+
+            context = (
+                get_month_context(
+                    year=year,
+                    month=month,
+                )
+            )
 
         return render(
             request,

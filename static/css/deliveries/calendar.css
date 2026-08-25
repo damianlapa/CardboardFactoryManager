@@ -1450,3 +1450,294 @@ button.calendar-modal-event {
     }
 
 }
+
+/* ========================================================== */
+/* VIEW SWITCH                                                */
+/* ========================================================== */
+
+.calendar-view-switch {
+    display: inline-flex;
+
+    padding: 3px;
+
+    border: 1px solid var(--app-border);
+
+    border-radius: 8px;
+
+    background: #f8fafc;
+}
+
+
+.calendar-view-switch__button {
+    min-height: 30px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 5px 10px;
+
+    border-radius: 6px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 9px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        background .12s ease,
+        color .12s ease,
+        box-shadow .12s ease;
+}
+
+
+.calendar-view-switch__button:hover {
+    color: var(--app-text);
+}
+
+
+.calendar-view-switch__button.is-active {
+    background: #ffffff;
+
+    color: var(--app-primary);
+
+    box-shadow:
+        0 1px 3px rgba(15, 23, 42, .08);
+}
+
+
+.calendar-navigation__week {
+    min-width: 155px;
+
+    color: var(--app-text);
+
+    font-size: 12px;
+    font-weight: 750;
+
+    text-align: center;
+}
+
+/* ========================================================== */
+/* WEEK VIEW                                                  */
+/* ========================================================== */
+
+.calendar-week-view {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, minmax(0, 1fr));
+
+    overflow: hidden;
+
+    border: 1px solid var(--app-border);
+
+    border-radius: 12px;
+
+    background: var(--app-surface);
+}
+
+
+.calendar-week-day {
+    min-width: 0;
+
+    min-height: 430px;
+
+    border-right: 1px solid var(--app-border);
+
+    background: #ffffff;
+}
+
+
+.calendar-week-day:last-child {
+    border-right: 0;
+}
+
+
+.calendar-week-day:nth-child(6),
+.calendar-week-day:nth-child(7) {
+    background: #fcfcfd;
+}
+
+
+.calendar-week-day--today {
+    background: #f8fbff;
+}
+
+
+/* HEADER */
+
+.calendar-week-day__header {
+    width: 100%;
+    min-height: 66px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    padding: 10px;
+
+    border: 0;
+    border-bottom: 1px solid var(--app-border);
+
+    background: transparent;
+
+    color: var(--app-text);
+
+    font-family: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+
+.calendar-week-day__header:hover {
+    background: var(--app-primary-soft);
+}
+
+
+.calendar-week-day__weekday {
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: var(--app-text-muted);
+
+    font-size: 8px;
+    font-weight: 750;
+
+    text-transform: uppercase;
+}
+
+
+.calendar-week-day__header strong {
+    font-size: 15px;
+    font-weight: 750;
+}
+
+
+.calendar-week-day--today
+.calendar-week-day__header strong {
+    color: var(--app-primary);
+}
+
+
+.calendar-week-day__add {
+    width: 27px;
+    height: 27px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 6px;
+
+    color: var(--app-text-muted);
+
+    font-size: 9px;
+}
+
+
+.calendar-week-day__header:hover
+.calendar-week-day__add {
+    background: #ffffff;
+
+    color: var(--app-primary);
+}
+
+
+/* EVENTS */
+
+.calendar-week-day__events {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    padding: 9px;
+}
+
+
+.calendar-week-day__events
+.calendar-event {
+    min-height: 50px;
+}
+
+
+.calendar-week-day__events
+.calendar-event__content {
+    padding: 8px;
+}
+
+
+.calendar-week-day__events
+.calendar-event__content strong {
+    font-size: 10px;
+
+    white-space: normal;
+}
+
+
+.calendar-week-day__events
+.calendar-event__content small {
+    margin-top: 4px;
+
+    font-size: 8px;
+}
+
+
+/* EMPTY */
+
+.calendar-week-day__empty {
+    min-height: 75px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    border: 1px dashed var(--app-border-strong);
+
+    border-radius: 7px;
+
+    background: transparent;
+
+    color: var(--app-text-muted);
+
+    font-family: inherit;
+    font-size: 8px;
+
+    cursor: pointer;
+}
+
+
+.calendar-week-day__empty:hover {
+    border-color: var(--app-primary);
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+@media (max-width: 1100px) {
+
+    .calendar-week-view {
+        overflow-x: auto;
+
+        grid-template-columns:
+            repeat(7, minmax(150px, 1fr));
+    }
+
+
+    .calendar-week-day {
+        min-height: 350px;
+    }
+
+}

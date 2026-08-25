@@ -46,7 +46,19 @@
             </div>
 
             <h1>
-                {{ month_label }}
+
+                {% if calendar_view == "month" %}
+
+                    {{ month_label }}
+
+                {% else %}
+
+                    {{ week_start|date:"d.m" }}
+                    –
+                    {{ week_end|date:"d.m.Y" }}
+
+                {% endif %}
+
             </h1>
 
             <p>
@@ -59,7 +71,7 @@
         <div class="calendar-header__actions">
 
             <a
-                href="{% url 'deliveries-calendar' %}"
+                href="{% url 'deliveries-calendar' %}?view={{ calendar_view }}{% if calendar_view == 'week' %}&date={{ today|date:'Y-m-d' }}{% endif %}"
                 class="app-btn app-btn-secondary"
             >
                 <i class="fa-regular fa-calendar-check"></i>
@@ -87,62 +99,170 @@
 
     <div class="calendar-toolbar">
 
-        <div class="calendar-navigation">
 
-            <a
-                href="{% url 'deliveries-calendar' %}?year={{ previous_month.year }}&month={{ previous_month.month }}"
-                class="calendar-navigation__button"
-                title="Poprzedni miesiąc"
-            >
-                <i class="fa-solid fa-chevron-left"></i>
-            </a>
+        <!-- NAVIGATION -->
+
+        {% if calendar_view == "month" %}
+
+            <div class="calendar-navigation">
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=month&year={{ previous_month.year }}&month={{ previous_month.month }}"
+                    class="calendar-navigation__button"
+                    title="Poprzedni miesiąc"
+                >
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
 
 
-            <div class="calendar-navigation__month">
-                {{ month_label }}
+                <div class="calendar-navigation__month">
+                    {{ month_label }}
+                </div>
+
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=month&year={{ next_month.year }}&month={{ next_month.month }}"
+                    class="calendar-navigation__button"
+                    title="Następny miesiąc"
+                >
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
             </div>
 
+        {% else %}
+
+            <div class="calendar-navigation">
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=week&date={{ previous_week|date:'Y-m-d' }}"
+                    class="calendar-navigation__button"
+                    title="Poprzedni tydzień"
+                >
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+
+                <div class="calendar-navigation__week">
+                    {{ week_start|date:"d.m" }}
+                    –
+                    {{ week_end|date:"d.m.Y" }}
+                </div>
+
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=week&date={{ next_week|date:'Y-m-d' }}"
+                    class="calendar-navigation__button"
+                    title="Następny tydzień"
+                >
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- VIEW SWITCH -->
+
+        <div class="calendar-view-switch">
 
             <a
-                href="{% url 'deliveries-calendar' %}?year={{ next_month.year }}&month={{ next_month.month }}"
-                class="calendar-navigation__button"
-                title="Następny miesiąc"
-            >
-                <i class="fa-solid fa-chevron-right"></i>
-            </a>
+    href="{% url 'deliveries-calendar' %}?view=month&year={{ year }}&month={{ month }}"
+    class="
+        calendar-view-switch__button
+        {% if calendar_view == 'month' %}
+            is-active
+        {% endif %}
+    "
+>
+    <i class="fa-solid fa-calendar-days"></i>
+    Miesiąc
+</a>
+
+
+            <a
+    href="{% url 'deliveries-calendar' %}?view=week&date={% if calendar_view == 'month' %}{{ year }}-{{ month|stringformat:'02d' }}-01{% else %}{{ week_start|date:'Y-m-d' }}{% endif %}"
+    class="
+        calendar-view-switch__button
+        {% if calendar_view == 'week' %}
+            is-active
+        {% endif %}
+    "
+>
+    <i class="fa-solid fa-calendar-week"></i>
+    Tydzień
+</a>
 
         </div>
 
 
+        <!-- LEGEND -->
+
         <div class="calendar-legend">
 
             <span class="calendar-legend__item">
-                <span class="calendar-legend__dot calendar-legend__dot--planned"></span>
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--planned
+                    "
+                ></span>
                 Dostawa
             </span>
 
+
             <span class="calendar-legend__item">
-                <span class="calendar-legend__dot calendar-legend__dot--completed"></span>
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--completed
+                    "
+                ></span>
                 Zrealizowana
             </span>
 
+
             <span class="calendar-legend__item">
-                <span class="calendar-legend__dot calendar-legend__dot--shipping"></span>
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--shipping
+                    "
+                ></span>
                 Spedycja
             </span>
 
+
             <span class="calendar-legend__item">
-                <span class="calendar-legend__dot calendar-legend__dot--pickup"></span>
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--pickup
+                    "
+                ></span>
                 Odbiór
             </span>
 
+
             <span class="calendar-legend__item">
-                <span class="calendar-legend__dot calendar-legend__dot--meeting"></span>
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--meeting
+                    "
+                ></span>
                 Spotkanie
             </span>
 
+
             <span class="calendar-legend__item">
-                <span class="calendar-legend__dot calendar-legend__dot--other"></span>
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--other
+                    "
+                ></span>
                 Inne
             </span>
 
@@ -152,112 +272,170 @@
 
 
     <!-- =================================================== -->
-    <!-- CALENDAR                                            -->
+    <!-- MONTH VIEW                                          -->
     <!-- =================================================== -->
 
-    <div class="calendar-card">
+    {% if calendar_view == "month" %}
 
-        <div class="calendar-weekdays">
+        <div class="calendar-card">
 
-            <div>Pon</div>
-            <div>Wt</div>
-            <div>Śr</div>
-            <div>Czw</div>
-            <div>Pt</div>
-            <div>Sob</div>
-            <div>Nie</div>
+
+            <!-- WEEK DAYS -->
+
+            <div class="calendar-weekdays">
+
+                <div>Pon</div>
+                <div>Wt</div>
+                <div>Śr</div>
+                <div>Czw</div>
+                <div>Pt</div>
+                <div>Sob</div>
+                <div>Nie</div>
+
+            </div>
+
+
+            <!-- DAYS -->
+
+            <div class="calendar-grid">
+
+                {% for week in weeks %}
+
+                    {% for day in week %}
+
+                        <button
+                            type="button"
+                            class="
+                                calendar-day
+
+                                {% if not day.is_current_month %}
+                                    calendar-day--outside
+                                {% endif %}
+
+                                {% if day.is_today %}
+                                    calendar-day--today
+                                {% endif %}
+                            "
+                            data-calendar-day
+                            data-date="{{ day.date|date:'Y-m-d' }}"
+                        >
+
+                            <div class="calendar-day__header">
+
+                                <span class="calendar-day__number">
+                                    {{ day.date.day }}
+                                </span>
+
+
+                                <span class="calendar-day__add">
+                                    <i class="fa-solid fa-plus"></i>
+                                </span>
+
+                            </div>
+
+
+                            <div class="calendar-day__events">
+
+                                {% for event in day.events %}
+
+                                    {% include "deliveries/_calendar_event.html" %}
+
+                                {% endfor %}
+
+                            </div>
+
+                        </button>
+
+                    {% endfor %}
+
+                {% endfor %}
+
+            </div>
 
         </div>
 
 
-        <div class="calendar-grid">
+    <!-- =================================================== -->
+    <!-- WEEK VIEW                                           -->
+    <!-- =================================================== -->
 
-            {% for week in weeks %}
+    {% else %}
 
-                {% for day in week %}
+        <div class="calendar-week-view">
+
+            {% for day in days %}
+
+                <section
+                    class="
+                        calendar-week-day
+
+                        {% if day.is_today %}
+                            calendar-week-day--today
+                        {% endif %}
+                    "
+                >
+
+
+                    <!-- DAY HEADER -->
 
                     <button
                         type="button"
-                        class="
-                            calendar-day
-
-                            {% if not day.is_current_month %}
-                                calendar-day--outside
-                            {% endif %}
-
-                            {% if day.is_today %}
-                                calendar-day--today
-                            {% endif %}
-                        "
+                        class="calendar-week-day__header"
                         data-calendar-day
                         data-date="{{ day.date|date:'Y-m-d' }}"
                     >
 
-                        <div class="calendar-day__header">
+                        <div>
 
-                            <span class="calendar-day__number">
-                                {{ day.date.day }}
+                            <span class="calendar-week-day__weekday">
+                                {{ day.weekday_name }}
                             </span>
 
-                            <span class="calendar-day__add">
-                                <i class="fa-solid fa-plus"></i>
-                            </span>
+                            <strong>
+                                {{ day.date|date:"d.m" }}
+                            </strong>
 
                         </div>
 
 
-                        <div class="calendar-day__events">
-
-                            {% for event in day.events %}
-
-                                <span
-                                    class="
-                                        calendar-event
-                                        calendar-event--{{ event.style_key }}
-                                    "
-                                >
-
-                                    <span class="calendar-event__marker"></span>
-
-                                    <span class="calendar-event__content">
-
-                                        <strong>
-                                            {{ event.title }}
-                                        </strong>
-
-                                        <small>
-                                            {% if event.type == "PLANOWANA DOSTAWA" %}
-                                                Dostawa
-                                            {% elif event.type == "ZREALIZOWANA DOSTAWA" %}
-                                                Zrealizowana
-                                            {% elif event.type == "SPEDYCJA" %}
-                                                Spedycja
-                                            {% elif event.type == "ODBIÓR OSOBISTY" %}
-                                                Odbiór
-                                            {% elif event.type == "SPOTKANIE" %}
-                                                Spotkanie
-                                            {% else %}
-                                                Inne
-                                            {% endif %}
-                                        </small>
-
-                                    </span>
-
-                                </span>
-
-                            {% endfor %}
-
-                        </div>
+                        <span class="calendar-week-day__add">
+                            <i class="fa-solid fa-plus"></i>
+                        </span>
 
                     </button>
 
-                {% endfor %}
+
+                    <!-- EVENTS -->
+
+                    <div class="calendar-week-day__events">
+
+                        {% for event in day.events %}
+
+                            {% include "deliveries/_calendar_event.html" %}
+
+                        {% empty %}
+
+                            <button
+                                type="button"
+                                class="calendar-week-day__empty"
+                                data-calendar-day
+                                data-date="{{ day.date|date:'Y-m-d' }}"
+                            >
+                                <i class="fa-solid fa-plus"></i>
+                                Dodaj wydarzenie
+                            </button>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
 
             {% endfor %}
 
         </div>
 
-    </div>
+    {% endif %}
 
 </div>
 
@@ -278,6 +456,11 @@
         aria-modal="true"
         aria-labelledby="calendarModalTitle"
     >
+
+
+        <!-- ================================================= -->
+        <!-- MODAL HEADER                                      -->
+        <!-- ================================================= -->
 
         <div class="calendar-modal__header">
 
@@ -311,6 +494,10 @@
         </div>
 
 
+        <!-- ================================================= -->
+        <!-- MODAL BODY                                        -->
+        <!-- ================================================= -->
+
         <div class="calendar-modal__body">
 
 
@@ -319,6 +506,9 @@
             <!-- ================================================= -->
 
             <div id="calendarDayView">
+
+
+                <!-- EVENTS -->
 
                 <section class="calendar-modal-section">
 
@@ -355,7 +545,9 @@
                 </section>
 
 
-                <!-- ADD EVENT -->
+                <!-- ================================================= -->
+                <!-- ADD EVENT                                         -->
+                <!-- ================================================= -->
 
                 <section class="calendar-modal-section">
 
@@ -396,6 +588,9 @@
 
                         <div class="calendar-form-grid">
 
+
+                            <!-- TYPE -->
+
                             <div class="calendar-form-field">
 
                                 <label for="calendarEventType">
@@ -421,6 +616,8 @@
                             </div>
 
 
+                            <!-- TITLE -->
+
                             <div class="calendar-form-field">
 
                                 <label for="calendarEventTitle">
@@ -438,7 +635,14 @@
                             </div>
 
 
-                            <div class="calendar-form-field calendar-form-field--full">
+                            <!-- DETAILS -->
+
+                            <div
+                                class="
+                                    calendar-form-field
+                                    calendar-form-field--full
+                                "
+                            >
 
                                 <label for="calendarEventDetails">
                                     Szczegóły
@@ -475,7 +679,7 @@
 
 
             <!-- ================================================= -->
-            <!-- EVENT DETAIL VIEW                                 -->
+            <!-- EVENT DETAIL                                      -->
             <!-- ================================================= -->
 
             <div
@@ -565,7 +769,7 @@
 
 
             <!-- ================================================= -->
-            <!-- EVENT EDIT VIEW                                   -->
+            <!-- EVENT EDIT                                        -->
             <!-- ================================================= -->
 
             <div
@@ -620,6 +824,9 @@
 
                         <div class="calendar-form-grid">
 
+
+                            <!-- DATE -->
+
                             <div class="calendar-form-field">
 
                                 <label for="calendarEventEditDay">
@@ -635,6 +842,8 @@
 
                             </div>
 
+
+                            <!-- TYPE -->
 
                             <div class="calendar-form-field">
 
@@ -661,7 +870,14 @@
                             </div>
 
 
-                            <div class="calendar-form-field calendar-form-field--full">
+                            <!-- TITLE -->
+
+                            <div
+                                class="
+                                    calendar-form-field
+                                    calendar-form-field--full
+                                "
+                            >
 
                                 <label for="calendarEventEditTitle">
                                     Tytuł
@@ -678,7 +894,14 @@
                             </div>
 
 
-                            <div class="calendar-form-field calendar-form-field--full">
+                            <!-- DETAILS -->
+
+                            <div
+                                class="
+                                    calendar-form-field
+                                    calendar-form-field--full
+                                "
+                            >
 
                                 <label for="calendarEventEditDetails">
                                     Szczegóły
@@ -723,7 +946,5 @@
 
 
 {% block scripts %}
-
 <script src="{% static 'js/deliveries/calendar.js' %}"></script>
-
 {% endblock %}
