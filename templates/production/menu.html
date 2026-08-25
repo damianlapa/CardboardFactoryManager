@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Produkcja | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-dashboard">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="production-header">
+
+        <div>
+
+            <div class="production-eyebrow">
+                Produkcja
+            </div>
+
+            <h1>
+                Centrum produkcji
+            </h1>
+
+            <p>
+                Zlecenia, stanowiska, planowanie
+                i analiza pracy produkcji
+            </p>
+
+        </div>
+
+
+        <div class="production-header__actions">
+
+            {% if perms.production.add_productionorder %}
+
+                <a
+                    href="{% url 'production-order-add' %}"
+                    class="app-btn app-btn-primary"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Nowe zlecenie
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- SUMMARY                                             -->
+    <!-- =================================================== -->
+
+    <div class="production-summary-grid">
+
+        <a
+            href="{% url 'all-production-orders' %}"
+            class="production-summary-card"
+        >
+
+            <div class="production-summary-card__icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    Wszystkie zlecenia
+                </span>
+
+                <strong>
+                    {{ orders_total }}
+                </strong>
+
+            </div>
+
+        </a>
+
+
+        <a
+            href="{% url 'all-production-orders' %}?status=UNCOMPLETED"
+            class="
+                production-summary-card
+                production-summary-card--warning
+            "
+        >
+
+            <div class="production-summary-card__icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    Niekompletne
+                </span>
+
+                <strong>
+                    {{ orders_uncompleted }}
+                </strong>
+
+            </div>
+
+        </a>
+
+
+        <a
+            href="{% url 'all-production-orders' %}?status=PLANNED"
+            class="
+                production-summary-card
+                production-summary-card--planned
+            "
+        >
+
+            <div class="production-summary-card__icon">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    Zaplanowane
+                </span>
+
+                <strong>
+                    {{ orders_planned }}
+                </strong>
+
+            </div>
+
+        </a>
+
+
+        <a
+            href="{% url 'production-workstations' %}"
+            class="
+                production-summary-card
+                production-summary-card--active
+            "
+        >
+
+            <div class="production-summary-card__icon">
+                <i class="fa-solid fa-industry"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    W toku
+                </span>
+
+                <strong>
+                    {{ orders_in_progress }}
+                </strong>
+
+            </div>
+
+        </a>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- MODULES                                             -->
+    <!-- =================================================== -->
+
+    <section class="production-section">
+
+        <div class="production-section__header">
+
+            <div>
+
+                <h2>
+                    Moduły
+                </h2>
+
+                <p>
+                    Najczęściej używane obszary produkcji
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="production-modules">
+
+            <a
+                href="{% url 'all-production-orders' %}"
+                class="production-module-card"
+            >
+
+                <div class="production-module-card__icon">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        Zlecenia
+                    </strong>
+
+                    <span>
+                        Lista i obsługa zleceń produkcyjnych
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </a>
+
+
+            <a
+                href="{% url 'production-workstations' %}"
+                class="production-module-card"
+            >
+
+                <div class="production-module-card__icon">
+                    <i class="fa-solid fa-gears"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        Stanowiska
+                    </strong>
+
+                    <span>
+                        Kolejki i bieżąca praca maszyn
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </a>
+
+
+            <a
+                href="{% url 'custom-report' %}"
+                class="production-module-card"
+            >
+
+                <div class="production-module-card__icon">
+                    <i class="fa-solid fa-chart-column"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        Raporty
+                    </strong>
+
+                    <span>
+                        Raporty pracowników i stanowisk
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </a>
+
+
+            <a
+                href="{% url 'workstation_effectivity' %}"
+                class="production-module-card"
+            >
+
+                <div class="production-module-card__icon">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        Zajętość stanowisk
+                    </strong>
+
+                    <span>
+                        Analiza wykorzystania maszyn
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- CURRENT PRODUCTION                                  -->
+    <!-- =================================================== -->
+
+    <section class="production-section">
+
+        <div class="production-section__header">
+
+            <div>
+
+                <h2>
+                    Aktualnie w produkcji
+                </h2>
+
+                <p>
+                    Jednostki ze statusem „IN PROGRESS”
+                </p>
+
+            </div>
+
+            <span class="production-count">
+                {{ active_units|length }}
+            </span>
+
+        </div>
+
+
+        {% if active_units %}
+
+            <div class="production-active-list">
+
+                {% for unit in active_units %}
+
+                    <a
+                        href="{% url 'unit-details' unit.id %}"
+                        class="production-active-item"
+                    >
+
+                        <div
+                            class="production-active-item__station"
+                        >
+                            {{ unit.work_station }}
+                        </div>
+
+                        <div
+                            class="production-active-item__order"
+                        >
+                            <strong>
+                                {{ unit.production_order.id_number }}
+                            </strong>
+
+                            <span>
+                                {{ unit.production_order.customer }}
+                            </span>
+                        </div>
+
+
+                        <div
+                            class="production-active-item__people"
+                        >
+
+                            {% for person in unit.persons.all %}
+
+                                <span>
+                                    {{ person }}
+                                </span>
+
+                            {% empty %}
+
+                                <span class="production-muted">
+                                    Brak obsady
+                                </span>
+
+                            {% endfor %}
+
+                        </div>
+
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </a>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="production-empty">
+
+                <i class="fa-solid fa-pause"></i>
+
+                <strong>
+                    Brak aktywnej produkcji
+                </strong>
+
+                <span>
+                    Żadna jednostka nie ma obecnie statusu
+                    „IN PROGRESS”.
+                </span>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}

@@ -5,11 +5,15 @@ from production.effectivity_views import *
 from production.planning_views import *
 from production.reports_view import *
 
+from production.modern_views.orders import (
+    ProductionOrderDetailView,
+)
+
 
 urlpatterns = [
     path('', ProductionMenu.as_view(), name='production-menu'),
     path('orders/all/', AllProductionOrders.as_view(), name='all-production-orders'),
-    path('order/details/<int:production_order_id>/', ProductionDetails.as_view(), name='production-details'),
+    # path('order/details/<int:production_order_id>/', ProductionDetails.as_view(), name='production-details'),
     path('order/details/change/<int:production_order_id>/', ChangeProductionStatus.as_view(), name='production-details-change'),
     path('workstation/all/', WorkStations.as_view(), name='production-workstations'),
     path('workstation/<int:workstation_id>', WorkStationDetails.as_view(), name='workstation-details'),
@@ -20,6 +24,14 @@ urlpatterns = [
     path('unit/edit/<int:unit_id>/', EditProductionUnit.as_view(), name='unit-edit'),
     path('set-estimated-time/', SetEstimatedTimeView.as_view(), name='set-estimated-time'),
     path('wrong-date-units/', WrongDateUnits.as_view(), name='wrong-date-units')
+]
+
+urlpatterns += [
+    path(
+        "order/details/<int:production_order_id>/",
+        ProductionOrderDetailView.as_view(),
+        name="production-details",
+    ),
 ]
 
 # production orders

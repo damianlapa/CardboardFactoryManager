@@ -137,7 +137,7 @@
                     href="{% url 'production-menu' %}"
                     class="
                         app-navigation__item
-                        {% if request.resolver_match.url_name == 'production' %}
+                        {% if request.resolver_match.url_name == 'production-menu' or 'production' in request.path %}
                             is-active
                         {% endif %}
                     "

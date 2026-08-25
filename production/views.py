@@ -35,6 +35,26 @@ from django.http import HttpResponse
 from .models import ProductionUnit, WorkStation
 
 
+####### NEW IMPORTS
+
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.db.models import Count, Q
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views import View
+
+from production.models import (
+    ProductionOrder,
+    ProductionUnit,
+    WorkStation,
+)
+from warehousemanager.functions import visit_counter
+
+#######
+
+
 class Echo:
     def write(self, value):
         return value
@@ -190,22 +210,255 @@ class GetProductionById(View):
             return HttpResponse(json.dumps(False))
 
 
-class ProductionMenu(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+
+
+
+class ProductionMenu(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.view_productionorder"
+    )
+
+    login_url = reverse_lazy("login")
+
+    template_name = (
+        "production/menu.html"
+    )
 
     def get(self, request):
-        return render(request, 'production/production-menu.html', locals())
+        visit_counter(
+            request.user,
+            "Production dashboard",
+        )
+
+        order_counts = {
+            row["status"]: row["count"]
+            for row in (
+                ProductionOrder.objects
+                .values("status")
+                .annotate(
+                    count=Count("id")
+                )
+            )
+        }
+
+        context = {
+            "orders_total":
+                ProductionOrder.objects.count(),
+
+            "orders_uncompleted":
+                order_counts.get(
+                    "UNCOMPLETED",
+                    0,
+                ),
+
+            "orders_planned":
+                order_counts.get(
+                    "PLANNED",
+                    0,
+                ),
+
+            "orders_in_progress":
+                ProductionUnit.objects
+                .filter(
+                    status="IN PROGRESS"
+                )
+                .count(),
+
+            "stations_count":
+                WorkStation.objects.count(),
+
+            "active_units":
+                (
+                    ProductionUnit.objects
+                    .filter(
+                        status="IN PROGRESS"
+                    )
+                    .select_related(
+                        "production_order",
+                        "work_station",
+                    )
+                    .prefetch_related(
+                        "persons",
+                    )
+                    .order_by(
+                        "work_station__name"
+                    )
+                ),
+
+            "planned_units":
+                (
+                    ProductionUnit.objects
+                    .filter(
+                        status="PLANNED"
+                    )
+                    .select_related(
+                        "production_order",
+                        "work_station",
+                    )
+                    .order_by(
+                        "work_station__name",
+                        "order",
+                    )[:10]
+                ),
+        }
+
+        return render(
+            request,
+            self.template_name,
+            context,
+        )
 
 
-class AllProductionOrders(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+class AllProductionOrders(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.view_productionorder"
+    )
+
+    login_url = reverse_lazy("login")
+
+    template_name = (
+        "production/orders/list.html"
+    )
+
+    ACTIVE_STATUSES = (
+        "ORDERED",
+        "UNCOMPLETED",
+        "COMPLETED",
+        "PLANNED",
+    )
 
     def get(self, request):
-        visit_counter(request.user, 'All Production Orders')
-        title = 'Production Orders'
-        production_orders = ProductionOrder.objects.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED'))
-        number = production_orders.count()
-        return render(request, 'production/production-all.html', locals())
+        visit_counter(
+            request.user,
+            "All Production Orders",
+        )
+
+        search = (
+            request.GET.get(
+                "q",
+                ""
+            )
+            .strip()
+        )
+
+        status = (
+            request.GET.get(
+                "status",
+                ""
+            )
+            .strip()
+        )
+
+        orders = (
+            ProductionOrder.objects
+            .select_related(
+                "customer",
+                "photopolymer",
+                "punch",
+            )
+            .annotate(
+                units_count=Count(
+                    "productionunit",
+                    distinct=True,
+                )
+            )
+            .order_by(
+                "-priority",
+                "-add_date",
+            )
+        )
+
+        if not status:
+            orders = orders.filter(
+                status__in=
+                    self.ACTIVE_STATUSES
+            )
+
+        elif status != "ALL":
+            orders = orders.filter(
+                status=status
+            )
+
+        if search:
+            orders = orders.filter(
+                Q(
+                    id_number__icontains=
+                        search
+                )
+                | Q(
+                    customer__name__icontains=
+                        search
+                )
+                | Q(
+                    dimensions__icontains=
+                        search
+                )
+                | Q(
+                    cardboard__icontains=
+                        search
+                )
+                | Q(
+                    cardboard_dimensions__icontains=
+                        search
+                )
+            )
+
+        context = {
+            "production_orders":
+                orders,
+
+            "orders_count":
+                orders.count(),
+
+            "search":
+                search,
+
+            "selected_status":
+                status or "",
+
+            "statuses": [
+                (
+                    "ALL",
+                    "Wszystkie",
+                ),
+                (
+                    "UNCOMPLETED",
+                    "Niekompletne",
+                ),
+                (
+                    "COMPLETED",
+                    "Kompletne",
+                ),
+                (
+                    "PLANNED",
+                    "Zaplanowane",
+                ),
+                (
+                    "ORDERED",
+                    "Zamówione",
+                ),
+                (
+                    "FINISHED",
+                    "Zakończone",
+                ),
+                (
+                    "ARCHIVED",
+                    "Archiwalne",
+                ),
+            ],
+        }
+
+        return render(
+            request,
+            self.template_name,
+            context,
+        )
 
 
 class AddMoreProductionOrders(LoginRequiredMixin, View):
@@ -313,11 +566,19 @@ class ProductionDetails(LoginRequiredMixin, View):
         return render(request, 'production/production-details.html', locals())
 
 
-class UpdateProductionUnitInline(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+class UpdateProductionUnitInline(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionunit"
+    )
 
     def post(self, request, unit_id):
-        unit = ProductionUnit.objects.get(id=unit_id)
+        unit = get_object_or_404(
+            ProductionUnit,
+            pk=unit_id,
+        )
 
         field = request.POST.get("field")
         value = request.POST.get("value")
@@ -380,8 +641,13 @@ class UpdateProductionUnitInline(LoginRequiredMixin, View):
             }, status=400)
 
 
-class UpdateProductionUnitPersons(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+class UpdateProductionUnitPersons(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionunit"
+    )
 
     def post(self, request, unit_id):
         unit = ProductionUnit.objects.get(id=unit_id)
@@ -406,23 +672,76 @@ class UpdateProductionUnitPersons(LoginRequiredMixin, View):
 
 from django.http import JsonResponse
 
-class ChangeProductionStatus(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.http import JsonResponse
+from django.shortcuts import (
+    get_object_or_404,
+)
+from django.views import View
 
-    def post(self, request, production_order_id):
-        production_order = get_object_or_404(
-            ProductionOrder,
-            id=production_order_id
+from production.models import (
+    PRODUCTION_ORDER_STATUSES,
+    ProductionOrder,
+)
+
+
+class ChangeProductionStatus(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionorder"
+    )
+
+    def post(
+        self,
+        request,
+        production_order_id,
+    ):
+        production_order = (
+            get_object_or_404(
+                ProductionOrder,
+                pk=production_order_id,
+            )
         )
 
-        status = request.POST.get("status")
+        status = request.POST.get(
+            "status"
+        )
 
-        production_order.status = status
-        production_order.save(update_fields=["status"])
+        allowed_statuses = {
+            value
+            for value, label
+            in PRODUCTION_ORDER_STATUSES
+        }
+
+        if status not in allowed_statuses:
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error":
+                        "Nieprawidłowy status.",
+                },
+                status=400,
+            )
+
+        production_order.status = (
+            status
+        )
+
+        production_order.save(
+            update_fields=[
+                "status",
+            ]
+        )
 
         return JsonResponse({
             "success": True,
-            "status": production_order.status
+            "status":
+                production_order.status,
         })
 
 
@@ -1559,88 +1878,108 @@ class OrderDetailsRedirect(LoginRequiredMixin, View):
 
 
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+)
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
 
-from production.models import ProductionOrder
-from warehousemanager.models import Photopolymer, Punch
+from production.models import (
+    ProductionOrder,
+)
+from warehousemanager.models import (
+    Photopolymer,
+    Punch,
+)
 
 
-class UpdateProductionOrderToolView(LoginRequiredMixin, View):
-    login_url = reverse_lazy("login")
+class UpdateProductionOrderToolView(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionorder"
+    )
 
-    def post(self, request, production_order_id):
-        production_order = get_object_or_404(
-            ProductionOrder,
-            pk=production_order_id
+    def post(
+        self,
+        request,
+        production_order_id,
+    ):
+        production_order = (
+            get_object_or_404(
+                ProductionOrder,
+                pk=production_order_id,
+            )
         )
 
-        tool_type = request.POST.get("tool_type")
-        tool_id = request.POST.get("tool_id") or None
+        tool_type = request.POST.get(
+            "tool_type"
+        )
+
+        tool_id = (
+            request.POST.get(
+                "tool_id"
+            )
+            or None
+        )
 
         if tool_type == "punch":
-            punch = None
 
-            if tool_id:
-                punch = get_object_or_404(Punch, pk=tool_id)
+            production_order.punch = (
+                get_object_or_404(
+                    Punch,
+                    pk=tool_id,
+                )
+                if tool_id
+                else None
+            )
 
-            production_order.punch = punch
-            production_order.save(update_fields=["punch"])
+            production_order.save(
+                update_fields=[
+                    "punch",
+                ]
+            )
 
-            messages.success(request, "Wykrojnik został zapisany.")
+            messages.success(
+                request,
+                "Wykrojnik został zapisany.",
+            )
 
         elif tool_type == "photopolymer":
-            photopolymer = None
 
-            if tool_id:
-                photopolymer = get_object_or_404(
+            production_order.photopolymer = (
+                get_object_or_404(
                     Photopolymer,
-                    pk=tool_id
+                    pk=tool_id,
                 )
+                if tool_id
+                else None
+            )
 
-            production_order.photopolymer = photopolymer
-            production_order.save(update_fields=["photopolymer"])
+            production_order.save(
+                update_fields=[
+                    "photopolymer",
+                ]
+            )
 
-            messages.success(request, "Fotopolimer został zapisany.")
+            messages.success(
+                request,
+                "Polimer został zapisany.",
+            )
 
         else:
-            messages.error(request, "Nieprawidłowy typ narzędzia.")
 
-        return redirect(request.META.get("HTTP_REFERER", "/"))
+            messages.error(
+                request,
+                "Nieprawidłowy typ narzędzia.",
+            )
 
-
-from django.views import View
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from production.models import ProductionOrder
-from warehousemanager.models import Punch, Photopolymer
-
-
-class UpdateProductionOrderToolView(LoginRequiredMixin, View):
-
-    def post(self, request, production_order_id):
-        production_order = get_object_or_404(
-            ProductionOrder,
-            pk=production_order_id
+        return redirect(
+            "production-details",
+            production_order_id=
+                production_order.id,
         )
-
-        tool_type = request.POST.get("tool_type")
-        tool_id = request.POST.get("tool_id")
-
-        if tool_type == "punch":
-            production_order.punch = (
-                Punch.objects.get(pk=tool_id)
-                if tool_id else None
-            )
-
-        elif tool_type == "photopolymer":
-            production_order.photopolymer = (
-                Photopolymer.objects.get(pk=tool_id)
-                if tool_id else None
-            )
-
-        production_order.save()
-
-        return redirect(request.META.get("HTTP_REFERER", "/"))

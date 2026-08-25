@@ -1,0 +1,978 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {{ production_order.id_number }} | Produkcja
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/order_detail.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div
+    class="production-order-detail"
+    data-production-order
+    data-status-url="{% url 'production-details-change' production_order.id %}"
+>
+
+
+    <!-- HEADER -->
+
+    <header class="production-detail-header">
+
+        <div>
+
+            <a
+                href="{% url 'all-production-orders' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Zlecenia produkcyjne
+            </a>
+
+            <div class="production-eyebrow">
+                Zlecenie produkcyjne
+            </div>
+
+            <div class="production-detail-title">
+
+                <h1>
+                    {{ production_order.id_number }}
+                </h1>
+
+                {% if production_order.priority %}
+
+                    <span class="production-priority">
+                        <i class="fa-solid fa-fire"></i>
+                        Priorytet
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+            <p>
+                {{ production_order.customer }}
+            </p>
+
+        </div>
+
+
+        <div class="production-detail-header__actions">
+
+            <a
+                href="{% url 'order-redirect' production_order.id %}"
+                class="app-btn app-btn-secondary"
+            >
+                <i class="fa-solid fa-warehouse"></i>
+                Zlecenie magazynowe
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- STATUS + INFO -->
+
+    <div class="production-detail-grid">
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+                    <h2>Informacje</h2>
+                    <p>Podstawowe dane zlecenia</p>
+                </div>
+
+                <i class="fa-solid fa-clipboard-list"></i>
+
+            </div>
+
+
+            <div class="production-info-grid">
+
+                <div>
+                    <span>Klient</span>
+                    <strong>
+                        {{ production_order.customer }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Wymiary</span>
+                    <strong>
+                        {{ production_order.dimensions|default:"—" }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Ilość zamówiona</span>
+                    <strong>
+                        {{ production_order.ordered_quantity|default:"—" }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Ilość produkcyjna</span>
+                    <strong>
+                        {{ production_order.quantity|default:"—" }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Tektura</span>
+                    <strong>
+                        {{ production_order.cardboard|default:"—" }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Format tektury</span>
+                    <strong>
+                        {{ production_order.cardboard_dimensions|default:"—" }}
+                    </strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+                    <h2>Status</h2>
+                    <p>Stan całego zlecenia</p>
+                </div>
+
+                <i class="fa-solid fa-bars-progress"></i>
+
+            </div>
+
+
+            <div class="production-status-editor">
+
+                <select
+                    id="productionOrderStatus"
+                    {% if not perms.production.change_productionorder %}
+                        disabled
+                    {% endif %}
+                >
+
+                    {% for value, label in production_order_statuses %}
+
+                        <option
+                            value="{{ value }}"
+                            {% if production_order.status == value %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ label }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <span
+                    id="productionStatusSaved"
+                    class="production-save-indicator"
+                    hidden
+                >
+                    <i class="fa-solid fa-check"></i>
+                    Zapisano
+                </span>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- TOOLS -->
+
+    <section class="production-detail-card">
+
+        <div class="production-detail-card__header">
+
+            <div>
+                <h2>Narzędzia</h2>
+                <p>Wykrojnik i polimer przypisany do zlecenia</p>
+            </div>
+
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+
+        </div>
+
+
+        <div class="production-tools-grid">
+
+            <button
+                type="button"
+                class="production-tool-card"
+                data-tool-button
+                data-tool-type="punch"
+                data-tool-label="Wykrojnik"
+                data-current-id="{{ production_order.punch_id|default:'' }}"
+                {% if not perms.production.change_productionorder %}
+                    disabled
+                {% endif %}
+            >
+
+                <span>Wykrojnik</span>
+
+                <strong>
+                    {{ production_order.punch|default:"Brak" }}
+                </strong>
+
+                <small>
+                    Kliknij, aby zmienić
+                </small>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="production-tool-card"
+                data-tool-button
+                data-tool-type="photopolymer"
+                data-tool-label="Polimer"
+                data-current-id="{{ production_order.photopolymer_id|default:'' }}"
+                {% if not perms.production.change_productionorder %}
+                    disabled
+                {% endif %}
+            >
+
+                <span>Polimer</span>
+
+                <strong>
+                    {{ production_order.photopolymer|default:"Brak" }}
+                </strong>
+
+                <small>
+                    Kliknij, aby zmienić
+                </small>
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    {% if production_order.notes %}
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+                <div>
+                    <h2>Notatki</h2>
+                </div>
+            </div>
+
+            <div class="production-notes">
+                {{ production_order.notes|linebreaksbr }}
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- UNITS -->
+
+    <section class="production-detail-card">
+
+        <div class="production-detail-card__header">
+
+            <div>
+                <h2>Operacje produkcyjne</h2>
+
+                <p>
+                    {{ production_units|length }}
+                    operacji
+                </p>
+            </div>
+
+            <i class="fa-solid fa-gears"></i>
+
+        </div>
+
+
+        <div class="production-units-table-wrapper">
+
+            <table class="production-units-table">
+
+                <thead>
+
+                    <tr>
+                        <th>#</th>
+                        <th>Status</th>
+                        <th>Stanowisko</th>
+                        <th>Start</th>
+                        <th>Koniec</th>
+                        <th>Wejście</th>
+                        <th>Wyjście</th>
+                        <th>Plan [min]</th>
+                        <th>Pracownicy</th>
+                        <th></th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for unit in production_units %}
+
+                        <tr
+                            {% if unit.start and unit.end and unit.start >= unit.end %}
+                                class="production-unit-error"
+                            {% endif %}
+                        >
+
+                            <td>
+
+                                <input
+                                    type="number"
+                                    class="production-unit-edit"
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="sequence"
+                                    value="{{ unit.sequence }}"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+                            <td>
+
+                                <select
+                                    class="production-unit-edit"
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="status"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                                    {% for value, label in production_unit_statuses %}
+
+                                        <option
+                                            value="{{ value }}"
+                                            {% if unit.status == value %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            {{ label }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </td>
+
+
+                            <td>
+
+                                <select
+                                    class="production-unit-edit"
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="work_station"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                                    {% for station in workstations %}
+
+                                        <option
+                                            value="{{ station.id }}"
+                                            {% if unit.work_station_id == station.id %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            {{ station }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </td>
+
+
+                            <td>
+
+                                <input
+                                    type="text"
+                                    class="
+                                        production-unit-edit
+                                        js-datetime-picker
+                                    "
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="start"
+                                    value="{{ unit.start|date:'Y-m-d H:i' }}"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+                            <td>
+
+                                <input
+                                    type="text"
+                                    class="
+                                        production-unit-edit
+                                        js-datetime-picker
+                                    "
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="end"
+                                    value="{{ unit.end|date:'Y-m-d H:i' }}"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+                            <td>
+
+                                <input
+                                    type="number"
+                                    class="production-unit-edit"
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="quantity_start"
+                                    value="{{ unit.quantity_start|default:'' }}"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+                            <td>
+
+                                <input
+                                    type="number"
+                                    class="production-unit-edit"
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="quantity_end"
+                                    value="{{ unit.quantity_end|default:'' }}"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+                            <td>
+
+                                <input
+                                    type="number"
+                                    class="production-unit-edit"
+                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-field="estimated_time"
+                                    value="{{ unit.estimated_time|default:'' }}"
+                                    {% if not perms.production.change_productionunit %}
+                                        disabled
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+                            <td>
+
+                                <div
+                                    class="production-workers"
+                                    id="workers-preview-{{ unit.id }}"
+                                >
+
+                                    {% for person in unit.persons.all %}
+
+                                        <span>
+                                            {{ person }}
+                                        </span>
+
+                                    {% empty %}
+
+                                        <small>
+                                            Brak
+                                        </small>
+
+                                    {% endfor %}
+
+                                </div>
+
+
+                                {% if perms.production.change_productionunit %}
+
+                                    <button
+                                        type="button"
+                                        class="production-worker-edit"
+                                        data-edit-workers
+                                        data-unit-id="{{ unit.id }}"
+                                        data-url="{% url 'production-unit-persons-update' unit.id %}"
+                                        data-current-workers="{% for person in unit.persons.all %}{{ person.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editWorkersModal"
+                                    >
+                                        Edytuj
+                                    </button>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <a
+                                    href="{% url 'unit-details' unit.id %}"
+                                    class="production-row-action"
+                                    title="Szczegóły"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="10"
+                                class="production-table-empty"
+                            >
+                                Brak operacji produkcyjnych.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- ADD UNIT -->
+
+    {% if perms.production.add_productionunit %}
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+                    <h2>Dodaj operację</h2>
+                    <p>Nowy etap produkcji</p>
+                </div>
+
+                <i class="fa-solid fa-plus"></i>
+
+            </div>
+
+
+            <form
+                method="post"
+                class="production-unit-form"
+            >
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+
+                    <div class="production-form-error">
+                        {{ form.non_field_errors }}
+                    </div>
+
+                {% endif %}
+
+
+                <div class="production-unit-form-grid">
+
+                    <div>
+                        <label>Kolejność</label>
+                        {{ form.sequence }}
+                    </div>
+
+                    <div>
+                        <label>Status</label>
+                        {{ form.status }}
+                    </div>
+
+                    <div>
+                        <label>Stanowisko</label>
+                        {{ form.work_station }}
+                    </div>
+
+                    <div>
+                        <label>Plan [min]</label>
+                        {{ form.estimated_time }}
+                    </div>
+
+                    <div>
+                        <label>Start</label>
+                        {{ form.start }}
+                    </div>
+
+                    <div>
+                        <label>Koniec</label>
+                        {{ form.end }}
+                    </div>
+
+                    <div>
+                        <label>Ilość wejściowa</label>
+                        {{ form.quantity_start }}
+                    </div>
+
+                    <div>
+                        <label>Ilość wyjściowa</label>
+                        {{ form.quantity_end }}
+                    </div>
+
+                </div>
+
+
+                <div class="production-unit-persons-field">
+
+                    <label>Pracownicy</label>
+
+                    <button
+                        type="button"
+                        class="app-btn app-btn-secondary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#workersModal"
+                    >
+                        <i class="fa-solid fa-users"></i>
+                        Wybierz pracowników
+                    </button>
+
+                    <div id="selectedWorkersPreview">
+                        Brak pracowników
+                    </div>
+
+                    <div hidden>
+                        {{ form.persons }}
+                    </div>
+
+                </div>
+
+
+                <div class="production-unit-form-actions">
+
+                    <button
+                        type="submit"
+                        class="app-btn app-btn-primary"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        Dodaj operację
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ADD WORKERS MODAL -->
+
+<div
+    class="modal fade"
+    id="workersModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Wybierz pracowników
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="production-workers-grid">
+
+                    {% for worker in workers %}
+
+                        <button
+                            type="button"
+                            class="production-worker-tile"
+                            data-add-worker
+                            data-worker-id="{{ worker.id }}"
+                            data-worker-name="{{ worker }}"
+                        >
+                            {{ worker }}
+                        </button>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-secondary"
+                    id="clearAddWorkers"
+                >
+                    Wyczyść
+                </button>
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-primary"
+                    data-bs-dismiss="modal"
+                >
+                    Zatwierdź
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- EDIT WORKERS MODAL -->
+
+<div
+    class="modal fade"
+    id="editWorkersModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Edytuj pracowników
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="production-workers-grid">
+
+                    {% for worker in workers %}
+
+                        <button
+                            type="button"
+                            class="production-worker-tile"
+                            data-edit-worker
+                            data-worker-id="{{ worker.id }}"
+                            data-worker-name="{{ worker }}"
+                        >
+                            {{ worker }}
+                        </button>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-secondary"
+                    id="clearEditWorkers"
+                >
+                    Wyczyść
+                </button>
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-primary"
+                    id="saveEditWorkers"
+                >
+                    Zapisz
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- TOOL MODAL -->
+
+<div
+    class="modal fade"
+    id="productionToolModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <form
+                method="post"
+                action="{% url 'update_production_order_tool' production_order.id %}"
+            >
+
+                {% csrf_token %}
+
+                <div class="modal-header">
+
+                    <h5
+                        class="modal-title"
+                        id="productionToolModalTitle"
+                    >
+                        Wybierz narzędzie
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <input
+                        type="hidden"
+                        name="tool_type"
+                        id="productionToolType"
+                    >
+
+                    <label class="production-modal-label">
+                        Narzędzie
+                    </label>
+
+                    <select
+                        name="tool_id"
+                        id="productionToolSelect"
+                        class="production-modal-select"
+                    >
+                        <option value="">
+                            — brak —
+                        </option>
+                    </select>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="app-btn app-btn-secondary"
+                        data-bs-dismiss="modal"
+                    >
+                        Anuluj
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="app-btn app-btn-primary"
+                    >
+                        Zapisz
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{{ punches_data|json_script:"production-punches-data" }}
+{{ photopolymers_data|json_script:"production-polymers-data" }}
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{% static 'js/production/order_detail.js' %}"></script>
+
+{% endblock %}

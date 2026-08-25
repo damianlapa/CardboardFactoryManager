@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Zlecenia produkcyjne | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-orders-page">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="production-header">
+
+        <div>
+
+            <a
+                href="{% url 'production-menu' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Produkcja
+            </a>
+
+            <div class="production-eyebrow">
+                Produkcja
+            </div>
+
+            <h1>
+                Zlecenia produkcyjne
+            </h1>
+
+            <p>
+                Zarządzanie zleceniami i przebiegiem produkcji
+            </p>
+
+        </div>
+
+
+        <div class="production-header__actions">
+
+            {% if perms.production.add_productionorder %}
+
+                <a
+                    href="{% url 'production-order-add' %}"
+                    class="app-btn app-btn-primary"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Nowe zlecenie
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- FILTERS                                             -->
+    <!-- =================================================== -->
+
+    <form
+        method="get"
+        class="production-order-filters"
+    >
+
+        <div class="production-search">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                type="text"
+                name="q"
+                value="{{ search }}"
+                placeholder="Numer, klient, wymiar, tektura..."
+            >
+
+        </div>
+
+
+        <select name="status">
+
+            <option value="">
+                Aktywne
+            </option>
+
+            {% for value, label in statuses %}
+
+                <option
+                    value="{{ value }}"
+                    {% if selected_status == value %}
+                        selected
+                    {% endif %}
+                >
+                    {{ label }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+
+        <button
+            type="submit"
+            class="app-btn app-btn-primary"
+        >
+            <i class="fa-solid fa-filter"></i>
+            Filtruj
+        </button>
+
+
+        {% if search or selected_status %}
+
+            <a
+                href="{% url 'all-production-orders' %}"
+                class="app-btn app-btn-secondary"
+            >
+                Wyczyść
+            </a>
+
+        {% endif %}
+
+    </form>
+
+
+    <!-- =================================================== -->
+    <!-- RESULT HEADER                                       -->
+    <!-- =================================================== -->
+
+    <div class="production-result-header">
+
+        <div>
+
+            <strong>
+                {{ orders_count }}
+            </strong>
+
+            <span>
+                zleceń
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- ORDERS                                              -->
+    <!-- =================================================== -->
+
+    {% if production_orders %}
+
+        <div class="production-order-list">
+
+            {% for order in production_orders %}
+
+                <a
+                    href="{% url 'production-details' production_order_id=order.id %}"
+                    class="
+                        production-order-row
+                        {% if order.priority %}
+                            production-order-row--priority
+                        {% endif %}
+                    "
+                >
+
+                    <div class="production-order-row__number">
+
+                        {% if order.priority %}
+                            <i
+                                class="fa-solid fa-fire"
+                                title="Priorytet"
+                            ></i>
+                        {% endif %}
+
+                        <strong>
+                            {{ order.id_number }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="production-order-row__customer">
+
+                        <span class="production-table-label">
+                            Klient
+                        </span>
+
+                        <strong>
+                            {{ order.customer }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Produkt
+                        </span>
+
+                        <strong>
+                            {{ order.dimensions|default:"—" }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Tektura
+                        </span>
+
+                        <strong>
+                            {{ order.cardboard|default:"—" }}
+                        </strong>
+
+                        <small>
+                            {{ order.cardboard_dimensions|default:"" }}
+                        </small>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Ilość
+                        </span>
+
+                        <strong>
+                            {{ order.quantity|default:"—" }}
+                        </strong>
+
+                        {% if order.ordered_quantity %}
+
+                            <small>
+                                zam. {{ order.ordered_quantity }}
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Operacje
+                        </span>
+
+                        <strong>
+                            {{ order.units_count }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span
+                            class="
+                                production-status
+                                production-status--{{ order.status|lower }}
+                            "
+                        >
+                            {{ order.get_status_display }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="production-order-row__arrow">
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </div>
+
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="production-empty">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <strong>
+                Brak zleceń
+            </strong>
+
+            <span>
+                Żadne zlecenie nie odpowiada wybranym filtrom.
+            </span>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

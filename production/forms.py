@@ -12,8 +12,10 @@ class ProductionOrderForm(ModelForm):
 
 
 class ProductionUnitForm(forms.ModelForm):
+
     class Meta:
         model = ProductionUnit
+
         fields = [
             "sequence",
             "work_station",
@@ -37,6 +39,7 @@ class ProductionUnitForm(forms.ModelForm):
                 },
                 format="%Y-%m-%d %H:%M",
             ),
+
             "end": forms.DateTimeInput(
                 attrs={
                     "type": "text",
@@ -48,18 +51,53 @@ class ProductionUnitForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, **kwargs):
-        day = kwargs.pop("day", None)
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        kwargs.pop(
+            "day",
+            None,
+        )
 
-        self.fields["start"].input_formats = ["%Y-%m-%dT%H:%M"]
-        self.fields["end"].input_formats = ["%Y-%m-%dT%H:%M"]
+        super().__init__(
+            *args,
+            **kwargs,
+        )
+
+        datetime_formats = [
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%dT%H:%M",
+        ]
+
+        self.fields[
+            "start"
+        ].input_formats = datetime_formats
+
+        self.fields[
+            "end"
+        ].input_formats = datetime_formats
 
         for name, field in self.fields.items():
-            if name not in ("persons",):
-                field.widget.attrs.setdefault("class", "form-control")
 
-        self.fields["persons"].widget.attrs.update({
+            if name != "persons":
+                existing_class = (
+                    field.widget.attrs.get(
+                        "class",
+                        "",
+                    )
+                )
+
+                field.widget.attrs[
+                    "class"
+                ] = (
+                    f"{existing_class} form-control"
+                ).strip()
+
+        self.fields[
+            "persons"
+        ].widget.attrs.update({
             "class": "d-none",
         })
 
