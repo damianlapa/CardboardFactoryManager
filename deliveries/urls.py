@@ -12,3 +12,41 @@ urlpatterns = [
     path('event-delete/<int:event_id>/', EventDelete.as_view(), name='event-delete'),
     path('event-check/<int:event_id>/', EventCheck.as_view(), name='event-check')
 ]
+
+urlpatterns += [
+    path(
+        "calendar/day-events/",
+        CalendarDayEventsView.as_view(),
+        name="calendar-day-events",
+    ),
+
+    path(
+        "calendar/event-create/",
+        CalendarEventCreateView.as_view(),
+        name="calendar-event-create",
+    ),
+
+    path(
+        "calendar/event/<int:event_id>/",
+        CalendarEventDetailView.as_view(),
+        name="calendar-event-detail",
+    ),
+
+    path(
+        "calendar/event/<int:event_id>/update/",
+        CalendarEventUpdateView.as_view(),
+        name="calendar-event-update",
+    ),
+
+    path(
+        "calendar/event/<int:event_id>/complete/",
+        CalendarEventCompleteView.as_view(),
+        name="calendar-event-complete",
+    ),
+
+    path(
+        "calendar/event/<int:event_id>/delete/",
+        CalendarEventDeleteView.as_view(),
+        name="calendar-event-delete",
+    ),
+]

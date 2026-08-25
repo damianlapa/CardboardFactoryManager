@@ -26,52 +26,62 @@ MONTHS = (
 )
 
 
-class CalendarView(LoginRequiredMixin, View):
-    login_url = reverse_lazy('start-page')
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views import View
+
+from deliveries.services.calendar import (
+    get_month_context, create_event, get_events_for_day
+)
+
+from deliveries.services.calendar import (
+    complete_event,
+    create_event,
+    delete_event,
+    get_event,
+    get_events_for_day,
+    serialize_event,
+    update_event,
+)
+
+
+class CalendarView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+    template_name = "deliveries/calendar_new.html"
 
     def get(self, request):
+        today = datetime.date.today()
 
-        another_start = request.GET.get('start')
+        year = request.GET.get("year")
+        month = request.GET.get("month")
 
-        if another_start:
-            another_start = another_start.split('-')
+        try:
+            year = int(year)
+        except (TypeError, ValueError):
+            year = today.year
 
-            y = int(another_start[0])
-            m = int(another_start[1])
+        try:
+            month = int(month)
+        except (TypeError, ValueError):
+            month = today.month
 
-            today = datetime.datetime(y, m, 1)
-        else:
-            today = datetime.datetime.today().date()
+        if month < 1 or month > 12:
+            month = today.month
 
-        month_desc = f'{MONTHS[today.month - 1]} {today.year}'
+        context = get_month_context(
+            year=year,
+            month=month,
+        )
 
-        month_start = datetime.datetime(today.year, today.month, 1)
-        month_start_weekday = month_start.isoweekday()
-
-        weeks = []
-
-        day_start = month_start - datetime.timedelta(days=month_start_weekday - 1)
-
-        for _ in range(5):
-            week = []
-            for _ in range(7):
-                if day_start.isoweekday() <= 5:
-                    week.append((day_start, f'{day_start.year}-{day_start.month}-{day_start.day}'))
-                day_start += datetime.timedelta(days=1)
-            weeks.append(week)
-
-        today = datetime.datetime(today.year, today.month, today.day)
-
-        n_month = f'{today.year}-{today.month + 1}' if today.month < 12 else f'{today.year + 1}-1'
-        p_month = f'{today.year}-{today.month - 1}' if today.month > 1 else f'{today.year - 1}-12'
-
-        today = datetime.datetime.today()
-
-        today = datetime.datetime(today.year, today.month, today.day)
-
-        notes = Note.objects.all()
-
-        return render(request, 'deliveries/calendar2.html', locals())
+        return render(
+            request,
+            self.template_name,
+            context,
+        )
 
 
 class EventsByDay(LoginRequiredMixin, View):
@@ -203,3 +213,179 @@ class EventDelete(LoginRequiredMixin, View):
         event.delete()
 
         return redirect('day-details', date=day)
+
+
+class CalendarDayEventsView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def get(self, request):
+        day_raw = request.GET.get("day")
+
+        try:
+            day = datetime.date.fromisoformat(
+                day_raw
+            )
+        except (TypeError, ValueError):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Nieprawidłowa data.",
+                },
+                status=400,
+            )
+
+        return JsonResponse({
+            "success": True,
+            "day": day.isoformat(),
+            "events": get_events_for_day(
+                day
+            ),
+        })
+
+
+class CalendarEventCreateView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(self, request):
+        try:
+            event = create_event(
+                event_type=request.POST.get(
+                    "event_type"
+                ),
+                title=request.POST.get(
+                    "title"
+                ),
+                day=request.POST.get(
+                    "day"
+                ),
+                details=request.POST.get(
+                    "details"
+                ),
+            )
+
+        except ValueError as error:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": str(error),
+                },
+                status=400,
+            )
+
+        return JsonResponse({
+            "success": True,
+            "event": {
+                "id": event.id,
+            },
+        })
+
+
+class CalendarEventDetailView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def get(self, request, event_id):
+        event = get_event(event_id)
+
+        return JsonResponse({
+            "success": True,
+            "event": serialize_event(
+                event
+            ),
+        })
+
+
+class CalendarEventUpdateView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(
+        self,
+        request,
+        event_id,
+    ):
+        try:
+            event = update_event(
+                event_id=event_id,
+                event_type=request.POST.get(
+                    "event_type"
+                ),
+                title=request.POST.get(
+                    "title"
+                ),
+                day=request.POST.get(
+                    "day"
+                ),
+                details=request.POST.get(
+                    "details"
+                ),
+            )
+
+        except ValueError as error:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": str(error),
+                },
+                status=400,
+            )
+
+        return JsonResponse({
+            "success": True,
+            "event": serialize_event(
+                event
+            ),
+        })
+
+
+class CalendarEventCompleteView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(
+        self,
+        request,
+        event_id,
+    ):
+        event = complete_event(
+            event_id
+        )
+
+        return JsonResponse({
+            "success": True,
+            "event": serialize_event(
+                event
+            ),
+        })
+
+
+class CalendarEventDeleteView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(
+        self,
+        request,
+        event_id,
+    ):
+        delete_event(
+            event_id
+        )
+
+        return JsonResponse({
+            "success": True,
+        })
