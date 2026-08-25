@@ -83,9 +83,36 @@
         );
 
 
-    const modal = bootstrap.Modal.getOrCreateInstance(
-        modalElement
-    );
+    if (
+        !modalElement ||
+        !form ||
+        !saveButton ||
+        !workerIdInput ||
+        !dateInput ||
+        !absenceType
+    ) {
+        console.error(
+            "Absences: brakuje wymaganych elementów DOM."
+        );
+        return;
+    }
+
+
+    if (
+        typeof bootstrap === "undefined"
+        || !bootstrap.Modal
+    ) {
+        console.error(
+            "Absences: Bootstrap JS nie został załadowany."
+        );
+        return;
+    }
+
+
+    const modal =
+        bootstrap.Modal.getOrCreateInstance(
+            modalElement
+        );
 
 
     /* ====================================================== */
@@ -93,6 +120,7 @@
     /* ====================================================== */
 
     let calendarData = null;
+    let lastFocusedElement = null;
 
 
     /* ====================================================== */
@@ -107,12 +135,16 @@
         const [year, month] =
             periodSelect.value.split("-");
 
-        const params = new URLSearchParams(
-            window.location.search
-        );
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
 
         params.set("year", year);
-        params.set("month", String(Number(month)));
+        params.set(
+            "month",
+            String(Number(month))
+        );
 
         if (contractTypeSelect) {
             params.set(
@@ -156,7 +188,7 @@
 
 
     /* ====================================================== */
-    /* RENDER DATA                                            */
+    /* RENDER                                                 */
     /* ====================================================== */
 
     function applyHoliday(holiday) {
@@ -169,12 +201,17 @@
                     "absence-cell--holiday"
                 );
 
-                cell.title = holiday.name;
+                cell.title =
+                    holiday.name || "Święto";
             });
     }
 
 
     function applyEmploymentExclusion(item) {
+        if (!Array.isArray(item.days)) {
+            return;
+        }
+
         item.days.forEach((day) => {
             const cell = getCell(
                 item.worker_id,
@@ -201,6 +238,10 @@
         );
 
         if (!cell) {
+            console.warn(
+                "Nie znaleziono komórki dla nieobecności:",
+                absence
+            );
             return;
         }
 
@@ -208,8 +249,10 @@
             "absence-cell--absence"
         );
 
-        cell.dataset.absenceId =
-            absence.id;
+        if (absence.id !== undefined) {
+            cell.dataset.absenceId =
+                absence.id;
+        }
 
         if (absence.type === "SP") {
             cell.textContent =
@@ -229,7 +272,8 @@
             return;
         }
 
-        cell.textContent = absence.type;
+        cell.textContent =
+            absence.type || "";
     }
 
 
@@ -240,6 +284,10 @@
         );
 
         if (!cell) {
+            console.warn(
+                "Nie znaleziono komórki dla nadgodzin:",
+                extraHour
+            );
             return;
         }
 
@@ -254,7 +302,9 @@
         }
 
         const prefix =
-            extraHour.full_day ? "+" : "";
+            extraHour.full_day
+                ? "+"
+                : "";
 
         cell.textContent =
             `${prefix}${extraHour.quantity}`;
@@ -262,25 +312,38 @@
 
 
     function renderCalendar() {
+        if (!calendarData) {
+            return;
+        }
+
         calendar
             .querySelectorAll(
                 "[data-worker-id][data-day]"
             )
             .forEach(clearDynamicState);
 
-        calendarData.holidays.forEach(
+        (
+            calendarData.holidays || []
+        ).forEach(
             applyHoliday
         );
 
-        calendarData.employment_exclusions.forEach(
+        (
+            calendarData.employment_exclusions
+            || []
+        ).forEach(
             applyEmploymentExclusion
         );
 
-        calendarData.absences.forEach(
+        (
+            calendarData.absences || []
+        ).forEach(
             applyAbsence
         );
 
-        calendarData.extra_hours.forEach(
+        (
+            calendarData.extra_hours || []
+        ).forEach(
             applyExtraHours
         );
     }
@@ -291,16 +354,28 @@
     /* ====================================================== */
 
     async function loadCalendarData() {
-        const params = new URLSearchParams({
-            year: calendar.dataset.year,
-            month: calendar.dataset.month,
-            contract_type:
-                calendar.dataset.contractType,
-        });
+        const params =
+            new URLSearchParams({
+                year:
+                    calendar.dataset.year || "",
+                month:
+                    calendar.dataset.month || "",
+                contract_type:
+                    calendar.dataset.contractType
+                    || "",
+            });
+
+        const url =
+            `${calendar.dataset.dataUrl}?` +
+            params.toString();
+
+        console.log(
+            "ABSENCES DATA URL:",
+            url
+        );
 
         const response = await fetch(
-            `${calendar.dataset.dataUrl}?` +
-            params.toString(),
+            url,
             {
                 headers: {
                     "X-Requested-With":
@@ -316,9 +391,91 @@
             );
         }
 
-        calendarData = await response.json();
+        calendarData =
+            await response.json();
+
+        console.log(
+            "ABSENCE CALENDAR DATA:",
+            calendarData
+        );
+
+        console.log(
+            "ABSENCES:",
+            calendarData.absences
+        );
+
+        console.log(
+            "EXTRA HOURS:",
+            calendarData.extra_hours
+        );
 
         renderCalendar();
+    }
+
+
+    /* ====================================================== */
+    /* FIND DATA                                              */
+    /* ====================================================== */
+
+    function findAbsence(
+        workerId,
+        day
+    ) {
+        if (
+            !calendarData
+            || !Array.isArray(
+                calendarData.absences
+            )
+        ) {
+            return null;
+        }
+
+        return (
+            calendarData.absences.find(
+                (item) =>
+                    String(
+                        item.worker_id
+                    ) ===
+                        String(workerId)
+                    &&
+                    Number(
+                        item.day
+                    ) ===
+                        Number(day)
+            )
+            || null
+        );
+    }
+
+
+    function findExtraHours(
+        workerId,
+        day
+    ) {
+        if (
+            !calendarData
+            || !Array.isArray(
+                calendarData.extra_hours
+            )
+        ) {
+            return null;
+        }
+
+        return (
+            calendarData.extra_hours.find(
+                (item) =>
+                    String(
+                        item.worker_id
+                    ) ===
+                        String(workerId)
+                    &&
+                    Number(
+                        item.day
+                    ) ===
+                        Number(day)
+            )
+            || null
+        );
     }
 
 
@@ -326,42 +483,27 @@
     /* MODAL HELPERS                                          */
     /* ====================================================== */
 
-    function findAbsence(workerId, day) {
-        return calendarData.absences.find(
-            (item) =>
-                String(item.worker_id) ===
-                    String(workerId) &&
-                Number(item.day) === Number(day)
-        );
-    }
-
-
-    function findExtraHours(workerId, day) {
-        return calendarData.extra_hours.find(
-            (item) =>
-                String(item.worker_id) ===
-                    String(workerId) &&
-                Number(item.day) === Number(day)
-        );
-    }
-
-
     function getWorkerName(cell) {
         const columnIndex =
             cell.cellIndex;
 
-        const header = calendar.querySelector(
-            `thead th:nth-child(${columnIndex + 1})`
-        );
+        const header =
+            calendar.querySelector(
+                `thead th:nth-child(${columnIndex + 1})`
+            );
 
         return (
-            header?.textContent.trim() ||
-            "Pracownik"
+            header?.textContent.trim()
+            || "Pracownik"
         );
     }
 
 
     function formatDate(dateValue) {
+        if (!dateValue) {
+            return "";
+        }
+
         const [year, month, day] =
             dateValue.split("-");
 
@@ -372,26 +514,49 @@
     function resetModal() {
         form.reset();
 
-        absenceValueContainer.hidden = true;
-        absenceInfoContainer.hidden = true;
+        if (absenceValueContainer) {
+            absenceValueContainer.hidden =
+                true;
+        }
 
-        extraHoursFields.hidden = true;
+        if (absenceInfoContainer) {
+            absenceInfoContainer.hidden =
+                true;
+        }
 
-        modalError.hidden = true;
-        modalError.textContent = "";
+        if (extraHoursFields) {
+            extraHoursFields.hidden =
+                true;
+        }
+
+        if (modalError) {
+            modalError.hidden = true;
+            modalError.textContent = "";
+        }
     }
 
 
     function updateAbsenceFields() {
-        absenceValueContainer.hidden =
-            absenceType.value !== "SP";
+        if (absenceValueContainer) {
+            absenceValueContainer.hidden =
+                absenceType.value !== "SP";
+        }
 
-        absenceInfoContainer.hidden =
-            absenceType.value !== "IN";
+        if (absenceInfoContainer) {
+            absenceInfoContainer.hidden =
+                absenceType.value !== "IN";
+        }
     }
 
 
     function updateExtraHoursFields() {
+        if (
+            !extraHoursFields
+            || !extraHoursEnabled
+        ) {
+            return;
+        }
+
         extraHoursFields.hidden =
             !extraHoursEnabled.checked;
     }
@@ -420,48 +585,83 @@
         const workerName =
             getWorkerName(cell);
 
-        workerIdInput.value = workerId;
-        dateInput.value = date;
+        workerIdInput.value =
+            workerId;
 
-        modalSubtitle.textContent =
-            `${workerName} • ${formatDate(date)}`;
+        dateInput.value =
+            date;
+
+        if (modalSubtitle) {
+            modalSubtitle.textContent =
+                `${workerName} • ${formatDate(date)}`;
+        }
 
         const existingAbsence =
-            findAbsence(workerId, day);
+            findAbsence(
+                workerId,
+                day
+            );
 
         const existingExtraHours =
-            findExtraHours(workerId, day);
+            findExtraHours(
+                workerId,
+                day
+            );
 
 
         if (existingAbsence) {
             absenceType.value =
-                existingAbsence.type;
+                existingAbsence.type || "";
 
-            if (existingAbsence.type === "SP") {
+            if (
+                existingAbsence.type
+                === "SP"
+                && absenceValue
+            ) {
                 absenceValue.value =
-                    existingAbsence.value || "";
+                    existingAbsence.value
+                    || "";
             }
 
-            if (existingAbsence.type === "IN") {
+            if (
+                existingAbsence.type
+                === "IN"
+                && additionalInfo
+            ) {
                 additionalInfo.value =
-                    existingAbsence.additional_info || "";
+                    existingAbsence
+                        .additional_info
+                    || "";
             }
         }
 
 
-        if (existingExtraHours) {
-            extraHoursEnabled.checked = true;
+        if (
+            existingExtraHours
+            && extraHoursEnabled
+        ) {
+            extraHoursEnabled.checked =
+                true;
 
-            extraHoursQuantity.value =
-                existingExtraHours.quantity;
+            if (extraHoursQuantity) {
+                extraHoursQuantity.value =
+                    existingExtraHours.quantity
+                    || "";
+            }
 
-            extraHoursFullDay.checked =
-                existingExtraHours.full_day;
+            if (extraHoursFullDay) {
+                extraHoursFullDay.checked =
+                    Boolean(
+                        existingExtraHours.full_day
+                    );
+            }
         }
 
 
         updateAbsenceFields();
         updateExtraHoursFields();
+
+        lastFocusedElement = cell;
 
         modal.show();
     }
@@ -472,14 +672,22 @@
     /* ====================================================== */
 
     function getCsrfToken() {
-        return form.querySelector(
-            "[name='csrfmiddlewaretoken']"
-        ).value;
+        const token =
+            form.querySelector(
+                "[name='csrfmiddlewaretoken']"
+            );
+
+        return token
+            ? token.value
+            : "";
     }
 
 
-    function setSavingState(isSaving) {
-        saveButton.disabled = isSaving;
+    function setSavingState(
+        isSaving
+    ) {
+        saveButton.disabled =
+            isSaving;
 
         if (isSaving) {
             saveButton.innerHTML =
@@ -497,15 +705,33 @@
 
 
     function showModalError(message) {
-        modalError.textContent = message;
-        modalError.hidden = false;
+        if (!modalError) {
+            window.alert(message);
+            return;
+        }
+
+        modalError.textContent =
+            message;
+
+        modalError.hidden =
+            false;
     }
 
 
     async function saveDay() {
-        modalError.hidden = true;
+        if (!calendar.dataset.updateUrl) {
+            showModalError(
+                "Brak adresu zapisu nieobecności."
+            );
+            return;
+        }
 
-        const body = new URLSearchParams();
+        if (modalError) {
+            modalError.hidden = true;
+        }
+
+        const body =
+            new URLSearchParams();
 
         body.set(
             "worker_id",
@@ -524,27 +750,41 @@
 
         body.set(
             "absence_value",
-            absenceValue.value
+            absenceValue
+                ? absenceValue.value
+                : ""
         );
 
         body.set(
             "additional_info",
-            additionalInfo.value
+            additionalInfo
+                ? additionalInfo.value
+                : ""
         );
 
         body.set(
             "extra_hours_enabled",
-            String(extraHoursEnabled.checked)
+            String(
+                extraHoursEnabled
+                    ? extraHoursEnabled.checked
+                    : false
+            )
         );
 
         body.set(
             "extra_hours_quantity",
-            extraHoursQuantity.value
+            extraHoursQuantity
+                ? extraHoursQuantity.value
+                : ""
         );
 
         body.set(
             "extra_hours_full_day",
-            String(extraHoursFullDay.checked)
+            String(
+                extraHoursFullDay
+                    ? extraHoursFullDay.checked
+                    : false
+            )
         );
 
 
@@ -567,18 +807,30 @@
                             "XMLHttpRequest",
                     },
 
-                    body: body.toString(),
+                    body:
+                        body.toString(),
                 }
             );
 
+            let result = null;
 
-            const result = await response.json();
-
-
-            if (!response.ok || !result.ok) {
+            try {
+                result =
+                    await response.json();
+            } catch (error) {
                 throw new Error(
-                    result.error ||
-                    "Nie udało się zapisać zmian."
+                    "Serwer zwrócił nieprawidłową odpowiedź."
+                );
+            }
+
+
+            if (
+                !response.ok
+                || !result.ok
+            ) {
+                throw new Error(
+                    result.error
+                    || "Nie udało się zapisać zmian."
                 );
             }
 
@@ -588,14 +840,17 @@
             modal.hide();
 
         } catch (error) {
+            console.error(
+                "Absence save error:",
+                error
+            );
 
             showModalError(
-                error.message ||
-                "Wystąpił błąd podczas zapisu."
+                error.message
+                || "Wystąpił błąd podczas zapisu."
             );
 
         } finally {
-
             setSavingState(false);
         }
     }
@@ -623,7 +878,7 @@
     );
 
 
-    extraHoursEnabled.addEventListener(
+    extraHoursEnabled?.addEventListener(
         "change",
         updateExtraHoursFields
     );
@@ -638,10 +893,10 @@
     calendar.addEventListener(
         "click",
         (event) => {
-
-            const cell = event.target.closest(
-                "[data-worker-id][data-date]"
-            );
+            const cell =
+                event.target.closest(
+                    "[data-worker-id][data-date]"
+                );
 
             if (!cell) {
                 return;
@@ -653,14 +908,57 @@
 
 
     /* ====================================================== */
+    /* MODAL FOCUS                                            */
+    /* ====================================================== */
+
+    modalElement.addEventListener(
+        "hide.bs.modal",
+        () => {
+            const active =
+                document.activeElement;
+
+            if (
+                active
+                && modalElement.contains(
+                    active
+                )
+                && typeof active.blur
+                    === "function"
+            ) {
+                active.blur();
+            }
+        }
+    );
+
+
+    modalElement.addEventListener(
+        "hidden.bs.modal",
+        () => {
+            if (
+                lastFocusedElement
+                && document.body.contains(
+                    lastFocusedElement
+                )
+            ) {
+                lastFocusedElement.focus();
+            }
+
+            lastFocusedElement = null;
+        }
+    );
+
+
+    /* ====================================================== */
     /* START                                                  */
     /* ====================================================== */
 
-    loadCalendarData().catch((error) => {
-        console.error(
-            "Unable to load absence calendar.",
-            error
-        );
-    });
+    loadCalendarData().catch(
+        (error) => {
+            console.error(
+                "Unable to load absence calendar.",
+                error
+            );
+        }
+    );
 
 })();
