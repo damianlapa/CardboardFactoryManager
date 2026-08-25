@@ -51,7 +51,7 @@
         <div class="app-sidebar__header">
 
             <a
-                href="{% url 'main-page' %}"
+                href="{% url 'dashboard' %}"
                 class="app-logo"
             >
 
@@ -71,7 +71,7 @@
             <!-- DASHBOARD -->
 
             <a
-                href="{% url 'main-page' %}"
+                href="{% url 'dashboard' %}"
                 class="
                     app-navigation__item
                     {% if request.resolver_match.url_name == 'main-page' %}
@@ -244,7 +244,7 @@
             {% if perms.warehousemanager.view_photopolymer %}
 
                 <a
-                    href="{% url 'photopolymers' %}"
+                    href="{% url 'polymers' %}"
                     class="
                         app-navigation__item
                         {% if request.resolver_match.url_name == 'polymers' %}

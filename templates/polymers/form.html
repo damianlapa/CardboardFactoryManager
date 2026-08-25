@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if object %}
+        Edycja polimeru | PAKER
+    {% else %}
+        Nowy polimer | PAKER
+    {% endif %}
+{% endblock %}
+
+{% block page_title %}
+    Polimery
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/polymers.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="polymer-form-page">
+
+    <header class="polymer-form-header">
+
+        <div>
+
+            <a
+                href="{% if object %}{% url 'polymer-details' object.id %}{% else %}{% url 'polymers' %}{% endif %}"
+                class="polymer-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Wróć
+            </a>
+
+            <div class="polymer-eyebrow">
+                Polimery
+            </div>
+
+            <h1>
+                {% if object %}
+                    Edytuj polimer
+                {% else %}
+                    Dodaj polimer
+                {% endif %}
+            </h1>
+
+            <p>
+                {% if object %}
+                    Zmień dane istniejącego polimeru
+                {% else %}
+                    Dodaj nowy polimer do ewidencji
+                {% endif %}
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+        class="polymer-form-card"
+    >
+
+        {% csrf_token %}
+
+
+        {% if form.non_field_errors %}
+
+            <div class="polymer-form-error">
+                {{ form.non_field_errors }}
+            </div>
+
+        {% endif %}
+
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+                    <h2>Dane podstawowe</h2>
+                    <p>Numer, producent i klient</p>
+                </div>
+
+            </div>
+
+
+            <div class="polymer-form-grid">
+
+                <div class="polymer-form-field">
+                    <label for="{{ form.identification_number.id_for_label }}">
+                        Numer
+                    </label>
+
+                    {{ form.identification_number }}
+
+                    {% if form.identification_number.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.identification_number.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+
+                <div class="polymer-form-field">
+                    <label for="{{ form.identification_letter.id_for_label }}">
+                        Litera
+                    </label>
+
+                    {{ form.identification_letter }}
+
+                    {% if form.identification_letter.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.identification_letter.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+
+                <div class="polymer-form-field">
+                    <label for="{{ form.producer.id_for_label }}">
+                        Producent
+                    </label>
+
+                    {{ form.producer }}
+
+                    {% if form.producer.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.producer.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+
+                <div class="polymer-form-field">
+                    <label for="{{ form.customer.id_for_label }}">
+                        Klient
+                    </label>
+
+                    {{ form.customer }}
+
+                    {% if form.customer.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.customer.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+
+                <div class="polymer-form-field polymer-form-field--full">
+                    <label for="{{ form.name.id_for_label }}">
+                        Nazwa
+                    </label>
+
+                    {{ form.name }}
+
+                    {% if form.name.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.name.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+
+                <div class="polymer-form-field">
+                    <label for="{{ form.dimensions.id_for_label }}">
+                        Wymiary
+                    </label>
+
+                    {{ form.dimensions }}
+
+                    {% if form.dimensions.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.dimensions.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+
+                <div class="polymer-form-field">
+                    <label for="{{ form.delivery_date.id_for_label }}">
+                        Data dostarczenia
+                    </label>
+
+                    {{ form.delivery_date }}
+
+                    {% if form.delivery_date.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.delivery_date.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+                    <h2>Kolory</h2>
+                    <p>Farby przypisane do polimeru</p>
+                </div>
+
+            </div>
+
+
+            <div class="polymer-form-field polymer-form-field--full">
+
+                <label for="{{ form.colors.id_for_label }}">
+                    Farby
+                </label>
+
+                {{ form.colors }}
+
+                {% if form.colors.errors %}
+                    <div class="polymer-field-error">
+                        {{ form.colors.errors }}
+                    </div>
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+                    <h2>Projekt</h2>
+                    <p>Plik i link do materiałów</p>
+                </div>
+
+            </div>
+
+
+            <div class="polymer-form-grid">
+
+                <div class="polymer-form-field">
+
+                    <label for="{{ form.project.id_for_label }}">
+                        Plik projektu
+                    </label>
+
+                    {{ form.project }}
+
+                    {% if object and object.project %}
+
+                        <small class="polymer-current-file">
+                            Aktualnie:
+                            {{ object.project.name }}
+                        </small>
+
+                    {% endif %}
+
+                    {% if form.project.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.project.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+
+                <div class="polymer-form-field">
+
+                    <label for="{{ form.link.id_for_label }}">
+                        Link
+                    </label>
+
+                    {{ form.link }}
+
+                    {% if form.link.errors %}
+                        <div class="polymer-field-error">
+                            {{ form.link.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+                    <h2>Status</h2>
+                    <p>Dostępność polimeru w systemie</p>
+                </div>
+
+            </div>
+
+
+            <label class="polymer-checkbox">
+
+                {{ form.active }}
+
+                <span>
+                    Polimer aktywny
+                </span>
+
+            </label>
+
+
+            {% if form.active.errors %}
+                <div class="polymer-field-error">
+                    {{ form.active.errors }}
+                </div>
+            {% endif %}
+
+        </section>
+
+
+        <div class="polymer-form-actions">
+
+            <a
+                href="{% if object %}{% url 'polymer-details' object.id %}{% else %}{% url 'polymers' %}{% endif %}"
+                class="app-btn app-btn-secondary"
+            >
+                Anuluj
+            </a>
+
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-check"></i>
+
+                {% if object %}
+                    Zapisz zmiany
+                {% else %}
+                    Dodaj polimer
+                {% endif %}
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

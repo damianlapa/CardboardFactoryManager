@@ -30,7 +30,7 @@ class ModernAbsenceListView(
     )
 
     template_name = (
-        "modern/absences/list.html"
+        "absences/list.html"
     )
 
     def get(self, request):

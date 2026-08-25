@@ -1,0 +1,702 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Polimery | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Polimery
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/polymers.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="polymer-page">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="polymer-header">
+
+        <div>
+
+            <div class="polymer-eyebrow">
+                Narzędzia produkcyjne
+            </div>
+
+            <h1>
+                Polimery
+            </h1>
+
+            <p>
+                Ewidencja polimerów,
+                dostępności i wysyłek serwisowych
+            </p>
+
+        </div>
+
+
+        <div class="polymer-header__actions">
+
+            {% if perms.warehousemanager.add_photopolymer_service %}
+
+                <a
+                    href="{% url 'polymer-service-create' %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    <i class="fa-solid fa-truck-fast"></i>
+                    Nowa wysyłka
+                </a>
+
+            {% endif %}
+
+
+            {% if perms.warehousemanager.add_photopolymer %}
+
+                <a
+                    href="{% url 'polymer-create' %}"
+                    class="app-btn app-btn-primary"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Dodaj polimer
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- SUMMARY                                             -->
+    <!-- =================================================== -->
+
+    <div class="polymer-summary-grid">
+
+        <div class="polymer-summary-card">
+
+            <span>
+                Wszystkie
+            </span>
+
+            <strong>
+                {{ summary.total }}
+            </strong>
+
+        </div>
+
+
+        <div class="polymer-summary-card polymer-summary-card--success">
+
+            <span>
+                Na miejscu
+            </span>
+
+            <strong>
+                {{ summary.on_site }}
+            </strong>
+
+        </div>
+
+
+        <div class="polymer-summary-card polymer-summary-card--warning">
+
+            <span>
+                Poza firmą
+            </span>
+
+            <strong>
+                {{ summary.away }}
+            </strong>
+
+        </div>
+
+
+        <div class="polymer-summary-card polymer-summary-card--muted">
+
+            <span>
+                Niedostarczone
+            </span>
+
+            <strong>
+                {{ summary.not_delivered }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- CURRENT SERVICES                                    -->
+    <!-- =================================================== -->
+
+    {% if current_services %}
+
+        <section class="polymer-service-alert">
+
+            <div class="polymer-service-alert__header">
+
+                <div>
+
+                    <div class="polymer-service-alert__icon">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </div>
+
+                    <div>
+
+                        <h2>
+                            Polimery poza firmą
+                        </h2>
+
+                        <p>
+                            Aktualnie wysłane lub przebywające w serwisie
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <span class="polymer-service-alert__count">
+                    {{ current_services|length }}
+                </span>
+
+            </div>
+
+
+            <div class="polymer-service-list">
+
+                {% for service in current_services %}
+
+                    <div class="polymer-service-item">
+
+                        <div class="polymer-service-item__main">
+
+                            <strong>
+                                #{{ service.photopolymer.identification_number }}
+                                {% if service.photopolymer.identification_letter %}
+                                    {{ service.photopolymer.identification_letter }}
+                                {% endif %}
+                            </strong>
+
+                            <span>
+                                {{ service.photopolymer.customer }}
+                                ·
+                                {{ service.photopolymer.name|default:"Bez nazwy" }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="polymer-service-item__meta">
+
+                            <span>
+                                <i class="fa-solid fa-building"></i>
+                                {{ service.company|default:"—" }}
+                            </span>
+
+                            <span>
+                                <i class="fa-regular fa-calendar"></i>
+                                {{ service.send_date|date:"d.m.Y" }}
+                            </span>
+
+                        </div>
+
+
+                        <a
+                            href="{% url 'polymer-details' service.photopolymer.id %}"
+                            class="polymer-service-item__link"
+                        >
+                            Szczegóły
+
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- FILTERS                                             -->
+    <!-- =================================================== -->
+
+    <form
+        method="get"
+        class="polymer-filters"
+    >
+
+        <div class="polymer-filter polymer-filter--search">
+
+            <label for="polymerSearch">
+                Szukaj
+            </label>
+
+            <div class="polymer-search">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    name="q"
+                    id="polymerSearch"
+                    value="{{ filters.q }}"
+                    placeholder="Numer, nazwa lub klient..."
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="polymer-filter">
+
+            <label for="polymerCustomer">
+                Klient
+            </label>
+
+            <select
+                name="customer"
+                id="polymerCustomer"
+            >
+
+                <option value="">
+                    Wszyscy
+                </option>
+
+                {% for customer in customers %}
+
+                    <option
+                        value="{{ customer.id }}"
+                        {% if filters.customer == customer.id|stringformat:"s" %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ customer.name }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="polymer-filter">
+
+            <label for="polymerProducer">
+                Producent
+            </label>
+
+            <select
+                name="producer"
+                id="polymerProducer"
+            >
+
+                <option value="">
+                    Wszyscy
+                </option>
+
+                {% for value, label in producers %}
+
+                    <option
+                        value="{{ value }}"
+                        {% if filters.producer == value %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ label }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="polymer-filter">
+
+            <label for="polymerStatus">
+                Status
+            </label>
+
+            <select
+                name="status"
+                id="polymerStatus"
+            >
+
+                <option value="">
+                    Wszystkie
+                </option>
+
+                <option
+                    value="on_site"
+                    {% if filters.status == "on_site" %}
+                        selected
+                    {% endif %}
+                >
+                    Na miejscu
+                </option>
+
+                <option
+                    value="away"
+                    {% if filters.status == "away" %}
+                        selected
+                    {% endif %}
+                >
+                    Poza firmą
+                </option>
+
+                <option
+                    value="not_delivered"
+                    {% if filters.status == "not_delivered" %}
+                        selected
+                    {% endif %}
+                >
+                    Niedostarczone
+                </option>
+
+                <option
+                    value="inactive"
+                    {% if filters.status == "inactive" %}
+                        selected
+                    {% endif %}
+                >
+                    Nieaktywne
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="polymer-filter-actions">
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-filter"></i>
+                Filtruj
+            </button>
+
+
+            <a
+                href="{% url 'polymers' %}"
+                class="app-btn app-btn-secondary"
+            >
+                Wyczyść
+            </a>
+
+        </div>
+
+    </form>
+
+
+    <!-- =================================================== -->
+    <!-- TABLE                                               -->
+    <!-- =================================================== -->
+
+    <section class="polymer-table-card">
+
+        <div class="polymer-table-header">
+
+            <div>
+
+                <h2>
+                    Lista polimerów
+                </h2>
+
+                <p>
+                    {{ polymers|length }}
+                    pozycji dla wybranych filtrów
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% if polymers %}
+
+            <div class="polymer-table-wrapper">
+
+                <table class="polymer-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Numer</th>
+                            <th>Klient</th>
+                            <th>Nazwa</th>
+                            <th>Producent</th>
+                            <th>Kolory</th>
+                            <th>Dostarczenie</th>
+                            <th>Status</th>
+                            <th class="polymer-table__actions">
+                                Akcje
+                            </th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for row in polymers %}
+
+                            {% with polymer=row.object %}
+
+                                <tr>
+
+                                    <td>
+
+                                        <a
+                                            href="{% url 'polymer-details' polymer.id %}"
+                                            class="polymer-number"
+                                        >
+                                            {{ row.number }}
+                                        </a>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <a
+                                            href="{% url 'polymer-details' polymer.id %}"
+                                            class="polymer-row-link"
+                                        >
+                                            {{ polymer.customer }}
+                                        </a>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <a
+                                            href="{% url 'polymer-details' polymer.id %}"
+                                            class="polymer-row-link"
+                                        >
+                                            {{ polymer.name|default:"—" }}
+                                        </a>
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ polymer.producer }}
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="polymer-colors">
+
+                                            {% for color in row.colors %}
+
+                                                <span
+                                                    class="polymer-color"
+                                                    title="{{ color.name }}"
+                                                >
+                                                    {{ color.number }}
+                                                </span>
+
+                                            {% empty %}
+
+                                                <span class="polymer-empty">
+                                                    —
+                                                </span>
+
+                                            {% endfor %}
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if polymer.delivery_date %}
+
+                                            {{ polymer.delivery_date|date:"d.m.Y" }}
+
+                                        {% else %}
+
+                                            <span class="polymer-empty">
+                                                —
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span
+                                            class="
+                                                polymer-status
+                                                polymer-status--{{ row.status }}
+                                            "
+                                        >
+
+                                            <span class="polymer-status__dot"></span>
+
+                                            {{ row.status_label }}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="polymer-actions">
+
+                                            <a
+                                                href="{% url 'polymer-details' polymer.id %}"
+                                                class="polymer-action"
+                                                title="Szczegóły"
+                                            >
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+
+
+                                            {% if perms.warehousemanager.change_photopolymer %}
+
+                                                <a
+                                                    href="{% url 'polymer-update' polymer.id %}"
+                                                    class="polymer-action"
+                                                    title="Edytuj"
+                                                >
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </a>
+
+                                            {% endif %}
+
+
+                                            {% if perms.warehousemanager.delete_photopolymer %}
+
+                                                <a
+                                                    href="{% url 'polymer-delete' polymer.id %}"
+                                                    class="polymer-action polymer-action--danger"
+                                                    title="Usuń"
+                                                >
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </a>
+
+                                            {% endif %}
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            {% endwith %}
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="polymer-empty-state">
+
+                <i class="fa-solid fa-layer-group"></i>
+
+                <strong>
+                    Brak polimerów
+                </strong>
+
+                <span>
+                    Żaden polimer nie odpowiada wybranym filtrom.
+                </span>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- HISTORY                                             -->
+    <!-- =================================================== -->
+
+    {% if history_services %}
+
+        <details class="polymer-history">
+
+            <summary>
+
+                <span>
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    Historia wysyłek
+                </span>
+
+                <small>
+                    ostatnie {{ history_services|length }} wpisów
+                </small>
+
+            </summary>
+
+
+            <div class="polymer-history-list">
+
+                {% for service in history_services %}
+
+                    <div class="polymer-history-item">
+
+                        <strong>
+                            {{ service.photopolymer }}
+                        </strong>
+
+                        <span>
+                            {{ service.company|default:"—" }}
+                        </span>
+
+                        <span>
+                            {{ service.send_date|date:"d.m.Y" }}
+                            →
+                            {{ service.return_date|date:"d.m.Y" }}
+                        </span>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </details>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -39,6 +39,17 @@ from warehousemanager.modern_views.colors import (
     ModernColorListView,
 )
 
+from warehousemanager.modern_views.polymers import (
+    PolymerCreateView,
+    PolymerDeleteView,
+    PolymerDetailView,
+    PolymerListView,
+    PolymerUpdateView,
+    PolymerServiceCreateView,
+    PolymerServiceDeleteView,
+    PolymerServiceUpdateView
+)
+
 
 urlpatterns = [
 
@@ -306,10 +317,62 @@ urlpatterns = [
         name="legacy-bucket-details",
     ),
 
+    # ========================================================
+    # POLYMERS
+    # ========================================================
+
+    path(
+        "polymers/",
+        PolymerListView.as_view(),
+        name="polymers",
+    ),
+
+    path(
+        "polymers/<int:polymer_id>/",
+        PolymerDetailView.as_view(),
+        name="polymer-details",
+    ),
+
+    path(
+        "polymers/create/",
+        PolymerCreateView.as_view(),
+        name="polymer-create",
+    ),
+
+    path(
+        "polymers/<int:pk>/update/",
+        PolymerUpdateView.as_view(),
+        name="polymer-update",
+    ),
+
+    path(
+        "polymers/<int:pk>/delete/",
+        PolymerDeleteView.as_view(),
+        name="polymer-delete",
+    ),
+
+    path(
+        "photopolymers/service/create/",
+        PolymerServiceCreateView.as_view(),
+        name="polymer-service-create",
+    ),
+
+    path(
+        "photopolymers/service/<int:pk>/update/",
+        PolymerServiceUpdateView.as_view(),
+        name="polymer-service-update",
+    ),
+
+    path(
+        "photopolymers/service/<int:pk>/delete/",
+        PolymerServiceDeleteView.as_view(),
+        name="polymer-service-delete",
+    ),
 
     # ========================================================
     # PROFILE
     # ========================================================
+
 
     path(
         "profile/pin/",

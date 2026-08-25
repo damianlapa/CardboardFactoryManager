@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Usuń wysyłkę | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Polimery
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/polymers.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="polymer-delete-page">
+
+    <div class="polymer-delete-card">
+
+        <div class="polymer-delete-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+
+        <h1>
+            Usuń wysyłkę
+        </h1>
+
+
+        <p>
+            Czy na pewno chcesz usunąć wpis wysyłki:
+        </p>
+
+
+        <strong class="polymer-delete-name">
+            {{ object.photopolymer }}
+        </strong>
+
+
+        <div class="polymer-service-delete-info">
+
+            <span>
+                Wysłano
+            </span>
+
+            <strong>
+                {{ object.send_date|date:"d.m.Y" }}
+            </strong>
+
+
+            <span>
+                Firma / kurier
+            </span>
+
+            <strong>
+                {{ object.company|default:"—" }}
+            </strong>
+
+        </div>
+
+
+        <div class="polymer-delete-warning">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            <span>
+                Usunięta zostanie historia tej wysyłki. Sam polimer nie zostanie usunięty.
+            </span>
+
+        </div>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="polymer-delete-actions">
+
+                <a
+                    href="{% url 'polymer-details' object.photopolymer_id %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    Anuluj
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="app-btn polymer-btn-danger"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                    Usuń wysyłkę
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

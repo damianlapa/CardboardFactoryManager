@@ -15,7 +15,7 @@ class ModernVacationListView(
     View,
 ):
     permission_required = "warehousemanager.view_absence"
-    template_name = "modern/vacations/list.html"
+    template_name = "vacations/list.html"
 
     def get(self, request):
         year = resolve_vacation_year(
@@ -45,7 +45,7 @@ class ModernVacationDetailView(
     View,
 ):
     permission_required = "warehousemanager.view_absence"
-    template_name = "modern/vacations/detail.html"
+    template_name = "vacations/detail.html"
 
     def get(self, request, person_id):
         year = resolve_vacation_year(

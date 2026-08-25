@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Urlop - {{ worker }}
+{% endblock %}
+
+{% block page_title %}
+    Urlop pracownika
+{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/modern/vacations.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+
+        <a
+            href="{% url 'vacations' %}?year={{ year }}"
+            class="vacation-back-link"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+            Wróć do zestawienia
+        </a>
+
+        <h1 class="app-page-title vacation-detail-title">
+            {{ worker }}
+        </h1>
+
+        <div class="app-page-description">
+            Szczegóły wykorzystania urlopu w {{ year }} roku
+        </div>
+
+    </div>
+
+
+    <div class="vacation-detail-year">
+
+        <form method="get">
+
+            <label for="vacationDetailYear">
+                Rok
+            </label>
+
+            <select
+                id="vacationDetailYear"
+                name="year"
+                class="vacation-filter-select"
+                onchange="this.form.submit()"
+            >
+
+                {% for available_year in years %}
+
+                    <option
+                        value="{{ available_year }}"
+                        {% if available_year == year %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ available_year }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="vacation-metrics">
+
+    <div class="vacation-metric app-card">
+
+        <div class="vacation-metric__icon vacation-metric__icon--limit">
+            <i class="fa-solid fa-calendar-check"></i>
+        </div>
+
+        <div>
+
+            <div class="vacation-metric__label">
+                Limit roczny
+            </div>
+
+            <div class="vacation-metric__value">
+                {{ balance.annual_entitlement }}
+                <span>dni</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="vacation-metric app-card">
+
+        <div class="vacation-metric__icon vacation-metric__icon--carry">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+
+        <div>
+
+            <div class="vacation-metric__label">
+                Z poprzednich lat
+            </div>
+
+            <div class="vacation-metric__value">
+                {{ balance.carried_over }}
+                <span>dni</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="vacation-metric app-card">
+
+        <div class="vacation-metric__icon vacation-metric__icon--used">
+            <i class="fa-solid fa-plane-departure"></i>
+        </div>
+
+        <div>
+
+            <div class="vacation-metric__label">
+                Wykorzystano
+            </div>
+
+            <div class="vacation-metric__value">
+                {{ balance.used_total }}
+                <span>dni</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="vacation-metric app-card">
+
+        <div class="vacation-metric__icon vacation-metric__icon--remaining">
+            <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+
+        <div>
+
+            <div class="vacation-metric__label">
+                Pozostało
+            </div>
+
+            <div class="vacation-metric__value">
+                {{ balance.remaining }}
+                <span>dni</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="vacation-breakdown app-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Wykorzystanie urlopu
+            </h2>
+
+            <div class="vacation-section-description">
+                Podział wykorzystanych dni urlopowych
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="vacation-breakdown__body">
+
+        <div class="vacation-breakdown-item">
+
+            <div>
+
+                <div class="vacation-breakdown-item__title">
+                    Urlop wypoczynkowy
+                </div>
+
+                <div class="vacation-breakdown-item__code">
+                    UW
+                </div>
+
+            </div>
+
+            <div class="vacation-breakdown-item__value">
+                {{ balance.used_regular }} dni
+            </div>
+
+        </div>
+
+
+        <div class="vacation-breakdown-item">
+
+            <div>
+
+                <div class="vacation-breakdown-item__title">
+                    Urlop na żądanie
+                </div>
+
+                <div class="vacation-breakdown-item__code">
+                    UŻ
+                </div>
+
+            </div>
+
+            <div class="vacation-breakdown-item__value">
+                {{ balance.used_on_demand }} dni
+            </div>
+
+        </div>
+
+
+        <div class="vacation-breakdown-item vacation-breakdown-item--total">
+
+            <div>
+
+                <div class="vacation-breakdown-item__title">
+                    Łącznie wykorzystano
+                </div>
+
+                <div class="vacation-breakdown-item__code">
+                    UW + UŻ
+                </div>
+
+            </div>
+
+            <div class="vacation-breakdown-item__value">
+                {{ balance.used_total }} dni
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="vacation-history app-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Historia urlopów
+            </h2>
+
+            <div class="vacation-section-description">
+                Urlopy zapisane w {{ year }} roku
+            </div>
+
+        </div>
+
+        <div class="vacation-section-icon">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+
+    </div>
+
+
+    {% if absences %}
+
+        <div class="vacation-history app-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Historia nieobecności
+            </h2>
+
+            <div class="vacation-section-description">
+                Wszystkie nieobecności zapisane w {{ year }} roku
+            </div>
+
+        </div>
+
+        <div class="vacation-section-icon">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+
+    </div>
+
+
+    {% if absences %}
+
+        <div class="vacation-table-scroll">
+
+            <table class="vacation-table vacation-history-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Data</th>
+                        <th>Rodzaj</th>
+                        <th>Kod</th>
+                        <th>Informacja</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for absence in absences %}
+
+                        <tr>
+
+                            <td class="vacation-date">
+                                {{ absence.absence_date|date:"d.m.Y" }}
+                            </td>
+
+
+                            <td>
+
+                                {% if absence.absence_type == "UW" %}
+                                    Urlop wypoczynkowy
+                                {% elif absence.absence_type == "UŻ" %}
+                                    Urlop na żądanie
+                                {% elif absence.absence_type == "UB" %}
+                                    Urlop bezpłatny
+                                {% elif absence.absence_type == "UO" %}
+                                    Urlop okolicznościowy
+                                {% elif absence.absence_type == "CH" %}
+                                    Choroba
+                                {% elif absence.absence_type == "OP" %}
+                                    Opieka
+                                {% elif absence.absence_type == "NN" %}
+                                    Nieobecność nieusprawiedliwiona
+                                {% elif absence.absence_type == "KW" %}
+                                    Kwarantanna
+                                {% elif absence.absence_type == "IZ" %}
+                                    Izolacja
+                                {% elif absence.absence_type == "D" %}
+                                    Delegacja
+                                {% elif absence.absence_type == "SP" %}
+                                    Spóźnienie
+                                {% elif absence.absence_type == "IN" %}
+                                    Inna nieobecność
+                                {% else %}
+                                    {{ absence.absence_type }}
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <span
+                                    class="
+                                        vacation-type-badge
+                                        vacation-type-badge--{{ absence.absence_type|lower }}
+                                    "
+                                >
+                                    {{ absence.absence_type }}
+                                </span>
+
+                            </td>
+
+
+                            <td class="vacation-absence-info">
+
+                                {% if absence.absence_type == "SP" %}
+
+                                    {% if absence.value %}
+                                        {{ absence.value }} min
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                {% elif absence.absence_type == "IN" %}
+
+                                    {{ absence.additional_info|default:"—" }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="vacation-empty">
+
+            <div class="vacation-empty__icon">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+
+            <div class="vacation-empty__title">
+                Brak nieobecności
+            </div>
+
+            <div class="vacation-empty__description">
+                Ten pracownik nie ma zapisanych nieobecności w {{ year }} roku.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

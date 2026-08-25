@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Farby{% endblock %}
+{% block page_title %}Farby{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/colors.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+        <h1 class="app-page-title">
+            Farby
+        </h1>
+
+        <div class="app-page-description">
+            Aktualny stan farb produkcyjnych
+        </div>
+    </div>
+
+</div>
+
+
+<div class="color-grid">
+
+    {% for row in colors %}
+
+        <a
+            href="{% url 'color-details' row.color.id %}"
+            class="
+                color-card
+                app-card
+                color-card--{{ row.stock_level }}
+            "
+        >
+
+            <!-- COLOR SAMPLE -->
+
+            <div
+                class="color-card__sample"
+                style="--color-value: {{ row.hex }};"
+            ></div>
+
+
+            <!-- CONTENT -->
+
+            <div class="color-card__body">
+
+                <div class="color-card__header">
+
+                    <div class="color-card__identity">
+
+                        <div class="color-card__name">
+                            {{ row.color }}
+                        </div>
+
+                        <div class="color-card__hex">
+                            {{ row.hex }}
+                        </div>
+
+                    </div>
+
+
+                    <!-- STOCK STATUS -->
+
+                    {% if row.stock_level == "empty" %}
+
+                        <span
+                            class="
+                                color-stock-badge
+                                color-stock-badge--empty
+                            "
+                        >
+                            Brak
+                        </span>
+
+                    {% elif row.stock_level == "critical" %}
+
+                        <span
+                            class="
+                                color-stock-badge
+                                color-stock-badge--critical
+                            "
+                        >
+                            Krytyczny
+                        </span>
+
+                    {% elif row.stock_level == "low" %}
+
+                        <span
+                            class="
+                                color-stock-badge
+                                color-stock-badge--low
+                            "
+                        >
+                            Niski
+                        </span>
+
+                    {% elif row.stock_level == "warning" %}
+
+                        <span
+                            class="
+                                color-stock-badge
+                                color-stock-badge--warning
+                            "
+                        >
+                            Uwaga
+                        </span>
+
+                    {% else %}
+
+                        <span
+                            class="
+                                color-stock-badge
+                                color-stock-badge--healthy
+                            "
+                        >
+                            OK
+                        </span>
+
+                    {% endif %}
+
+
+                </div>
+
+
+                <!-- METRICS -->
+
+                <div class="color-card__metrics">
+
+                    <div class="color-card__metric">
+
+                        <span>
+                            Stan
+                        </span>
+
+                        <strong>
+                            {{ row.current_weight|floatformat:1 }}
+                            <small>kg</small>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="color-card__metric">
+
+                        <span>
+                            Wiadra
+                        </span>
+
+                        <strong>
+                            {{ row.active_buckets }}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ARROW -->
+
+            <div class="color-card__arrow">
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </div>
+
+        </a>
+
+    {% empty %}
+
+        <div class="app-card color-empty">
+            Brak zdefiniowanych farb.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

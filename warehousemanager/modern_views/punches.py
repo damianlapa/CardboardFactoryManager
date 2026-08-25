@@ -24,7 +24,7 @@ class ModernPunchListView(
     )
 
     template_name = (
-        "modern/punches/list.html"
+        "punches/list.html"
     )
 
     def get(self, request):
@@ -56,7 +56,7 @@ class ModernPunchDetailView(
     )
 
     template_name = (
-        "modern/punches/detail.html"
+        "punches/detail.html"
     )
 
     def get(self, request, punch_id):
@@ -80,7 +80,7 @@ class ModernPunchCreateView(
     )
 
     template_name = (
-        "modern/punches/form.html"
+        "punches/form.html"
     )
 
     def get(self, request):
@@ -132,7 +132,7 @@ class ModernPunchUpdateView(
     )
 
     template_name = (
-        "modern/punches/form.html"
+        "punches/form.html"
     )
 
     def get(self, request, punch_id):

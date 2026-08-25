@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if object %}
+        Edycja wysyłki | PAKER
+    {% else %}
+        Nowa wysyłka | PAKER
+    {% endif %}
+{% endblock %}
+
+{% block page_title %}
+    Polimery
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/polymers.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="polymer-form-page">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="polymer-form-header">
+
+        <div>
+
+            {% if object %}
+
+    <a
+        href="{% url 'polymer-details' object.photopolymer_id %}"
+        class="polymer-back-link"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+        Wróć
+    </a>
+
+{% else %}
+
+    <a
+        href="{% url 'polymers' %}"
+        class="polymer-back-link"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+        Wróć
+    </a>
+
+{% endif %}
+
+
+            <div class="polymer-eyebrow">
+                Polimery
+            </div>
+
+
+            <h1>
+
+                {% if object %}
+                    Edytuj wysyłkę
+                {% else %}
+                    Nowa wysyłka
+                {% endif %}
+
+            </h1>
+
+
+            <p>
+
+                {% if object %}
+                    Zmień dane wysyłki lub uzupełnij datę zwrotu
+                {% else %}
+                    Zarejestruj wysłanie polimeru poza firmę
+                {% endif %}
+
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- FORM                                                -->
+    <!-- =================================================== -->
+
+    <form
+        method="post"
+        class="polymer-form-card"
+    >
+
+        {% csrf_token %}
+
+
+        {% if form.non_field_errors %}
+
+            <div class="polymer-form-error">
+                {{ form.non_field_errors }}
+            </div>
+
+        {% endif %}
+
+
+        <!-- ================================================= -->
+        <!-- POLYMER                                           -->
+        <!-- ================================================= -->
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+
+                    <h2>
+                        Polimer
+                    </h2>
+
+                    <p>
+                        Wybierz polimer, którego dotyczy wysyłka
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="polymer-form-field polymer-form-field--full">
+
+                <label for="{{ form.photopolymer.id_for_label }}">
+                    Polimer
+                </label>
+
+                {{ form.photopolymer }}
+
+                {% if form.photopolymer.errors %}
+
+                    <div class="polymer-field-error">
+                        {{ form.photopolymer.errors }}
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- SHIPMENT                                          -->
+        <!-- ================================================= -->
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+
+                    <h2>
+                        Wysyłka
+                    </h2>
+
+                    <p>
+                        Firma, data i opis operacji
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="polymer-form-grid">
+
+
+                <div class="polymer-form-field">
+
+                    <label for="{{ form.send_date.id_for_label }}">
+                        Data wysłania
+                    </label>
+
+                    {{ form.send_date }}
+
+                    {% if form.send_date.errors %}
+
+                        <div class="polymer-field-error">
+                            {{ form.send_date.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="polymer-form-field">
+
+                    <label for="{{ form.company.id_for_label }}">
+                        Firma / kurier
+                    </label>
+
+                    {{ form.company }}
+
+                    {% if form.company.errors %}
+
+                        <div class="polymer-field-error">
+                            {{ form.company.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div
+                    class="
+                        polymer-form-field
+                        polymer-form-field--full
+                    "
+                >
+
+                    <label for="{{ form.service_description.id_for_label }}">
+                        Opis wysyłki / serwisu
+                    </label>
+
+                    {{ form.service_description }}
+
+                    {% if form.service_description.errors %}
+
+                        <div class="polymer-field-error">
+                            {{ form.service_description.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- RETURN                                            -->
+        <!-- ================================================= -->
+
+        <section class="polymer-form-section">
+
+            <div class="polymer-form-section__header">
+
+                <div>
+
+                    <h2>
+                        Zwrot
+                    </h2>
+
+                    <p>
+                        Pozostaw puste, jeśli polimer nadal jest poza firmą
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="polymer-form-grid">
+
+                <div class="polymer-form-field">
+
+                    <label for="{{ form.return_date.id_for_label }}">
+                        Data zwrotu
+                    </label>
+
+                    {{ form.return_date }}
+
+                    {% if form.return_date.errors %}
+
+                        <div class="polymer-field-error">
+                            {{ form.return_date.errors }}
+                        </div>
+
+                    {% endif %}
+
+                    <small class="polymer-form-help">
+                        Wpisanie daty zwrotu oznacza zakończenie wysyłki.
+                    </small>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- ACTIONS                                           -->
+        <!-- ================================================= -->
+
+        <div class="polymer-form-actions">
+
+            <a
+                href="
+                    {% if object %}
+                        {% url 'polymer-details' object.photopolymer_id %}
+                    {% else %}
+                        {% url 'polymers' %}
+                    {% endif %}
+                "
+                class="app-btn app-btn-secondary"
+            >
+                Anuluj
+            </a>
+
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-check"></i>
+
+                {% if object %}
+                    Zapisz zmiany
+                {% else %}
+                    Zapisz wysyłkę
+                {% endif %}
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

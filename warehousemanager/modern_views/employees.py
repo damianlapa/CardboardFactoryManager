@@ -18,7 +18,7 @@ class ModernEmployeeListView(
     View,
 ):
     login_url = reverse_lazy("login")
-    template_name = "modern/employees/list.html"
+    template_name = "employees/list.html"
 
     def get(self, request):
         if not can_view_employee_list(
@@ -50,7 +50,7 @@ class ModernEmployeeDetailView(
     View,
 ):
     login_url = reverse_lazy("login")
-    template_name = "modern/employees/detail.html"
+    template_name = "employees/detail.html"
 
     def get(self, request, person_id):
         context = get_employee_details(

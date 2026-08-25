@@ -22,7 +22,7 @@ class ModernColorListView(
     )
 
     template_name = (
-        "modern/colors/list.html"
+        "colors/list.html"
     )
 
     def get(self, request):
@@ -44,7 +44,7 @@ class ModernColorDetailView(
     )
 
     template_name = (
-        "modern/colors/detail.html"
+        "colors/detail.html"
     )
 
     def get(self, request, color_id):
@@ -64,7 +64,7 @@ class ModernBucketDetailView(
     )
 
     template_name = (
-        "modern/colors/bucket_detail.html"
+        "colors/bucket_detail.html"
     )
 
     def get(self, request, bucket_id):

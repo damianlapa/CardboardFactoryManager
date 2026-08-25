@@ -24,7 +24,6 @@ from xhtml2pdf import pisa
 
 
 class StartPage(View):
-    print('oko')
     def get(self, request):
         user = request.user
         visit_counter(user, 'index')

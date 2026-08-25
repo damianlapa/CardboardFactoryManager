@@ -135,3 +135,101 @@ class PersonPinForm(forms.Form):
             )
 
         return cleaned_data
+
+
+from django import forms
+
+from warehousemanager.models import (
+    Photopolymer,
+)
+
+
+class PolymerForm(forms.ModelForm):
+
+    class Meta:
+        model = Photopolymer
+
+        fields = [
+            "producer",
+            "identification_number",
+            "identification_letter",
+            "customer",
+            "name",
+            "dimensions",
+            "colors",
+            "delivery_date",
+            "project",
+            "link",
+            "active",
+        ]
+
+        widgets = {
+            "delivery_date": forms.DateInput(
+                attrs={
+                    "type": "date",
+                }
+            ),
+        }
+
+
+class PolymerServiceForm(forms.ModelForm):
+
+    class Meta:
+        model = PhotopolymerService
+
+        fields = [
+            "photopolymer",
+            "send_date",
+            "company",
+            "service_description",
+            "return_date",
+        ]
+
+        widgets = {
+            "send_date": forms.DateInput(
+                attrs={
+                    "type": "date",
+                }
+            ),
+            "return_date": forms.DateInput(
+                attrs={
+                    "type": "date",
+                }
+            ),
+            "service_description": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                }
+            ),
+        }
+
+        labels = {
+            "photopolymer": "Polimer",
+            "send_date": "Data wysłania",
+            "company": "Firma / kurier",
+            "service_description": "Opis wysyłki / serwisu",
+            "return_date": "Data zwrotu",
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        send_date = cleaned_data.get(
+            "send_date"
+        )
+
+        return_date = cleaned_data.get(
+            "return_date"
+        )
+
+        if (
+            send_date
+            and return_date
+            and return_date < send_date
+        ):
+            self.add_error(
+                "return_date",
+                "Data zwrotu nie może być wcześniejsza niż data wysłania.",
+            )
+
+        return cleaned_data

@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Urlopy{% endblock %}
+
+{% block page_title %}
+    Urlopy
+{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/modern/vacations.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+        <h1 class="app-page-title">
+            Urlopy
+        </h1>
+
+        <div class="app-page-description">
+            Zestawienie limitów i wykorzystania urlopów
+        </div>
+    </div>
+
+</div>
+
+
+<div class="vacation-toolbar app-card">
+
+    <form
+        method="get"
+        class="vacation-year-form"
+    >
+
+        <div class="vacation-filter-group">
+
+            <label
+                for="vacationYear"
+                class="vacation-filter-label"
+            >
+                Rok
+            </label>
+
+            <select
+                id="vacationYear"
+                name="year"
+                class="vacation-filter-select"
+            >
+
+                {% for available_year in years %}
+
+                    <option
+                        value="{{ available_year }}"
+                        {% if available_year == year %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ available_year }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <button
+            type="submit"
+            class="app-btn app-btn-primary"
+        >
+            <i class="fa-solid fa-filter"></i>
+            Pokaż
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="vacation-summary-card app-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Dostępne urlopy
+            </h2>
+
+            <div class="vacation-section-description">
+                Stan na rok {{ year }}
+            </div>
+
+        </div>
+
+        <div class="vacation-section-icon">
+            <i class="fa-solid fa-umbrella-beach"></i>
+        </div>
+
+    </div>
+
+
+    {% if vacation_balances %}
+
+        <div class="vacation-table-scroll">
+
+            <table class="vacation-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Pracownik</th>
+                        <th>Limit roczny</th>
+                        <th>Z poprzednich lat</th>
+                        <th>Wykorzystano</th>
+                        <th>Pozostało</th>
+                        <th></th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for balance in vacation_balances %}
+
+                        <tr>
+
+                            <td>
+
+                                <a
+                                    href="{% url 'vacation-person' balance.worker.id %}?year={{ year }}"
+                                    class="vacation-worker-link"
+                                >
+                                    <span class="vacation-worker-avatar">
+                                        <i class="fa-solid fa-user"></i>
+                                    </span>
+
+                                    <span>
+                                        {{ balance.worker }}
+                                    </span>
+                                </a>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="vacation-value">
+                                    {{ balance.annual_entitlement }}
+                                </span>
+
+                                <span class="vacation-value-unit">
+                                    dni
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if balance.carried_over > 0 %}
+
+                                    <span class="vacation-badge vacation-badge--carry">
+                                        {{ balance.carried_over }} dni
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="vacation-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+    <div class="vacation-used">
+
+        <span class="vacation-value">
+            {{ balance.used_total }}
+        </span>
+
+        <span class="vacation-value-unit">
+            dni
+        </span>
+
+    </div>
+
+    <div class="vacation-used-details">
+
+        UW:
+        <strong>{{ balance.used_regular }}</strong>
+
+        <span class="vacation-used-separator">
+            •
+        </span>
+
+        UŻ:
+        <strong>{{ balance.used_on_demand }}</strong>
+
+    </div>
+
+</td>
+
+
+                            <td>
+
+                                {% if balance.remaining > 5 %}
+
+                                    <span class="vacation-badge vacation-badge--available">
+                                        {{ balance.remaining }} dni
+                                    </span>
+
+                                {% elif balance.remaining > 0 %}
+
+                                    <span class="vacation-badge vacation-badge--low">
+                                        {{ balance.remaining }} dni
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="vacation-badge vacation-badge--empty">
+                                        {{ balance.remaining }} dni
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="vacation-action-cell">
+
+                                <a
+                                    href="{% url 'vacation-person' balance.worker.id %}?year={{ year }}"
+                                    class="vacation-details-button"
+                                    title="Szczegóły urlopu"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="vacation-empty">
+
+            <div class="vacation-empty__icon">
+                <i class="fa-solid fa-calendar"></i>
+            </div>
+
+            <div class="vacation-empty__title">
+                Brak danych
+            </div>
+
+            <div class="vacation-empty__description">
+                Nie znaleziono pracowników dla wybranego roku.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
