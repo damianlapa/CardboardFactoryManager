@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Pulpit | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Pulpit
+{% endblock %}
+
+{% block style %}
+    <link
+        rel="stylesheet"
+        href="{% static 'css/dashboard.css' %}"
+    >
+{% endblock %}
+
+
+{% block content %}
+
+<div class="dashboard">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="dashboard-header">
+
+        <div class="dashboard-header__content">
+
+            <div class="dashboard-eyebrow">
+                {{ weekday_name }},
+                {{ today|date:"d.m.Y" }}
+            </div>
+
+            <h1>
+                Dzień dobry,
+                {{ request.user.first_name|default:request.user.username }}
+            </h1>
+
+            <p>
+                Oto najważniejsze informacje na dziś.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- COMPANY OVERVIEW                                    -->
+    <!-- =================================================== -->
+
+    {% if access.company_overview %}
+
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-header">
+
+                <div>
+                    <h2>Dzisiaj</h2>
+
+                    <p>
+                        Bieżąca sytuacja w firmie
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-kpi-grid">
+
+
+                <!-- PRODUCTION -->
+
+                <div class="dashboard-kpi">
+
+                    <div class="dashboard-kpi-icon">
+                        <i class="fa-solid fa-industry"></i>
+                    </div>
+
+                    <div class="dashboard-kpi-content">
+
+                        <span class="dashboard-kpi-label">
+                            Produkcja
+                        </span>
+
+                        <strong>
+                            —
+                        </strong>
+
+                        <small>
+                            aktywnych zleceń
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- DELIVERIES -->
+
+                <div class="dashboard-kpi">
+
+                    <div class="dashboard-kpi-icon">
+                        <i class="fa-solid fa-truck"></i>
+                    </div>
+
+                    <div class="dashboard-kpi-content">
+
+                        <span class="dashboard-kpi-label">
+                            Dostawy
+                        </span>
+
+                        <strong>
+                            —
+                        </strong>
+
+                        <small>
+                            zaplanowanych
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ABSENCES -->
+
+                {% if access.absences %}
+
+                    <div class="dashboard-kpi">
+
+                        <div class="dashboard-kpi-icon">
+                            <i class="fa-solid fa-user-clock"></i>
+                        </div>
+
+                        <div class="dashboard-kpi-content">
+
+                            <span class="dashboard-kpi-label">
+                                Nieobecni
+                            </span>
+
+                            <strong>
+                                {{ absences.count }}
+                            </strong>
+
+                            <small>
+                                pracowników
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+                <!-- SHIPMENTS -->
+
+                <div class="dashboard-kpi">
+
+                    <div class="dashboard-kpi-icon">
+                        <i class="fa-solid fa-box"></i>
+                    </div>
+
+                    <div class="dashboard-kpi-content">
+
+                        <span class="dashboard-kpi-label">
+                            Wysyłki
+                        </span>
+
+                        <strong>
+                            —
+                        </strong>
+
+                        <small>
+                            do realizacji
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- PRODUCTION                                          -->
+    <!-- =================================================== -->
+
+    {% if access.production %}
+
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-header">
+
+                <div>
+                    <h2>Produkcja</h2>
+
+                    <p>
+                        Bieżące zlecenia produkcyjne
+                    </p>
+                </div>
+
+                <a
+                    href="{% url 'production-menu' %}"
+                    class="dashboard-section-link"
+                >
+                    Pokaż wszystko
+
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+
+            <div class="dashboard-card dashboard-placeholder">
+
+                <div class="dashboard-placeholder-icon">
+                    <i class="fa-solid fa-industry"></i>
+                </div>
+
+                <strong>
+                    Produkcja
+                </strong>
+
+                <span>
+                    Dane produkcyjne dodamy w kolejnym kroku.
+                </span>
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- DELIVERIES / ABSENCES                               -->
+    <!-- =================================================== -->
+
+    {% if access.deliveries or access.absences %}
+
+        <div class="dashboard-columns">
+
+
+            <!-- DELIVERIES -->
+
+            {% if access.deliveries %}
+
+                <section class="dashboard-section">
+
+                    <div class="dashboard-section-header">
+
+                        <div>
+                            <h2>Dostawy</h2>
+
+                            <p>
+                                Zaplanowane na dzisiaj
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="dashboard-card dashboard-placeholder">
+
+                        <div class="dashboard-placeholder-icon">
+                            <i class="fa-solid fa-truck"></i>
+                        </div>
+
+                        <strong>
+                            Dzisiejsze dostawy
+                        </strong>
+
+                        <span>
+                            Dane dostaw podłączymy w kolejnym kroku.
+                        </span>
+
+                    </div>
+
+                </section>
+
+            {% endif %}
+
+
+            <!-- ABSENCES -->
+
+            {% if access.absences %}
+
+                <section class="dashboard-section">
+
+                    <div class="dashboard-section-header">
+
+                        <div>
+                            <h2>Nieobecności</h2>
+
+                            <p>
+                                Kto jest dziś nieobecny
+                            </p>
+                        </div>
+
+                        <a
+                            href="{% url 'absence-list' %}"
+                            class="dashboard-section-link"
+                        >
+                            Kalendarz
+
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+
+
+                    <div class="dashboard-card">
+
+                        {% if absences.rows %}
+
+                            <div class="dashboard-absence-list">
+
+                                {% for absence in absences.rows %}
+
+                                    <div class="dashboard-absence-item">
+
+                                        <div class="dashboard-absence-person">
+
+                                            <div class="dashboard-absence-avatar">
+
+                                                {{ absence.worker.first_name|first }}
+                                                {{ absence.worker.last_name|first }}
+
+                                            </div>
+
+
+                                            <div class="dashboard-absence-info">
+
+                                                <strong>
+                                                    {{ absence.worker.first_name }}
+                                                    {{ absence.worker.last_name }}
+                                                </strong>
+
+                                                <span>
+                                                    {{ absence.label }}
+                                                </span>
+
+                                                {% if absence.additional_info %}
+
+                                                    <small>
+                                                        {{ absence.additional_info }}
+                                                    </small>
+
+                                                {% endif %}
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <span
+                                            class="
+                                                dashboard-absence-code
+                                                dashboard-absence-code--{{ absence.css_key }}
+                                            "
+                                        >
+                                            {{ absence.type }}
+                                        </span>
+
+                                    </div>
+
+                                {% endfor %}
+
+                            </div>
+
+                        {% else %}
+
+                            <div class="dashboard-empty">
+
+                                <div class="dashboard-empty-icon">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+
+                                <strong>
+                                    Brak nieobecności
+                                </strong>
+
+                                <span>
+                                    Wszyscy pracownicy są dziś obecni.
+                                </span>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </section>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- INVENTORY                                           -->
+    <!-- =================================================== -->
+
+    {% if access.inventory %}
+
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-header">
+
+                <div>
+                    <h2>Magazyn</h2>
+
+                    <p>
+                        Stany wymagające uwagi
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-card dashboard-placeholder">
+
+                <div class="dashboard-placeholder-icon">
+                    <i class="fa-solid fa-warehouse"></i>
+                </div>
+
+                <strong>
+                    Alerty magazynowe
+                </strong>
+
+                <span>
+                    Tutaj pojawią się braki i niskie stany magazynowe.
+                </span>
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- FINANCIAL                                           -->
+    <!-- =================================================== -->
+
+    {% if access.financial %}
+
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-header">
+
+                <div>
+                    <h2>Finanse</h2>
+
+                    <p>
+                        Bieżący miesiąc
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-card dashboard-placeholder">
+
+                <div class="dashboard-placeholder-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+
+                <strong>
+                    Wyniki finansowe
+                </strong>
+
+                <span>
+                    Dostępne wyłącznie dla uprawnionych użytkowników.
+                </span>
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- =================================================== -->
+    <!-- PERSONAL                                            -->
+    <!-- =================================================== -->
+
+    {% if access.personal %}
+
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-header">
+
+                <div>
+                    <h2>Moje informacje</h2>
+
+                    <p>
+                        Twój profil i sprawy pracownicze
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-card">
+
+                {% if personal.employee %}
+
+                    <div class="dashboard-personal">
+
+                        <div class="dashboard-personal-icon">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+
+
+                        <div class="dashboard-personal-content">
+
+                            <strong>
+                                {{ personal.employee.first_name }}
+                                {{ personal.employee.last_name }}
+                            </strong>
+
+                            {% if personal.today_absence %}
+
+                                <span>
+                                    Dzisiaj:
+                                    {{ personal.today_absence.get_absence_type_display }}
+                                </span>
+
+                            {% else %}
+
+                                <span>
+                                    Brak nieobecności na dziś
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="dashboard-personal-stat">
+
+                            <span>
+                                Nadgodziny w tym roku
+                            </span>
+
+                            <strong>
+                                {{ personal.extra_hours_year|default:"0" }} h
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="dashboard-empty">
+
+                        <div class="dashboard-empty-icon dashboard-empty-icon--neutral">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+
+                        <strong>
+                            Brak powiązanego pracownika
+                        </strong>
+
+                        <span>
+                            Konto użytkownika nie jest powiązane z kartą pracownika.
+                        </span>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+</div>
+
+{% endblock %}

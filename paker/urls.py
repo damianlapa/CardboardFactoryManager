@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
 from warehousemanager.views import *
-from django.conf.urls.static import static
+
+from paker.views.auth import (
+    LoginView,
+    LogoutView,
+    RootView
+)
+
+from paker.views.dashboard import DashboardView
 
 
 urlpatterns = [
@@ -16,6 +23,34 @@ urlpatterns = [
 
     path('buyer-add/', AddBuyer.as_view(), name='buyer-add'),
     path('buyers/', BuyersList.as_view(), name='buyers'),
+]
+
+urlpatterns += [
+    path(
+        "login/",
+        LoginView.as_view(),
+        name="login",
+    ),
+
+    path(
+        "logout/",
+        LogoutView.as_view(),
+        name="logout",
+    ),
+
+    path(
+            "",
+            RootView.as_view(),
+            name="start-page",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "dashboard/",
+        DashboardView.as_view(),
+        name="dashboard",
+    ),
 ]
 
 # absences
@@ -49,9 +84,9 @@ urlpatterns += [
 
 # navigation
 urlpatterns += [
-    path('', StartPage.as_view(), name='start-page'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('login/', LoginView.as_view(), name='login'),
+    # path('', StartPage.as_view(), name='start-page'),
+    # path('logout/', LogoutView.as_view(), name='logout'),
+    # path('login/', LoginView.as_view(), name='login'),
     path('main-page/', MainPageView.as_view(), name='main-page'),
 ]
 
@@ -61,7 +96,7 @@ urlpatterns += [
 ]
 # persons
 urlpatterns += [
-    # path('persons/', PersonListView.as_view(), name='persons'),
+    path('persons/', PersonListView.as_view(), name='persons'),
     # path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
 ]
 

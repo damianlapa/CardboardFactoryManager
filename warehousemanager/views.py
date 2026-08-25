@@ -24,6 +24,7 @@ from xhtml2pdf import pisa
 
 
 class StartPage(View):
+    print('oko')
     def get(self, request):
         user = request.user
         visit_counter(user, 'index')
@@ -43,32 +44,32 @@ class StartPage(View):
         return redirect('start-page')
 
 
-class LoginView(View):
-    def get(self, request):
-        user = request.user
-        visit_counter(user, 'index')
-        next_url = request.GET.get('next')
-        return render(request, 'start-page.html', locals())
-
-    def post(self, request):
-        name = request.POST.get('login')
-        password = request.POST.get('password')
-        next_url = request.POST.get('next')
-
-        user = authenticate(username=name, password=password)
-
-        if user is not None:
-            login(request, user)
-        if next_url:
-            return redirect(next_url)
-        return redirect('start-page')
-
-
-class LogoutView(View):
-    def get(self, request):
-        logout(request)
-
-        return redirect('start-page')
+# class LoginView(View):
+#     def get(self, request):
+#         user = request.user
+#         visit_counter(user, 'index')
+#         next_url = request.GET.get('next')
+#         return render(request, 'start-page.html', locals())
+#
+#     def post(self, request):
+#         name = request.POST.get('login')
+#         password = request.POST.get('password')
+#         next_url = request.POST.get('next')
+#
+#         user = authenticate(username=name, password=password)
+#
+#         if user is not None:
+#             login(request, user)
+#         if next_url:
+#             return redirect(next_url)
+#         return redirect('start-page')
+#
+#
+# class LogoutView(View):
+#     def get(self, request):
+#         logout(request)
+#
+#         return redirect('start-page')
 
 
 class MainPageView(LoginRequiredMixin, View):

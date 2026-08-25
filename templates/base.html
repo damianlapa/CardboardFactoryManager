@@ -1,0 +1,440 @@
+{% load static %}
+{% load access_tags %}
+
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        {% block title %}
+            PAKER
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/base.css' %}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    {% block style %}{% endblock %}
+
+</head>
+
+
+<body>
+
+<div class="app-shell">
+
+
+    <!-- =================================================== -->
+    <!-- SIDEBAR                                             -->
+    <!-- =================================================== -->
+
+    <aside
+        class="app-sidebar"
+        id="appSidebar"
+    >
+
+        <div class="app-sidebar__header">
+
+            <a
+                href="{% url 'main-page' %}"
+                class="app-logo"
+            >
+
+                <img
+                    src="{% static 'images/paker-logo.png' %}"
+                    alt="PAKER"
+                >
+
+            </a>
+
+        </div>
+
+
+        <nav class="app-navigation">
+
+
+            <!-- DASHBOARD -->
+
+            <a
+                href="{% url 'main-page' %}"
+                class="
+                    app-navigation__item
+                    {% if request.resolver_match.url_name == 'main-page' %}
+                        is-active
+                    {% endif %}
+                "
+            >
+                <span class="app-navigation__icon">
+                    <i class="fa-solid fa-house"></i>
+                </span>
+
+                <span>
+                    Pulpit
+                </span>
+            </a>
+
+
+            <!-- EMPLOYEES -->
+
+            {% if request.user.is_superuser or request.user|has_group:"Bosses" or request.user|has_group:"OfficeWorkers" %}
+
+                <a
+                    href="{% url 'employee_list' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'employee_list' or request.resolver_match.url_name == 'person-details' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-users"></i>
+                    </span>
+
+                    <span>
+                        Pracownicy
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- PRODUCTION -->
+
+            {% if request.user.is_superuser or request.user|has_group:"Bosses" or request.user|has_group:"OfficeWorkers" or request.user|has_group:"ProductionWorker" %}
+
+                <a
+                    href="{% url 'production-menu' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'production' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-industry"></i>
+                    </span>
+
+                    <span>
+                        Produkcja
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- DELIVERIES -->
+
+            {% if request.user.is_superuser or request.user|has_group:"Bosses" or request.user|has_group:"OfficeWorkers" %}
+
+                <a
+                    href="{% url 'deliveries-calendar' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'deliveries-calendar' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-truck"></i>
+                    </span>
+
+                    <span>
+                        Dostawy
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- ABSENCES -->
+
+            {% if perms.warehousemanager.view_absence %}
+
+                <a
+                    href="{% url 'absence-list' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'absence-list' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-calendar-xmark"></i>
+                    </span>
+
+                    <span>
+                        Nieobecności
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- COLORS -->
+
+            {% if perms.warehousemanager.view_color %}
+
+                <a
+                    href="{% url 'colors' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'colors' or request.resolver_match.url_name == 'color-details' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-palette"></i>
+                    </span>
+
+                    <span>
+                        Farby
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- PUNCHES -->
+
+            {% if perms.warehousemanager.view_punch %}
+
+                <a
+                    href="{% url 'punches' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'punches' or request.resolver_match.url_name == 'punch-details' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-scissors"></i>
+                    </span>
+
+                    <span>
+                        Wykrojniki
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- POLYMERS -->
+
+            {% if perms.warehousemanager.view_photopolymer %}
+
+                <a
+                    href="{% url 'photopolymers' %}"
+                    class="
+                        app-navigation__item
+                        {% if request.resolver_match.url_name == 'polymers' %}
+                            is-active
+                        {% endif %}
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </span>
+
+                    <span>
+                        Polimery
+                    </span>
+                </a>
+
+            {% endif %}
+
+
+            <!-- WAREHOUSE -->
+
+            {% if request.user.is_superuser or request.user|has_group:"Bosses" or request.user|has_group:"OfficeWorkers" or request.user|has_group:"WarehouseWorker" %}
+
+                <a
+                    href="{% url 'warehouse:warehouse-list-view' %}"
+                    class="
+                        app-navigation__item
+                    "
+                >
+                    <span class="app-navigation__icon">
+                        <i class="fa-solid fa-warehouse"></i>
+                    </span>
+
+                    <span>
+                        Magazyn
+                    </span>
+                </a>
+
+            {% endif %}
+
+        </nav>
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR FOOTER                                    -->
+        <!-- ================================================= -->
+
+        <div class="app-sidebar__footer">
+
+            <div class="app-user">
+
+                <div class="app-user__avatar">
+
+                    {% if request.user.first_name %}
+                        {{ request.user.first_name|first }}
+                    {% else %}
+                        {{ request.user.username|first }}
+                    {% endif %}
+
+                </div>
+
+
+                <div class="app-user__info">
+
+                    <strong>
+                        {% if request.user.first_name %}
+                            {{ request.user.first_name }}
+                            {{ request.user.last_name }}
+                        {% else %}
+                            {{ request.user.username }}
+                        {% endif %}
+                    </strong>
+
+                    <span>
+                        {{ request.user.username }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{% url 'logout' %}"
+            >
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="app-logout"
+                    title="Wyloguj"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </form>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =================================================== -->
+    <!-- MAIN                                                -->
+    <!-- =================================================== -->
+
+    <div class="app-main">
+
+
+        <!-- TOPBAR -->
+
+        <header class="app-topbar">
+
+            <button
+                type="button"
+                class="app-sidebar-toggle"
+                id="appSidebarToggle"
+                aria-label="Menu"
+            >
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+
+            <div class="app-topbar__title">
+                {% block page_title %}
+                    PAKER
+                {% endblock %}
+            </div>
+
+
+            <div class="app-topbar__right">
+
+                <span class="app-topbar__user">
+                    {{ request.user.username }}
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================================================= -->
+        <!-- MESSAGES                                          -->
+        <!-- ================================================= -->
+
+        {% if messages %}
+
+            <div class="app-messages">
+
+                {% for message in messages %}
+
+                    <div
+                        class="
+                            app-message
+                            app-message--{{ message.tags|default:'info' }}
+                        "
+                    >
+
+                        <span>
+                            {{ message }}
+                        </span>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ================================================= -->
+        <!-- CONTENT                                           -->
+        <!-- ================================================= -->
+
+        <main class="app-content">
+
+            {% block content %}{% endblock %}
+
+        </main>
+
+    </div>
+
+</div>
+
+
+<script src="{% static 'js/base.js' %}"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+
+</html>

@@ -68,7 +68,7 @@ ROOT_URLCONF = 'paker.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['paker/templates'],
+        'DIRS': ['paker/templates', 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

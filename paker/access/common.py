@@ -33,3 +33,19 @@ def is_warehouse_worker(user):
         user,
         "WarehouseWorker",
     )
+
+
+def get_home_url_name(user):
+    if is_warehouse_worker(user):
+        return "warehouse:warehouse-list-view"
+
+    if is_production_worker(user):
+        return "dashboard"
+
+    if is_office_worker(user):
+        return "dashboard"
+
+    if is_boss(user):
+        return "dashboard"
+
+    return "dashboard"
