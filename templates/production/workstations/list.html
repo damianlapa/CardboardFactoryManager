@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Stanowiska produkcyjne | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/workstations.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="workstations-page">
+
+
+    <!-- HEADER -->
+
+    <header class="production-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:production-menu' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Produkcja
+            </a>
+
+
+            <div class="production-eyebrow">
+                Produkcja
+            </div>
+
+
+            <h1>
+                Stanowiska
+            </h1>
+
+
+            <p>
+                Bieżąca praca maszyn,
+                kolejki i obsada produkcji
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- SUMMARY -->
+
+    <div class="workstations-summary">
+
+        <div class="workstations-summary-card">
+
+            <span>
+                Stanowiska
+            </span>
+
+            <strong>
+                {{ stations_count }}
+            </strong>
+
+        </div>
+
+
+        <div class="
+            workstations-summary-card
+            workstations-summary-card--active
+        ">
+
+            <span>
+                Operacje w toku
+            </span>
+
+            <strong>
+                {{ active_count }}
+            </strong>
+
+        </div>
+
+
+        <div class="workstations-summary-card">
+
+            <span>
+                Pracownicy dziś
+            </span>
+
+            <strong>
+                {{ workers_count }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- STATIONS -->
+
+    <section class="workstations-section">
+
+        <div class="workstations-section__header">
+
+            <div>
+
+                <h2>
+                    Park maszynowy
+                </h2>
+
+                <p>
+                    Aktualny stan stanowisk
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="workstations-grid">
+
+            {% for row in station_rows %}
+
+                <a
+                    href="{% url 'modern_production:workstation-details' row.station.id %}"
+                    class="
+                        workstation-card
+                        {% if row.active_unit %}
+                            workstation-card--active
+                        {% endif %}
+                        {% if row.has_multiple_active %}
+                            workstation-card--error
+                        {% endif %}
+                    "
+                >
+
+                    <div class="workstation-card__header">
+
+                        <div>
+
+                            <span>
+                                Stanowisko
+                            </span>
+
+                            <strong>
+                                {{ row.station.name }}
+                            </strong>
+
+                        </div>
+
+
+                        {% if row.has_multiple_active %}
+
+                            <span class="workstation-warning">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                {{ row.active_units|length }} aktywne
+                            </span>
+
+                        {% elif row.active_unit %}
+
+                            <span class="workstation-running">
+                                <span></span>
+                                Pracuje
+                            </span>
+
+                        {% else %}
+
+                            <span class="workstation-free">
+                                Wolne
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    {% if row.active_unit %}
+
+                        <div class="workstation-current">
+
+                            <span>
+                                Aktualnie
+                            </span>
+
+                            <strong>
+                                {{ row.active_unit.production_order.id_number }}
+                            </strong>
+
+                            <small>
+                                {{ row.active_unit.production_order.customer }}
+                            </small>
+
+
+                            <div class="workstation-current__workers">
+
+                                {% for person in row.active_unit.persons.all %}
+
+                                    <span>
+                                        {{ person }}
+                                    </span>
+
+                                {% empty %}
+
+                                    <span>
+                                        Brak obsady
+                                    </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="workstation-current workstation-current--empty">
+
+                            <i class="fa-solid fa-pause"></i>
+
+                            <span>
+                                Brak aktywnej operacji
+                            </span>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="workstation-next">
+
+                        <div>
+
+                            <span>
+                                Kolejka
+                            </span>
+
+                            <strong>
+                                {{ row.planned_count }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Następna
+                            </span>
+
+                            <strong>
+                                {% if row.next_unit %}
+                                    {{ row.next_unit.production_order.id_number }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </strong>
+
+                        </div>
+
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <div class="production-empty">
+
+                    <strong>
+                        Brak stanowisk
+                    </strong>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- WORKERS -->
+
+    <section class="workstations-section">
+
+        <div class="workstations-section__header">
+
+            <div>
+
+                <h2>
+                    Pracownicy
+                </h2>
+
+                <p>
+                    Dzisiejsza obsada produkcji
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="workstation-workers-list">
+
+            {% for row in worker_rows %}
+
+                <div class="workstation-worker-row">
+
+                    <div class="workstation-worker-row__person">
+
+                        <div class="workstation-worker-avatar">
+
+                            {{ row.worker.first_name|first }}
+                            {{ row.worker.last_name|first }}
+
+                        </div>
+
+                        <strong>
+                            {{ row.worker }}
+                        </strong>
+
+                    </div>
+
+
+                    {% if row.unit %}
+
+                        <div class="workstation-worker-status">
+
+                            <span class="workstation-worker-status__active">
+                                W produkcji
+                            </span>
+
+                            <strong>
+                                {{ row.station }}
+                            </strong>
+
+                        </div>
+
+
+                        <a
+                            href="{% url 'modern_production:unit-details' row.unit.id %}"
+                            class="production-row-action"
+                        >
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+
+                    {% else %}
+
+                        <div class="workstation-worker-status">
+
+                            <span class="workstation-worker-status__free">
+                                Dostępny
+                            </span>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% empty %}
+
+                <div class="production-empty">
+                    Brak pracowników produkcyjnych.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

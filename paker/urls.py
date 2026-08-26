@@ -13,6 +13,12 @@ from paker.views.dashboard import DashboardView
 
 urlpatterns = [
     path('production/', include('production.urls')),
+    path(
+        "modern_production/",
+        include(
+            "production.modern_urls"
+        ),
+    ),
     # path('orders/', include('orders.urls')),
     path('deliveries/', include('deliveries.urls')),
     path('whm/', include('warehousemanager.urls')),
@@ -84,9 +90,6 @@ urlpatterns += [
 
 # navigation
 urlpatterns += [
-    # path('', StartPage.as_view(), name='start-page'),
-    # path('logout/', LogoutView.as_view(), name='logout'),
-    # path('login/', LoginView.as_view(), name='login'),
     path('main-page/', MainPageView.as_view(), name='main-page'),
 ]
 
@@ -97,25 +100,6 @@ urlpatterns += [
 # persons
 urlpatterns += [
     path('persons/', PersonListView.as_view(), name='persons'),
-    # path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
-]
-
-# polymers
-urlpatterns += [
-    # path('polymers/', PhotoPolymers.as_view(), name='photopolymers'),
-    # path('polymer/<int:polymer_id>/', PhotoPolymerDetail.as_view(), name='polymer-details'),
-    # path('polymer-create/', PolymerCreate.as_view(), name='polymer-create'),
-    # path('polymer-update/<int:pk>/', PolymerUpdate.as_view(), name='polymer-update'),
-    # path('polymer-delete/<int:pk>/', PolymerDelete.as_view(), name='polymer-delete'),
-]
-
-# punches
-urlpatterns += [
-    # path('punches/', PunchesList.as_view(), name='punches'),
-    # path('punch-add/', PunchAdd.as_view(), name='punch-add'),
-    # path('punch/<str:punch_id>/', PunchDetails.as_view(), name='punch-details'),
-    # path('punch-edit/<int:punch_id>/', PunchEdit.as_view(), name='punch-edit'),
-    # path('punch-delete/<int:punch_id>/', PunchDelete.as_view(), name='punch-delete'),
 ]
 
 # reminders

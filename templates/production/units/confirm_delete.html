@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Usuń operację | Produkcja
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/unit_detail.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-unit-delete-page">
+
+    <div class="production-unit-delete-card">
+
+        <div class="production-unit-delete-icon">
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+        </div>
+
+
+        <h1>
+            Usuń operację
+        </h1>
+
+
+        <p>
+            Czy na pewno chcesz usunąć:
+        </p>
+
+
+        <strong>
+            {{ object.sequence }}.
+            {{ object.work_station }}
+        </strong>
+
+
+        <span>
+            {{ object.production_order.id_number }}
+        </span>
+
+
+        <div class="production-unit-delete-warning">
+
+            Operacja zostanie trwale usunięta,
+            a kolejność kolejnych operacji zostanie skorygowana.
+
+        </div>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+
+            <div class="production-unit-delete-actions">
+
+                <a
+                    href="{% url 'modern_production:unit-details' object.id %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    Anuluj
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="app-btn production-danger-button"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                    Usuń operację
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

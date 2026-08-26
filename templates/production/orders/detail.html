@@ -10,14 +10,17 @@
 {% endblock %}
 
 {% block style %}
+
 <link
     rel="stylesheet"
     href="{% static 'css/production/production.css' %}"
 >
+
 <link
     rel="stylesheet"
     href="{% static 'css/production/order_detail.css' %}"
 >
+
 {% endblock %}
 
 
@@ -26,27 +29,31 @@
 <div
     class="production-order-detail"
     data-production-order
-    data-status-url="{% url 'production-details-change' production_order.id %}"
+    data-status-url="{% url 'modern_production:production-details-change' production_order.id %}"
 >
 
 
-    <!-- HEADER -->
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
 
     <header class="production-detail-header">
 
         <div>
 
             <a
-                href="{% url 'all-production-orders' %}"
+                href="{% url 'modern_production:all-production-orders' %}"
                 class="production-back-link"
             >
                 <i class="fa-solid fa-arrow-left"></i>
                 Zlecenia produkcyjne
             </a>
 
+
             <div class="production-eyebrow">
                 Zlecenie produkcyjne
             </div>
+
 
             <div class="production-detail-title">
 
@@ -57,13 +64,17 @@
                 {% if production_order.priority %}
 
                     <span class="production-priority">
+
                         <i class="fa-solid fa-fire"></i>
+
                         Priorytet
+
                     </span>
 
                 {% endif %}
 
             </div>
+
 
             <p>
                 {{ production_order.customer }}
@@ -74,8 +85,21 @@
 
         <div class="production-detail-header__actions">
 
+            {% if perms.production.change_productionorder %}
+
+                <a
+                    href="{% url 'modern_production:production-order-edit' production_order.id %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    <i class="fa-solid fa-pen"></i>
+                    Edytuj
+                </a>
+
+            {% endif %}
+
+
             <a
-                href="{% url 'order-redirect' production_order.id %}"
+                href="{% url 'modern_production:order-redirect' production_order.id %}"
                 class="app-btn app-btn-secondary"
             >
                 <i class="fa-solid fa-warehouse"></i>
@@ -87,17 +111,29 @@
     </header>
 
 
-    <!-- STATUS + INFO -->
+    <!-- =================================================== -->
+    <!-- INFO + STATUS                                       -->
+    <!-- =================================================== -->
 
     <div class="production-detail-grid">
+
+
+        <!-- INFO -->
 
         <section class="production-detail-card">
 
             <div class="production-detail-card__header">
 
                 <div>
-                    <h2>Informacje</h2>
-                    <p>Podstawowe dane zlecenia</p>
+
+                    <h2>
+                        Informacje
+                    </h2>
+
+                    <p>
+                        Podstawowe dane zlecenia
+                    </p>
+
                 </div>
 
                 <i class="fa-solid fa-clipboard-list"></i>
@@ -108,45 +144,80 @@
             <div class="production-info-grid">
 
                 <div>
-                    <span>Klient</span>
+
+                    <span>
+                        Klient
+                    </span>
+
                     <strong>
                         {{ production_order.customer }}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Wymiary</span>
+
+                    <span>
+                        Wymiary
+                    </span>
+
                     <strong>
                         {{ production_order.dimensions|default:"—" }}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Ilość zamówiona</span>
+
+                    <span>
+                        Ilość zamówiona
+                    </span>
+
                     <strong>
                         {{ production_order.ordered_quantity|default:"—" }}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Ilość produkcyjna</span>
+
+                    <span>
+                        Ilość produkcyjna
+                    </span>
+
                     <strong>
                         {{ production_order.quantity|default:"—" }}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Tektura</span>
+
+                    <span>
+                        Tektura
+                    </span>
+
                     <strong>
                         {{ production_order.cardboard|default:"—" }}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Format tektury</span>
+
+                    <span>
+                        Format tektury
+                    </span>
+
                     <strong>
                         {{ production_order.cardboard_dimensions|default:"—" }}
                     </strong>
+
                 </div>
 
             </div>
@@ -154,13 +225,22 @@
         </section>
 
 
+        <!-- STATUS -->
+
         <section class="production-detail-card">
 
             <div class="production-detail-card__header">
 
                 <div>
-                    <h2>Status</h2>
-                    <p>Stan całego zlecenia</p>
+
+                    <h2>
+                        Status
+                    </h2>
+
+                    <p>
+                        Stan całego zlecenia
+                    </p>
+
                 </div>
 
                 <i class="fa-solid fa-bars-progress"></i>
@@ -192,13 +272,17 @@
 
                 </select>
 
+
                 <span
                     id="productionStatusSaved"
                     class="production-save-indicator"
                     hidden
                 >
+
                     <i class="fa-solid fa-check"></i>
+
                     Zapisano
+
                 </span>
 
             </div>
@@ -208,15 +292,24 @@
     </div>
 
 
-    <!-- TOOLS -->
+    <!-- =================================================== -->
+    <!-- TOOLS                                               -->
+    <!-- =================================================== -->
 
     <section class="production-detail-card">
 
         <div class="production-detail-card__header">
 
             <div>
-                <h2>Narzędzia</h2>
-                <p>Wykrojnik i polimer przypisany do zlecenia</p>
+
+                <h2>
+                    Narzędzia
+                </h2>
+
+                <p>
+                    Wykrojnik i polimer przypisany do zlecenia
+                </p>
+
             </div>
 
             <i class="fa-solid fa-screwdriver-wrench"></i>
@@ -238,15 +331,21 @@
                 {% endif %}
             >
 
-                <span>Wykrojnik</span>
+                <span>
+                    Wykrojnik
+                </span>
 
                 <strong>
                     {{ production_order.punch|default:"Brak" }}
                 </strong>
 
-                <small>
-                    Kliknij, aby zmienić
-                </small>
+                {% if perms.production.change_productionorder %}
+
+                    <small>
+                        Kliknij, aby zmienić
+                    </small>
+
+                {% endif %}
 
             </button>
 
@@ -263,15 +362,21 @@
                 {% endif %}
             >
 
-                <span>Polimer</span>
+                <span>
+                    Polimer
+                </span>
 
                 <strong>
                     {{ production_order.photopolymer|default:"Brak" }}
                 </strong>
 
-                <small>
-                    Kliknij, aby zmienić
-                </small>
+                {% if perms.production.change_productionorder %}
+
+                    <small>
+                        Kliknij, aby zmienić
+                    </small>
+
+                {% endif %}
 
             </button>
 
@@ -280,18 +385,33 @@
     </section>
 
 
+    <!-- =================================================== -->
+    <!-- NOTES                                               -->
+    <!-- =================================================== -->
+
     {% if production_order.notes %}
 
         <section class="production-detail-card">
 
             <div class="production-detail-card__header">
+
                 <div>
-                    <h2>Notatki</h2>
+
+                    <h2>
+                        Notatki
+                    </h2>
+
                 </div>
+
+                <i class="fa-solid fa-note-sticky"></i>
+
             </div>
 
+
             <div class="production-notes">
+
                 {{ production_order.notes|linebreaksbr }}
+
             </div>
 
         </section>
@@ -299,19 +419,25 @@
     {% endif %}
 
 
-    <!-- UNITS -->
+    <!-- =================================================== -->
+    <!-- UNITS                                               -->
+    <!-- =================================================== -->
 
     <section class="production-detail-card">
 
         <div class="production-detail-card__header">
 
             <div>
-                <h2>Operacje produkcyjne</h2>
+
+                <h2>
+                    Operacje produkcyjne
+                </h2>
 
                 <p>
                     {{ production_units|length }}
                     operacji
                 </p>
+
             </div>
 
             <i class="fa-solid fa-gears"></i>
@@ -326,6 +452,7 @@
                 <thead>
 
                     <tr>
+
                         <th>#</th>
                         <th>Status</th>
                         <th>Stanowisko</th>
@@ -336,6 +463,7 @@
                         <th>Plan [min]</th>
                         <th>Pracownicy</th>
                         <th></th>
+
                     </tr>
 
                 </thead>
@@ -351,12 +479,15 @@
                             {% endif %}
                         >
 
+
+                            <!-- SEQUENCE -->
+
                             <td>
 
                                 <input
                                     type="number"
                                     class="production-unit-edit"
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="sequence"
                                     value="{{ unit.sequence }}"
                                     {% if not perms.production.change_productionunit %}
@@ -367,11 +498,13 @@
                             </td>
 
 
+                            <!-- STATUS -->
+
                             <td>
 
                                 <select
                                     class="production-unit-edit"
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="status"
                                     {% if not perms.production.change_productionunit %}
                                         disabled
@@ -396,11 +529,13 @@
                             </td>
 
 
+                            <!-- WORKSTATION -->
+
                             <td>
 
                                 <select
                                     class="production-unit-edit"
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="work_station"
                                     {% if not perms.production.change_productionunit %}
                                         disabled
@@ -425,6 +560,8 @@
                             </td>
 
 
+                            <!-- START -->
+
                             <td>
 
                                 <input
@@ -433,7 +570,7 @@
                                         production-unit-edit
                                         js-datetime-picker
                                     "
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="start"
                                     value="{{ unit.start|date:'Y-m-d H:i' }}"
                                     {% if not perms.production.change_productionunit %}
@@ -444,6 +581,8 @@
                             </td>
 
 
+                            <!-- END -->
+
                             <td>
 
                                 <input
@@ -452,7 +591,7 @@
                                         production-unit-edit
                                         js-datetime-picker
                                     "
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="end"
                                     value="{{ unit.end|date:'Y-m-d H:i' }}"
                                     {% if not perms.production.change_productionunit %}
@@ -463,12 +602,14 @@
                             </td>
 
 
+                            <!-- Q START -->
+
                             <td>
 
                                 <input
                                     type="number"
                                     class="production-unit-edit"
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="quantity_start"
                                     value="{{ unit.quantity_start|default:'' }}"
                                     {% if not perms.production.change_productionunit %}
@@ -479,12 +620,14 @@
                             </td>
 
 
+                            <!-- Q END -->
+
                             <td>
 
                                 <input
                                     type="number"
                                     class="production-unit-edit"
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="quantity_end"
                                     value="{{ unit.quantity_end|default:'' }}"
                                     {% if not perms.production.change_productionunit %}
@@ -495,12 +638,14 @@
                             </td>
 
 
+                            <!-- ESTIMATED TIME -->
+
                             <td>
 
                                 <input
                                     type="number"
                                     class="production-unit-edit"
-                                    data-url="{% url 'production-unit-inline-update' unit.id %}"
+                                    data-url="{% url 'modern_production:production-unit-inline-update' unit.id %}"
                                     data-field="estimated_time"
                                     value="{{ unit.estimated_time|default:'' }}"
                                     {% if not perms.production.change_productionunit %}
@@ -510,6 +655,8 @@
 
                             </td>
 
+
+                            <!-- PERSONS -->
 
                             <td>
 
@@ -542,7 +689,7 @@
                                         class="production-worker-edit"
                                         data-edit-workers
                                         data-unit-id="{{ unit.id }}"
-                                        data-url="{% url 'production-unit-persons-update' unit.id %}"
+                                        data-url="{% url 'modern_production:production-unit-persons-update' unit.id %}"
                                         data-current-workers="{% for person in unit.persons.all %}{{ person.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editWorkersModal"
@@ -555,10 +702,12 @@
                             </td>
 
 
+                            <!-- DETAILS -->
+
                             <td>
 
                                 <a
-                                    href="{% url 'unit-details' unit.id %}"
+                                    href="{% url 'modern_production:unit-details' unit.id %}"
                                     class="production-row-action"
                                     title="Szczegóły"
                                 >
@@ -593,7 +742,9 @@
     </section>
 
 
-    <!-- ADD UNIT -->
+    <!-- =================================================== -->
+    <!-- ADD UNIT                                            -->
+    <!-- =================================================== -->
 
     {% if perms.production.add_productionunit %}
 
@@ -602,8 +753,15 @@
             <div class="production-detail-card__header">
 
                 <div>
-                    <h2>Dodaj operację</h2>
-                    <p>Nowy etap produkcji</p>
+
+                    <h2>
+                        Dodaj operację
+                    </h2>
+
+                    <p>
+                        Nowy etap produkcji
+                    </p>
+
                 </div>
 
                 <i class="fa-solid fa-plus"></i>
@@ -618,6 +776,7 @@
 
                 {% csrf_token %}
 
+
                 {% if form.non_field_errors %}
 
                     <div class="production-form-error">
@@ -630,43 +789,138 @@
                 <div class="production-unit-form-grid">
 
                     <div>
-                        <label>Kolejność</label>
+
+                        <label for="{{ form.sequence.id_for_label }}">
+                            Kolejność
+                        </label>
+
                         {{ form.sequence }}
+
+                        {% if form.sequence.errors %}
+                            <div class="production-field-error">
+                                {{ form.sequence.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Status</label>
+
+                        <label for="{{ form.status.id_for_label }}">
+                            Status
+                        </label>
+
                         {{ form.status }}
+
+                        {% if form.status.errors %}
+                            <div class="production-field-error">
+                                {{ form.status.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Stanowisko</label>
+
+                        <label for="{{ form.work_station.id_for_label }}">
+                            Stanowisko
+                        </label>
+
                         {{ form.work_station }}
+
+                        {% if form.work_station.errors %}
+                            <div class="production-field-error">
+                                {{ form.work_station.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Plan [min]</label>
+
+                        <label for="{{ form.estimated_time.id_for_label }}">
+                            Plan [min]
+                        </label>
+
                         {{ form.estimated_time }}
+
+                        {% if form.estimated_time.errors %}
+                            <div class="production-field-error">
+                                {{ form.estimated_time.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Start</label>
+
+                        <label for="{{ form.start.id_for_label }}">
+                            Start
+                        </label>
+
                         {{ form.start }}
+
+                        {% if form.start.errors %}
+                            <div class="production-field-error">
+                                {{ form.start.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Koniec</label>
+
+                        <label for="{{ form.end.id_for_label }}">
+                            Koniec
+                        </label>
+
                         {{ form.end }}
+
+                        {% if form.end.errors %}
+                            <div class="production-field-error">
+                                {{ form.end.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Ilość wejściowa</label>
+
+                        <label for="{{ form.quantity_start.id_for_label }}">
+                            Ilość wejściowa
+                        </label>
+
                         {{ form.quantity_start }}
+
+                        {% if form.quantity_start.errors %}
+                            <div class="production-field-error">
+                                {{ form.quantity_start.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
                     <div>
-                        <label>Ilość wyjściowa</label>
+
+                        <label for="{{ form.quantity_end.id_for_label }}">
+                            Ilość wyjściowa
+                        </label>
+
                         {{ form.quantity_end }}
+
+                        {% if form.quantity_end.errors %}
+                            <div class="production-field-error">
+                                {{ form.quantity_end.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
                 </div>
@@ -674,7 +928,10 @@
 
                 <div class="production-unit-persons-field">
 
-                    <label>Pracownicy</label>
+                    <label>
+                        Pracownicy
+                    </label>
+
 
                     <button
                         type="button"
@@ -686,13 +943,23 @@
                         Wybierz pracowników
                     </button>
 
+
                     <div id="selectedWorkersPreview">
                         Brak pracowników
                     </div>
 
+
                     <div hidden>
                         {{ form.persons }}
                     </div>
+
+                    {% if form.persons.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.persons.errors }}
+                        </div>
+
+                    {% endif %}
 
                 </div>
 
@@ -718,29 +985,44 @@
 </div>
 
 
-<!-- ADD WORKERS MODAL -->
+<!-- ======================================================= -->
+<!-- ADD WORKERS MODAL                                       -->
+<!-- ======================================================= -->
 
 <div
     class="modal fade"
     id="workersModal"
     tabindex="-1"
+    aria-labelledby="workersModalLabel"
     aria-hidden="true"
 >
 
-    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div
+        class="
+            modal-dialog
+            modal-lg
+            modal-dialog-scrollable
+            modal-dialog-centered
+        "
+    >
 
         <div class="modal-content">
 
             <div class="modal-header">
 
-                <h5 class="modal-title">
+                <h5
+                    class="modal-title"
+                    id="workersModalLabel"
+                >
                     Wybierz pracowników
                 </h5>
+
 
                 <button
                     type="button"
                     class="btn-close"
                     data-bs-dismiss="modal"
+                    aria-label="Zamknij"
                 ></button>
 
             </div>
@@ -762,6 +1044,12 @@
                             {{ worker }}
                         </button>
 
+                    {% empty %}
+
+                        <div class="production-table-empty">
+                            Brak aktywnych pracowników produkcyjnych.
+                        </div>
+
                     {% endfor %}
 
                 </div>
@@ -778,6 +1066,7 @@
                 >
                     Wyczyść
                 </button>
+
 
                 <button
                     type="button"
@@ -796,29 +1085,44 @@
 </div>
 
 
-<!-- EDIT WORKERS MODAL -->
+<!-- ======================================================= -->
+<!-- EDIT WORKERS MODAL                                      -->
+<!-- ======================================================= -->
 
 <div
     class="modal fade"
     id="editWorkersModal"
     tabindex="-1"
+    aria-labelledby="editWorkersModalLabel"
     aria-hidden="true"
 >
 
-    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div
+        class="
+            modal-dialog
+            modal-lg
+            modal-dialog-scrollable
+            modal-dialog-centered
+        "
+    >
 
         <div class="modal-content">
 
             <div class="modal-header">
 
-                <h5 class="modal-title">
+                <h5
+                    class="modal-title"
+                    id="editWorkersModalLabel"
+                >
                     Edytuj pracowników
                 </h5>
+
 
                 <button
                     type="button"
                     class="btn-close"
                     data-bs-dismiss="modal"
+                    aria-label="Zamknij"
                 ></button>
 
             </div>
@@ -857,6 +1161,7 @@
                     Wyczyść
                 </button>
 
+
                 <button
                     type="button"
                     class="app-btn app-btn-primary"
@@ -874,25 +1179,34 @@
 </div>
 
 
-<!-- TOOL MODAL -->
+<!-- ======================================================= -->
+<!-- TOOL MODAL                                              -->
+<!-- ======================================================= -->
 
 <div
     class="modal fade"
     id="productionToolModal"
     tabindex="-1"
+    aria-labelledby="productionToolModalTitle"
     aria-hidden="true"
 >
 
-    <div class="modal-dialog modal-dialog-centered">
+    <div
+        class="
+            modal-dialog
+            modal-dialog-centered
+        "
+    >
 
         <div class="modal-content">
 
             <form
                 method="post"
-                action="{% url 'update_production_order_tool' production_order.id %}"
+                action="{% url 'modern_production:update_production_order_tool' production_order.id %}"
             >
 
                 {% csrf_token %}
+
 
                 <div class="modal-header">
 
@@ -903,10 +1217,12 @@
                         Wybierz narzędzie
                     </h5>
 
+
                     <button
                         type="button"
                         class="btn-close"
                         data-bs-dismiss="modal"
+                        aria-label="Zamknij"
                     ></button>
 
                 </div>
@@ -920,18 +1236,25 @@
                         id="productionToolType"
                     >
 
-                    <label class="production-modal-label">
+
+                    <label
+                        for="productionToolSelect"
+                        class="production-modal-label"
+                    >
                         Narzędzie
                     </label>
+
 
                     <select
                         name="tool_id"
                         id="productionToolSelect"
                         class="production-modal-select"
                     >
+
                         <option value="">
                             — brak —
                         </option>
+
                     </select>
 
                 </div>
@@ -947,10 +1270,12 @@
                         Anuluj
                     </button>
 
+
                     <button
                         type="submit"
                         class="app-btn app-btn-primary"
                     >
+                        <i class="fa-solid fa-check"></i>
                         Zapisz
                     </button>
 
@@ -966,6 +1291,7 @@
 
 
 {{ punches_data|json_script:"production-punches-data" }}
+
 {{ photopolymers_data|json_script:"production-polymers-data" }}
 
 {% endblock %}
@@ -973,6 +1299,8 @@
 
 {% block scripts %}
 
-<script src="{% static 'js/production/order_detail.js' %}"></script>
+<script
+    src="{% static 'js/production/order_detail.js' %}"
+></script>
 
 {% endblock %}

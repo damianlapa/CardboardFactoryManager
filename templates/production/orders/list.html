@@ -31,20 +31,23 @@
         <div>
 
             <a
-                href="{% url 'production-menu' %}"
+                href="{% url 'modern_production:production-menu' %}"
                 class="production-back-link"
             >
                 <i class="fa-solid fa-arrow-left"></i>
                 Produkcja
             </a>
 
+
             <div class="production-eyebrow">
                 Produkcja
             </div>
 
+
             <h1>
                 Zlecenia produkcyjne
             </h1>
+
 
             <p>
                 Zarządzanie zleceniami i przebiegiem produkcji
@@ -58,7 +61,7 @@
             {% if perms.production.add_productionorder %}
 
                 <a
-                    href="{% url 'production-order-add' %}"
+                    href="{% url 'modern_production:production-order-add' %}"
                     class="app-btn app-btn-primary"
                 >
                     <i class="fa-solid fa-plus"></i>
@@ -90,6 +93,7 @@
                 name="q"
                 value="{{ search }}"
                 placeholder="Numer, klient, wymiar, tektura..."
+                autocomplete="off"
             >
 
         </div>
@@ -129,7 +133,7 @@
         {% if search or selected_status %}
 
             <a
-                href="{% url 'all-production-orders' %}"
+                href="{% url 'modern_production:all-production-orders' %}"
                 class="app-btn app-btn-secondary"
             >
                 Wyczyść
@@ -172,7 +176,7 @@
             {% for order in production_orders %}
 
                 <a
-                    href="{% url 'production-details' production_order_id=order.id %}"
+                    href="{% url 'modern_production:production-details' production_order_id=order.id %}"
                     class="
                         production-order-row
                         {% if order.priority %}
@@ -184,10 +188,12 @@
                     <div class="production-order-row__number">
 
                         {% if order.priority %}
+
                             <i
                                 class="fa-solid fa-fire"
                                 title="Priorytet"
                             ></i>
+
                         {% endif %}
 
                         <strong>
@@ -233,9 +239,13 @@
                             {{ order.cardboard|default:"—" }}
                         </strong>
 
-                        <small>
-                            {{ order.cardboard_dimensions|default:"" }}
-                        </small>
+                        {% if order.cardboard_dimensions %}
+
+                            <small>
+                                {{ order.cardboard_dimensions }}
+                            </small>
+
+                        {% endif %}
 
                     </div>
 

@@ -134,10 +134,10 @@
             {% if request.user.is_superuser or request.user|has_group:"Bosses" or request.user|has_group:"OfficeWorkers" or request.user|has_group:"ProductionWorker" %}
 
                 <a
-                    href="{% url 'production-menu' %}"
+                    href="{% url 'modern_production:production-menu' %}"
                     class="
                         app-navigation__item
-                        {% if request.resolver_match.url_name == 'production-menu' or 'production' in request.path %}
+                        {% if request.resolver_match.namespace == 'modern_production' %}
                             is-active
                         {% endif %}
                     "

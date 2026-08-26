@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+
+    {% if object %}
+        Edycja zlecenia | Produkcja
+    {% else %}
+        Nowe zlecenie | Produkcja
+    {% endif %}
+
+{% endblock %}
+
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/order_detail.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/order_form.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-order-form-page">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="production-header">
+
+        <div>
+
+            {% if object %}
+
+                <a
+                    href="{% url 'modern_production:production-details' object.id %}"
+                    class="production-back-link"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Wróć do zlecenia
+                </a>
+
+            {% else %}
+
+                <a
+                    href="{% url 'modern_production:all-production-orders' %}"
+                    class="production-back-link"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Zlecenia produkcyjne
+                </a>
+
+            {% endif %}
+
+
+            <div class="production-eyebrow">
+                Produkcja
+            </div>
+
+
+            <h1>
+
+                {% if object %}
+                    Edytuj zlecenie
+                {% else %}
+                    Nowe zlecenie
+                {% endif %}
+
+            </h1>
+
+
+            <p>
+
+                {% if object %}
+                    Zmień dane zlecenia produkcyjnego
+                {% else %}
+                    Utwórz nowe zlecenie produkcyjne
+                {% endif %}
+
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- FORM                                                -->
+    <!-- =================================================== -->
+
+    <form
+        method="post"
+        class="production-order-form"
+    >
+
+        {% csrf_token %}
+
+
+        {% if form.non_field_errors %}
+
+            <div class="production-form-error">
+                {{ form.non_field_errors }}
+            </div>
+
+        {% endif %}
+
+
+        <!-- ================================================= -->
+        <!-- BASIC                                             -->
+        <!-- ================================================= -->
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+
+                    <h2>
+                        Dane podstawowe
+                    </h2>
+
+                    <p>
+                        Numer, klient i wymiary
+                    </p>
+
+                </div>
+
+                <i class="fa-solid fa-clipboard-list"></i>
+
+            </div>
+
+
+            <div class="production-order-form-grid">
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.id_number.id_for_label }}">
+                        {{ form.id_number.label }}
+                    </label>
+
+                    {{ form.id_number }}
+
+                    {% if form.id_number.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.id_number.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.customer.id_for_label }}">
+                        {{ form.customer.label }}
+                    </label>
+
+                    {{ form.customer }}
+
+                    {% if form.customer.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.customer.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.dimensions.id_for_label }}">
+                        {{ form.dimensions.label }}
+                    </label>
+
+                    {{ form.dimensions }}
+
+                    {% if form.dimensions.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.dimensions.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.status.id_for_label }}">
+                        {{ form.status.label }}
+                    </label>
+
+                    {{ form.status }}
+
+                    {% if form.status.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.status.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- QUANTITY                                          -->
+        <!-- ================================================= -->
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+
+                    <h2>
+                        Ilości
+                    </h2>
+
+                    <p>
+                        Zamówienie i produkcja
+                    </p>
+
+                </div>
+
+                <i class="fa-solid fa-boxes-stacked"></i>
+
+            </div>
+
+
+            <div class="production-order-form-grid">
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.ordered_quantity.id_for_label }}">
+                        {{ form.ordered_quantity.label }}
+                    </label>
+
+                    {{ form.ordered_quantity }}
+
+                    {% if form.ordered_quantity.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.ordered_quantity.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.quantity.id_for_label }}">
+                        {{ form.quantity.label }}
+                    </label>
+
+                    {{ form.quantity }}
+
+                    {% if form.quantity.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.quantity.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- CARDBOARD                                         -->
+        <!-- ================================================= -->
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+
+                    <h2>
+                        Tektura
+                    </h2>
+
+                    <p>
+                        Rodzaj i format arkusza
+                    </p>
+
+                </div>
+
+                <i class="fa-solid fa-layer-group"></i>
+
+            </div>
+
+
+            <div class="production-order-form-grid">
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.cardboard.id_for_label }}">
+                        {{ form.cardboard.label }}
+                    </label>
+
+                    {{ form.cardboard }}
+
+                    {% if form.cardboard.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.cardboard.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.cardboard_dimensions.id_for_label }}">
+                        {{ form.cardboard_dimensions.label }}
+                    </label>
+
+                    {{ form.cardboard_dimensions }}
+
+                    {% if form.cardboard_dimensions.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.cardboard_dimensions.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- TOOLS                                             -->
+        <!-- ================================================= -->
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+
+                    <h2>
+                        Narzędzia
+                    </h2>
+
+                    <p>
+                        Polimer i wykrojnik
+                    </p>
+
+                </div>
+
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+
+            </div>
+
+
+            <div class="production-order-form-grid">
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.photopolymer.id_for_label }}">
+                        {{ form.photopolymer.label }}
+                    </label>
+
+                    {{ form.photopolymer }}
+
+                    {% if form.photopolymer.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.photopolymer.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.punch.id_for_label }}">
+                        {{ form.punch.label }}
+                    </label>
+
+                    {{ form.punch }}
+
+                    {% if form.punch.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.punch.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- EXTRA                                             -->
+        <!-- ================================================= -->
+
+        <section class="production-detail-card">
+
+            <div class="production-detail-card__header">
+
+                <div>
+
+                    <h2>
+                        Dodatkowe informacje
+                    </h2>
+
+                    <p>
+                        Priorytet i notatki
+                    </p>
+
+                </div>
+
+                <i class="fa-solid fa-note-sticky"></i>
+
+            </div>
+
+
+            <div class="production-order-form-extra">
+
+                <label class="production-priority-checkbox">
+
+                    {{ form.priority }}
+
+                    <span>
+                        Zlecenie priorytetowe
+                    </span>
+
+                </label>
+
+
+                {% if form.priority.errors %}
+
+                    <div class="production-field-error">
+                        {{ form.priority.errors }}
+                    </div>
+
+                {% endif %}
+
+
+                <div class="production-form-field">
+
+                    <label for="{{ form.notes.id_for_label }}">
+                        {{ form.notes.label }}
+                    </label>
+
+                    {{ form.notes }}
+
+                    {% if form.notes.errors %}
+
+                        <div class="production-field-error">
+                            {{ form.notes.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- ACTIONS                                           -->
+        <!-- ================================================= -->
+
+        <div class="production-form-actions">
+
+            {% if object %}
+
+                <a
+                    href="{% url 'modern_production:production-details' object.id %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    Anuluj
+                </a>
+
+            {% else %}
+
+                <a
+                    href="{% url 'modern_production:all-production-orders' %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    Anuluj
+                </a>
+
+            {% endif %}
+
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+
+                <i class="fa-solid fa-check"></i>
+
+                {% if object %}
+                    Zapisz zmiany
+                {% else %}
+                    Utwórz zlecenie
+                {% endif %}
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

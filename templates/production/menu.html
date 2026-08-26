@@ -51,7 +51,7 @@
             {% if perms.production.add_productionorder %}
 
                 <a
-                    href="{% url 'production-order-add' %}"
+                    href="{% url 'modern_production:production-order-add' %}"
                     class="app-btn app-btn-primary"
                 >
                     <i class="fa-solid fa-plus"></i>
@@ -72,7 +72,7 @@
     <div class="production-summary-grid">
 
         <a
-            href="{% url 'all-production-orders' %}"
+            href="{% url 'modern_production:all-production-orders' %}?status=ALL"
             class="production-summary-card"
         >
 
@@ -96,7 +96,7 @@
 
 
         <a
-            href="{% url 'all-production-orders' %}?status=UNCOMPLETED"
+            href="{% url 'modern_production:all-production-orders' %}?status=UNCOMPLETED"
             class="
                 production-summary-card
                 production-summary-card--warning
@@ -123,7 +123,7 @@
 
 
         <a
-            href="{% url 'all-production-orders' %}?status=PLANNED"
+            href="{% url 'modern_production:all-production-orders' %}?status=PLANNED"
             class="
                 production-summary-card
                 production-summary-card--planned
@@ -150,7 +150,7 @@
 
 
         <a
-            href="{% url 'production-workstations' %}"
+            href="{% url 'modern_production:workstations' %}"
             class="
                 production-summary-card
                 production-summary-card--active
@@ -204,7 +204,7 @@
         <div class="production-modules">
 
             <a
-                href="{% url 'all-production-orders' %}"
+                href="{% url 'modern_production:all-production-orders' %}"
                 class="production-module-card"
             >
 
@@ -230,7 +230,7 @@
 
 
             <a
-                href="{% url 'production-workstations' %}"
+                href="{% url 'modern_production:workstations' %}"
                 class="production-module-card"
             >
 
@@ -345,19 +345,17 @@
                 {% for unit in active_units %}
 
                     <a
-                        href="{% url 'unit-details' unit.id %}"
+                        href="{% url 'modern_production:unit-details' unit.id %}"
                         class="production-active-item"
                     >
 
-                        <div
-                            class="production-active-item__station"
-                        >
+                        <div class="production-active-item__station">
                             {{ unit.work_station }}
                         </div>
 
-                        <div
-                            class="production-active-item__order"
-                        >
+
+                        <div class="production-active-item__order">
+
                             <strong>
                                 {{ unit.production_order.id_number }}
                             </strong>
@@ -365,12 +363,11 @@
                             <span>
                                 {{ unit.production_order.customer }}
                             </span>
+
                         </div>
 
 
-                        <div
-                            class="production-active-item__people"
-                        >
+                        <div class="production-active-item__people">
 
                             {% for person in unit.persons.all %}
 

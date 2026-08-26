@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.utils.dateparse import parse_datetime
 
 from django.db.models import Q
+from django.urls import reverse
 
 from production.models import *
 from production.forms import *
@@ -208,257 +209,6 @@ class GetProductionById(View):
             return HttpResponse(json.dumps(True))
         except ObjectDoesNotExist:
             return HttpResponse(json.dumps(False))
-
-
-
-
-
-class ProductionMenu(
-    PermissionRequiredMixin,
-    View,
-):
-    permission_required = (
-        "production.view_productionorder"
-    )
-
-    login_url = reverse_lazy("login")
-
-    template_name = (
-        "production/menu.html"
-    )
-
-    def get(self, request):
-        visit_counter(
-            request.user,
-            "Production dashboard",
-        )
-
-        order_counts = {
-            row["status"]: row["count"]
-            for row in (
-                ProductionOrder.objects
-                .values("status")
-                .annotate(
-                    count=Count("id")
-                )
-            )
-        }
-
-        context = {
-            "orders_total":
-                ProductionOrder.objects.count(),
-
-            "orders_uncompleted":
-                order_counts.get(
-                    "UNCOMPLETED",
-                    0,
-                ),
-
-            "orders_planned":
-                order_counts.get(
-                    "PLANNED",
-                    0,
-                ),
-
-            "orders_in_progress":
-                ProductionUnit.objects
-                .filter(
-                    status="IN PROGRESS"
-                )
-                .count(),
-
-            "stations_count":
-                WorkStation.objects.count(),
-
-            "active_units":
-                (
-                    ProductionUnit.objects
-                    .filter(
-                        status="IN PROGRESS"
-                    )
-                    .select_related(
-                        "production_order",
-                        "work_station",
-                    )
-                    .prefetch_related(
-                        "persons",
-                    )
-                    .order_by(
-                        "work_station__name"
-                    )
-                ),
-
-            "planned_units":
-                (
-                    ProductionUnit.objects
-                    .filter(
-                        status="PLANNED"
-                    )
-                    .select_related(
-                        "production_order",
-                        "work_station",
-                    )
-                    .order_by(
-                        "work_station__name",
-                        "order",
-                    )[:10]
-                ),
-        }
-
-        return render(
-            request,
-            self.template_name,
-            context,
-        )
-
-
-class AllProductionOrders(
-    PermissionRequiredMixin,
-    View,
-):
-    permission_required = (
-        "production.view_productionorder"
-    )
-
-    login_url = reverse_lazy("login")
-
-    template_name = (
-        "production/orders/list.html"
-    )
-
-    ACTIVE_STATUSES = (
-        "ORDERED",
-        "UNCOMPLETED",
-        "COMPLETED",
-        "PLANNED",
-    )
-
-    def get(self, request):
-        visit_counter(
-            request.user,
-            "All Production Orders",
-        )
-
-        search = (
-            request.GET.get(
-                "q",
-                ""
-            )
-            .strip()
-        )
-
-        status = (
-            request.GET.get(
-                "status",
-                ""
-            )
-            .strip()
-        )
-
-        orders = (
-            ProductionOrder.objects
-            .select_related(
-                "customer",
-                "photopolymer",
-                "punch",
-            )
-            .annotate(
-                units_count=Count(
-                    "productionunit",
-                    distinct=True,
-                )
-            )
-            .order_by(
-                "-priority",
-                "-add_date",
-            )
-        )
-
-        if not status:
-            orders = orders.filter(
-                status__in=
-                    self.ACTIVE_STATUSES
-            )
-
-        elif status != "ALL":
-            orders = orders.filter(
-                status=status
-            )
-
-        if search:
-            orders = orders.filter(
-                Q(
-                    id_number__icontains=
-                        search
-                )
-                | Q(
-                    customer__name__icontains=
-                        search
-                )
-                | Q(
-                    dimensions__icontains=
-                        search
-                )
-                | Q(
-                    cardboard__icontains=
-                        search
-                )
-                | Q(
-                    cardboard_dimensions__icontains=
-                        search
-                )
-            )
-
-        context = {
-            "production_orders":
-                orders,
-
-            "orders_count":
-                orders.count(),
-
-            "search":
-                search,
-
-            "selected_status":
-                status or "",
-
-            "statuses": [
-                (
-                    "ALL",
-                    "Wszystkie",
-                ),
-                (
-                    "UNCOMPLETED",
-                    "Niekompletne",
-                ),
-                (
-                    "COMPLETED",
-                    "Kompletne",
-                ),
-                (
-                    "PLANNED",
-                    "Zaplanowane",
-                ),
-                (
-                    "ORDERED",
-                    "Zamówione",
-                ),
-                (
-                    "FINISHED",
-                    "Zakończone",
-                ),
-                (
-                    "ARCHIVED",
-                    "Archiwalne",
-                ),
-            ],
-        }
-
-        return render(
-            request,
-            self.template_name,
-            context,
-        )
 
 
 class AddMoreProductionOrders(LoginRequiredMixin, View):
@@ -745,38 +495,44 @@ class ChangeProductionStatus(
         })
 
 
-class AddProductionOrder(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
 
-    def get(self, request):
-        form = ProductionOrderForm()
-        return render(request, 'production/production-order-add.html', locals())
+from production.forms import (
+    ProductionOrderForm,
+)
+from production.models import (
+    ProductionOrder,
+)
 
-    def post(self, request):
-        form = ProductionOrderForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            id_number = data['id_number']
-            cardboard = data['cardboard']
-            cardboard_dimensions = data['cardboard_dimensions']
-            customer = data['customer']
-            dimensions = data['dimensions']
-            ordered_quantity = data['ordered_quantity']
-            quantity = data['quantity']
-            status = data['status']
-            notes = data['notes']
 
-            if customer:
-                customer = Buyer.objects.get(name=customer)
+class ProductionOrderCreateView(
+    PermissionRequiredMixin,
+    CreateView,
+):
+    permission_required = (
+        "production.add_productionorder"
+    )
 
-            try:
-                ProductionOrder.objects.get(id_number=id_number)
-            except ObjectDoesNotExist:
-                ProductionOrder.objects.create(ordered_quantity=ordered_quantity, id_number=id_number,
-                                               cardboard=cardboard,
-                                               cardboard_dimensions=cardboard_dimensions, customer=customer,
-                                               dimensions=dimensions, quantity=quantity, status=status, notes=notes)
-        return redirect('all-production-orders')
+    model = ProductionOrder
+
+    form_class = ProductionOrderForm
+
+    template_name = (
+        "production/orders/form.html"
+    )
+
+    def get_success_url(self):
+        return reverse(
+            "production-details",
+            kwargs={
+                "production_order_id":
+                    self.object.id,
+            },
+        )
 
 
 class WorkStations(LoginRequiredMixin, View):

@@ -1,0 +1,734 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Obsada produkcji | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/staffing.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div
+    class="staffing-page"
+    data-staffing-board
+    data-assign-url="{% url 'modern_production:staffing-assign' %}"
+    data-unassign-url="{% url 'modern_production:staffing-unassign' %}"
+>
+
+    {# ====================================================== #}
+    {# HEADER                                                 #}
+    {# ====================================================== #}
+
+    <header class="production-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:production-menu' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Produkcja
+            </a>
+
+            <div class="production-eyebrow">
+                Planowanie produkcji
+            </div>
+
+            <h1>
+                Obsada produkcji
+            </h1>
+
+            <p>
+                Przypisz pracowników do jednostek produkcyjnych.
+                Kwalifikacja stanowiskowa określa, kto może pełnić
+                funkcję operatora.
+            </p>
+
+        </div>
+
+
+        <div class="staffing-summary">
+
+            <div class="staffing-summary__item">
+
+                <span>
+                    Pracownicy
+                </span>
+
+                <strong>
+                    {{ worker_count }}
+                </strong>
+
+            </div>
+
+
+            <div class="staffing-summary__item">
+
+                <span>
+                    Jednostki
+                </span>
+
+                <strong>
+                    {{ unit_count }}
+                </strong>
+
+            </div>
+
+
+            <div
+                class="
+                    staffing-summary__item
+                    staffing-summary__item--warning
+                "
+            >
+
+                <span>
+                    Braki w obsadzie
+                </span>
+
+                <strong>
+                    {{ incomplete_count }}
+                </strong>
+
+            </div>
+
+
+            <div
+                class="
+                    staffing-summary__item
+                    staffing-summary__item--success
+                "
+            >
+
+                <span>
+                    Kompletne
+                </span>
+
+                <strong>
+                    {{ complete_count }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    {# ====================================================== #}
+    {# TOOLBAR                                                #}
+    {# ====================================================== #}
+
+    <div class="staffing-toolbar">
+
+        <div class="staffing-toolbar__info">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            <span>
+                Pracownik z kwalifikacją dla stanowiska jest
+                liczony jako operator. Pozostali jako pomocnicy.
+            </span>
+
+        </div>
+
+
+        <label class="staffing-filter-checkbox">
+
+            <input
+                type="checkbox"
+                id="staffingIncompleteOnly"
+            >
+
+            <span>
+                Pokaż tylko jednostki z brakami
+            </span>
+
+        </label>
+
+    </div>
+
+
+    {# ====================================================== #}
+    {# MAIN LAYOUT                                            #}
+    {# ====================================================== #}
+
+    <div class="staffing-layout">
+
+
+        {# ================================================== #}
+        {# LEFT — WORKERS                                     #}
+        {# ================================================== #}
+
+        <aside class="staffing-workers">
+
+            <div class="staffing-panel-header">
+
+                <div>
+
+                    <span class="staffing-panel-eyebrow">
+                        Zasoby
+                    </span>
+
+                    <h2>
+                        Pracownicy
+                    </h2>
+
+                </div>
+
+
+                <span class="staffing-panel-count">
+                    {{ worker_count }}
+                </span>
+
+            </div>
+
+
+            <div class="staffing-search">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="staffingWorkerSearch"
+                    placeholder="Szukaj pracownika..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div
+                class="staffing-workers__list"
+                id="staffingWorkersList"
+            >
+
+                {% for row in workers %}
+
+                    <article
+                        class="staffing-worker"
+                        data-worker-card
+                        data-worker-id="{{ row.worker.id }}"
+                        data-search="{{ row.worker|lower }}"
+                        data-qualified-stations="{% for station_id in row.qualification_ids %}{{ station_id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                    >
+
+                        <div class="staffing-worker__avatar">
+
+                            <span>
+                                {{ row.worker.first_name|first }}{{ row.worker.last_name|first }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="staffing-worker__content">
+
+                            <strong>
+                                {{ row.worker }}
+                            </strong>
+
+                            {% if row.qualification_ids %}
+
+                                <span class="staffing-worker__qualification">
+
+                                    <i class="fa-solid fa-certificate"></i>
+
+                                    {{ row.qualification_ids|length }}
+                                    kwalifikacji
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="staffing-worker__qualification staffing-worker__qualification--none">
+
+                                    Brak kwalifikacji
+
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="staffing-worker__drag">
+
+                            <i class="fa-solid fa-grip-vertical"></i>
+
+                        </div>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="staffing-empty">
+
+                        <i class="fa-solid fa-users-slash"></i>
+
+                        <strong>
+                            Brak pracowników
+                        </strong>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </aside>
+
+
+        {# ================================================== #}
+        {# RIGHT — UNITS                                      #}
+        {# ================================================== #}
+
+        <main class="staffing-units">
+
+            <div class="staffing-panel-header staffing-panel-header--units">
+
+                <div>
+
+                    <span class="staffing-panel-eyebrow">
+                        Produkcja
+                    </span>
+
+                    <h2>
+                        Jednostki produkcyjne
+                    </h2>
+
+                </div>
+
+
+                <div class="staffing-units-search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="staffingUnitSearch"
+                        placeholder="Zlecenie, klient, stanowisko..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="staffing-units__grid"
+                id="staffingUnitsGrid"
+            >
+
+                {% for row in units %}
+
+                    <article
+                        class="
+                            staffing-unit
+
+                            {% if row.staffing.is_complete %}
+                                staffing-unit--complete
+                            {% else %}
+                                staffing-unit--incomplete
+                            {% endif %}
+                        "
+                        data-unit-card
+                        data-unit-id="{{ row.unit.id }}"
+                        data-station-id="{{ row.unit.work_station_id }}"
+                        data-complete="{% if row.staffing.is_complete %}1{% else %}0{% endif %}"
+                        data-search="{{ row.unit.production_order.id_number|lower }} {{ row.unit.production_order.customer|lower }} {{ row.unit.work_station|lower }}"
+                    >
+
+
+                        {# ================================== #}
+                        {# UNIT HEADER                        #}
+                        {# ================================== #}
+
+                        <div class="staffing-unit__header">
+
+                            <div>
+
+                                <span class="staffing-unit__station">
+
+                                    <i class="fa-solid fa-industry"></i>
+
+                                    {{ row.unit.work_station }}
+
+                                </span>
+
+
+                                <a
+                                    href="{% url 'modern_production:unit-details' row.unit.id %}"
+                                    class="staffing-unit__order"
+                                >
+                                    {{ row.unit.production_order.id_number }}
+                                </a>
+
+
+                                <span class="staffing-unit__customer">
+                                    {{ row.unit.production_order.customer }}
+                                </span>
+
+                            </div>
+
+
+                            {% if row.staffing.is_complete %}
+
+                                <span
+                                    class="staffing-unit__status staffing-unit__status--complete"
+                                    title="Obsada kompletna"
+                                >
+                                    <i class="fa-solid fa-check"></i>
+                                </span>
+
+                            {% else %}
+
+                                <span
+                                    class="staffing-unit__status staffing-unit__status--warning"
+                                    title="Braki w obsadzie"
+                                >
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {# ================================== #}
+                        {# REQUIREMENTS                       #}
+                        {# ================================== #}
+
+                        <div class="staffing-unit__requirements">
+
+
+                            {# OPERATORS #}
+
+                            <div
+                                class="
+                                    staffing-requirement
+
+                                    {% if row.staffing.operators_complete %}
+                                        staffing-requirement--complete
+                                    {% else %}
+                                        staffing-requirement--missing
+                                    {% endif %}
+                                "
+                            >
+
+                                <div class="staffing-requirement__icon">
+                                    <i class="fa-solid fa-user-gear"></i>
+                                </div>
+
+
+                                <div>
+
+                                    <span>
+                                        Operatorzy
+                                    </span>
+
+                                    <strong>
+                                        {{ row.staffing.operator_count }}
+                                        /
+                                        {{ row.staffing.required_operators }}
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            {# HELPERS #}
+
+                            <div
+                                class="
+                                    staffing-requirement
+
+                                    {% if row.staffing.helpers_complete %}
+                                        staffing-requirement--complete
+                                    {% else %}
+                                        staffing-requirement--missing
+                                    {% endif %}
+                                "
+                            >
+
+                                <div class="staffing-requirement__icon">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+
+
+                                <div>
+
+                                    <span>
+                                        Pomocnicy
+                                    </span>
+
+                                    <strong>
+                                        {{ row.staffing.helper_count }}
+                                        /
+                                        {{ row.staffing.required_helpers }}
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        {# ================================== #}
+                        {# STAFF                              #}
+                        {# ================================== #}
+
+                        <div
+                            class="staffing-unit__people"
+                            data-unit-dropzone
+                        >
+
+
+                            {# OPERATORS #}
+
+                            {% for person in row.staffing.qualified_persons %}
+
+                                <div
+                                    class="
+                                        staffing-person
+                                        staffing-person--operator
+                                    "
+                                    data-assigned-worker
+                                    data-worker-id="{{ person.id }}"
+                                    data-unit-id="{{ row.unit.id }}"
+                                >
+
+                                    <div class="staffing-person__avatar">
+                                        {{ person.first_name|first }}{{ person.last_name|first }}
+                                    </div>
+
+
+                                    <div class="staffing-person__content">
+
+                                        <strong>
+                                            {{ person }}
+                                        </strong>
+
+                                        <span>
+                                            <i class="fa-solid fa-certificate"></i>
+                                            Operator
+                                        </span>
+
+                                    </div>
+
+
+                                    {% if perms.production.change_productionunit %}
+
+                                        <button
+                                            type="button"
+                                            class="staffing-person__remove"
+                                            data-remove-worker
+                                            title="Usuń z obsady"
+                                        >
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+
+                                    {% endif %}
+
+                                </div>
+
+                            {% endfor %}
+
+
+                            {# HELPERS #}
+
+                            {% for person in row.staffing.helper_persons %}
+
+                                <div
+                                    class="
+                                        staffing-person
+                                        staffing-person--helper
+                                    "
+                                    data-assigned-worker
+                                    data-worker-id="{{ person.id }}"
+                                    data-unit-id="{{ row.unit.id }}"
+                                >
+
+                                    <div class="staffing-person__avatar">
+                                        {{ person.first_name|first }}{{ person.last_name|first }}
+                                    </div>
+
+
+                                    <div class="staffing-person__content">
+
+                                        <strong>
+                                            {{ person }}
+                                        </strong>
+
+                                        <span>
+                                            Pomocnik
+                                        </span>
+
+                                    </div>
+
+
+                                    {% if perms.production.change_productionunit %}
+
+                                        <button
+                                            type="button"
+                                            class="staffing-person__remove"
+                                            data-remove-worker
+                                            title="Usuń z obsady"
+                                        >
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+
+                                    {% endif %}
+
+                                </div>
+
+                            {% endfor %}
+
+
+                            {# DROP PLACEHOLDER #}
+
+                            <div class="staffing-unit__drop-placeholder">
+
+                                <i class="fa-solid fa-user-plus"></i>
+
+                                <span>
+                                    Przeciągnij pracownika
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        {# ================================== #}
+                        {# FOOTER                             #}
+                        {# ================================== #}
+
+                        <div class="staffing-unit__footer">
+
+                            <div>
+
+                                <span>
+                                    Operacja
+                                </span>
+
+                                <strong>
+                                    {{ row.unit.sequence }}
+                                </strong>
+
+                            </div>
+
+
+                            {% if row.unit.estimated_time %}
+
+                                <div>
+
+                                    <span>
+                                        Czas
+                                    </span>
+
+                                    <strong>
+                                        {{ row.unit.estimated_time }} min
+                                    </strong>
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="staffing-unit__footer-state">
+
+                                {% if row.staffing.is_complete %}
+
+                                    <span class="staffing-state staffing-state--complete">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Gotowa
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="staffing-state staffing-state--missing">
+
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+
+                                        {% if row.staffing.missing_operators %}
+                                            Brak operatorów: {{ row.staffing.missing_operators }}
+                                        {% elif row.staffing.missing_helpers %}
+                                            Brak pomocników: {{ row.staffing.missing_helpers }}
+                                        {% else %}
+                                            Braki w obsadzie
+                                        {% endif %}
+
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="staffing-empty staffing-empty--units">
+
+                        <i class="fa-solid fa-check-double"></i>
+
+                        <strong>
+                            Brak jednostek do obsadzenia
+                        </strong>
+
+                        <span>
+                            Wszystkie dostępne operacje zostały zakończone.
+                        </span>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </main>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
+></script>
+
+<script
+    src="{% static 'js/production/staffing.js' %}"
+></script>
+
+{% endblock %}
