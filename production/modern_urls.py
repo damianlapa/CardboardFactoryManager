@@ -43,6 +43,16 @@ from production.modern_views.staffing import (
     ProductionStaffingAssignView,
     ProductionStaffingUnassignView,
     ProductionStaffingView,
+    ProductionStaffingRequirementsView,
+    ProductionStaffingEstimatedTimeView,
+)
+
+from production.modern_views.daily_planning import (
+    CurrentDailyPlanningView,
+    DailyPlanningCreateTaskView,
+    DailyPlanningMoveTaskView,
+    DailyPlanningRemoveTaskView,
+    DailyPlanningView,
 )
 
 
@@ -251,5 +261,49 @@ urlpatterns += [
         "staffing/unassign/",
         ProductionStaffingUnassignView.as_view(),
         name="staffing-unassign",
+    ),
+
+    path(
+        "staffing/requirements/",
+        ProductionStaffingRequirementsView.as_view(),
+        name="staffing-requirements",
+    ),
+
+    path(
+        "staffing/estimated-time/",
+        ProductionStaffingEstimatedTimeView.as_view(),
+        name="staffing-estimated-time",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "planning/day/",
+        CurrentDailyPlanningView.as_view(),
+        name="daily-planning-current",
+    ),
+
+    path(
+        "planning/day/<str:day>/",
+        DailyPlanningView.as_view(),
+        name="daily-planning",
+    ),
+
+    path(
+        "planning/day/<str:day>/create/",
+        DailyPlanningCreateTaskView.as_view(),
+        name="daily-planning-create",
+    ),
+
+    path(
+        "planning/day/<str:day>/move/",
+        DailyPlanningMoveTaskView.as_view(),
+        name="daily-planning-move",
+    ),
+
+    path(
+        "planning/day/<str:day>/tasks/<int:task_id>/remove/",
+        DailyPlanningRemoveTaskView.as_view(),
+        name="daily-planning-remove",
     ),
 ]

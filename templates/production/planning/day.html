@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Plan dnia {{ day|date:"d.m.Y" }} | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/daily_plan.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div
+    class="daily-plan-page"
+    data-daily-plan
+    data-day="{{ day|date:'Y-m-d' }}"
+    data-create-url="{% url 'modern_production:daily-planning-create' day|date:'Y-m-d' %}"
+    data-move-url="{% url 'modern_production:daily-planning-move' day|date:'Y-m-d' %}"
+    data-day-duration="{{ day_duration_minutes }}"
+    data-snap-minutes="{{ snap_minutes }}"
+>
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="production-header daily-plan-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:production-menu' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Produkcja
+            </a>
+
+
+            <div class="production-eyebrow">
+                Plan produkcji
+            </div>
+
+
+            <div class="daily-plan-title">
+
+                <h1>
+                    {{ day|date:"l, d.m.Y" }}
+                </h1>
+
+            </div>
+
+
+            <p>
+                Plan dnia 07:00–15:00 · przerwa 11:00–11:20
+            </p>
+
+        </div>
+
+
+        <div class="daily-plan-navigation">
+
+            <a
+                href="{% url 'modern_production:daily-planning' previous_day|date:'Y-m-d' %}"
+                class="daily-plan-nav-button"
+            >
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+
+
+            <a
+                href="{% url 'modern_production:daily-planning-current' %}"
+                class="app-btn app-btn-secondary"
+            >
+                Dzisiaj
+            </a>
+
+
+            <a
+                href="{% url 'modern_production:daily-planning' next_day|date:'Y-m-d' %}"
+                class="daily-plan-nav-button"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- UNPLANNED                                           -->
+    <!-- =================================================== -->
+
+    <section class="daily-plan-unplanned">
+
+        <div class="daily-plan-unplanned__header">
+
+            <div>
+
+                <h2>
+                    Niezaplanowane
+                </h2>
+
+                <p>
+                    Przeciągnij jednostkę na stanowisko i godzinę.
+                </p>
+
+            </div>
+
+
+            <div class="daily-plan-unplanned__search">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="dailyPlanSearch"
+                    placeholder="Zlecenie, klient, stanowisko..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="daily-plan-unplanned__list"
+            id="dailyPlanUnplanned"
+        >
+
+            {% for unit in unplanned_units %}
+
+                <article
+                    class="
+                        daily-unplanned-card
+
+                        {% if unit.production_order.priority %}
+                            daily-unplanned-card--priority
+                        {% endif %}
+                    "
+                    data-unplanned-unit
+                    data-unit-id="{{ unit.id }}"
+                    data-station-id="{{ unit.work_station_id }}"
+                    data-duration="{{ unit.estimated_time|default:0 }}"
+                    data-search="{{ unit.production_order.id_number }} {{ unit.production_order.customer }} {{ unit.work_station }}"
+                >
+
+                    <div class="daily-unplanned-card__top">
+
+                        <strong>
+                            {{ unit.production_order.id_number }}
+                        </strong>
+
+
+                        {% if unit.production_order.priority %}
+
+                            <i class="fa-solid fa-fire"></i>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <span class="daily-unplanned-card__customer">
+                        {{ unit.production_order.customer }}
+                    </span>
+
+
+                    <div class="daily-unplanned-card__meta">
+
+                        <span>
+                            {{ unit.work_station }}
+                        </span>
+
+
+                        {% if unit.estimated_time %}
+
+                            <span>
+                                <i class="fa-regular fa-clock"></i>
+                                {{ unit.estimated_time }} min
+                            </span>
+
+                        {% else %}
+
+                            <span class="daily-unplanned-card__warning">
+                                Brak czasu
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="daily-unplanned-card__people">
+
+                        <i class="fa-solid fa-users"></i>
+
+                        {{ unit.persons.count }}
+
+                    </div>
+
+                </article>
+
+            {% empty %}
+
+                <div class="daily-plan-empty">
+                    Wszystkie jednostki są już zaplanowane.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- BOARD                                               -->
+    <!-- =================================================== -->
+
+    <section class="daily-board-wrapper">
+
+        <div class="daily-board">
+
+
+            <div class="daily-board__corner">
+
+                <strong>
+                    Stanowisko
+                </strong>
+
+            </div>
+
+
+            <!-- TIME HEADER -->
+
+            <div class="daily-board__time-header">
+
+                {% for hour in hours %}
+
+                    <div
+                        class="daily-time-marker"
+                        style="left: {{ hour.offset_percent }}%;"
+                    >
+
+                        <span>
+                            {{ hour.label }}
+                        </span>
+
+                    </div>
+
+                {% endfor %}
+
+
+                <div
+                    class="daily-break-band daily-break-band--header"
+                    style="
+                        left: {{ break_left_percent }}%;
+                        width: {{ break_width_percent }}%;
+                    "
+                >
+
+                    <span>
+                        11:00–11:20
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- STATIONS -->
+
+            {% for row in station_rows %}
+
+
+                <div class="daily-station">
+
+                    <div>
+
+                        <span>
+                            Stanowisko
+                        </span>
+
+                        <strong>
+                            {{ row.station.name }}
+                        </strong>
+
+
+                        {% if row.capacity > 1 %}
+
+                            <small class="daily-station__capacity">
+                                {{ row.capacity }} równoległe
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div class="daily-station-lanes">
+
+
+                    {% for lane in row.lanes %}
+
+                        <div
+                            class="daily-timeline"
+                            data-timeline
+                            data-station-id="{{ row.station.id }}"
+                            data-lane="{{ lane.number }}"
+                        >
+
+
+                            {% for hour in hours %}
+
+                                <div
+                                    class="daily-grid-hour"
+                                    style="left: {{ hour.offset_percent }}%;"
+                                ></div>
+
+                            {% endfor %}
+
+
+                            <!-- BREAK -->
+
+                            <div
+                                class="daily-break-band"
+                                style="
+                                    left: {{ break_left_percent }}%;
+                                    width: {{ break_width_percent }}%;
+                                "
+                            ></div>
+
+
+                            <!-- TASKS -->
+
+                            {% for item in lane.tasks %}
+
+                                {% with task=item.task segment=item.segment %}
+
+                                    <article
+                                        class="
+                                            daily-task
+
+                                            {% if task.production_unit.production_order.priority %}
+                                                daily-task--priority
+                                            {% endif %}
+
+                                            {% if segment.continues_from_previous %}
+                                                daily-task--continues-from-previous
+                                            {% endif %}
+
+                                            {% if segment.continues_next %}
+                                                daily-task--continues-next
+                                            {% endif %}
+                                        "
+                                        data-daily-task
+                                        data-task-id="{{ task.id }}"
+                                        data-unit-id="{{ task.production_unit_id }}"
+                                        data-station-id="{{ task.work_station_id }}"
+                                        data-lane="{{ lane.number }}"
+                                        data-start-minutes="{{ segment.start_minutes }}"
+                                        data-duration="{{ segment.total_duration }}"
+                                        data-display-duration="{{ segment.display_minutes }}"
+                                        style="
+                                            left: {{ segment.left_percent }}%;
+                                            width: {{ segment.width_percent }}%;
+                                        "
+                                    >
+
+
+                                        <div class="daily-task__top">
+
+                                            <span class="daily-task__time">
+
+                                                {% if segment.continues_from_previous %}
+                                                    ←
+                                                {% endif %}
+
+                                                {{ segment.start_dt|date:"H:i" }}
+                                                –
+                                                {{ segment.end_dt|date:"H:i" }}
+
+                                                {% if segment.continues_next %}
+                                                    →
+                                                {% endif %}
+
+                                            </span>
+
+
+                                            <span class="daily-task__duration">
+                                                {{ segment.total_duration }}m
+                                            </span>
+
+                                        </div>
+
+
+                                        <strong class="daily-task__order">
+                                            {{ task.production_unit.production_order.id_number }}
+                                        </strong>
+
+
+                                        <span class="daily-task__customer">
+                                            {{ task.production_unit.production_order.customer }}
+                                        </span>
+
+
+                                        <div class="daily-task__people">
+
+                                            {% for person in task.production_unit.persons.all %}
+
+                                                <span>
+                                                    {{ person.first_name|first }}{{ person.last_name|first }}
+                                                </span>
+
+                                            {% empty %}
+
+                                                <span class="daily-task__no-people">
+                                                    Brak obsady
+                                                </span>
+
+                                            {% endfor %}
+
+                                        </div>
+
+
+                                        {% if segment.continues_next %}
+
+                                            <div class="daily-task__continuation">
+                                                dalej następnego dnia
+                                            </div>
+
+                                        {% elif segment.continues_from_previous %}
+
+                                            <div class="daily-task__continuation">
+                                                kontynuacja
+                                            </div>
+
+                                        {% endif %}
+
+
+                                        <button
+                                            type="button"
+                                            class="daily-task__remove"
+                                            data-remove-task
+                                            data-remove-url="{% url 'modern_production:daily-planning-remove' day|date:'Y-m-d' task.id %}"
+                                            title="Usuń z planu"
+                                        >
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+
+                                    </article>
+
+                                {% endwith %}
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% endfor %}
+
+
+                    {% if row.has_overflow %}
+
+                        <div class="daily-station-overflow">
+
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+
+                            Przekroczona pojemność:
+                            {{ row.overflow|length }}
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="{% static 'js/production/daily_plan.js' %}"
+></script>
+
+{% endblock %}

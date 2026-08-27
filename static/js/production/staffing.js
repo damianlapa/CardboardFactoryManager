@@ -1,18 +1,20 @@
 (() => {
     "use strict";
 
-    const root = document.querySelector(
-        "[data-staffing-board]"
-    );
+
+    /* ======================================================
+       ROOT
+       ====================================================== */
+
+    const root =
+        document.querySelector(
+            "[data-staffing-board]"
+        );
 
     if (!root) {
         return;
     }
 
-
-    /* ======================================================
-       SORTABLE CHECK
-       ====================================================== */
 
     if (
         typeof Sortable === "undefined"
@@ -44,9 +46,19 @@
             "#staffingUnitSearch"
         );
 
-    const incompleteOnly =
+    const hideComplete =
         document.querySelector(
-            "#staffingIncompleteOnly"
+            "#staffingHideComplete"
+        );
+
+    const completeCountElement =
+        document.querySelector(
+            "#staffingCompleteCount"
+        );
+
+    const incompleteCountElement =
+        document.querySelector(
+            "#staffingIncompleteCount"
         );
 
 
@@ -56,8 +68,6 @@
 
     let requestInProgress = false;
 
-    let draggedWorkerId = null;
-
     let draggedQualifications = [];
 
 
@@ -66,6 +76,7 @@
        ====================================================== */
 
     function getCookie(name) {
+
         const cookies =
             document.cookie
                 ? document.cookie.split(";")
@@ -93,14 +104,17 @@
 
 
     const csrfToken =
-        getCookie("csrftoken");
+        getCookie(
+            "csrftoken"
+        );
 
 
     /* ======================================================
-       BUSY STATE
+       BUSY
        ====================================================== */
 
     function setBusy(value) {
+
         requestInProgress =
             Boolean(value);
 
@@ -119,6 +133,7 @@
         message,
         type = "success"
     ) {
+
         let container =
             document.querySelector(
                 "#staffingToastContainer"
@@ -151,63 +166,17 @@
         toast.className =
             `staffing-toast staffing-toast--${type}`;
 
-
-        const icon =
-            document.createElement(
-                "i"
-            );
-
-        icon.className =
-            type === "success"
-                ? "fa-solid fa-check"
-                : "fa-solid fa-triangle-exclamation";
-
-
-        const text =
-            document.createElement(
-                "span"
-            );
-
-        text.textContent =
+        toast.textContent =
             message;
-
-
-        toast.appendChild(
-            icon
-        );
-
-        toast.appendChild(
-            text
-        );
 
         container.appendChild(
             toast
         );
 
 
-        requestAnimationFrame(
-            () => {
-                toast.classList.add(
-                    "is-visible"
-                );
-            }
-        );
-
-
         window.setTimeout(
             () => {
-
-                toast.classList.remove(
-                    "is-visible"
-                );
-
-                window.setTimeout(
-                    () => {
-                        toast.remove();
-                    },
-                    200
-                );
-
+                toast.remove();
             },
             2300
         );
@@ -215,19 +184,20 @@
 
 
     /* ======================================================
-       REQUEST
+       GENERIC JSON REQUEST
        ====================================================== */
 
-    async function sendStaffingRequest(
+    async function sendJSON(
         url,
-        workerId,
-        unitId
+        payload
     ) {
+
         const response =
             await fetch(
                 url,
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -241,13 +211,9 @@
                     },
 
                     body:
-                        JSON.stringify({
-                            worker_id:
-                                Number(workerId),
-
-                            unit_id:
-                                Number(unitId),
-                        }),
+                        JSON.stringify(
+                            payload
+                        ),
                 }
             );
 
@@ -255,10 +221,12 @@
         let result = null;
 
         try {
+
             result =
                 await response.json();
 
         } catch (error) {
+
             throw new Error(
                 "Serwer zwrócił nieprawidłową odpowiedź."
             );
@@ -271,12 +239,79 @@
         ) {
             throw new Error(
                 result.error
-                || "Nie udało się zapisać obsady."
+                || "Nie udało się zapisać zmian."
             );
         }
 
 
         return result;
+    }
+
+
+    /* ======================================================
+       API
+       ====================================================== */
+
+    async function sendStaffingRequest(
+        url,
+        workerId,
+        unitId
+    ) {
+
+        return sendJSON(
+            url,
+            {
+                worker_id:
+                    Number(workerId),
+
+                unit_id:
+                    Number(unitId),
+            }
+        );
+    }
+
+
+    async function changeRequirement(
+        unitId,
+        field,
+        delta
+    ) {
+
+        return sendJSON(
+            root.dataset
+                .requirementsUrl,
+
+            {
+                unit_id:
+                    Number(unitId),
+
+                field:
+                    field,
+
+                delta:
+                    Number(delta),
+            }
+        );
+    }
+
+
+    async function changeEstimatedTime(
+        unitId,
+        estimatedTime
+    ) {
+
+        return sendJSON(
+            root.dataset
+                .estimatedTimeUrl,
+
+            {
+                unit_id:
+                    Number(unitId),
+
+                estimated_time:
+                    Number(estimatedTime),
+            }
+        );
     }
 
 
@@ -287,6 +322,7 @@
     function parseQualifications(
         workerCard
     ) {
+
         return (
             workerCard.dataset
                 .qualifiedStations
@@ -301,7 +337,32 @@
     }
 
 
+    function getWorkerRole(
+        workerCard,
+        unitCard
+    ) {
+
+        const qualifications =
+            parseQualifications(
+                workerCard
+            );
+
+        const stationId =
+            String(
+                unitCard.dataset
+                    .stationId
+            );
+
+        return qualifications.includes(
+            stationId
+        )
+            ? "operator"
+            : "helper";
+    }
+
+
     function highlightTargets() {
+
         document
             .querySelectorAll(
                 "[data-unit-card]"
@@ -315,11 +376,9 @@
                                 .stationId
                         );
 
-
                     unitCard.classList.remove(
                         "is-qualified-target",
-                        "is-helper-target",
-                        "is-disabled-target"
+                        "is-helper-target"
                     );
 
 
@@ -328,11 +387,13 @@
                             stationId
                         )
                     ) {
+
                         unitCard.classList.add(
                             "is-qualified-target"
                         );
 
                     } else {
+
                         unitCard.classList.add(
                             "is-helper-target"
                         );
@@ -343,16 +404,17 @@
 
 
     function clearHighlights() {
+
         document
             .querySelectorAll(
                 "[data-unit-card]"
             )
             .forEach(
-                (unitCard) => {
-                    unitCard.classList.remove(
+                (card) => {
+
+                    card.classList.remove(
                         "is-qualified-target",
-                        "is-helper-target",
-                        "is-disabled-target"
+                        "is-helper-target"
                     );
                 }
             );
@@ -360,7 +422,546 @@
 
 
     /* ======================================================
-       WORKER SOURCE
+       COUNTS
+       ====================================================== */
+
+    function increaseCurrentCount(
+        unitCard,
+        role,
+        delta
+    ) {
+
+        const key =
+            role === "operator"
+                ? "operators"
+                : "helpers";
+
+
+        const element =
+            unitCard.querySelector(
+                `[data-required-current="${key}"]`
+            );
+
+
+        if (!element) {
+            return;
+        }
+
+
+        const current =
+            Number(
+                element.textContent.trim()
+                || 0
+            );
+
+
+        element.textContent =
+            Math.max(
+                0,
+                current + delta
+            );
+    }
+
+
+    function getPersonsCount(
+        unitCard
+    ) {
+
+        return unitCard.querySelectorAll(
+            "[data-assigned-worker]"
+        ).length;
+    }
+
+
+    /* ======================================================
+       PERFORMANCE
+       ====================================================== */
+
+    function getQuantity(
+        unitCard
+    ) {
+
+        const quantityElement =
+            unitCard.querySelector(
+                "[data-production-quantity]"
+            );
+
+
+        if (
+            quantityElement?.dataset.quantity
+        ) {
+
+            return Number(
+                quantityElement.dataset.quantity
+            );
+        }
+
+
+        return Number(
+            unitCard.dataset.quantity
+            || 0
+        );
+    }
+
+
+    function getEstimatedTime(
+        unitCard
+    ) {
+
+        const input =
+            unitCard.querySelector(
+                "[data-estimated-time-input]"
+            );
+
+
+        return Number(
+            input?.value
+            || 0
+        );
+    }
+
+
+    function refreshPerformance(
+        unitCard,
+        serverResult = null
+    ) {
+
+        const sheetsPerHourElement =
+            unitCard.querySelector(
+                "[data-sheets-per-hour]"
+            );
+
+
+        const sheetsPerPersonHourElement =
+            unitCard.querySelector(
+                "[data-sheets-per-person-hour]"
+            );
+
+
+        let sheetsPerHour = 0;
+
+        let sheetsPerPersonHour = 0;
+
+
+        /*
+         * Jeśli backend zwrócił policzone wartości
+         * po zmianie czasu, używamy ich.
+         */
+
+        if (
+            serverResult
+            && "sheets_per_hour"
+            in serverResult
+        ) {
+
+            sheetsPerHour =
+                Number(
+                    serverResult
+                        .sheets_per_hour
+                    || 0
+                );
+
+        } else {
+
+            const quantity =
+                getQuantity(
+                    unitCard
+                );
+
+
+            const estimatedTime =
+                getEstimatedTime(
+                    unitCard
+                );
+
+
+            if (
+                quantity > 0
+                && estimatedTime > 0
+            ) {
+
+                sheetsPerHour =
+                    Math.round(
+                        quantity
+                        * 60
+                        / estimatedTime
+                    );
+            }
+        }
+
+
+        const personsCount =
+            getPersonsCount(
+                unitCard
+            );
+
+
+        if (
+            sheetsPerHour > 0
+            && personsCount > 0
+        ) {
+
+            sheetsPerPersonHour =
+                Math.round(
+                    sheetsPerHour
+                    / personsCount
+                );
+        }
+
+
+        if (
+            sheetsPerHourElement
+        ) {
+
+            sheetsPerHourElement.textContent =
+                sheetsPerHour > 0
+                    ? sheetsPerHour
+                    : "—";
+        }
+
+
+        if (
+            sheetsPerPersonHourElement
+        ) {
+
+            sheetsPerPersonHourElement.textContent =
+                sheetsPerPersonHour > 0
+                    ? sheetsPerPersonHour
+                    : "—";
+        }
+    }
+
+
+    /* ======================================================
+       GLOBAL COUNTERS
+       ====================================================== */
+
+    function refreshGlobalCounters() {
+
+        const cards =
+            Array.from(
+                document.querySelectorAll(
+                    "[data-unit-card]"
+                )
+            );
+
+
+        const complete =
+            cards.filter(
+                (card) =>
+                    card.dataset.complete
+                    === "1"
+            ).length;
+
+
+        const incomplete =
+            cards.length
+            - complete;
+
+
+        if (
+            completeCountElement
+        ) {
+
+            completeCountElement.textContent =
+                complete;
+        }
+
+
+        if (
+            incompleteCountElement
+        ) {
+
+            incompleteCountElement.textContent =
+                incomplete;
+        }
+    }
+
+
+    /* ======================================================
+       UNIT STATUS
+       ====================================================== */
+
+    function refreshUnitState(
+        unitCard
+    ) {
+
+        const operatorCurrent =
+            Number(
+                unitCard.querySelector(
+                    '[data-required-current="operators"]'
+                )?.textContent
+                || 0
+            );
+
+
+        const operatorRequired =
+            Number(
+                unitCard.querySelector(
+                    '[data-required-value="required_operators"]'
+                )?.textContent
+                || 0
+            );
+
+
+        const helperCurrent =
+            Number(
+                unitCard.querySelector(
+                    '[data-required-current="helpers"]'
+                )?.textContent
+                || 0
+            );
+
+
+        const helperRequired =
+            Number(
+                unitCard.querySelector(
+                    '[data-required-value="required_helpers"]'
+                )?.textContent
+                || 0
+            );
+
+
+        const operatorsComplete =
+            operatorCurrent
+            >= operatorRequired;
+
+
+        const helpersComplete =
+            helperCurrent
+            >= helperRequired;
+
+
+        const complete =
+            operatorsComplete
+            && helpersComplete;
+
+
+        unitCard.dataset.complete =
+            complete
+                ? "1"
+                : "0";
+
+
+        unitCard.classList.toggle(
+            "staffing-unit--complete",
+            complete
+        );
+
+
+        unitCard.classList.toggle(
+            "staffing-unit--incomplete",
+            !complete
+        );
+
+
+        const operatorRequirement =
+            unitCard.querySelector(
+                '[data-requirement="operators"]'
+            );
+
+
+        const helperRequirement =
+            unitCard.querySelector(
+                '[data-requirement="helpers"]'
+            );
+
+
+        operatorRequirement
+            ?.classList.toggle(
+                "staffing-requirement--complete",
+                operatorsComplete
+            );
+
+
+        operatorRequirement
+            ?.classList.toggle(
+                "staffing-requirement--missing",
+                !operatorsComplete
+            );
+
+
+        helperRequirement
+            ?.classList.toggle(
+                "staffing-requirement--complete",
+                helpersComplete
+            );
+
+
+        helperRequirement
+            ?.classList.toggle(
+                "staffing-requirement--missing",
+                !helpersComplete
+            );
+
+
+        const status =
+            unitCard.querySelector(
+                ".staffing-unit__status"
+            );
+
+
+        if (status) {
+
+            status.classList.toggle(
+                "staffing-unit__status--complete",
+                complete
+            );
+
+
+            status.classList.toggle(
+                "staffing-unit__status--warning",
+                !complete
+            );
+
+
+            status.innerHTML =
+                complete
+
+                    ? '<i class="fa-solid fa-check"></i>'
+
+                    : '<i class="fa-solid fa-triangle-exclamation"></i>';
+        }
+
+
+        const footer =
+            unitCard.querySelector(
+                ".staffing-state"
+            );
+
+
+        if (footer) {
+
+            footer.classList.toggle(
+                "staffing-state--complete",
+                complete
+            );
+
+
+            footer.classList.toggle(
+                "staffing-state--missing",
+                !complete
+            );
+
+
+            if (complete) {
+
+                footer.innerHTML =
+                    '<i class="fa-solid fa-circle-check"></i> Gotowa';
+
+            } else if (
+                !operatorsComplete
+            ) {
+
+                footer.innerHTML =
+                    `<i class="fa-solid fa-circle-exclamation"></i> Brak operatorów: ${operatorRequired - operatorCurrent}`;
+
+            } else {
+
+                footer.innerHTML =
+                    `<i class="fa-solid fa-circle-exclamation"></i> Brak pomocników: ${helperRequired - helperCurrent}`;
+            }
+        }
+
+
+        refreshGlobalCounters();
+
+        filterUnits();
+    }
+
+
+    /* ======================================================
+       CREATE ASSIGNED WORKER
+       ====================================================== */
+
+    function createAssignedWorkerElement(
+        workerCard,
+        unitCard,
+        role
+    ) {
+
+        const workerId =
+            workerCard.dataset.workerId;
+
+
+        const unitId =
+            unitCard.dataset.unitId;
+
+
+        const avatar =
+            workerCard.querySelector(
+                ".staffing-worker__avatar"
+            )?.textContent.trim()
+            || "";
+
+
+        const name =
+            workerCard.querySelector(
+                ".staffing-worker__content strong"
+            )?.textContent.trim()
+            || "Pracownik";
+
+
+        const element =
+            document.createElement(
+                "div"
+            );
+
+
+        element.className =
+            `staffing-person staffing-person--${role}`;
+
+
+        element.dataset.assignedWorker =
+            "";
+
+
+        element.dataset.workerId =
+            workerId;
+
+
+        element.dataset.unitId =
+            unitId;
+
+
+        element.innerHTML = `
+            <div class="staffing-person__avatar">
+                ${avatar}
+            </div>
+
+            <div class="staffing-person__content">
+
+                <strong>
+                    ${name}
+                </strong>
+
+                <span>
+                    ${
+                        role === "operator"
+                            ? '<i class="fa-solid fa-certificate"></i> Operator'
+                            : "Pomocnik"
+                    }
+                </span>
+
+            </div>
+
+            <button
+                type="button"
+                class="staffing-person__remove"
+                data-remove-worker
+                title="Usuń z obsady"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        `;
+
+
+        return element;
+    }
+
+
+    /* ======================================================
+       WORKERS SORTABLE
        ====================================================== */
 
     if (workersList) {
@@ -369,6 +970,7 @@
             workersList,
             {
                 group: {
+
                     name:
                         "staffing-workers",
 
@@ -379,23 +981,30 @@
                         false,
                 },
 
+
                 sort:
                     false,
+
 
                 animation:
                     160,
 
+
                 draggable:
                     "[data-worker-card]",
+
 
                 ghostClass:
                     "staffing-drag-ghost",
 
+
                 chosenClass:
                     "staffing-drag-chosen",
 
+
                 fallbackOnBody:
                     true,
+
 
                 revertClone:
                     true,
@@ -410,39 +1019,17 @@
                     }
 
 
-                    const workerCard =
-                        event.item;
-
-
-                    draggedWorkerId =
-                        workerCard.dataset
-                            .workerId;
-
-
                     draggedQualifications =
                         parseQualifications(
-                            workerCard
+                            event.item
                         );
-
-
-                    workerCard.classList.add(
-                        "is-dragging"
-                    );
 
 
                     highlightTargets();
                 },
 
 
-                onEnd(event) {
-
-                    event.item.classList.remove(
-                        "is-dragging"
-                    );
-
-
-                    draggedWorkerId =
-                        null;
+                onEnd() {
 
                     draggedQualifications =
                         [];
@@ -470,6 +1057,7 @@
                     dropzone,
                     {
                         group: {
+
                             name:
                                 "staffing-workers",
 
@@ -480,39 +1068,24 @@
                                 true,
                         },
 
+
                         sort:
                             false,
+
 
                         animation:
                             150,
 
+
                         draggable:
                             "[data-worker-card]",
+
 
                         ghostClass:
                             "staffing-drag-ghost",
 
 
-                        onChoose() {
-                            dropzone.classList.add(
-                                "is-over"
-                            );
-                        },
-
-
-                        onUnchoose() {
-                            dropzone.classList.remove(
-                                "is-over"
-                            );
-                        },
-
-
                         async onAdd(event) {
-
-                            dropzone.classList.remove(
-                                "is-over"
-                            );
-
 
                             const workerCard =
                                 event.item;
@@ -542,12 +1115,20 @@
                                     .unitId;
 
 
-                            /*
-                             * To jest clone ze źródła.
-                             * Nie chcemy go zostawiać w DOM,
-                             * bo prawdziwa rola operator/helper
-                             * jest liczona przez backend.
-                             */
+                            const role =
+                                getWorkerRole(
+                                    workerCard,
+                                    unitCard
+                                );
+
+
+                            const assignedElement =
+                                createAssignedWorkerElement(
+                                    workerCard,
+                                    unitCard,
+                                    role
+                                );
+
 
                             workerCard.remove();
 
@@ -559,7 +1140,9 @@
                             }
 
 
-                            setBusy(true);
+                            setBusy(
+                                true
+                            );
 
 
                             try {
@@ -569,31 +1152,68 @@
                                         .assignUrl,
 
                                     workerId,
+
                                     unitId
                                 );
 
 
-                                showToast(
-                                    "Pracownik został przypisany."
+                                const placeholder =
+                                    dropzone.querySelector(
+                                        ".staffing-unit__drop-placeholder"
+                                    );
+
+
+                                if (placeholder) {
+
+                                    dropzone.insertBefore(
+                                        assignedElement,
+                                        placeholder
+                                    );
+
+                                } else {
+
+                                    dropzone.appendChild(
+                                        assignedElement
+                                    );
+                                }
+
+
+                                increaseCurrentCount(
+                                    unitCard,
+                                    role,
+                                    1
                                 );
 
 
-                                window.setTimeout(
-                                    () => {
-                                        window.location.reload();
-                                    },
-                                    120
+                                refreshPerformance(
+                                    unitCard
+                                );
+
+
+                                refreshUnitState(
+                                    unitCard
+                                );
+
+
+                                showToast(
+                                    role === "operator"
+                                        ? "Operator został przypisany."
+                                        : "Pomocnik został przypisany."
                                 );
 
 
                             } catch (error) {
 
-                                setBusy(false);
-
-
                                 showToast(
                                     error.message,
                                     "error"
+                                );
+
+
+                            } finally {
+
+                                setBusy(
+                                    false
                                 );
                             }
                         },
@@ -604,20 +1224,132 @@
 
 
     /* ======================================================
-       REMOVE WORKER
+       CLICK ACTIONS
        ====================================================== */
 
     root.addEventListener(
         "click",
         async (event) => {
 
-            const button =
+
+            /* ==============================================
+               REQUIREMENTS
+               ============================================== */
+
+            const requirementButton =
+                event.target.closest(
+                    "[data-requirement-change]"
+                );
+
+
+            if (
+                requirementButton
+            ) {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+
+                if (
+                    requestInProgress
+                ) {
+                    return;
+                }
+
+
+                const unitId =
+                    requirementButton.dataset
+                        .unitId;
+
+
+                const field =
+                    requirementButton.dataset
+                        .field;
+
+
+                const delta =
+                    requirementButton.dataset
+                        .delta;
+
+
+                const unitCard =
+                    requirementButton.closest(
+                        "[data-unit-card]"
+                    );
+
+
+                if (!unitCard) {
+                    return;
+                }
+
+
+                requirementButton.disabled =
+                    true;
+
+
+                try {
+
+                    const result =
+                        await changeRequirement(
+                            unitId,
+                            field,
+                            delta
+                        );
+
+
+                    const value =
+                        unitCard.querySelector(
+                            `[data-required-value="${field}"]`
+                        );
+
+
+                    if (value) {
+
+                        value.textContent =
+                            result.value;
+                    }
+
+
+                    refreshUnitState(
+                        unitCard
+                    );
+
+
+                    showToast(
+                        "Wymagana obsada została zmieniona."
+                    );
+
+
+                } catch (error) {
+
+                    showToast(
+                        error.message,
+                        "error"
+                    );
+
+
+                } finally {
+
+                    requirementButton.disabled =
+                        false;
+                }
+
+
+                return;
+            }
+
+
+            /* ==============================================
+               REMOVE WORKER
+               ============================================== */
+
+            const removeButton =
                 event.target.closest(
                     "[data-remove-worker]"
                 );
 
 
-            if (!button) {
+            if (!removeButton) {
                 return;
             }
 
@@ -633,31 +1365,44 @@
             }
 
 
-            const workerElement =
-                button.closest(
+            const worker =
+                removeButton.closest(
                     "[data-assigned-worker]"
                 );
 
 
-            if (!workerElement) {
+            if (!worker) {
                 return;
             }
 
 
+            const unitCard =
+                worker.closest(
+                    "[data-unit-card]"
+                );
+
+
             const workerId =
-                workerElement.dataset
+                worker.dataset
                     .workerId;
 
 
             const unitId =
-                workerElement.dataset
+                worker.dataset
                     .unitId;
 
 
-            setBusy(true);
+            const role =
+                worker.classList.contains(
+                    "staffing-person--operator"
+                )
+                    ? "operator"
+                    : "helper";
 
-            button.disabled =
-                true;
+
+            setBusy(
+                true
+            );
 
 
             try {
@@ -667,8 +1412,32 @@
                         .unassignUrl,
 
                     workerId,
+
                     unitId
                 );
+
+
+                worker.remove();
+
+
+                if (unitCard) {
+
+                    increaseCurrentCount(
+                        unitCard,
+                        role,
+                        -1
+                    );
+
+
+                    refreshPerformance(
+                        unitCard
+                    );
+
+
+                    refreshUnitState(
+                        unitCard
+                    );
+                }
 
 
                 showToast(
@@ -676,27 +1445,115 @@
                 );
 
 
-                window.setTimeout(
-                    () => {
-                        window.location.reload();
-                    },
-                    120
-                );
-
-
             } catch (error) {
-
-                button.disabled =
-                    false;
-
-
-                setBusy(false);
-
 
                 showToast(
                     error.message,
                     "error"
                 );
+
+
+            } finally {
+
+                setBusy(
+                    false
+                );
+            }
+        }
+    );
+
+
+    /* ======================================================
+       ESTIMATED TIME
+       ====================================================== */
+
+    root.addEventListener(
+        "change",
+        async (event) => {
+
+            const input =
+                event.target.closest(
+                    "[data-estimated-time-input]"
+                );
+
+
+            if (!input) {
+                return;
+            }
+
+
+            const unitCard =
+                input.closest(
+                    "[data-unit-card]"
+                );
+
+
+            if (!unitCard) {
+                return;
+            }
+
+
+            const unitId =
+                input.dataset
+                    .unitId;
+
+
+            const estimatedTime =
+                Number(
+                    input.value
+                );
+
+
+            if (
+                !estimatedTime
+                || estimatedTime <= 0
+            ) {
+
+                showToast(
+                    "Podaj poprawny czas.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            input.disabled =
+                true;
+
+
+            try {
+
+                const result =
+                    await changeEstimatedTime(
+                        unitId,
+                        estimatedTime
+                    );
+
+
+                refreshPerformance(
+                    unitCard,
+                    result
+                );
+
+
+                showToast(
+                    "Założony czas został zapisany."
+                );
+
+
+            } catch (error) {
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+
+            } finally {
+
+                input.disabled =
+                    false;
             }
         }
     );
@@ -707,6 +1564,7 @@
        ====================================================== */
 
     function filterWorkers() {
+
         const query =
             (
                 workerSearch?.value
@@ -723,7 +1581,7 @@
             .forEach(
                 (card) => {
 
-                    const search =
+                    const value =
                         (
                             card.dataset.search
                             || ""
@@ -734,7 +1592,7 @@
                     card.hidden =
                         Boolean(
                             query
-                            && !search.includes(
+                            && !value.includes(
                                 query
                             )
                         );
@@ -743,17 +1601,12 @@
     }
 
 
-    workerSearch?.addEventListener(
-        "input",
-        filterWorkers
-    );
-
-
     /* ======================================================
        UNIT FILTER
        ====================================================== */
 
     function filterUnits() {
+
         const query =
             (
                 unitSearch?.value
@@ -763,9 +1616,9 @@
             .toLowerCase();
 
 
-        const onlyIncomplete =
+        const shouldHideComplete =
             Boolean(
-                incompleteOnly?.checked
+                hideComplete?.checked
             );
 
 
@@ -784,8 +1637,14 @@
                         .toLowerCase();
 
 
-                    const isComplete =
+                    const complete =
                         card.dataset.complete
+                        === "1";
+
+
+                    const manuallyHidden =
+                        card.dataset
+                            .manuallyHidden
                         === "1";
 
 
@@ -796,19 +1655,75 @@
                         );
 
 
-                    const incompleteOk =
-                        !onlyIncomplete
-                        || !isComplete;
+                    const completeOk =
+                        !shouldHideComplete
+                        || !complete;
 
 
-                    card.hidden =
-                        !(
-                            searchOk
-                            && incompleteOk
-                        );
+                    const visible =
+                        !manuallyHidden
+                        && searchOk
+                        && completeOk;
+
+
+                    card.classList.toggle(
+                        "is-hidden",
+                        !visible
+                    );
                 }
             );
     }
+
+
+    /* ======================================================
+       HIDE UNIT
+       ====================================================== */
+
+    document
+        .querySelectorAll(
+            "[data-hide-unit]"
+        )
+        .forEach(
+            (button) => {
+
+                button.addEventListener(
+                    "click",
+                    (event) => {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+
+                        const card =
+                            button.closest(
+                                "[data-unit-card]"
+                            );
+
+
+                        if (!card) {
+                            return;
+                        }
+
+
+                        card.dataset.manuallyHidden =
+                            "1";
+
+
+                        filterUnits();
+                    }
+                );
+            }
+        );
+
+
+    /* ======================================================
+       LISTENERS
+       ====================================================== */
+
+    workerSearch?.addEventListener(
+        "input",
+        filterWorkers
+    );
 
 
     unitSearch?.addEventListener(
@@ -817,17 +1732,38 @@
     );
 
 
-    incompleteOnly?.addEventListener(
+    hideComplete?.addEventListener(
         "change",
         filterUnits
     );
 
 
     /* ======================================================
-       START
+       INIT PERFORMANCE
        ====================================================== */
 
+    document
+        .querySelectorAll(
+            "[data-unit-card]"
+        )
+        .forEach(
+            (unitCard) => {
+
+                refreshPerformance(
+                    unitCard
+                );
+            }
+        );
+
+
+    /* ======================================================
+       INIT
+       ====================================================== */
+
+    refreshGlobalCounters();
+
     filterWorkers();
+
     filterUnits();
 
 })();

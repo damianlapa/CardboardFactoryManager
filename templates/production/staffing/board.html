@@ -11,6 +11,7 @@
 
 
 {% block style %}
+
 <link
     rel="stylesheet"
     href="{% static 'css/production/production.css' %}"
@@ -20,6 +21,7 @@
     rel="stylesheet"
     href="{% static 'css/production/staffing.css' %}"
 >
+
 {% endblock %}
 
 
@@ -30,11 +32,14 @@
     data-staffing-board
     data-assign-url="{% url 'modern_production:staffing-assign' %}"
     data-unassign-url="{% url 'modern_production:staffing-unassign' %}"
+    data-requirements-url="{% url 'modern_production:staffing-requirements' %}"
+    data-estimated-time-url="{% url 'modern_production:staffing-estimated-time' %}"
 >
 
-    {# ====================================================== #}
-    {# HEADER                                                 #}
-    {# ====================================================== #}
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
 
     <header class="production-header">
 
@@ -48,18 +53,19 @@
                 Produkcja
             </a>
 
+
             <div class="production-eyebrow">
                 Planowanie produkcji
             </div>
+
 
             <h1>
                 Obsada produkcji
             </h1>
 
+
             <p>
-                Przypisz pracowników do jednostek produkcyjnych.
-                Kwalifikacja stanowiskowa określa, kto może pełnić
-                funkcję operatora.
+                Dobierz operatorów i pomocników do operacji produkcyjnych.
             </p>
 
         </div>
@@ -93,36 +99,30 @@
             </div>
 
 
-            <div
-                class="
-                    staffing-summary__item
-                    staffing-summary__item--warning
-                "
-            >
+            <div class="staffing-summary__item staffing-summary__item--warning">
 
                 <span>
-                    Braki w obsadzie
+                    Braki
                 </span>
 
-                <strong>
+                <strong
+                    id="staffingIncompleteCount"
+                >
                     {{ incomplete_count }}
                 </strong>
 
             </div>
 
 
-            <div
-                class="
-                    staffing-summary__item
-                    staffing-summary__item--success
-                "
-            >
+            <div class="staffing-summary__item staffing-summary__item--success">
 
                 <span>
                     Kompletne
                 </span>
 
-                <strong>
+                <strong
+                    id="staffingCompleteCount"
+                >
                     {{ complete_count }}
                 </strong>
 
@@ -133,9 +133,9 @@
     </header>
 
 
-    {# ====================================================== #}
-    {# TOOLBAR                                                #}
-    {# ====================================================== #}
+    <!-- =================================================== -->
+    <!-- TOOLBAR                                             -->
+    <!-- =================================================== -->
 
     <div class="staffing-toolbar">
 
@@ -144,8 +144,8 @@
             <i class="fa-solid fa-circle-info"></i>
 
             <span>
-                Pracownik z kwalifikacją dla stanowiska jest
-                liczony jako operator. Pozostali jako pomocnicy.
+                Zielone podświetlenie oznacza kwalifikację operatorską
+                do danego stanowiska.
             </span>
 
         </div>
@@ -155,11 +155,12 @@
 
             <input
                 type="checkbox"
-                id="staffingIncompleteOnly"
+                id="staffingHideComplete"
+                checked
             >
 
             <span>
-                Pokaż tylko jednostki z brakami
+                Ukryj jednostki z kompletną obsadą
             </span>
 
         </label>
@@ -167,16 +168,16 @@
     </div>
 
 
-    {# ====================================================== #}
-    {# MAIN LAYOUT                                            #}
-    {# ====================================================== #}
+    <!-- =================================================== -->
+    <!-- LAYOUT                                              -->
+    <!-- =================================================== -->
 
     <div class="staffing-layout">
 
 
-        {# ================================================== #}
-        {# LEFT — WORKERS                                     #}
-        {# ================================================== #}
+        <!-- ================================================= -->
+        <!-- WORKERS                                          -->
+        <!-- ================================================= -->
 
         <aside class="staffing-workers">
 
@@ -233,9 +234,8 @@
 
                         <div class="staffing-worker__avatar">
 
-                            <span>
-                                {{ row.worker.first_name|first }}{{ row.worker.last_name|first }}
-                            </span>
+                            {{ row.worker.first_name|first }}
+                            {{ row.worker.last_name|first }}
 
                         </div>
 
@@ -245,6 +245,7 @@
                             <strong>
                                 {{ row.worker }}
                             </strong>
+
 
                             {% if row.qualification_ids %}
 
@@ -260,9 +261,7 @@
                             {% else %}
 
                                 <span class="staffing-worker__qualification staffing-worker__qualification--none">
-
-                                    Brak kwalifikacji
-
+                                    Brak kwalifikacji operatorskich
                                 </span>
 
                             {% endif %}
@@ -281,13 +280,7 @@
                 {% empty %}
 
                     <div class="staffing-empty">
-
-                        <i class="fa-solid fa-users-slash"></i>
-
-                        <strong>
-                            Brak pracowników
-                        </strong>
-
+                        Brak pracowników.
                     </div>
 
                 {% endfor %}
@@ -297,9 +290,9 @@
         </aside>
 
 
-        {# ================================================== #}
-        {# RIGHT — UNITS                                      #}
-        {# ================================================== #}
+        <!-- ================================================= -->
+        <!-- UNITS                                            -->
+        <!-- ================================================= -->
 
         <main class="staffing-units">
 
@@ -359,69 +352,158 @@
                     >
 
 
-                        {# ================================== #}
-                        {# UNIT HEADER                        #}
-                        {# ================================== #}
+                        <!-- ================================= -->
+                        <!-- UNIT HEADER                       -->
+                        <!-- ================================= -->
 
                         <div class="staffing-unit__header">
 
-                            <div>
+                            <div class="staffing-unit__header-main">
 
-                                <span class="staffing-unit__station">
+                                <div class="staffing-unit__title-row">
 
-                                    <i class="fa-solid fa-industry"></i>
-
-                                    {{ row.unit.work_station }}
-
-                                </span>
+                                    <strong class="staffing-unit__station">
+                                        {{ row.unit.work_station }}
+                                    </strong>
 
 
-                                <a
-                                    href="{% url 'modern_production:unit-details' row.unit.id %}"
-                                    class="staffing-unit__order"
-                                >
-                                    {{ row.unit.production_order.id_number }}
-                                </a>
+                                    {% if row.unit.production_order.priority %}
+
+                                        <span
+                                            class="staffing-priority"
+                                            title="Priorytet"
+                                        >
+                                            <i class="fa-solid fa-fire"></i>
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
 
 
-                                <span class="staffing-unit__customer">
-                                    {{ row.unit.production_order.customer }}
-                                </span>
+                                <div class="staffing-unit__customer-row">
+
+                                    <strong class="staffing-unit__customer">
+                                        {{ row.unit.production_order.customer }}
+                                    </strong>
+
+
+                                    <a
+                                        href="{% url 'modern_production:unit-details' row.unit.id %}"
+                                        class="staffing-unit__order"
+                                    >
+                                        {{ row.unit.production_order.id_number }}
+                                    </a>
+
+                                </div>
+
+
+                                <div class="staffing-unit__production-data">
+
+                                    <div>
+
+                                        <span>
+                                            Ilość
+                                        </span>
+
+                                        <strong
+                                            data-production-quantity
+                                            data-quantity="{{ row.unit.production_order.quantity|default:0 }}"
+                                        >
+                                            {{ row.unit.production_order.quantity|default:"—" }} szt.
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Wymiary
+                                        </span>
+
+                                        <strong>
+                                            {{ row.unit.production_order.dimensions|default:"—" }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Tektura
+                                        </span>
+
+                                        <strong>
+                                            {{ row.unit.production_order.cardboard|default:"—" }}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Format
+                                        </span>
+
+                                        <strong>
+                                            {{ row.unit.production_order.cardboard_dimensions|default:"—" }}
+                                        </strong>
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
 
-                            {% if row.staffing.is_complete %}
+                            <div class="staffing-unit__header-actions">
 
-                                <span
-                                    class="staffing-unit__status staffing-unit__status--complete"
-                                    title="Obsada kompletna"
+                                {% if row.staffing.is_complete %}
+
+                                    <span
+                                        class="staffing-unit__status staffing-unit__status--complete"
+                                        title="Obsada kompletna"
+                                    >
+                                        <i class="fa-solid fa-check"></i>
+                                    </span>
+
+                                {% else %}
+
+                                    <span
+                                        class="staffing-unit__status staffing-unit__status--warning"
+                                        title="Braki w obsadzie"
+                                    >
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </span>
+
+                                {% endif %}
+
+
+                                <button
+                                    type="button"
+                                    class="staffing-unit__hide"
+                                    data-hide-unit
+                                    title="Ukryj jednostkę"
                                 >
-                                    <i class="fa-solid fa-check"></i>
-                                </span>
+                                    <i class="fa-solid fa-eye-slash"></i>
+                                </button>
 
-                            {% else %}
-
-                                <span
-                                    class="staffing-unit__status staffing-unit__status--warning"
-                                    title="Braki w obsadzie"
-                                >
-                                    <i class="fa-solid fa-triangle-exclamation"></i>
-                                </span>
-
-                            {% endif %}
+                            </div>
 
                         </div>
 
 
-                        {# ================================== #}
-                        {# REQUIREMENTS                       #}
-                        {# ================================== #}
+                        <!-- ================================= -->
+                        <!-- REQUIREMENTS                      -->
+                        <!-- ================================= -->
 
                         <div class="staffing-unit__requirements">
 
 
-                            {# OPERATORS #}
+                            <!-- OPERATORS -->
 
                             <div
                                 class="
@@ -433,31 +515,82 @@
                                         staffing-requirement--missing
                                     {% endif %}
                                 "
+                                data-requirement="operators"
                             >
 
-                                <div class="staffing-requirement__icon">
-                                    <i class="fa-solid fa-user-gear"></i>
+                                <div class="staffing-requirement__main">
+
+                                    <div class="staffing-requirement__icon">
+
+                                        <i class="fa-solid fa-user-gear"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span class="staffing-requirement__label">
+                                            Operatorzy
+                                        </span>
+
+                                        <strong class="staffing-requirement__counter">
+
+                                            <span
+                                                data-required-current="operators"
+                                            >
+                                                {{ row.staffing.operator_count }}
+                                            </span>
+
+                                            <em>/</em>
+
+                                            <span
+                                                data-required-value="required_operators"
+                                            >
+                                                {{ row.staffing.required_operators }}
+                                            </span>
+
+                                        </strong>
+
+                                    </div>
+
                                 </div>
 
 
-                                <div>
+                                {% if perms.production.change_productionunit %}
 
-                                    <span>
-                                        Operatorzy
-                                    </span>
+                                    <div class="staffing-requirement__controls">
 
-                                    <strong>
-                                        {{ row.staffing.operator_count }}
-                                        /
-                                        {{ row.staffing.required_operators }}
-                                    </strong>
+                                        <button
+                                            type="button"
+                                            data-requirement-change
+                                            data-unit-id="{{ row.unit.id }}"
+                                            data-field="required_operators"
+                                            data-delta="-1"
+                                            title="Zmniejsz liczbę operatorów"
+                                        >
+                                            <i class="fa-solid fa-minus"></i>
+                                        </button>
 
-                                </div>
+
+                                        <button
+                                            type="button"
+                                            data-requirement-change
+                                            data-unit-id="{{ row.unit.id }}"
+                                            data-field="required_operators"
+                                            data-delta="1"
+                                            title="Zwiększ liczbę operatorów"
+                                        >
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+
+                                    </div>
+
+                                {% endif %}
 
                             </div>
 
 
-                            {# HELPERS #}
+                            <!-- HELPERS -->
 
                             <div
                                 class="
@@ -469,43 +602,92 @@
                                         staffing-requirement--missing
                                     {% endif %}
                                 "
+                                data-requirement="helpers"
                             >
 
-                                <div class="staffing-requirement__icon">
-                                    <i class="fa-solid fa-user"></i>
+                                <div class="staffing-requirement__main">
+
+                                    <div class="staffing-requirement__icon">
+
+                                        <i class="fa-solid fa-user"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span class="staffing-requirement__label">
+                                            Pomocnicy
+                                        </span>
+
+                                        <strong class="staffing-requirement__counter">
+
+                                            <span
+                                                data-required-current="helpers"
+                                            >
+                                                {{ row.staffing.helper_count }}
+                                            </span>
+
+                                            <em>/</em>
+
+                                            <span
+                                                data-required-value="required_helpers"
+                                            >
+                                                {{ row.staffing.required_helpers }}
+                                            </span>
+
+                                        </strong>
+
+                                    </div>
+
                                 </div>
 
 
-                                <div>
+                                {% if perms.production.change_productionunit %}
 
-                                    <span>
-                                        Pomocnicy
-                                    </span>
+                                    <div class="staffing-requirement__controls">
 
-                                    <strong>
-                                        {{ row.staffing.helper_count }}
-                                        /
-                                        {{ row.staffing.required_helpers }}
-                                    </strong>
+                                        <button
+                                            type="button"
+                                            data-requirement-change
+                                            data-unit-id="{{ row.unit.id }}"
+                                            data-field="required_helpers"
+                                            data-delta="-1"
+                                            title="Zmniejsz liczbę pomocników"
+                                        >
+                                            <i class="fa-solid fa-minus"></i>
+                                        </button>
 
-                                </div>
+
+                                        <button
+                                            type="button"
+                                            data-requirement-change
+                                            data-unit-id="{{ row.unit.id }}"
+                                            data-field="required_helpers"
+                                            data-delta="1"
+                                            title="Zwiększ liczbę pomocników"
+                                        >
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+
+                                    </div>
+
+                                {% endif %}
 
                             </div>
 
                         </div>
 
 
-                        {# ================================== #}
-                        {# STAFF                              #}
-                        {# ================================== #}
+                        <!-- ================================= -->
+                        <!-- PEOPLE                            -->
+                        <!-- ================================= -->
 
                         <div
                             class="staffing-unit__people"
                             data-unit-dropzone
                         >
 
-
-                            {# OPERATORS #}
 
                             {% for person in row.staffing.qualified_persons %}
 
@@ -520,7 +702,8 @@
                                 >
 
                                     <div class="staffing-person__avatar">
-                                        {{ person.first_name|first }}{{ person.last_name|first }}
+                                        {{ person.first_name|first }}
+                                        {{ person.last_name|first }}
                                     </div>
 
 
@@ -556,8 +739,6 @@
                             {% endfor %}
 
 
-                            {# HELPERS #}
-
                             {% for person in row.staffing.helper_persons %}
 
                                 <div
@@ -571,7 +752,8 @@
                                 >
 
                                     <div class="staffing-person__avatar">
-                                        {{ person.first_name|first }}{{ person.last_name|first }}
+                                        {{ person.first_name|first }}
+                                        {{ person.last_name|first }}
                                     </div>
 
 
@@ -606,8 +788,6 @@
                             {% endfor %}
 
 
-                            {# DROP PLACEHOLDER #}
-
                             <div class="staffing-unit__drop-placeholder">
 
                                 <i class="fa-solid fa-user-plus"></i>
@@ -621,9 +801,9 @@
                         </div>
 
 
-                        {# ================================== #}
-                        {# FOOTER                             #}
-                        {# ================================== #}
+                        <!-- ================================= -->
+                        <!-- FOOTER                            -->
+                        <!-- ================================= -->
 
                         <div class="staffing-unit__footer">
 
@@ -640,21 +820,60 @@
                             </div>
 
 
-                            {% if row.unit.estimated_time %}
+                            <div class="staffing-unit__performance">
 
-                                <div>
+    <div class="staffing-time-editor">
 
-                                    <span>
-                                        Czas
-                                    </span>
+        <span>
+            Założony czas
+        </span>
 
-                                    <strong>
-                                        {{ row.unit.estimated_time }} min
-                                    </strong>
+        <div class="staffing-time-editor__control">
 
-                                </div>
+            <input
+                type="number"
+                min="1"
+                step="1"
+                value="{{ row.unit.estimated_time|default:'' }}"
+                data-estimated-time-input
+                data-unit-id="{{ row.unit.id }}"
+            >
 
-                            {% endif %}
+            <span>
+                min
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="staffing-performance-value">
+
+        <span>
+            Arkuszy / h
+        </span>
+
+        <strong data-sheets-per-hour>
+    {{ row.staffing.sheets_per_hour|default:"—" }}
+</strong>
+
+    </div>
+
+
+    <div class="staffing-performance-value">
+
+        <span>
+            Arkuszy / h / osoba
+        </span>
+
+        <strong data-sheets-per-person-hour>
+    {{ row.staffing.sheets_per_person_hour|default:"—" }}
+</strong>
+
+    </div>
+
+</div>
 
 
                             <div class="staffing-unit__footer-state">
@@ -664,6 +883,7 @@
                                     <span class="staffing-state staffing-state--complete">
 
                                         <i class="fa-solid fa-circle-check"></i>
+
                                         Gotowa
 
                                     </span>
@@ -675,11 +895,19 @@
                                         <i class="fa-solid fa-circle-exclamation"></i>
 
                                         {% if row.staffing.missing_operators %}
-                                            Brak operatorów: {{ row.staffing.missing_operators }}
+
+                                            Brak operatorów:
+                                            {{ row.staffing.missing_operators }}
+
                                         {% elif row.staffing.missing_helpers %}
-                                            Brak pomocników: {{ row.staffing.missing_helpers }}
+
+                                            Brak pomocników:
+                                            {{ row.staffing.missing_helpers }}
+
                                         {% else %}
+
                                             Braki w obsadzie
+
                                         {% endif %}
 
                                     </span>
@@ -701,10 +929,6 @@
                         <strong>
                             Brak jednostek do obsadzenia
                         </strong>
-
-                        <span>
-                            Wszystkie dostępne operacje zostały zakończone.
-                        </span>
 
                     </div>
 

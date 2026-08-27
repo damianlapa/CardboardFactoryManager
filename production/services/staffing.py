@@ -195,6 +195,39 @@ def get_unit_staffing_state(
         >= required_helpers
     )
 
+    quantity = (
+            unit.production_order.quantity
+            or 0
+    )
+
+    estimated_time = (
+            unit.estimated_time
+            or 0
+    )
+
+    persons_count = len(
+        persons
+    )
+
+    sheets_per_hour = None
+    sheets_per_person_hour = None
+
+    if (
+            quantity
+            and estimated_time
+    ):
+        sheets_per_hour = round(
+            quantity
+            * 60
+            / estimated_time
+        )
+
+        if persons_count:
+            sheets_per_person_hour = round(
+                sheets_per_hour
+                / persons_count
+            )
+
     return {
         "persons":
             persons,
@@ -242,6 +275,15 @@ def get_unit_staffing_state(
                 operators_complete
                 and helpers_complete
             ),
+
+        "persons_count":
+            persons_count,
+
+        "sheets_per_hour":
+            sheets_per_hour,
+
+        "sheets_per_person_hour":
+            sheets_per_person_hour,
     }
 
 
