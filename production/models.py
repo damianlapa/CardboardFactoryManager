@@ -317,20 +317,23 @@ class ProductionUnit(models.Model):
             return 0
 
     def unit_production_cost(self):
-        worker_cost = 0
-        unit_duration = self.unit_duration2() / 3600
-        unit_start = self.start
-        for worker in self.persons.all():
-            current_contract = worker.contract(unit_start)
-            if not current_contract:
-                current_contract = 0
-            unit_duration = Decimal(str(unit_duration))
-            worker_cost += (current_contract * unit_duration) / 168
-        worker_cost = D(str(worker_cost * Decimal('1.205')))
-        energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
-        machine_usage = self.work_station.calculate_machine_usage(unit_duration)
+        if self.unit_duration2():
+            worker_cost = 0
+            unit_duration = self.unit_duration2() / 3600
+            unit_start = self.start
+            for worker in self.persons.all():
+                current_contract = worker.contract(unit_start)
+                if not current_contract:
+                    current_contract = 0
+                unit_duration = Decimal(str(unit_duration))
+                worker_cost += (current_contract * unit_duration) / 168
+            worker_cost = D(str(worker_cost * Decimal('1.205')))
+            energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
+            machine_usage = self.work_station.calculate_machine_usage(unit_duration)
 
-        return money(worker_cost), money(energy_cost), money(machine_usage)
+            return money(worker_cost), money(energy_cost), money(machine_usage)
+        else:
+            return money(Decimal('0.00')), money(Decimal('0.00')), money(Decimal('0.00'))
 
     @classmethod
     def last_in_line(cls, station, point=None):

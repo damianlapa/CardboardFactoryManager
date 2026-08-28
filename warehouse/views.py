@@ -1,4 +1,4 @@
-# warehouse/modern_views.py
+# warehouse/views.py
 
 from django.views.generic import ListView
 from warehouse.services.products import safe_get_or_create_product
@@ -1071,7 +1071,8 @@ class OrderDetailView(PermissionRequiredMixin, View):
             last_unit = production_units.order_by("-sequence").first()
             if last_unit:
                 lq = last_unit.quantity_end
-                ld = last_unit.end.date()
+                if last_unit.end:
+                    ld = last_unit.end.date()
         else:
             production_units = []
 
