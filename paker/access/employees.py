@@ -1,6 +1,8 @@
 from paker.access.common import (
     is_boss,
     is_office_worker,
+    is_production_worker,
+    is_warehouse_worker
 )
 
 
@@ -18,6 +20,7 @@ def can_view_employee_list(user):
     return (
         is_boss(user)
         or is_office_worker(user)
+        or is_production_worker(user)
     )
 
 

@@ -33,7 +33,6 @@ def can_view_production_dashboard(user):
     return (
         is_boss(user)
         or is_office_worker(user)
-        or is_production_worker(user)
     )
 
 

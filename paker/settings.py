@@ -78,7 +78,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'warehousemanager.context_processor.actual_date',
                 'warehousemanager.context_processor.new_reminders',
-                'warehousemanager.context_processor.new_messages'
+                'warehousemanager.context_processor.new_messages',
+                "paker.context_processors.sidebar.access_context",
             ],
         },
     },

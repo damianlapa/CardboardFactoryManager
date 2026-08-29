@@ -37,7 +37,7 @@ def is_warehouse_worker(user):
 
 def get_home_url_name(user):
     if is_warehouse_worker(user):
-        return "warehouse:warehouse-list-view"
+        return "dashboard"
 
     if is_production_worker(user):
         return "dashboard"

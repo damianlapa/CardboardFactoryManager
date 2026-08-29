@@ -20,6 +20,10 @@ from warehousemanager.models import (
     Person,
 )
 
+from paker.access.absences import (
+    can_add_absences
+)
+
 
 class ModernAbsenceListView(
     PermissionRequiredMixin,
@@ -47,6 +51,8 @@ class ModernAbsenceListView(
                 "contract_type"
             ),
         )
+
+        context['can_add_absence'] = can_add_absences(request.user)
 
         return render(
             request,

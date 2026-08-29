@@ -33,6 +33,7 @@ class ModernEmployeeListView(
         context = {
             "employees": get_employee_list(
                 include_inactive=include_inactive,
+                user=request.user
             ),
             "include_inactive":
                 include_inactive,

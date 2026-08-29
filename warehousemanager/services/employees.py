@@ -13,26 +13,38 @@ from paker.access.employees import (
     can_view_vacations,
     can_view_work_time,
 )
+
+from paker.access.common import (
+    is_boss,
+    is_office_worker,
+    is_production_worker,
+    is_warehouse_worker
+)
+
 from warehousemanager.models import (
     Contract,
     Person,
 )
 
 
-def get_employee_list(*, include_inactive=False):
+def get_employee_list(*, include_inactive=False, user=None):
     today = datetime.date.today()
 
-    employees = Person.objects.all()
+    if user and is_boss(user):
 
-    if not include_inactive:
-        employees = employees.filter(
-            job_end__isnull=True,
+        employees = Person.objects.all()
+
+        if not include_inactive:
+            employees = employees.filter(
+                job_end__isnull=True,
+            )
+
+        employees = employees.order_by(
+            "last_name",
+            "first_name",
         )
-
-    employees = employees.order_by(
-        "last_name",
-        "first_name",
-    )
+    else:
+        employees = Person.objects.filter(user=user)
 
     rows = []
 

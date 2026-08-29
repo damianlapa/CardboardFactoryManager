@@ -37,6 +37,8 @@
 
         </a>
 
+        {% if access.production %}
+
         <a href="{% url 'add-absence' %}"
            class="app-btn app-btn-primary">
 
@@ -45,6 +47,8 @@
             Dodaj nieobecność
 
         </a>
+
+        {% endif %}
 
     </div>
 
