@@ -1987,4 +1987,305 @@
 
     reflowAllStations();
 
+        /* ======================================================
+       STATION FILTER
+       ====================================================== */
+
+    const stationFilterToggle =
+        document.querySelector(
+            "#dailyStationFilterToggle"
+        );
+
+
+    const stationFilterOptions =
+        document.querySelector(
+            "#dailyStationFilterOptions"
+        );
+
+
+    const STATION_STORAGE_KEY =
+        "dailyPlanHiddenStations";
+
+
+    function getHiddenStations() {
+
+        try {
+
+            return new Set(
+                JSON.parse(
+                    localStorage.getItem(
+                        STATION_STORAGE_KEY
+                    ) || "[]"
+                )
+                .map(String)
+            );
+
+        } catch (error) {
+
+            return new Set();
+        }
+    }
+
+
+    function saveHiddenStations(
+        hidden
+    ) {
+
+        localStorage.setItem(
+            STATION_STORAGE_KEY,
+            JSON.stringify(
+                Array.from(
+                    hidden
+                )
+            )
+        );
+    }
+
+
+    function setStationVisible(
+        stationId,
+        visible
+    ) {
+
+        const row =
+            document.querySelector(
+                `[data-station-row="${stationId}"]`
+            );
+
+
+        const lanes =
+            document.querySelector(
+                `[data-station-lanes="${stationId}"]`
+            );
+
+
+        row?.classList.toggle(
+            "is-hidden-station",
+            !visible
+        );
+
+
+        lanes?.classList.toggle(
+            "is-hidden-station",
+            !visible
+        );
+    }
+
+
+    function applyStationVisibility() {
+
+        const hidden =
+            getHiddenStations();
+
+
+        document
+            .querySelectorAll(
+                "[data-station-visibility]"
+            )
+            .forEach(
+                (checkbox) => {
+
+                    const stationId =
+                        String(
+                            checkbox.value
+                        );
+
+
+                    const visible =
+                        !hidden.has(
+                            stationId
+                        );
+
+
+                    checkbox.checked =
+                        visible;
+
+
+                    setStationVisible(
+                        stationId,
+                        visible
+                    );
+                }
+            );
+    }
+
+
+    function showAllStations() {
+
+        localStorage.removeItem(
+            STATION_STORAGE_KEY
+        );
+
+
+        applyStationVisibility();
+    }
+
+
+    function hideEmptyStations() {
+
+        const hidden =
+            getHiddenStations();
+
+
+        document
+            .querySelectorAll(
+                "[data-station-lanes]"
+            )
+            .forEach(
+                (lanes) => {
+
+                    const stationId =
+                        String(
+                            lanes.dataset
+                                .stationLanes
+                        );
+
+
+                    const hasTasks =
+                        Boolean(
+                            lanes.querySelector(
+                                "[data-daily-task]"
+                            )
+                        );
+
+
+                    if (!hasTasks) {
+
+                        hidden.add(
+                            stationId
+                        );
+                    }
+                }
+            );
+
+
+        saveHiddenStations(
+            hidden
+        );
+
+
+        applyStationVisibility();
+    }
+
+
+    stationFilterToggle
+        ?.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    !stationFilterOptions
+                ) {
+                    return;
+                }
+
+
+                stationFilterOptions.hidden =
+                    !stationFilterOptions.hidden;
+            }
+        );
+
+
+    stationFilterOptions
+        ?.addEventListener(
+            "change",
+            (event) => {
+
+                const checkbox =
+                    event.target.closest(
+                        "[data-station-visibility]"
+                    );
+
+
+                if (!checkbox) {
+                    return;
+                }
+
+
+                const hidden =
+                    getHiddenStations();
+
+
+                const stationId =
+                    String(
+                        checkbox.value
+                    );
+
+
+                if (
+                    checkbox.checked
+                ) {
+
+                    hidden.delete(
+                        stationId
+                    );
+
+                } else {
+
+                    hidden.add(
+                        stationId
+                    );
+                }
+
+
+                saveHiddenStations(
+                    hidden
+                );
+
+
+                setStationVisible(
+                    stationId,
+                    checkbox.checked
+                );
+            }
+        );
+
+
+    stationFilterOptions
+        ?.addEventListener(
+            "click",
+            (event) => {
+
+                const showAll =
+                    event.target.closest(
+                        "[data-stations-show-all]"
+                    );
+
+
+                if (showAll) {
+
+                    event.preventDefault();
+
+                    showAllStations();
+
+                    return;
+                }
+
+
+                const hideEmpty =
+                    event.target.closest(
+                        "[data-stations-hide-empty]"
+                    );
+
+
+                if (hideEmpty) {
+
+                    event.preventDefault();
+
+                    hideEmptyStations();
+
+                    return;
+                }
+            }
+        );
+
+
+    /* ======================================================
+       INIT
+       ====================================================== */
+
+    reflowAllStations();
+
+    applyStationVisibility();
+
 })();

@@ -167,57 +167,84 @@
 
                     <div class="daily-unplanned-card__top">
 
-                        <strong>
-                            {{ unit.production_order.id_number }}
-                        </strong>
+    <strong class="daily-unplanned-card__customer-main">
+        {{ unit.production_order.customer }}
+    </strong>
+
+    <span class="daily-unplanned-card__order">
+        {{ unit.production_order.id_number }}
+    </span>
+
+</div>
 
 
-                        {% if unit.production_order.priority %}
-
-                            <i class="fa-solid fa-fire"></i>
-
-                        {% endif %}
-
-                    </div>
+<div class="daily-unplanned-card__station">
+    {{ unit.work_station }}
+</div>
 
 
-                    <span class="daily-unplanned-card__customer">
-                        {{ unit.production_order.customer }}
-                    </span>
+<div class="daily-unplanned-card__production-data">
+
+    <div>
+        <span>Ilość</span>
+
+        <strong>
+            {{ unit.production_order.quantity|default:"—" }}
+            {% if unit.production_order.quantity %}
+                szt.
+            {% endif %}
+        </strong>
+    </div>
 
 
-                    <div class="daily-unplanned-card__meta">
+    <div>
+        <span>Wymiary</span>
 
-                        <span>
-                            {{ unit.work_station }}
-                        </span>
-
-
-                        {% if unit.estimated_time %}
-
-                            <span>
-                                <i class="fa-regular fa-clock"></i>
-                                {{ unit.estimated_time }} min
-                            </span>
-
-                        {% else %}
-
-                            <span class="daily-unplanned-card__warning">
-                                Brak czasu
-                            </span>
-
-                        {% endif %}
-
-                    </div>
+        <strong>
+            {{ unit.production_order.dimensions|default:"—" }}
+        </strong>
+    </div>
 
 
-                    <div class="daily-unplanned-card__people">
+    <div>
+        <span>Tektura</span>
 
-                        <i class="fa-solid fa-users"></i>
+        <strong>
+            {{ unit.production_order.cardboard|default:"—" }}
+        </strong>
+    </div>
 
-                        {{ unit.persons.count }}
 
-                    </div>
+    <div>
+        <span>Format</span>
+
+        <strong>
+            {{ unit.production_order.cardboard_dimensions|default:"—" }}
+        </strong>
+    </div>
+
+</div>
+
+
+<div class="daily-unplanned-card__footer">
+
+    <span>
+        <i class="fa-regular fa-clock"></i>
+
+        {% if unit.estimated_time %}
+            {{ unit.estimated_time }} min
+        {% else %}
+            Brak czasu
+        {% endif %}
+    </span>
+
+
+    <span>
+        <i class="fa-solid fa-users"></i>
+        {{ unit.persons.count }}
+    </span>
+
+</div>
 
                 </article>
 
@@ -232,6 +259,81 @@
         </div>
 
     </section>
+
+    <div class="daily-station-filter">
+
+    <div class="daily-station-filter__header">
+
+        <div>
+            <strong>
+                Widoczne stanowiska
+            </strong>
+
+            <span>
+                Ukryj stanowiska, których aktualnie nie planujesz.
+            </span>
+        </div>
+
+
+        <button
+            type="button"
+            id="dailyStationFilterToggle"
+            class="daily-station-filter__toggle"
+        >
+            <i class="fa-solid fa-sliders"></i>
+            Stanowiska
+        </button>
+
+    </div>
+
+
+    <div
+        class="daily-station-filter__options"
+        id="dailyStationFilterOptions"
+        hidden
+    >
+
+        {% for row in station_rows %}
+
+            <label>
+
+                <input
+                    type="checkbox"
+                    data-station-visibility
+                    value="{{ row.station.id }}"
+                    checked
+                >
+
+                <span>
+                    {{ row.station.name }}
+                </span>
+
+            </label>
+
+        {% endfor %}
+
+
+        <div class="daily-station-filter__actions">
+
+            <button
+                type="button"
+                data-stations-show-all
+            >
+                Pokaż wszystkie
+            </button>
+
+            <button
+                type="button"
+                data-stations-hide-empty
+            >
+                Ukryj puste
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
 
     <!-- =================================================== -->
@@ -294,7 +396,7 @@
             {% for row in station_rows %}
 
 
-                <div class="daily-station">
+                <div class="daily-station" data-station-row="{{ row.station.id }}">
 
                     <div>
 
@@ -320,7 +422,7 @@
                 </div>
 
 
-                <div class="daily-station-lanes">
+                <div class="daily-station-lanes" data-station-lanes="{{ row.station.id }}">
 
 
                     {% for lane in row.lanes %}
