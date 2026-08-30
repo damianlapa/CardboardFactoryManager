@@ -21,7 +21,7 @@ from warehousemanager.models import (
 )
 
 from paker.access.absences import (
-    can_add_absences
+    can_manage_absences
 )
 
 
@@ -52,7 +52,7 @@ class ModernAbsenceListView(
             ),
         )
 
-        context['can_add_absence'] = can_add_absences(request.user)
+        context['can_manage'] = can_manage_absences(request.user)
 
         return render(
             request,

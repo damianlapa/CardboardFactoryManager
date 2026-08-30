@@ -6,7 +6,5 @@ from paker.access.common import (
 )
 
 
-def can_add_absences(user):
-    return (
-        is_boss(user)
-    )
+def can_manage_absences(user):
+    return is_boss(user)

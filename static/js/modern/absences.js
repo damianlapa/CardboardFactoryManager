@@ -9,6 +9,8 @@
         return;
     }
 
+    const canManage = calendar.dataset.canManage === "1";
+
 
     /* ====================================================== */
     /* ELEMENTS                                               */
@@ -893,6 +895,11 @@
     calendar.addEventListener(
         "click",
         (event) => {
+
+            if (!canManage) {
+                return;
+            }
+
             const cell =
                 event.target.closest(
                     "[data-worker-id][data-date]"

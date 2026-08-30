@@ -5,5 +5,6 @@ Co jest do zrobienia?
 - filtrowanie wykrojników po kliencie
 - dopasowanie wielkości czcionek
 - rozdzielenie historii nieobecności i historii urlopów
-- wyłączenie dodawania nieobecności oraz raportu miesiecznego dla pracowników - tylko admin/boss
+- *wyłączenie dodawania nieobecności oraz raportu miesiecznego dla pracowników - tylko admin/boss*
+
 - 
