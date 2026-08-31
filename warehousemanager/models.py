@@ -140,7 +140,8 @@ COLORS_PROVIDERS = (
     ('INERGIS', 'INERGIS'),
     ('NEOINK', 'NEOINK'),
     ('AQUA POLIMERY', 'AQUA POLIMERY'),
-    ('CHESPA', 'CHESPA')
+    ('CHESPA', 'CHESPA'),
+    ('CHEMTEX', 'CHEMTEX')
 )
 
 
