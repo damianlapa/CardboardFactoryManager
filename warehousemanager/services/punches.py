@@ -109,6 +109,8 @@ def get_punch_list(*, include_inactive=False):
                 punch.customers.all()
             ),
 
+            "customers_str": " ".join((str(customer) for customer in list(punch.customers.all()))),
+
             "type_label": PUNCH_TYPE_LABELS.get(
                 punch.type,
                 punch.type,

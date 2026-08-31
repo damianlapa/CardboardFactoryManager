@@ -154,7 +154,8 @@
         if (searchValue) {
             const searchableText = normalizeText(
                 `${row.dataset.name} ` +
-                `${row.dataset.identifier}`
+                `${row.dataset.identifier}` +
+                `${row.dataset.customers}`
             );
 
             if (

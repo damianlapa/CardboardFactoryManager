@@ -386,6 +386,7 @@
                             data-width="{{ row.dimensions.width|default:'' }}"
                             data-length="{{ row.dimensions.length|default:'' }}"
                             data-height="{{ row.dimensions.height|default:'' }}"
+                            data-customers="{{ row.customers_str|default:'' }}"
                             data-href="{% url 'punch-details' row.punch.id %}"
                             tabindex="0"
                             role="link"
