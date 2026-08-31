@@ -394,15 +394,17 @@ def load_orders(year, row=None, division=None, row_list=None, preview_only=False
                 photopolymer = Photopolymer.objects.filter(name__icontains=data[10]).first() if data[10] else None
                 punch = Punch.objects.filter(name__icontains=data[11]).first() if data[11] else None
                 ProductionOrder.objects.get_or_create(
-                    id_number=f'{order_id}',
+                    id_number=f'{provider_shortcut} {order_id}',
                     cardboard=f'{data[19]}',
                     cardboard_dimensions=f'{data[12]}x{data[13]}',
                     customer=Buyer.objects.get(name=data[18].upper()),
                     dimensions=f'{data[23]}',
                     ordered_quantity=f'{data[14]}',
+                    quantity=0,
                     photopolymer=photopolymer,
-                    punch=punch
+                    punch=punch,
                 )
+
             except Exception as e:
                 result += f"{e}<br>\n"
 
@@ -713,7 +715,6 @@ class LoadWZ(PermissionRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
-        print('#1')
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
@@ -844,7 +845,6 @@ class LoadWZ(PermissionRequiredMixin, View):
         year_orders = {}
 
         for o in orders:
-            print(o, "$$$")
             try:
                 order_num_split, year_num_split = o[0].split('/')
                 if len(year_num_split) == 2:
@@ -873,6 +873,10 @@ class LoadWZ(PermissionRequiredMixin, View):
                         quantity=int(str(item[3]).replace(' ', '').replace(',', '')),
                         palettes_quantity=item[4] if len(item) > 4 else ''
                     )
+                    print(f'{order.provider.shortcut} {order.order_id}')
+                    production_order = ProductionOrder.objects.get(id_number=f'{order.provider.shortcut} {order.order_id}')
+                    production_order.quantity += delivery_item.quantity
+                    production_order.save()
                     result.append(f'{delivery_item} created')
                 except Order.DoesNotExist:
                     errors.append(f'Order {item[0]} does not exist.')
