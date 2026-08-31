@@ -387,20 +387,24 @@ def load_orders(year, row=None, division=None, row_list=None, preview_only=False
                 else:
                     result += f"{order_id} no cardboard price or order date<br>\n"
 
-                from production.models import ProductionOrder
-                from warehousemanager.models import Punch, Photopolymer
+            from production.models import ProductionOrder
+            from warehousemanager.models import Punch, Photopolymer
 
-                try:
-                    ProductionOrder.objects.get_or_create(
-                        id_number=f'{order_id}',
-                        cardboard=f'{data[19]}',
-                        cardboard_dimensions=f'{data[12]}x{data[13]}',
-                        customer=Buyer.objects.get(name=data[18].upper()),
-                        dimensions=f'{data[23]}',
-                        ordered_quantity=f'{data[14]}',
-                    )
-                except Exception as e:
-                    result += f"{e}<br>\n"
+            try:
+                photopolymer = Photopolymer.objects.filter(name__icontains=data[10]).first() if data[10] else None
+                punch = Punch.objects.filter(name__icontains=data[11]).first() if data[11] else None
+                ProductionOrder.objects.get_or_create(
+                    id_number=f'{order_id}',
+                    cardboard=f'{data[19]}',
+                    cardboard_dimensions=f'{data[12]}x{data[13]}',
+                    customer=Buyer.objects.get(name=data[18].upper()),
+                    dimensions=f'{data[23]}',
+                    ordered_quantity=f'{data[14]}',
+                    photopolymer=photopolymer,
+                    punch=punch
+                )
+            except Exception as e:
+                result += f"{e}<br>\n"
 
         except Exception as e:
             result += f"{e}<br>\n"
