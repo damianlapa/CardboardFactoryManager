@@ -5,5 +5,5 @@ Co jest do zrobienia?
 - dopasowanie wielkości czcionek
 - rozdzielenie historii nieobecności i historii urlopów
 - *wyłączenie dodawania nieobecności oraz raportu miesiecznego dla pracowników - tylko admin/boss*
-
+- przesunąć tworzenie PO na poziom przyjmowania dostawy na magazyn
 - 
