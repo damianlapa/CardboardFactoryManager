@@ -283,11 +283,11 @@ def register_bucket_usage(
             "Masa nie może być ujemna."
         )
 
-    if after > before:
-        raise ValueError(
-            "Masa po użyciu nie może być większa "
-            "od masy przed użyciem."
-        )
+    # if after > before:
+    #     raise ValueError(
+    #         "Masa po użyciu nie może być większa "
+    #         "od masy przed użyciem."
+    #     )
 
     current_weight = Decimal(
         str(bucket.weight or 0)
