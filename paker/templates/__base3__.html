@@ -57,7 +57,7 @@
         <div class="header">
 
             <div>
-                <a href="{% url 'main-page' %}">
+                <a href="{% url 'dashboard' %}">
                     <img src="{% static 'images/paker-logo.png' %}" alt="paker-logo">
                 </a>
             </div>
@@ -75,7 +75,20 @@
                         | <a href="{% url 'admin:index' %}">Administracja</a>
                     {% endif %}
 
-                    | <a href="{% url 'logout' %}">LOGOUT</a>
+                    | <form
+            method="post"
+            action="{% url 'logout' %}"
+        >
+            {% csrf_token %}
+
+            <button
+                type="submit"
+                class="app-logout"
+                title="Wyloguj"
+            >
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+        </form>
                 </div>
             </div>
 
