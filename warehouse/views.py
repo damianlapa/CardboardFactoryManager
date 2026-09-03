@@ -2455,7 +2455,7 @@ class ProductPackagingUpsertAjaxView(PermissionRequiredMixin, View):
             "columns": packaging.columns,
             "layers": packaging.layers,
             "qty_per_pack": packaging.qty_per_pack,
-            "aadditional_info": packaging.additional_info,
+            "additionalinfo": packaging.additional_info,
         })
 
 

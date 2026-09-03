@@ -51,6 +51,7 @@
                   data-layers="{{ p.packaging.layers }}"
                   data-qty-per-pack="{{ p.packaging.qty_per_pack }}"
                   data-product-name="{{ p.name }}"
+                  data-additionalinfo="{{p.packaging.additional_info }}"
                 >
                   ✅ <span class="ms-1">{{ p.packaging.qty_per_pallet }}</span>
                 </button>
@@ -65,6 +66,7 @@
                   data-layers="0"
                   data-qty-per-pack="0"
                   data-product-name="{{ p.name }}"
+                  data-additionalinfo=""
                 >
                   ➕ utwórz
                 </button>
@@ -225,7 +227,7 @@ function openModalWithButton(btn) {
   document.getElementById('palette_id').value = btn.dataset.paletteId || "";
   document.getElementById('columns').value = btn.dataset.columns || 0;
   document.getElementById('layers').value = btn.dataset.layers || 0;
-
+  document.getElementById('additional_info').value = btn.dataset.additionalinfo || "";
   const paletteSelect = document.getElementById('palette_id');
 
 // jeśli produkt ma już paletę w danych → użyj jej
@@ -306,6 +308,7 @@ cell.innerHTML = `
     data-columns="${data.columns}"
     data-layers="${data.layers}"
     data-qty-per-pack="${data.qty_per_pack}"
+    data-additionalinfo=${data.additionalinfo}"
   >
     ✅ <span class="ms-1">${data.qty_per_pallet}</span>
   </button>
