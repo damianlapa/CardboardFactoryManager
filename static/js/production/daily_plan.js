@@ -2287,5 +2287,158 @@
     reflowAllStations();
 
     applyStationVisibility();
+/* ======================================================
+   WORKER AVAILABILITY
+   ====================================================== */
+
+const workersToggle =
+    document.querySelector(
+        "#dailyWorkersToggle"
+    );
+
+const workersContent =
+    document.querySelector(
+        "#dailyWorkersContent"
+    );
+
+const workersToggleIcon =
+    document.querySelector(
+        "[data-workers-toggle-icon]"
+    );
+
+const dailyWorkerSearch =
+    document.querySelector(
+        "#dailyWorkerSearch"
+    );
+
+
+workersToggle?.addEventListener(
+    "click",
+    () => {
+
+        if (!workersContent) {
+            return;
+        }
+
+        workersContent.hidden =
+            !workersContent.hidden;
+
+        workersToggleIcon
+            ?.classList.toggle(
+                "fa-chevron-down",
+                workersContent.hidden
+            );
+
+        workersToggleIcon
+            ?.classList.toggle(
+                "fa-chevron-up",
+                !workersContent.hidden
+            );
+    }
+);
+
+
+function setWorkerVisible(
+    workerId,
+    visible
+) {
+
+    document
+        .querySelector(
+            `[data-worker-row="${workerId}"]`
+        )
+        ?.classList.toggle(
+            "is-hidden-worker",
+            !visible
+        );
+
+
+    document
+        .querySelector(
+            `[data-worker-timeline="${workerId}"]`
+        )
+        ?.classList.toggle(
+            "is-hidden-worker",
+            !visible
+        );
+}
+
+
+document
+    .querySelectorAll(
+        "[data-worker-visibility]"
+    )
+    .forEach(
+        (checkbox) => {
+
+            checkbox.addEventListener(
+                "change",
+                () => {
+
+                    setWorkerVisible(
+                        checkbox.value,
+                        checkbox.checked
+                    );
+                }
+            );
+        }
+    );
+
+
+function filterDailyWorkers() {
+
+    const query =
+        (
+            dailyWorkerSearch?.value
+            || ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    document
+        .querySelectorAll(
+            "[data-worker-row]"
+        )
+        .forEach(
+            (row) => {
+
+                const workerId =
+                    row.dataset.workerRow;
+
+
+                const matches =
+                    !query
+                    || row.textContent
+                        .toLowerCase()
+                        .includes(query);
+
+
+                const checkbox =
+                    document.querySelector(
+                        `[data-worker-visibility][value="${workerId}"]`
+                    );
+
+
+                const manuallyVisible =
+                    checkbox
+                        ? checkbox.checked
+                        : true;
+
+
+                setWorkerVisible(
+                    workerId,
+                    matches
+                    && manuallyVisible
+                );
+            }
+        );
+}
+
+
+dailyWorkerSearch?.addEventListener(
+    "input",
+    filterDailyWorkers
+);
 
 })();

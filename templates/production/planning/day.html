@@ -605,6 +605,219 @@
 
     </section>
 
+    <section class="daily-workers">
+
+    <div class="daily-workers__header">
+
+        <div>
+
+            <span class="daily-workers__eyebrow">
+                Obsada
+            </span>
+
+            <h2>
+                Zajętość pracowników
+            </h2>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="daily-workers__toggle"
+            id="dailyWorkersToggle"
+        >
+            <i class="fa-solid fa-users"></i>
+
+            Pracownicy
+
+            <i
+                class="fa-solid fa-chevron-down"
+                data-workers-toggle-icon
+            ></i>
+        </button>
+
+    </div>
+
+
+    <div
+        class="daily-workers__content"
+        id="dailyWorkersContent"
+        hidden
+    >
+
+        <div class="daily-workers__controls">
+
+            <div class="daily-workers__search">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="dailyWorkerSearch"
+                    placeholder="Szukaj pracownika..."
+                >
+
+            </div>
+
+
+            <div class="daily-workers__visibility">
+
+                {% for row in worker_rows %}
+
+                    <label>
+
+                        <input
+                            type="checkbox"
+                            data-worker-visibility
+                            value="{{ row.person.id }}"
+                            checked
+                        >
+
+                        <span>
+                            {{ row.person }}
+                        </span>
+
+                    </label>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+        <div class="daily-workers-board-wrapper">
+
+            <div class="daily-workers-board">
+
+                <div class="daily-workers-board__corner">
+                    Pracownik
+                </div>
+
+
+                <div class="daily-workers-board__time-header">
+
+                    {% for hour in hours %}
+
+                        <div
+                            class="daily-time-marker"
+                            style="left: {{ hour.offset_percent }}%;"
+                        >
+
+                            <span>
+                                {{ hour.label }}
+                            </span>
+
+                        </div>
+
+                    {% endfor %}
+
+
+                    <div
+                        class="daily-break-band daily-break-band--header"
+                        style="
+                            left: {{ break_left_percent }}%;
+                            width: {{ break_width_percent }}%;
+                        "
+                    ></div>
+
+                </div>
+
+
+                {% for row in worker_rows %}
+
+                    <div
+                        class="daily-worker-name"
+                        data-worker-row="{{ row.person.id }}"
+                    >
+
+                        <div class="daily-worker-name__avatar">
+                            {{ row.person.first_name|first }}
+                            {{ row.person.last_name|first }}
+                        </div>
+
+
+                        <strong>
+                            {{ row.person }}
+                        </strong>
+
+                    </div>
+
+
+                    <div
+                        class="daily-worker-timeline"
+                        data-worker-timeline="{{ row.person.id }}"
+                    >
+
+                        {% for hour in hours %}
+
+                            <div
+                                class="daily-grid-hour"
+                                style="left: {{ hour.offset_percent }}%;"
+                            ></div>
+
+                        {% endfor %}
+
+
+                        <div
+                            class="daily-break-band"
+                            style="
+                                left: {{ break_left_percent }}%;
+                                width: {{ break_width_percent }}%;
+                            "
+                        ></div>
+
+
+                        {% for item in row.tasks %}
+
+                            {% with task=item.task segment=item.segment %}
+
+                                <div
+                                    class="daily-worker-task"
+                                    data-worker-task
+                                    data-task-id="{{ task.id }}"
+                                    style="
+                                        left: {{ segment.left_percent }}%;
+                                        width: {{ segment.width_percent }}%;
+                                    "
+                                    title="{{ task.production_unit.production_order.id_number }} · {{ task.work_station }} · {{ segment.start_dt|date:'H:i' }}–{{ segment.end_dt|date:'H:i' }}"
+                                >
+
+                                    <strong>
+                                        {{ task.production_unit.production_order.id_number }}
+                                    </strong>
+
+                                    <span>
+                                        {{ segment.start_dt|date:"H:i" }}
+                                        –
+                                        {{ segment.end_dt|date:"H:i" }}
+                                    </span>
+
+                                </div>
+
+                            {% endwith %}
+
+                        {% endfor %}
+
+                    </div>
+
+                {% empty %}
+
+                    <div class="daily-workers-empty">
+                        Brak zaplanowanych pracowników w tym dniu.
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
 </div>
 
 {% endblock %}

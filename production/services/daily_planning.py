@@ -923,6 +923,10 @@ def get_day_planning_context(day):
     tasks = get_day_tasks(
         day
     )
+    worker_rows = build_worker_rows(
+        tasks=tasks,
+        day=day,
+    )
 
     stations = list(
         WorkStation.objects
@@ -1066,6 +1070,9 @@ def get_day_planning_context(day):
 
         "unplanned_units":
             get_unplanned_units(),
+
+        "worker_rows":
+            worker_rows,
     }
 
 
@@ -1369,3 +1376,118 @@ def get_task_json(
         "quantity":
             order.quantity or 0,
     }
+
+def build_worker_rows(
+    *,
+    tasks,
+    day,
+):
+    workers = {}
+
+    for task in tasks:
+
+        segment = (
+            get_task_segment_for_day(
+                task,
+                day,
+            )
+        )
+
+        if not segment:
+            continue
+
+
+        # ----------------------------------------------------
+        # OBSADA
+        # ----------------------------------------------------
+        #
+        # Najpierw ProductionTask.persons.
+        #
+        # Jeśli stary task nie ma tam zapisanej obsady,
+        # korzystamy z ProductionUnit.persons.
+        # ----------------------------------------------------
+
+        task_persons = list(
+            task.persons.all()
+        )
+
+        if task_persons:
+
+            persons = (
+                task_persons
+            )
+
+        else:
+
+            persons = list(
+                task.production_unit
+                .persons
+                .all()
+            )
+
+
+        # ----------------------------------------------------
+        # WORKER ROWS
+        # ----------------------------------------------------
+
+        for person in persons:
+
+            if person.id not in workers:
+
+                workers[
+                    person.id
+                ] = {
+                    "person":
+                        person,
+
+                    "tasks":
+                        [],
+                }
+
+
+            workers[
+                person.id
+            ]["tasks"].append({
+                "task":
+                    task,
+
+                "segment":
+                    segment,
+            })
+
+
+    result = list(
+        workers.values()
+    )
+
+
+    # --------------------------------------------------------
+    # SORT WORKERS
+    # --------------------------------------------------------
+
+    result.sort(
+        key=lambda row: (
+            row["person"].last_name
+            or "",
+
+            row["person"].first_name
+            or "",
+        )
+    )
+
+
+    # --------------------------------------------------------
+    # SORT TASKS
+    # --------------------------------------------------------
+
+    for row in result:
+
+        row["tasks"].sort(
+            key=lambda item:
+                item["segment"][
+                    "start_dt"
+                ]
+        )
+
+
+    return result
