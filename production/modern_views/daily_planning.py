@@ -14,6 +14,7 @@ from production.services.daily_planning import (
     get_task_json,
     move_task,
     remove_task,
+    get_worker_rows_json,
 )
 
 
@@ -297,11 +298,13 @@ class DailyPlanningRemoveTaskView(
         **kwargs,
     ):
         try:
+
             datetime.date.fromisoformat(
                 day
             )
 
         except ValueError:
+
             return JsonResponse(
                 {
                     "success": False,
@@ -313,7 +316,7 @@ class DailyPlanningRemoveTaskView(
 
         try:
 
-            remove_task(
+            unplanned = remove_task(
                 task_id=task_id,
             )
 
@@ -322,7 +325,8 @@ class DailyPlanningRemoveTaskView(
             return JsonResponse(
                 {
                     "success": False,
-                    "error": str(error),
+                    "error":
+                        str(error),
                 },
                 status=400,
             )
@@ -330,5 +334,59 @@ class DailyPlanningRemoveTaskView(
         return JsonResponse(
             {
                 "success": True,
+
+                "unplanned":
+                    unplanned,
+            }
+        )
+
+
+class DailyPlanningWorkersView(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.view_weeklyplan"
+    )
+
+    login_url = reverse_lazy(
+        "login"
+    )
+
+    def get(
+        self,
+        request,
+        day,
+        *args,
+        **kwargs,
+    ):
+        try:
+
+            planning_day = (
+                datetime.date.fromisoformat(
+                    day
+                )
+            )
+
+        except ValueError:
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error":
+                        "Nieprawidłowa data.",
+                },
+                status=400,
+            )
+
+
+        return JsonResponse(
+            {
+                "success": True,
+
+                "workers":
+                    get_worker_rows_json(
+                        planning_day
+                    ),
             }
         )

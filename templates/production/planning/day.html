@@ -35,6 +35,7 @@
     data-move-url="{% url 'modern_production:daily-planning-move' day|date:'Y-m-d' %}"
     data-day-duration="{{ day_duration_minutes }}"
     data-snap-minutes="{{ snap_minutes }}"
+    data-workers-url="{% url 'modern_production:daily-planning-workers' day|date:'Y-m-d' %}"
 >
 
 
@@ -492,25 +493,13 @@
                                         "
                                     >
 
-
                                         <div class="daily-task__top">
 
                                             <span class="daily-task__time">
-
-                                                {% if segment.continues_from_previous %}
-                                                    ←
-                                                {% endif %}
-
-                                                {{ segment.start_dt|date:"H:i" }}
-                                                –
-                                                {{ segment.end_dt|date:"H:i" }}
-
-                                                {% if segment.continues_next %}
-                                                    →
-                                                {% endif %}
-
+                                                {% if segment.continues_from_previous %}←{% endif %}
+                                                {{ segment.start_dt|date:"H:i" }} – {{ segment.end_dt|date:"H:i" }}
+                                                {% if segment.continues_next %}→{% endif %}
                                             </span>
-
 
                                             <span class="daily-task__duration">
                                                 {{ segment.total_duration }}m
@@ -519,59 +508,87 @@
                                         </div>
 
 
-                                        <strong class="daily-task__order">
-                                            {{ task.production_unit.production_order.id_number }}
-                                        </strong>
+                                        <div class="daily-task__main">
 
+                                            <div class="daily-task__identity">
 
-                                        <span class="daily-task__customer">
-                                            {{ task.production_unit.production_order.customer }}
-                                        </span>
+                                                <div class="daily-task__order-row">
 
+                                                    <strong class="daily-task__order">
+                                                        {{ task.production_unit.production_order.id_number }}
+                                                    </strong>
 
-                                        <div class="daily-task__people">
+                                                    <button
+                                                        type="button"
+                                                        class="daily-task__remove"
+                                                        data-remove-task
+                                                        data-remove-url="{% url 'modern_production:daily-planning-remove' day|date:'Y-m-d' task.id %}"
+                                                        title="Usuń z planu"
+                                                    >
+                                                        <i class="fa-solid fa-xmark"></i>
+                                                    </button>
 
-                                            {% for person in task.production_unit.persons.all %}
+                                                </div>
 
-                                                <span>
-                                                    {{ person.first_name|first }}{{ person.last_name|first }}
+                                                <span class="daily-task__customer">
+                                                    {{ task.production_unit.production_order.customer }}
                                                 </span>
 
-                                            {% empty %}
+                                            </div>
 
-                                                <span class="daily-task__no-people">
-                                                    Brak obsady
-                                                </span>
 
-                                            {% endfor %}
+                                            <div class="daily-task__people">
+
+                                                {% for person in task.production_unit.persons.all %}
+
+                                                    <span
+                                                        class="daily-task__avatar"
+                                                        title="{{ person }}"
+                                                    >
+                                                        {{ person.first_name|first }}{{ person.last_name|first }}
+                                                    </span>
+
+                                                {% empty %}
+
+                                                    <span
+                                                        class="daily-task__no-people"
+                                                        title="Brak obsady"
+                                                    >
+                                                        <i class="fa-solid fa-user-slash"></i>
+                                                    </span>
+
+                                                {% endfor %}
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div class="daily-task__material">
+
+                                            <div class="daily-task__material-item daily-task__material-item--name">
+                                                <span>Tektura</span>
+                                                <strong>{{ task.production_unit.production_order.cardboard|default:"—" }}</strong>
+                                            </div>
+
+                                            <div class="daily-task__material-item daily-task__material-item--size">
+                                                <span>Format</span>
+                                                <strong>{{ task.production_unit.production_order.cardboard_dimensions|default:"—" }}</strong>
+                                            </div>
 
                                         </div>
 
 
                                         {% if segment.continues_next %}
-
                                             <div class="daily-task__continuation">
                                                 dalej następnego dnia
                                             </div>
-
                                         {% elif segment.continues_from_previous %}
-
                                             <div class="daily-task__continuation">
                                                 kontynuacja
                                             </div>
-
                                         {% endif %}
 
-
-                                        <button
-                                            type="button"
-                                            class="daily-task__remove"
-                                            data-remove-task
-                                            data-remove-url="{% url 'modern_production:daily-planning-remove' day|date:'Y-m-d' task.id %}"
-                                            title="Usuń z planu"
-                                        >
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
 
                                     </article>
 
@@ -607,216 +624,157 @@
 
     <section class="daily-workers">
 
-    <div class="daily-workers__header">
+        <div class="daily-workers__header">
 
-        <div>
+            <div>
+                <span class="daily-workers__eyebrow">Obsada</span>
+                <h2>Zajętość pracowników</h2>
+            </div>
 
-            <span class="daily-workers__eyebrow">
-                Obsada
-            </span>
-
-            <h2>
-                Zajętość pracowników
-            </h2>
+            <button
+                type="button"
+                class="daily-workers__toggle"
+                id="dailyWorkersToggle"
+            >
+                <i class="fa-solid fa-users"></i>
+                Pracownicy
+                <i class="fa-solid fa-chevron-down" data-workers-toggle-icon></i>
+            </button>
 
         </div>
 
 
-        <button
-            type="button"
-            class="daily-workers__toggle"
-            id="dailyWorkersToggle"
+        <div
+            class="daily-workers__content"
+            id="dailyWorkersContent"
+            hidden
         >
-            <i class="fa-solid fa-users"></i>
 
-            Pracownicy
+            <div class="daily-workers__controls">
 
-            <i
-                class="fa-solid fa-chevron-down"
-                data-workers-toggle-icon
-            ></i>
-        </button>
-
-    </div>
-
-
-    <div
-        class="daily-workers__content"
-        id="dailyWorkersContent"
-        hidden
-    >
-
-        <div class="daily-workers__controls">
-
-            <div class="daily-workers__search">
-
-                <i class="fa-solid fa-magnifying-glass"></i>
-
-                <input
-                    type="text"
-                    id="dailyWorkerSearch"
-                    placeholder="Szukaj pracownika..."
-                >
-
-            </div>
-
-
-            <div class="daily-workers__visibility">
-
-                {% for row in worker_rows %}
-
-                    <label>
-
-                        <input
-                            type="checkbox"
-                            data-worker-visibility
-                            value="{{ row.person.id }}"
-                            checked
-                        >
-
-                        <span>
-                            {{ row.person }}
-                        </span>
-
-                    </label>
-
-                {% endfor %}
-
-            </div>
-
-        </div>
-
-
-        <div class="daily-workers-board-wrapper">
-
-            <div class="daily-workers-board">
-
-                <div class="daily-workers-board__corner">
-                    Pracownik
-                </div>
-
-
-                <div class="daily-workers-board__time-header">
-
-                    {% for hour in hours %}
-
-                        <div
-                            class="daily-time-marker"
-                            style="left: {{ hour.offset_percent }}%;"
-                        >
-
-                            <span>
-                                {{ hour.label }}
-                            </span>
-
-                        </div>
-
-                    {% endfor %}
-
-
-                    <div
-                        class="daily-break-band daily-break-band--header"
-                        style="
-                            left: {{ break_left_percent }}%;
-                            width: {{ break_width_percent }}%;
-                        "
-                    ></div>
-
-                </div>
-
-
-                {% for row in worker_rows %}
-
-                    <div
-                        class="daily-worker-name"
-                        data-worker-row="{{ row.person.id }}"
+                <div class="daily-workers__search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input
+                        type="text"
+                        id="dailyWorkerSearch"
+                        placeholder="Szukaj pracownika..."
                     >
+                </div>
 
-                        <div class="daily-worker-name__avatar">
-                            {{ row.person.first_name|first }}
-                            {{ row.person.last_name|first }}
-                        </div>
+                <div class="daily-workers__visibility">
+                    {% for row in worker_rows %}
+                        <label>
+                            <input
+                                type="checkbox"
+                                data-worker-visibility
+                                value="{{ row.person.id }}"
+                                checked
+                            >
+                            <span>{{ row.person }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+            </div>
 
 
-                        <strong>
-                            {{ row.person }}
-                        </strong>
+            <div class="daily-workers-board-wrapper">
 
+                <div class="daily-workers-board">
+
+                    <div class="daily-workers-board__corner">
+                        Pracownik
                     </div>
 
-
-                    <div
-                        class="daily-worker-timeline"
-                        data-worker-timeline="{{ row.person.id }}"
-                    >
+                    <div class="daily-workers-board__time-header">
 
                         {% for hour in hours %}
-
                             <div
-                                class="daily-grid-hour"
+                                class="daily-time-marker"
                                 style="left: {{ hour.offset_percent }}%;"
-                            ></div>
-
+                            >
+                                <span>{{ hour.label }}</span>
+                            </div>
                         {% endfor %}
+
+                        <div
+                            class="daily-break-band daily-break-band--header"
+                            style="left: {{ break_left_percent }}%; width: {{ break_width_percent }}%;"
+                        ></div>
+
+                    </div>
+
+
+                    {% for row in worker_rows %}
+
+                        <div
+                            class="daily-worker-name {% if row.is_absent %}daily-worker-name--absent{% endif %}"
+                            data-worker-row="{{ row.person.id }}"
+                        >
+
+                            <div class="daily-worker-name__avatar">
+                                {{ row.person.first_name|first }}{{ row.person.last_name|first }}
+                            </div>
+
+                            <strong>{{ row.person }}</strong>
+
+                            {% if row.absence %}
+                                <span class="daily-worker-absence">
+                                    <i class="fa-solid fa-ban"></i>
+                                    {{ row.absence.absence_type }}
+                                </span>
+                            {% endif %}
+
+                        </div>
 
 
                         <div
-                            class="daily-break-band"
-                            style="
-                                left: {{ break_left_percent }}%;
-                                width: {{ break_width_percent }}%;
-                            "
-                        ></div>
+                            class="daily-worker-timeline {% if row.is_absent %}daily-worker-timeline--absent{% endif %}"
+                            data-worker-timeline="{{ row.person.id }}"
+                        >
 
-
-                        {% for item in row.tasks %}
-
-                            {% with task=item.task segment=item.segment %}
-
+                            {% for hour in hours %}
                                 <div
-                                    class="daily-worker-task"
-                                    data-worker-task
-                                    data-task-id="{{ task.id }}"
-                                    style="
-                                        left: {{ segment.left_percent }}%;
-                                        width: {{ segment.width_percent }}%;
-                                    "
-                                    title="{{ task.production_unit.production_order.id_number }} · {{ task.work_station }} · {{ segment.start_dt|date:'H:i' }}–{{ segment.end_dt|date:'H:i' }}"
-                                >
+                                    class="daily-grid-hour"
+                                    style="left: {{ hour.offset_percent }}%;"
+                                ></div>
+                            {% endfor %}
 
-                                    <strong>
-                                        {{ task.production_unit.production_order.id_number }}
-                                    </strong>
+                            <div
+                                class="daily-break-band"
+                                style="left: {{ break_left_percent }}%; width: {{ break_width_percent }}%;"
+                            ></div>
 
-                                    <span>
-                                        {{ segment.start_dt|date:"H:i" }}
-                                        –
-                                        {{ segment.end_dt|date:"H:i" }}
-                                    </span>
+                            {% for item in row.tasks %}
+                                {% with task=item.task segment=item.segment %}
+                                    <div
+                                        class="daily-worker-task"
+                                        data-worker-task
+                                        data-task-id="{{ task.id }}"
+                                        style="left: {{ segment.left_percent }}%; width: {{ segment.width_percent }}%;"
+                                        title="{{ task.production_unit.production_order.id_number }} · {{ task.work_station }} · {{ segment.start_dt|date:'H:i' }}–{{ segment.end_dt|date:'H:i' }}"
+                                    >
+                                        <strong>{{ task.production_unit.production_order.id_number }}</strong>
+                                        <span>{{ segment.start_dt|date:"H:i" }} – {{ segment.end_dt|date:"H:i" }}</span>
+                                    </div>
+                                {% endwith %}
+                            {% endfor %}
 
-                                </div>
+                        </div>
 
-                            {% endwith %}
+                    {% empty %}
+                        <div class="daily-workers-empty">
+                            Brak zaplanowanych pracowników w tym dniu.
+                        </div>
+                    {% endfor %}
 
-                        {% endfor %}
-
-                    </div>
-
-                {% empty %}
-
-                    <div class="daily-workers-empty">
-                        Brak zaplanowanych pracowników w tym dniu.
-                    </div>
-
-                {% endfor %}
+                </div>
 
             </div>
 
         </div>
 
-    </div>
-
-</section>
+    </section>
 
 </div>
 

@@ -11,6 +11,22 @@ from production.models import (
     WorkStation,
 )
 
+from warehousemanager.models import (
+    Absence,
+    Person,
+)
+
+FULL_DAY_ABSENCES = {
+    "UW",
+    "UŻ",
+    "UB",
+    "CH",
+    "OP",
+    "NN",
+    "KW",
+    "UO",
+}
+
 
 # ============================================================
 # WORKING TIME
@@ -1273,11 +1289,101 @@ def remove_task(
 ):
     task = get_object_or_404(
         ProductionTask.objects
-        .select_for_update(),
+        .select_for_update()
+        .select_related(
+            "production_unit",
+            "production_unit__production_order",
+            "production_unit__production_order__customer",
+            "production_unit__work_station",
+        )
+        .prefetch_related(
+            "production_unit__persons",
+        ),
         pk=task_id,
     )
 
+    unit = task.production_unit
+    order = unit.production_order
+
+    data = {
+        "unit_id":
+            unit.id,
+
+        "station_id":
+            unit.work_station_id,
+
+        "station":
+            str(
+                unit.work_station
+            ),
+
+        "order":
+            order.id_number,
+
+        "customer":
+            str(
+                order.customer
+            ),
+
+        "quantity":
+            order.quantity
+            or 0,
+
+        "dimensions":
+            (
+                getattr(
+                    order,
+                    "dimensions",
+                    None,
+                )
+                or "—"
+            ),
+
+        "cardboard":
+            (
+                str(
+                    order.cardboard
+                )
+                if getattr(
+                    order,
+                    "cardboard",
+                    None,
+                )
+                else "—"
+            ),
+
+        "material_dimensions":
+            (
+                getattr(
+                    order,
+                    "cardboard_dimensions",
+                    None,
+                )
+                or "—"
+            ),
+
+        "duration":
+            (
+                unit.estimated_time
+                or 0
+            ),
+
+        "person_count":
+            unit.persons.count(),
+
+        "priority":
+            bool(
+                getattr(
+                    order,
+                    "priority",
+                    False,
+                )
+            ),
+    }
+
     task.delete()
+
+    return data
 
 
 # ============================================================
@@ -1375,6 +1481,41 @@ def get_task_json(
 
         "quantity":
             order.quantity or 0,
+
+        "material_dimensions":
+            (
+                    getattr(
+                        order,
+                        "cardboard_dimensions",
+                        None,
+                    )
+                    or "—"
+            ),
+
+        "persons": [
+            {
+                "id":
+                    person.id,
+
+                "name":
+                    str(person),
+
+                "initials":
+                    (
+                        f"{person.first_name[:1]}"
+                        f"{person.last_name[:1]}"
+                    ),
+            }
+            for person
+            in unit.persons.all()
+        ],
+
+        "cardboard":
+            (
+                str(order.cardboard)
+                if order.cardboard
+                else "—"
+            ),
     }
 
 def build_worker_rows(
@@ -1383,6 +1524,27 @@ def build_worker_rows(
     day,
 ):
     workers = {}
+
+    # --------------------------------------------------------
+    # ABSENCES
+    # --------------------------------------------------------
+
+    absences = {
+        absence.worker_id: absence
+        for absence
+        in Absence.objects
+        .filter(
+            absence_date=day
+        )
+        .select_related(
+            "worker"
+        )
+    }
+
+
+    # --------------------------------------------------------
+    # TASKS
+    # --------------------------------------------------------
 
     for task in tasks:
 
@@ -1397,19 +1559,10 @@ def build_worker_rows(
             continue
 
 
-        # ----------------------------------------------------
-        # OBSADA
-        # ----------------------------------------------------
-        #
-        # Najpierw ProductionTask.persons.
-        #
-        # Jeśli stary task nie ma tam zapisanej obsady,
-        # korzystamy z ProductionUnit.persons.
-        # ----------------------------------------------------
-
         task_persons = list(
             task.persons.all()
         )
+
 
         if task_persons:
 
@@ -1426,13 +1579,13 @@ def build_worker_rows(
             )
 
 
-        # ----------------------------------------------------
-        # WORKER ROWS
-        # ----------------------------------------------------
-
         for person in persons:
 
             if person.id not in workers:
+
+                absence = absences.get(
+                    person.id
+                )
 
                 workers[
                     person.id
@@ -1442,6 +1595,16 @@ def build_worker_rows(
 
                     "tasks":
                         [],
+
+                    "absence":
+                        absence,
+
+                    "is_absent":
+                        bool(
+                            absence
+                            and absence.absence_type
+                            in FULL_DAY_ABSENCES
+                        ),
                 }
 
 
@@ -1456,14 +1619,41 @@ def build_worker_rows(
             })
 
 
+    # --------------------------------------------------------
+    # ADD ABSENT PEOPLE EVEN WITHOUT TASK
+    # --------------------------------------------------------
+
+    for person_id, absence in absences.items():
+
+        if person_id in workers:
+            continue
+
+        person = absence.worker
+
+        workers[
+            person_id
+        ] = {
+            "person":
+                person,
+
+            "tasks":
+                [],
+
+            "absence":
+                absence,
+
+            "is_absent":
+                (
+                    absence.absence_type
+                    in FULL_DAY_ABSENCES
+                ),
+        }
+
+
     result = list(
         workers.values()
     )
 
-
-    # --------------------------------------------------------
-    # SORT WORKERS
-    # --------------------------------------------------------
 
     result.sort(
         key=lambda row: (
@@ -1476,10 +1666,6 @@ def build_worker_rows(
     )
 
 
-    # --------------------------------------------------------
-    # SORT TASKS
-    # --------------------------------------------------------
-
     for row in result:
 
         row["tasks"].sort(
@@ -1488,6 +1674,107 @@ def build_worker_rows(
                     "start_dt"
                 ]
         )
+
+
+    return result
+
+
+def get_worker_rows_json(day):
+
+    tasks = get_day_tasks(
+        day
+    )
+
+    rows = build_worker_rows(
+        tasks=tasks,
+        day=day,
+    )
+
+
+    result = []
+
+
+    for row in rows:
+
+        person = row["person"]
+
+        absence = row["absence"]
+
+
+        tasks_json = []
+
+
+        for item in row["tasks"]:
+
+            task = item["task"]
+            segment = item["segment"]
+
+            tasks_json.append({
+                "task_id":
+                    task.id,
+
+                "order":
+                    task.production_unit
+                    .production_order
+                    .id_number,
+
+                "station":
+                    str(
+                        task.work_station
+                    ),
+
+                "start":
+                    segment[
+                        "start_dt"
+                    ].strftime(
+                        "%H:%M"
+                    ),
+
+                "end":
+                    segment[
+                        "end_dt"
+                    ].strftime(
+                        "%H:%M"
+                    ),
+
+                "left_percent":
+                    segment[
+                        "left_percent"
+                    ],
+
+                "width_percent":
+                    segment[
+                        "width_percent"
+                    ],
+            })
+
+
+        result.append({
+            "person_id":
+                person.id,
+
+            "name":
+                str(person),
+
+            "initials":
+                (
+                    f"{person.first_name[:1]}"
+                    f"{person.last_name[:1]}"
+                ),
+
+            "is_absent":
+                row["is_absent"],
+
+            "absence_type":
+                (
+                    absence.absence_type
+                    if absence
+                    else None
+                ),
+
+            "tasks":
+                tasks_json,
+        })
 
 
     return result
