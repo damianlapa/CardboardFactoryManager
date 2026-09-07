@@ -54,6 +54,7 @@ from production.modern_views.daily_planning import (
     DailyPlanningRemoveTaskView,
     DailyPlanningView,
     DailyPlanningWorkersView,
+    DailyPlanningPreviewView,
 )
 
 
@@ -312,5 +313,11 @@ urlpatterns += [
         "planning/day/<str:day>/workers/",
         DailyPlanningWorkersView.as_view(),
         name="daily-planning-workers",
+    ),
+
+    path(
+        "planning/day/<str:day>/preview/",
+        DailyPlanningPreviewView.as_view(),
+        name="daily-planning-preview",
     ),
 ]

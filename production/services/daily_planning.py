@@ -1778,3 +1778,45 @@ def get_worker_rows_json(day):
 
 
     return result
+
+
+def get_day_preview_context(day):
+    context = get_day_planning_context(
+        day
+    )
+
+    preview_rows = []
+
+    for row in context["station_rows"]:
+
+        used_lanes = [
+            lane
+            for lane
+            in row["lanes"]
+            if lane["tasks"]
+        ]
+
+        if not used_lanes:
+            continue
+
+        preview_rows.append({
+            "station":
+                row["station"],
+
+            "capacity":
+                row["capacity"],
+
+            "lanes":
+                used_lanes,
+
+            "used_lane_count":
+                len(
+                    used_lanes
+                ),
+        })
+
+    context["preview_station_rows"] = (
+        preview_rows
+    )
+
+    return context

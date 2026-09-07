@@ -1,0 +1,1331 @@
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
+.plan-preview {
+    width: 100%;
+    max-width: 1600px;
+
+    margin: 0 auto;
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.plan-preview__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 16px;
+}
+
+
+.plan-preview__eyebrow {
+    color: #64748b;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+}
+
+
+.plan-preview__header h1 {
+    margin: 3px 0 0;
+
+    font-size: 28px;
+    font-weight: 900;
+}
+
+
+.plan-preview__header p {
+    margin: 4px 0 0;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+
+.plan-preview__actions {
+    display: flex;
+
+    gap: 8px;
+}
+
+
+.plan-preview__button {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 8px 12px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+
+    background: #fff;
+
+    color: #334155;
+
+    font-size: 9px;
+    font-weight: 750;
+
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+
+.plan-preview__button--primary {
+    border-color: #2563eb;
+
+    background: #2563eb;
+
+    color: #fff;
+}
+
+
+/* ==========================================================
+   BOARD
+   ========================================================== */
+
+.plan-preview__board {
+    display: grid;
+
+    grid-template-columns:
+        155px
+        minmax(1050px, 1fr);
+
+    overflow: hidden;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+
+    background: #fff;
+}
+
+
+.plan-preview__corner {
+    height: 46px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 10px;
+
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+
+    background: #f8fafc;
+
+    color: #475569;
+
+    font-size: 9px;
+    font-weight: 800;
+}
+
+
+/* ==========================================================
+   TIME HEADER
+   ========================================================== */
+
+.plan-preview__time-header {
+    position: relative;
+
+    height: 46px;
+
+    border-bottom: 1px solid #cbd5e1;
+
+    background: #f8fafc;
+}
+
+
+.plan-preview__hour {
+    position: absolute;
+
+    top: 15px;
+
+    padding-left: 5px;
+
+    border-left: 1px solid #cbd5e1;
+
+    color: #334155;
+
+    font-size: 9px;
+    font-weight: 800;
+}
+
+
+/* ==========================================================
+   STATION
+   ========================================================== */
+
+.plan-preview__station {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    padding: 8px 10px;
+
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+
+    background: #fafafa;
+}
+
+
+.plan-preview__station strong {
+    font-size: 12px;
+    font-weight: 900;
+}
+
+
+.plan-preview__station span {
+    margin-top: 2px;
+
+    color: #64748b;
+
+    font-size: 7px;
+}
+
+
+.plan-preview__lanes {
+    display: flex;
+    flex-direction: column;
+
+    border-bottom: 1px solid #cbd5e1;
+}
+
+
+/* ==========================================================
+   TIMELINE
+   ========================================================== */
+
+.plan-preview__timeline {
+    position: relative;
+
+    min-height: 96px;
+
+    border-bottom: 1px dashed #e2e8f0;
+
+    background:
+        repeating-linear-gradient(
+            to right,
+            transparent 0,
+            transparent calc(3.125% - 1px),
+            #f1f5f9 calc(3.125% - 1px),
+            #f1f5f9 3.125%
+        );
+}
+
+
+.plan-preview__timeline:last-child {
+    border-bottom: 0;
+}
+
+
+.plan-preview__grid-hour {
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+
+    width: 1px;
+
+    background: #cbd5e1;
+}
+
+
+/* ==========================================================
+   BREAK
+   ========================================================== */
+
+.plan-preview__break {
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+
+    z-index: 1;
+
+    border-left: 1px dashed #d6a85c;
+    border-right: 1px dashed #d6a85c;
+
+    background:
+        rgba(250, 204, 21, .08);
+
+    pointer-events: none;
+}
+
+
+.plan-preview__break--header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    padding-bottom: 3px;
+
+    color: #a16207;
+
+    font-size: 6px;
+    font-weight: 800;
+}
+
+
+/* ==========================================================
+   TASK
+   ========================================================== */
+
+.plan-preview__task {
+    position: absolute;
+
+    top: 7px;
+
+    height: 82px;
+    min-width: 50px;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, 1fr);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    border-radius: 7px;
+
+    background: #eff6ff;
+
+    z-index: 3;
+
+    container-type: inline-size;
+}
+
+
+.plan-preview__task--priority {
+    border-left-color: #ef4444;
+
+    background: #fff7f7;
+}
+
+
+/* ==========================================================
+   LEFT HALF
+   ========================================================== */
+
+.plan-preview__task-info {
+    min-width: 0;
+
+    padding: 7px 8px;
+
+    overflow: hidden;
+
+    border-right:
+        1px solid rgba(148, 163, 184, .30);
+}
+
+
+.plan-preview__task-info-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 5px;
+
+    min-width: 0;
+}
+
+
+.plan-preview__order {
+    display: block;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    color: #0f172a;
+
+    font-size: 15px;
+    font-weight: 950;
+
+    line-height: 1;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.plan-preview__time {
+    flex: 0 0 auto;
+
+    color: #475569;
+
+    font-size: 7px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+
+.plan-preview__customer {
+    margin-top: 5px;
+
+    overflow: hidden;
+
+    color: #334155;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    line-height: 1;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.plan-preview__material {
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    min-width: 0;
+
+    margin-top: 7px;
+}
+
+
+.plan-preview__material span {
+    min-width: 0;
+
+    overflow: hidden;
+
+    color: #475569;
+
+    font-size: 9px;
+    font-weight: 750;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.plan-preview__material strong {
+    flex: 0 0 auto;
+
+    color: #0f172a;
+
+    font-size: 10px;
+    font-weight: 900;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   RIGHT HALF — AVATARS
+   ========================================================== */
+
+.plan-preview__people {
+    display: flex;
+    align-items: stretch;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+
+    padding: 5px;
+
+    background: #f8fafc;
+
+    border-left: 2px solid #cbd5e1;
+}
+
+
+.plan-preview__avatar {
+    min-width: 0;
+
+    flex: 1 1 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: 3px;
+
+    border: 2px solid #1e40af;
+    border-radius: 6px;
+
+    background: #dbeafe;
+
+    color: #1e3a8a;
+
+    font-size: clamp(
+        12px,
+        2.1cqw,
+        25px
+    );
+
+    font-weight: 950;
+
+    line-height: 1;
+
+    text-align: center;
+}
+
+
+.plan-preview__avatar:first-child {
+    margin-left: 0;
+}
+
+
+.plan-preview__avatar--empty {
+    border-color: #f59e0b;
+
+    background: #fef3c7;
+
+    color: #92400e;
+}
+
+
+/* ==========================================================
+   MEDIUM TASK
+   ========================================================== */
+
+@container (max-width: 220px) {
+
+    .plan-preview__task {
+        grid-template-columns:
+            50%
+            50%;
+    }
+
+
+    .plan-preview__task-info {
+        padding:
+            6px 6px;
+    }
+
+
+    .plan-preview__time {
+        display: none;
+    }
+
+
+    .plan-preview__order {
+        font-size: 14px;
+    }
+
+
+    .plan-preview__customer {
+        font-size: 9px;
+    }
+
+
+    .plan-preview__material span {
+        font-size: 8px;
+    }
+
+
+    .plan-preview__material strong {
+        font-size: 9px;
+    }
+
+
+    .plan-preview__avatar {
+        font-size: clamp(
+            11px,
+            5cqw,
+            22px
+        );
+    }
+
+}
+
+
+/* ==========================================================
+   SMALL TASK
+   ========================================================== */
+
+@container (max-width: 145px) {
+
+    .plan-preview__customer {
+        display: none;
+    }
+
+
+    .plan-preview__material {
+        display: none;
+    }
+
+
+    .plan-preview__task-info {
+        display: flex;
+        align-items: center;
+
+        padding: 5px;
+    }
+
+
+    .plan-preview__order {
+        font-size: 13px;
+    }
+
+
+    .plan-preview__avatar {
+        padding: 0;
+
+        font-size: clamp(
+            10px,
+            6cqw,
+            18px
+        );
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL TASK
+   ========================================================== */
+
+@container (max-width: 90px) {
+
+    /*
+     * Nadal 50/50.
+     * Lewa = numer.
+     * Prawa = avatary.
+     */
+
+    .plan-preview__task-info {
+        padding: 3px;
+    }
+
+
+    .plan-preview__order {
+        font-size: 10px;
+    }
+
+
+    .plan-preview__people {
+        padding: 2px;
+    }
+
+
+    .plan-preview__avatar {
+        border-radius: 3px;
+
+        font-size: 9px;
+    }
+
+}
+
+
+/* ==========================================================
+   EMPTY
+   ========================================================== */
+
+.plan-preview__empty {
+    grid-column: 1 / -1;
+
+    padding: 30px;
+
+    color: #64748b;
+
+    text-align: center;
+
+    font-size: 11px;
+}
+
+
+/* ==========================================================
+   FOOTER
+   ========================================================== */
+
+.plan-preview__footer {
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: 8px;
+
+    color: #94a3b8;
+
+    font-size: 7px;
+}
+
+
+.plan-preview__print-title {
+    display: none;
+}
+
+
+/* ==========================================================
+   PRINT
+   ========================================================== */
+
+@media print {
+
+    @page {
+        size: A4 landscape;
+        margin: 6mm;
+    }
+
+
+    /* ======================================================
+       RESET STRONY
+       ====================================================== */
+
+    html,
+    body {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #fff !important;
+
+        overflow: visible !important;
+    }
+
+
+    body {
+        display: block !important;
+    }
+
+
+    /* ======================================================
+       ELEMENTY APLIKACJI - NIE DRUKUJEMY
+       ====================================================== */
+
+    .sidebar,
+    .navbar,
+    .topbar,
+    .app-sidebar,
+    .app-header,
+    .app-footer,
+    .mobile-header,
+    .plan-preview__header,
+    .plan-preview__footer,
+    .plan-preview__actions {
+        display: none !important;
+    }
+
+
+    /* ======================================================
+       RESET WRAPPERÓW BASE.HTML
+       ====================================================== */
+
+    main,
+    .main,
+    .content,
+    .main-content,
+    .app-content,
+    .app-main,
+    .content-wrapper,
+    .page-wrapper,
+    .page-content {
+        position: static !important;
+
+        width: 100% !important;
+        max-width: none !important;
+
+        height: auto !important;
+        min-height: 0 !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        overflow: visible !important;
+    }
+
+
+    /* ======================================================
+       PLAN
+       ====================================================== */
+
+    .plan-preview {
+        position: static !important;
+
+        display: block !important;
+
+        width: 100% !important;
+        max-width: none !important;
+
+        height: auto !important;
+        min-height: 0 !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        overflow: visible !important;
+    }
+
+
+    /* ======================================================
+       TYTUŁ
+       ====================================================== */
+
+    .plan-preview__print-title {
+        display: block !important;
+
+        width: 100%;
+
+        margin: 0 0 4mm 0;
+        padding: 0;
+
+        color: #000;
+
+        font-size: 17pt;
+        font-weight: 900;
+
+        line-height: 1.1;
+
+        text-align: center;
+    }
+
+
+    /* ======================================================
+       TABELA
+       ====================================================== */
+
+    .plan-preview__board {
+        display: grid !important;
+
+        grid-template-columns:
+            28mm
+            minmax(0, 1fr);
+
+        width: 100% !important;
+        max-width: 100% !important;
+
+        height: auto !important;
+        min-height: 0 !important;
+
+        margin: 0 !important;
+
+        overflow: visible !important;
+
+        border: 1px solid #64748b;
+        border-radius: 0;
+
+        background: #fff;
+    }
+
+
+    /* ======================================================
+       NAGŁÓWEK TABELI
+       ====================================================== */
+
+    .plan-preview__corner,
+    .plan-preview__time-header {
+        height: 9mm !important;
+        min-height: 9mm !important;
+    }
+
+
+    .plan-preview__corner {
+        display: flex;
+        align-items: center;
+
+        padding: 0 2mm;
+
+        color: #000;
+
+        font-size: 7pt;
+        font-weight: 900;
+    }
+
+
+    .plan-preview__time-header {
+        position: relative;
+    }
+
+
+    .plan-preview__hour {
+        top: 3mm;
+
+        padding-left: 1mm;
+
+        color: #000;
+
+        font-size: 6.5pt;
+        font-weight: 800;
+    }
+
+
+    .plan-preview__break--header {
+        font-size: 5pt;
+    }
+
+
+    /* ======================================================
+       STANOWISKA
+       ====================================================== */
+
+    .plan-preview__station {
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+
+        min-height: 0 !important;
+
+        padding: 1.5mm 2mm;
+
+        color: #000;
+
+        background: #f8fafc;
+    }
+
+
+    .plan-preview__station strong {
+        color: #000;
+
+        font-size: 8pt;
+        font-weight: 900;
+
+        line-height: 1.05;
+    }
+
+
+    .plan-preview__station span {
+        margin-top: 1mm;
+
+        color: #475569;
+
+        font-size: 5.5pt;
+    }
+
+
+    .plan-preview__lanes {
+        display: flex !important;
+        flex-direction: column;
+
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+
+    /* ======================================================
+       LANE
+       ====================================================== */
+
+    .plan-preview__timeline {
+        position: relative;
+
+        height: 20mm !important;
+        min-height: 20mm !important;
+
+        overflow: hidden !important;
+
+        page-break-inside: avoid;
+        break-inside: avoid;
+
+        background:
+            repeating-linear-gradient(
+                to right,
+                transparent 0,
+                transparent calc(3.125% - 1px),
+                #f1f5f9 calc(3.125% - 1px),
+                #f1f5f9 3.125%
+            );
+    }
+
+
+    .plan-preview__grid-hour {
+        top: 0;
+        bottom: 0;
+    }
+
+
+    /* ======================================================
+       TASK
+       ====================================================== */
+
+    .plan-preview__task {
+        position: absolute;
+
+        top: 1mm;
+
+        height: 18mm !important;
+        min-height: 0 !important;
+
+        display: grid !important;
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(0, 1fr);
+
+        overflow: hidden !important;
+
+        border: 1px solid #93c5fd;
+        border-left: 2.5mm solid #3b82f6;
+        border-radius: 1.5mm;
+
+        background: #eff6ff;
+
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+
+    .plan-preview__task--priority {
+        border-left-color: #ef4444;
+
+        background: #fff7f7;
+    }
+
+
+    /* ======================================================
+       LEWA POŁOWA TASKA
+       ====================================================== */
+
+    .plan-preview__task-info {
+        min-width: 0;
+
+        padding: 1.3mm;
+
+        overflow: hidden;
+
+        border-right: 1px solid #cbd5e1;
+    }
+
+
+    .plan-preview__task-info-top {
+        display: flex;
+
+        align-items: flex-start;
+        justify-content: space-between;
+
+        gap: 1mm;
+    }
+
+
+    .plan-preview__order {
+        min-width: 0;
+
+        overflow: hidden;
+
+        color: #000;
+
+        font-size: 8.5pt;
+        font-weight: 900;
+
+        line-height: 1;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+
+    .plan-preview__time {
+        flex: 0 0 auto;
+
+        color: #334155;
+
+        font-size: 5pt;
+        font-weight: 800;
+
+        white-space: nowrap;
+    }
+
+
+    .plan-preview__customer {
+        margin-top: 1.2mm;
+
+        overflow: hidden;
+
+        color: #111827;
+
+        font-size: 6.5pt;
+        font-weight: 800;
+
+        line-height: 1;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+
+    .plan-preview__material {
+        display: flex;
+
+        align-items: center;
+
+        gap: 1mm;
+
+        min-width: 0;
+
+        margin-top: 1.5mm;
+
+        overflow: hidden;
+    }
+
+
+    .plan-preview__material span {
+        min-width: 0;
+
+        overflow: hidden;
+
+        color: #334155;
+
+        font-size: 5.5pt;
+        font-weight: 700;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+
+    .plan-preview__material strong {
+        flex: 0 0 auto;
+
+        color: #000;
+
+        font-size: 6pt;
+        font-weight: 900;
+
+        white-space: nowrap;
+    }
+
+
+    /* ======================================================
+       PRAWA POŁOWA - AVATARY
+       ====================================================== */
+
+    .plan-preview__people {
+        display: flex !important;
+
+        align-items: stretch;
+
+        min-width: 0;
+        min-height: 0;
+
+        padding: 1mm;
+
+        overflow: hidden;
+
+        border-left: 1px solid #cbd5e1;
+
+        background: #f8fafc;
+    }
+
+
+    .plan-preview__avatar {
+        display: flex !important;
+
+        flex: 1 1 0;
+
+        align-items: center;
+        justify-content: center;
+
+        min-width: 0;
+
+        margin-left: 1mm;
+
+        border: 1px solid #1e40af;
+        border-radius: 1.5mm;
+
+        background: #dbeafe;
+
+        color: #1e3a8a;
+
+        font-size: 11pt;
+        font-weight: 900;
+
+        line-height: 1;
+
+        text-align: center;
+    }
+
+
+    .plan-preview__avatar:first-child {
+        margin-left: 0;
+    }
+
+
+    .plan-preview__avatar--empty {
+        border-color: #f59e0b;
+
+        background: #fef3c7;
+
+        color: #92400e;
+    }
+
+
+    /* ======================================================
+       PRZERWA
+       ====================================================== */
+
+    .plan-preview__break {
+        top: 0;
+        bottom: 0;
+
+        background: rgba(250, 204, 21, .08);
+    }
+
+
+    /* ======================================================
+       BRAK PLANU
+       ====================================================== */
+
+    .plan-preview__empty {
+        grid-column: 1 / -1;
+
+        padding: 10mm;
+
+        font-size: 10pt;
+
+        text-align: center;
+    }
+
+
+    /* ======================================================
+       WAŻNE DLA CHROME / EDGE
+       ====================================================== */
+
+    .plan-preview__board,
+    .plan-preview__station,
+    .plan-preview__lanes,
+    .plan-preview__timeline {
+        page-break-before: auto !important;
+        page-break-after: auto !important;
+    }
+
+
+    .plan-preview__station,
+    .plan-preview__lanes,
+    .plan-preview__timeline {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+
+    /* ======================================================
+       KOLORY NA WYDRUKU
+       ====================================================== */
+
+    .plan-preview,
+    .plan-preview * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+
+        box-sizing: border-box;
+    }
+
+    /* ======================================================
+   FIX: PUSTA DRUGA STRONA
+   ====================================================== */
+
+body,
+body > div,
+body > main,
+main,
+.main,
+.main-content,
+.content,
+.app,
+.app-layout,
+.app-content,
+.app-main,
+.content-wrapper,
+.page-wrapper,
+.page-content,
+.container,
+.container-fluid {
+    height: auto !important;
+    min-height: 0 !important;
+
+    max-height: none !important;
+
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    overflow: visible !important;
+}
+
+
+.plan-preview {
+    position: relative !important;
+
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+}
+
+
+.plan-preview__board {
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+}
+
+
+/*
+ * Chrome potrafi wygenerować pustą stronę,
+ * gdy ostatni element ma margin.
+ */
+.plan-preview__board:last-child,
+.plan-preview > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+
+/*
+ * Stopka preview nie może zajmować miejsca.
+ */
+.plan-preview__footer {
+    display: none !important;
+
+    height: 0 !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+
+/*
+ * Nie pozwalamy layoutowi aplikacji
+ * wymuszać wysokości viewportu.
+ */
+@supports (height: 100dvh) {
+
+    body,
+    main,
+    .main-content,
+    .app-content,
+    .app-main,
+    .content-wrapper,
+    .page-wrapper,
+    .page-content {
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+}
+
+}

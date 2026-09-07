@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Plan produkcji {{ day|date:"d.m.Y" }}
+{% endblock %}
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/daily_plan_preview.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="plan-preview">
+
+    <header class="plan-preview__header">
+
+        <div>
+
+            <div class="plan-preview__eyebrow">
+                Plan produkcji
+            </div>
+
+            <h1>
+                {{ day|date:"l, d.m.Y" }}
+            </h1>
+
+            <p>
+                Godziny pracy 07:00–15:00 · przerwa 11:00–11:20
+            </p>
+
+        </div>
+
+
+        <div class="plan-preview__actions">
+
+            <a
+                href="{% url 'modern_production:daily-planning' day|date:'Y-m-d' %}"
+                class="plan-preview__button"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Wróć
+            </a>
+
+
+            <button
+                type="button"
+                class="plan-preview__button plan-preview__button--primary"
+                onclick="window.print()"
+            >
+                <i class="fa-solid fa-print"></i>
+                Drukuj
+            </button>
+
+        </div>
+
+    </header>
+        <div class="plan-preview__print-title">
+    Plan produkcji — {{ day|date:"d.m.Y" }}
+</div>
+
+    <div class="plan-preview__board">
+
+        <div class="plan-preview__corner">
+            Stanowisko
+        </div>
+
+
+        <div class="plan-preview__time-header">
+
+            {% for hour in hours %}
+
+                <div
+                    class="plan-preview__hour"
+                    style="left: {{ hour.offset_percent }}%;"
+                >
+                    {{ hour.label }}
+                </div>
+
+            {% endfor %}
+
+
+            <div
+                class="plan-preview__break plan-preview__break--header"
+                style="
+                    left: {{ break_left_percent }}%;
+                    width: {{ break_width_percent }}%;
+                "
+            >
+                11:00–11:20
+            </div>
+
+        </div>
+
+
+        {% for row in preview_station_rows %}
+
+            <div class="plan-preview__station">
+
+                <strong>
+                    {{ row.station.name }}
+                </strong>
+
+                {% if row.used_lane_count > 1 %}
+                    <span>
+                        {{ row.used_lane_count }} równoległe
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="plan-preview__lanes">
+
+                {% for lane in row.lanes %}
+
+                    <div class="plan-preview__timeline">
+
+                        {% for hour in hours %}
+
+                            <div
+                                class="plan-preview__grid-hour"
+                                style="left: {{ hour.offset_percent }}%;"
+                            ></div>
+
+                        {% endfor %}
+
+
+                        <div
+                            class="plan-preview__break"
+                            style="
+                                left: {{ break_left_percent }}%;
+                                width: {{ break_width_percent }}%;
+                            "
+                        ></div>
+
+
+                        {% for item in lane.tasks %}
+
+                            {% with task=item.task segment=item.segment %}
+
+                                <div
+                                    class="
+                                        plan-preview__task
+
+                                        {% if task.production_unit.production_order.priority %}
+                                            plan-preview__task--priority
+                                        {% endif %}
+                                    "
+                                    style="
+                                        left: {{ segment.left_percent }}%;
+                                        width: {{ segment.width_percent }}%;
+                                    "
+                                >
+
+                                    <!-- LEWA POŁOWA -->
+
+                                    <div class="plan-preview__task-info">
+
+                                        <div class="plan-preview__task-info-top">
+
+                                            <strong class="plan-preview__order">
+                                                {{ task.production_unit.production_order.id_number }}
+                                            </strong>
+
+
+                                            <span class="plan-preview__time">
+
+                                                {% if segment.continues_from_previous %}
+                                                    ←
+                                                {% endif %}
+
+                                                {{ segment.start_dt|date:"H:i" }}
+                                                –
+                                                {{ segment.end_dt|date:"H:i" }}
+
+                                                {% if segment.continues_next %}
+                                                    →
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="plan-preview__customer">
+                                            {{ task.production_unit.production_order.customer }}
+                                        </div>
+
+
+                                        <div class="plan-preview__material">
+
+                                            <span>
+                                                {{ task.production_unit.production_order.cardboard|default:"—" }}
+                                            </span>
+
+                                            <strong>
+                                                {{ task.production_unit.production_order.cardboard_dimensions|default:"—" }}
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- PRAWA POŁOWA -->
+
+                                    <div class="plan-preview__people">
+
+                                        {% for person in task.production_unit.persons.all %}
+
+                                            <div
+                                                class="plan-preview__avatar"
+                                                title="{{ person }}"
+                                            >
+                                                {{ person.first_name|first }}{{ person.last_name|first }}
+                                            </div>
+
+                                        {% empty %}
+
+                                            <div class="plan-preview__avatar plan-preview__avatar--empty">
+                                                —
+                                            </div>
+
+                                        {% endfor %}
+
+                                    </div>
+
+                                </div>
+
+                            {% endwith %}
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% empty %}
+
+            <div class="plan-preview__empty">
+                Brak zaplanowanej produkcji.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <footer class="plan-preview__footer">
+
+        <span>
+            PAKER · Plan produkcji
+        </span>
+
+        <span>
+            {{ day|date:"d.m.Y" }}
+        </span>
+
+    </footer>
+
+</div>
+
+{% endblock %}

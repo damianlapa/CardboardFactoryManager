@@ -15,6 +15,7 @@ from production.services.daily_planning import (
     move_task,
     remove_task,
     get_worker_rows_json,
+    get_day_preview_context
 )
 
 
@@ -389,4 +390,55 @@ class DailyPlanningWorkersView(
                         planning_day
                     ),
             }
+        )
+
+
+class DailyPlanningPreviewView(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.view_weeklyplan"
+    )
+
+    login_url = reverse_lazy(
+        "login"
+    )
+
+    template_name = (
+        "production/planning/day_preview.html"
+    )
+
+    def get(
+        self,
+        request,
+        day,
+        *args,
+        **kwargs,
+    ):
+        try:
+            planning_day = (
+                datetime.date.fromisoformat(
+                    day
+                )
+            )
+
+        except ValueError:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error":
+                        "Nieprawidłowa data.",
+                },
+                status=400,
+            )
+
+        context = get_day_preview_context(
+            planning_day
+        )
+
+        return render(
+            request,
+            self.template_name,
+            context,
         )
