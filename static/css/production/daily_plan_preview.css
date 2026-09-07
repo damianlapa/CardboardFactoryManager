@@ -52,6 +52,10 @@
 }
 
 
+/* ==========================================================
+   ACTIONS
+   ========================================================== */
+
 .plan-preview__actions {
     display: flex;
 
@@ -93,6 +97,15 @@
 
 
 /* ==========================================================
+   PRINT TITLE
+   ========================================================== */
+
+.plan-preview__print-title {
+    display: none;
+}
+
+
+/* ==========================================================
    BOARD
    ========================================================== */
 
@@ -111,6 +124,10 @@
     background: #fff;
 }
 
+
+/* ==========================================================
+   CORNER
+   ========================================================== */
 
 .plan-preview__corner {
     height: 46px;
@@ -258,8 +275,7 @@
     border-left: 1px dashed #d6a85c;
     border-right: 1px dashed #d6a85c;
 
-    background:
-        rgba(250, 204, 21, .08);
+    background: rgba(250, 204, 21, .08);
 
     pointer-events: none;
 }
@@ -291,11 +307,7 @@
     height: 82px;
     min-width: 50px;
 
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1fr)
-        minmax(0, 1fr);
+    padding: 8px 9px;
 
     overflow: hidden;
 
@@ -306,6 +318,8 @@
     border-radius: 7px;
 
     background: #eff6ff;
+
+    color: #0f172a;
 
     z-index: 3;
 
@@ -321,38 +335,28 @@
 
 
 /* ==========================================================
-   LEFT HALF
+   TASK TOP LINE
    ========================================================== */
 
-.plan-preview__task-info {
-    min-width: 0;
+.plan-preview__task-topline {
+    display: flex;
+    align-items: center;
 
-    padding: 7px 8px;
+    gap: 8px;
+
+    width: 100%;
+    min-width: 0;
 
     overflow: hidden;
 
-    border-right:
-        1px solid rgba(148, 163, 184, .30);
+    white-space: nowrap;
 }
 
 
-.plan-preview__task-info-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-
-    gap: 5px;
-
-    min-width: 0;
-}
-
+/* ORDER */
 
 .plan-preview__order {
-    display: block;
-
-    min-width: 0;
-
-    overflow: hidden;
+    flex: 0 0 auto;
 
     color: #0f172a;
 
@@ -362,28 +366,40 @@
     line-height: 1;
 
     white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
 
-.plan-preview__time {
-    flex: 0 0 auto;
-
-    color: #475569;
-
-    font-size: 7px;
-    font-weight: 800;
-
-    white-space: nowrap;
-}
-
+/* CUSTOMER */
 
 .plan-preview__customer {
-    margin-top: 5px;
+    flex: 0 1 auto;
+
+    min-width: 0;
 
     overflow: hidden;
 
     color: #334155;
+
+    font-size: 11px;
+    font-weight: 850;
+
+    line-height: 1;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* CARDBOARD */
+
+.plan-preview__cardboard {
+    flex: 0 1 auto;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    color: #475569;
 
     font-size: 10px;
     font-weight: 800;
@@ -395,109 +411,74 @@
 }
 
 
-.plan-preview__material {
-    display: flex;
-    align-items: center;
+/* FORMAT */
 
-    gap: 6px;
-
-    min-width: 0;
-
-    margin-top: 7px;
-}
-
-
-.plan-preview__material span {
-    min-width: 0;
-
-    overflow: hidden;
-
-    color: #475569;
-
-    font-size: 9px;
-    font-weight: 750;
-
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-
-.plan-preview__material strong {
+.plan-preview__format {
     flex: 0 0 auto;
 
-    color: #0f172a;
+    color: #111827;
 
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 900;
+
+    line-height: 1;
+
+    white-space: nowrap;
+}
+
+
+/* TIME */
+
+.plan-preview__time {
+    flex: 0 0 auto;
+
+    margin-left: auto;
+
+    color: #64748b;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    line-height: 1;
 
     white-space: nowrap;
 }
 
 
 /* ==========================================================
-   RIGHT HALF — AVATARS
+   WORKERS
    ========================================================== */
 
-.plan-preview__people {
+.plan-preview__workers {
     display: flex;
-    align-items: stretch;
+    align-items: center;
+    flex-wrap: wrap;
 
+    gap: 5px 12px;
+
+    width: 100%;
     min-width: 0;
-    min-height: 0;
+
+    margin-top: 17px;
 
     overflow: hidden;
-
-    padding: 5px;
-
-    background: #f8fafc;
-
-    border-left: 2px solid #cbd5e1;
 }
 
 
-.plan-preview__avatar {
-    min-width: 0;
-
-    flex: 1 1 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    margin-left: 3px;
-
-    border: 2px solid #1e40af;
-    border-radius: 6px;
-
-    background: #dbeafe;
-
+.plan-preview__workers span {
     color: #1e3a8a;
 
-    font-size: clamp(
-        12px,
-        2.1cqw,
-        25px
-    );
-
-    font-weight: 950;
+    font-size: 11px;
+    font-weight: 850;
 
     line-height: 1;
 
-    text-align: center;
+    white-space: nowrap;
 }
 
 
-.plan-preview__avatar:first-child {
-    margin-left: 0;
-}
-
-
-.plan-preview__avatar--empty {
-    border-color: #f59e0b;
-
-    background: #fef3c7;
-
-    color: #92400e;
+.plan-preview__workers-empty {
+    color: #b45309 !important;
 }
 
 
@@ -505,23 +486,10 @@
    MEDIUM TASK
    ========================================================== */
 
-@container (max-width: 220px) {
+@container (max-width: 260px) {
 
-    .plan-preview__task {
-        grid-template-columns:
-            50%
-            50%;
-    }
-
-
-    .plan-preview__task-info {
-        padding:
-            6px 6px;
-    }
-
-
-    .plan-preview__time {
-        display: none;
+    .plan-preview__task-topline {
+        gap: 6px;
     }
 
 
@@ -531,26 +499,88 @@
 
 
     .plan-preview__customer {
+        font-size: 10px;
+    }
+
+
+    .plan-preview__cardboard {
         font-size: 9px;
     }
 
 
-    .plan-preview__material span {
+    .plan-preview__format {
+        font-size: 9px;
+    }
+
+
+    .plan-preview__time {
+        display: none;
+    }
+
+
+    .plan-preview__workers {
+        margin-top: 16px;
+
+        gap: 4px 9px;
+    }
+
+
+    .plan-preview__workers span {
+        font-size: 10px;
+    }
+
+}
+
+
+/* ==========================================================
+   SHORT TASK
+   ========================================================== */
+
+@container (max-width: 180px) {
+
+    .plan-preview__task {
+        padding: 7px;
+    }
+
+
+    .plan-preview__task-topline {
+        gap: 5px;
+    }
+
+
+    .plan-preview__order {
+        font-size: 13px;
+    }
+
+
+    /*
+     * Przy krótszym pasku najpierw chowamy format.
+     */
+
+    .plan-preview__format {
+        display: none;
+    }
+
+
+    .plan-preview__customer {
+        font-size: 9px;
+    }
+
+
+    .plan-preview__cardboard {
         font-size: 8px;
     }
 
 
-    .plan-preview__material strong {
-        font-size: 9px;
+    .plan-preview__workers {
+        margin-top: 15px;
+
+        gap: 3px 7px;
     }
 
 
-    .plan-preview__avatar {
-        font-size: clamp(
-            11px,
-            5cqw,
-            22px
-        );
+    .plan-preview__workers span {
+        font-size: 9px;
     }
 
 }
@@ -560,39 +590,42 @@
    SMALL TASK
    ========================================================== */
 
-@container (max-width: 145px) {
+@container (max-width: 135px) {
 
-    .plan-preview__customer {
+    /*
+     * Priorytet:
+     *
+     * 1. numer zlecenia
+     * 2. klient
+     * 3. pracownicy
+     *
+     * Tekturę chowamy.
+     */
+
+    .plan-preview__cardboard {
         display: none;
-    }
-
-
-    .plan-preview__material {
-        display: none;
-    }
-
-
-    .plan-preview__task-info {
-        display: flex;
-        align-items: center;
-
-        padding: 5px;
     }
 
 
     .plan-preview__order {
-        font-size: 13px;
+        font-size: 12px;
     }
 
 
-    .plan-preview__avatar {
-        padding: 0;
+    .plan-preview__customer {
+        font-size: 8px;
+    }
 
-        font-size: clamp(
-            10px,
-            6cqw,
-            18px
-        );
+
+    .plan-preview__workers {
+        margin-top: 14px;
+
+        gap: 3px 6px;
+    }
+
+
+    .plan-preview__workers span {
+        font-size: 8px;
     }
 
 }
@@ -602,33 +635,38 @@
    VERY SMALL TASK
    ========================================================== */
 
-@container (max-width: 90px) {
+@container (max-width: 95px) {
 
     /*
-     * Nadal 50/50.
-     * Lewa = numer.
-     * Prawa = avatary.
+     * Przy bardzo krótkim pasku:
+     *
+     * numer zlecenia + pracownicy.
      */
 
-    .plan-preview__task-info {
-        padding: 3px;
+    .plan-preview__task {
+        padding: 6px 5px;
+    }
+
+
+    .plan-preview__customer {
+        display: none;
     }
 
 
     .plan-preview__order {
-        font-size: 10px;
+        font-size: 11px;
     }
 
 
-    .plan-preview__people {
-        padding: 2px;
+    .plan-preview__workers {
+        margin-top: 13px;
+
+        gap: 3px 5px;
     }
 
 
-    .plan-preview__avatar {
-        border-radius: 3px;
-
-        font-size: 9px;
+    .plan-preview__workers span {
+        font-size: 7px;
     }
 
 }
@@ -667,11 +705,6 @@
 }
 
 
-.plan-preview__print-title {
-    display: none;
-}
-
-
 /* ==========================================================
    PRINT
    ========================================================== */
@@ -685,12 +718,13 @@
 
 
     /* ======================================================
-       RESET STRONY
+       PAGE RESET
        ====================================================== */
 
     html,
     body {
         width: 100% !important;
+
         height: auto !important;
         min-height: 0 !important;
 
@@ -709,7 +743,7 @@
 
 
     /* ======================================================
-       ELEMENTY APLIKACJI - NIE DRUKUJEMY
+       HIDE APPLICATION UI
        ====================================================== */
 
     .sidebar,
@@ -727,7 +761,7 @@
 
 
     /* ======================================================
-       RESET WRAPPERÓW BASE.HTML
+       RESET BASE.HTML WRAPPERS
        ====================================================== */
 
     main,
@@ -755,7 +789,7 @@
 
 
     /* ======================================================
-       PLAN
+       PREVIEW
        ====================================================== */
 
     .plan-preview {
@@ -777,7 +811,7 @@
 
 
     /* ======================================================
-       TYTUŁ
+       PRINT TITLE
        ====================================================== */
 
     .plan-preview__print-title {
@@ -790,17 +824,17 @@
 
         color: #000;
 
-        font-size: 17pt;
+        font-size: 16pt;
         font-weight: 900;
 
-        line-height: 1.1;
+        line-height: 1;
 
         text-align: center;
     }
 
 
     /* ======================================================
-       TABELA
+       BOARD
        ====================================================== */
 
     .plan-preview__board {
@@ -828,7 +862,7 @@
 
 
     /* ======================================================
-       NAGŁÓWEK TABELI
+       TIME HEADER
        ====================================================== */
 
     .plan-preview__corner,
@@ -874,7 +908,7 @@
 
 
     /* ======================================================
-       STANOWISKA
+       STATIONS
        ====================================================== */
 
     .plan-preview__station {
@@ -921,7 +955,7 @@
 
 
     /* ======================================================
-       LANE
+       TIMELINE
        ====================================================== */
 
     .plan-preview__timeline {
@@ -932,8 +966,8 @@
 
         overflow: hidden !important;
 
-        page-break-inside: avoid;
-        break-inside: avoid;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
 
         background:
             repeating-linear-gradient(
@@ -964,22 +998,18 @@
         height: 18mm !important;
         min-height: 0 !important;
 
-        display: grid !important;
-
-        grid-template-columns:
-            minmax(0, 1fr)
-            minmax(0, 1fr);
+        padding: 1.5mm 1.8mm;
 
         overflow: hidden !important;
 
         border: 1px solid #93c5fd;
-        border-left: 2.5mm solid #3b82f6;
+        border-left: 2mm solid #3b82f6;
         border-radius: 1.5mm;
 
         background: #eff6ff;
 
-        page-break-inside: avoid;
-        break-inside: avoid;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 
 
@@ -991,34 +1021,26 @@
 
 
     /* ======================================================
-       LEWA POŁOWA TASKA
+       TASK TOP LINE
        ====================================================== */
 
-    .plan-preview__task-info {
-        min-width: 0;
+    .plan-preview__task-topline {
+        display: flex;
 
-        padding: 1.3mm;
+        align-items: center;
+
+        gap: 1.5mm;
+
+        width: 100%;
 
         overflow: hidden;
 
-        border-right: 1px solid #cbd5e1;
-    }
-
-
-    .plan-preview__task-info-top {
-        display: flex;
-
-        align-items: flex-start;
-        justify-content: space-between;
-
-        gap: 1mm;
+        white-space: nowrap;
     }
 
 
     .plan-preview__order {
-        min-width: 0;
-
-        overflow: hidden;
+        flex: 0 0 auto;
 
         color: #000;
 
@@ -1026,161 +1048,102 @@
         font-weight: 900;
 
         line-height: 1;
+    }
 
-        white-space: nowrap;
+
+    .plan-preview__customer {
+        flex: 0 1 auto;
+
+        min-width: 0;
+
+        overflow: hidden;
+
+        color: #111827;
+
+        font-size: 7pt;
+        font-weight: 800;
+
         text-overflow: ellipsis;
+    }
+
+
+    .plan-preview__cardboard {
+        flex: 0 1 auto;
+
+        min-width: 0;
+
+        overflow: hidden;
+
+        color: #334155;
+
+        font-size: 6.5pt;
+        font-weight: 750;
+
+        text-overflow: ellipsis;
+    }
+
+
+    .plan-preview__format {
+        flex: 0 0 auto;
+
+        color: #000;
+
+        font-size: 6.5pt;
+        font-weight: 900;
     }
 
 
     .plan-preview__time {
         flex: 0 0 auto;
 
-        color: #334155;
+        margin-left: auto;
+
+        color: #475569;
 
         font-size: 5pt;
         font-weight: 800;
-
-        white-space: nowrap;
     }
 
 
-    .plan-preview__customer {
-        margin-top: 1.2mm;
+    /* ======================================================
+       WORKERS
+       ====================================================== */
 
-        overflow: hidden;
-
-        color: #111827;
-
-        font-size: 6.5pt;
-        font-weight: 800;
-
-        line-height: 1;
-
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-
-    .plan-preview__material {
+    .plan-preview__workers {
         display: flex;
 
         align-items: center;
+        flex-wrap: wrap;
 
-        gap: 1mm;
+        gap: 1mm 3mm;
 
-        min-width: 0;
+        width: 100%;
 
-        margin-top: 1.5mm;
+        margin-top: 3mm;
 
         overflow: hidden;
     }
 
 
-    .plan-preview__material span {
-        min-width: 0;
-
-        overflow: hidden;
-
-        color: #334155;
-
-        font-size: 5.5pt;
-        font-weight: 700;
-
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-
-    .plan-preview__material strong {
-        flex: 0 0 auto;
-
+    .plan-preview__workers span {
         color: #000;
 
-        font-size: 6pt;
-        font-weight: 900;
-
-        white-space: nowrap;
-    }
-
-
-    /* ======================================================
-       PRAWA POŁOWA - AVATARY
-       ====================================================== */
-
-    .plan-preview__people {
-        display: flex !important;
-
-        align-items: stretch;
-
-        min-width: 0;
-        min-height: 0;
-
-        padding: 1mm;
-
-        overflow: hidden;
-
-        border-left: 1px solid #cbd5e1;
-
-        background: #f8fafc;
-    }
-
-
-    .plan-preview__avatar {
-        display: flex !important;
-
-        flex: 1 1 0;
-
-        align-items: center;
-        justify-content: center;
-
-        min-width: 0;
-
-        margin-left: 1mm;
-
-        border: 1px solid #1e40af;
-        border-radius: 1.5mm;
-
-        background: #dbeafe;
-
-        color: #1e3a8a;
-
-        font-size: 11pt;
-        font-weight: 900;
+        font-size: 7pt;
+        font-weight: 850;
 
         line-height: 1;
 
-        text-align: center;
+        white-space: nowrap;
     }
 
 
-    .plan-preview__avatar:first-child {
-        margin-left: 0;
-    }
-
-
-    .plan-preview__avatar--empty {
-        border-color: #f59e0b;
-
-        background: #fef3c7;
-
-        color: #92400e;
+    .plan-preview__workers-empty {
+        color: #92400e !important;
     }
 
 
     /* ======================================================
-       PRZERWA
-       ====================================================== */
-
-    .plan-preview__break {
-        top: 0;
-        bottom: 0;
-
-        background: rgba(250, 204, 21, .08);
-    }
-
-
-    /* ======================================================
-       BRAK PLANU
+       EMPTY
        ====================================================== */
 
     .plan-preview__empty {
@@ -1195,7 +1158,7 @@
 
 
     /* ======================================================
-       WAŻNE DLA CHROME / EDGE
+       PREVENT STRANGE PAGE BREAKS
        ====================================================== */
 
     .plan-preview__board,
@@ -1216,116 +1179,47 @@
 
 
     /* ======================================================
-       KOLORY NA WYDRUKU
+       RESET HEIGHTS FROM BASE.HTML
        ====================================================== */
 
-    .plan-preview,
-    .plan-preview * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-
-        box-sizing: border-box;
-    }
-
-    /* ======================================================
-   FIX: PUSTA DRUGA STRONA
-   ====================================================== */
-
-body,
-body > div,
-body > main,
-main,
-.main,
-.main-content,
-.content,
-.app,
-.app-layout,
-.app-content,
-.app-main,
-.content-wrapper,
-.page-wrapper,
-.page-content,
-.container,
-.container-fluid {
-    height: auto !important;
-    min-height: 0 !important;
-
-    max-height: none !important;
-
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-
-    overflow: visible !important;
-}
-
-
-.plan-preview {
-    position: relative !important;
-
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-
-    height: auto !important;
-    min-height: 0 !important;
-
-    page-break-before: avoid !important;
-    page-break-after: avoid !important;
-}
-
-
-.plan-preview__board {
-    page-break-before: avoid !important;
-    page-break-after: avoid !important;
-}
-
-
-/*
- * Chrome potrafi wygenerować pustą stronę,
- * gdy ostatni element ma margin.
- */
-.plan-preview__board:last-child,
-.plan-preview > *:last-child {
-    margin-bottom: 0 !important;
-}
-
-
-/*
- * Stopka preview nie może zajmować miejsca.
- */
-.plan-preview__footer {
-    display: none !important;
-
-    height: 0 !important;
-    min-height: 0 !important;
-
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-
-/*
- * Nie pozwalamy layoutowi aplikacji
- * wymuszać wysokości viewportu.
- */
-@supports (height: 100dvh) {
-
     body,
+    body > div,
+    body > main,
     main,
+    .main,
     .main-content,
+    .content,
+    .app,
+    .app-layout,
     .app-content,
     .app-main,
     .content-wrapper,
     .page-wrapper,
-    .page-content {
+    .page-content,
+    .container,
+    .container-fluid {
         height: auto !important;
         min-height: 0 !important;
+
+        max-height: none !important;
+
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+
+        overflow: visible !important;
     }
 
-}
+
+    /* ======================================================
+       COLORS
+       ====================================================== */
+
+    .plan-preview,
+    .plan-preview * {
+        box-sizing: border-box;
+
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 
 }
