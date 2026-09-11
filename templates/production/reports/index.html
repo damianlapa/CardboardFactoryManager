@@ -1,0 +1,815 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Raporty produkcji | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Raporty produkcji
+{% endblock %}
+
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/reports.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-reports-page">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="production-reports-header">
+
+        <div class="production-reports-header__content">
+
+            <div class="production-reports-header__eyebrow">
+                Analiza produkcji
+            </div>
+
+            <h1>
+                Raport produkcyjny
+            </h1>
+
+            <p>
+                Analiza wykonanej produkcji,
+                wykorzystania stanowisk i efektywności.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- FILTERS                                             -->
+    <!-- =================================================== -->
+
+    <section class="production-reports-filters">
+
+        <form
+            method="get"
+            class="production-reports-filters__form"
+        >
+
+            <div class="production-reports-field">
+
+                <label for="reportDateFrom">
+                    Data od
+                </label>
+
+                <input
+                    type="date"
+                    id="reportDateFrom"
+                    name="date_from"
+                    value="{{ date_from|date:'Y-m-d' }}"
+                >
+
+            </div>
+
+
+            <div class="production-reports-field">
+
+                <label for="reportDateTo">
+                    Data do
+                </label>
+
+                <input
+                    type="date"
+                    id="reportDateTo"
+                    name="date_to"
+                    value="{{ date_to|date:'Y-m-d' }}"
+                >
+
+            </div>
+
+
+            <div class="production-reports-field">
+
+                <label for="reportStation">
+                    Stanowisko
+                </label>
+
+                <select
+                    id="reportStation"
+                    name="station"
+                >
+
+                    <option value="">
+                        Wszystkie stanowiska
+                    </option>
+
+                    {% for station in stations %}
+
+                        <option
+                            value="{{ station.id }}"
+                            {% if selected_station_id == station.id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ station.name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="production-reports-field">
+
+                <label for="reportWorker">
+                    Pracownik
+                </label>
+
+                <select
+                    id="reportWorker"
+                    name="worker"
+                >
+
+                    <option value="">
+                        Wszyscy pracownicy
+                    </option>
+
+                    {% for worker in workers %}
+
+                        <option
+                            value="{{ worker.id }}"
+                            {% if selected_worker_id == worker.id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ worker }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="production-reports-filters__actions">
+
+                <button
+                    type="submit"
+                    class="production-reports-button production-reports-button--primary"
+                >
+                    <i class="fa-solid fa-filter"></i>
+
+                    Pokaż raport
+                </button>
+
+
+                <a
+                    href="{% url 'modern_production:production-reports' %}"
+                    class="production-reports-button"
+                >
+                    <i class="fa-solid fa-rotate-left"></i>
+
+                    Wyczyść
+                </a>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- REPORT PERIOD                                       -->
+    <!-- =================================================== -->
+
+    <div class="production-reports-period">
+
+        <i class="fa-regular fa-calendar"></i>
+
+        <span>
+            Okres raportu
+        </span>
+
+        <strong>
+            {{ date_from|date:"d.m.Y" }}
+            –
+            {{ date_to|date:"d.m.Y" }}
+        </strong>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- KPI                                                 -->
+    <!-- =================================================== -->
+
+    <section class="production-reports-kpis">
+
+
+        <article class="production-reports-kpi">
+
+            <div class="production-reports-kpi__icon">
+                <i class="fa-solid fa-list-check"></i>
+            </div>
+
+            <div>
+
+                <span class="production-reports-kpi__label">
+                    Operacje
+                </span>
+
+                <strong>
+                    {{ summary.units_count }}
+                </strong>
+
+                <small>
+                    wykonanych jednostek
+                </small>
+
+            </div>
+
+        </article>
+
+
+        <article class="production-reports-kpi">
+
+            <div class="production-reports-kpi__icon">
+                <i class="fa-solid fa-box"></i>
+            </div>
+
+            <div>
+
+                <span class="production-reports-kpi__label">
+                    Zlecenia
+                </span>
+
+                <strong>
+                    {{ summary.orders_count }}
+                </strong>
+
+                <small>
+                    różnych zleceń
+                </small>
+
+            </div>
+
+        </article>
+
+
+        <article class="production-reports-kpi">
+
+            <div class="production-reports-kpi__icon">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+
+            <div>
+
+                <span class="production-reports-kpi__label">
+                    Produkcja
+                </span>
+
+                <strong>
+                    {{ summary.quantity }}
+                </strong>
+
+                <small>
+                    sztuk
+                </small>
+
+            </div>
+
+        </article>
+
+
+        <article class="production-reports-kpi">
+
+            <div class="production-reports-kpi__icon">
+                <i class="fa-regular fa-clock"></i>
+            </div>
+
+            <div>
+
+                <span class="production-reports-kpi__label">
+                    Czas rzeczywisty
+                </span>
+
+                <strong>
+                    {{ summary.real_time }}
+                </strong>
+
+                <small>
+                    godzin produkcji
+                </small>
+
+            </div>
+
+        </article>
+
+
+        <article class="production-reports-kpi">
+
+            <div class="production-reports-kpi__icon">
+                <i class="fa-solid fa-stopwatch"></i>
+            </div>
+
+            <div>
+
+                <span class="production-reports-kpi__label">
+                    Czas zakładany
+                </span>
+
+                <strong>
+                    {{ summary.estimated_time }}
+                </strong>
+
+                <small>
+                    godzin planowanych
+                </small>
+
+            </div>
+
+        </article>
+
+
+        <article class="production-reports-kpi">
+
+            <div class="production-reports-kpi__icon">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+
+            <div>
+
+                <span class="production-reports-kpi__label">
+                    Efektywność
+                </span>
+
+                <strong
+                    class="
+                        production-reports-kpi__efficiency
+
+                        {% if summary.efficiency >= 100 %}
+                            production-reports-kpi__efficiency--good
+                        {% elif summary.efficiency %}
+                            production-reports-kpi__efficiency--low
+                        {% endif %}
+                    "
+                >
+
+                    {% if summary.efficiency != None %}
+                        {{ summary.efficiency }}%
+                    {% else %}
+                        —
+                    {% endif %}
+
+                </strong>
+
+                <small>
+                    czas zakładany / rzeczywisty
+                </small>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- STATIONS                                            -->
+    <!-- =================================================== -->
+
+    <section class="production-reports-card">
+
+        <div class="production-reports-card__header">
+
+            <div>
+
+                <div class="production-reports-card__eyebrow">
+                    Stanowiska
+                </div>
+
+                <h2>
+                    Produkcja według stanowisk
+                </h2>
+
+                <p>
+                    Podsumowanie pracy maszyn i stanowisk
+                    w wybranym okresie.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="production-reports-table-wrapper">
+
+            <table class="production-reports-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Stanowisko
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Operacje
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Zlecenia
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Pracownicy
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Ilość
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Czas rzeczywisty
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Czas zakładany
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Efektywność
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for row in station_rows %}
+
+                        <tr>
+
+                            <td>
+
+                                <div class="production-reports-station">
+
+                                    <div class="production-reports-station__icon">
+                                        <i class="fa-solid fa-industry"></i>
+                                    </div>
+
+                                    <strong>
+                                        {{ row.station.name }}
+                                    </strong>
+
+                                </div>
+
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.units_count }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.orders_count }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.workers_count }}
+                            </td>
+
+
+                            <td class="production-reports-table__number production-reports-table__strong">
+                                {{ row.quantity }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.real_time }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.estimated_time }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+
+                                {% if row.efficiency != None %}
+
+                                    <span
+                                        class="
+                                            production-reports-efficiency
+
+                                            {% if row.efficiency >= 100 %}
+                                                production-reports-efficiency--good
+                                            {% else %}
+                                                production-reports-efficiency--low
+                                            {% endif %}
+                                        "
+                                    >
+                                        {{ row.efficiency }}%
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="production-reports-value-empty">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="8"
+                                class="production-reports-table__empty"
+                            >
+                                Brak produkcji dla wybranych filtrów.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- PRODUCTION UNITS                                    -->
+    <!-- =================================================== -->
+
+    <section class="production-reports-card">
+
+        <div class="production-reports-card__header">
+
+            <div>
+
+                <div class="production-reports-card__eyebrow">
+                    Szczegóły
+                </div>
+
+                <h2>
+                    Wykonane operacje
+                </h2>
+
+                <p>
+                    Szczegółowa lista jednostek produkcyjnych
+                    uwzględnionych w raporcie.
+                </p>
+
+            </div>
+
+
+            <div class="production-reports-card__counter">
+
+                <strong>
+                    {{ summary.units_count }}
+                </strong>
+
+                <span>
+                    operacji
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="production-reports-table-wrapper production-reports-table-wrapper--units">
+
+            <table class="production-reports-table production-reports-table--units">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Data
+                        </th>
+
+                        <th>
+                            Zlecenie
+                        </th>
+
+                        <th>
+                            Klient
+                        </th>
+
+                        <th>
+                            Stanowisko
+                        </th>
+
+                        <th>
+                            Pracownicy
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Ilość
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Rzeczywisty
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Zakładany
+                        </th>
+
+                        <th class="production-reports-table__number">
+                            Efektywność
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for row in unit_rows %}
+
+                        <tr>
+
+                            <td>
+
+                                <div class="production-reports-date">
+
+                                    {% if row.unit.start %}
+
+                                        <strong>
+                                            {{ row.unit.start|date:"d.m.Y" }}
+                                        </strong>
+
+                                        <span>
+                                            {{ row.unit.start|date:"H:i" }}
+
+                                            {% if row.unit.end %}
+                                                –
+                                                {{ row.unit.end|date:"H:i" }}
+                                            {% endif %}
+                                        </span>
+
+                                    {% else %}
+
+                                        —
+
+                                    {% endif %}
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                <strong class="production-reports-order">
+                                    {{ row.unit.production_order.id_number }}
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="production-reports-customer">
+                                    {{ row.unit.production_order.customer }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="production-reports-station-badge">
+                                    {{ row.unit.work_station }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="production-reports-workers">
+
+                                    {% for person in row.persons %}
+
+                                        <span class="production-reports-worker">
+                                            {{ person.first_name|first }}.
+                                            {{ person.last_name }}
+                                        </span>
+
+                                    {% empty %}
+
+                                        <span class="production-reports-value-empty">
+                                            Brak obsady
+                                        </span>
+
+                                    {% endfor %}
+
+                                </div>
+
+                            </td>
+
+
+                            <td class="production-reports-table__number production-reports-table__strong">
+                                {{ row.quantity }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.real_time }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+                                {{ row.estimated_time }}
+                            </td>
+
+
+                            <td class="production-reports-table__number">
+
+                                {% if row.efficiency != None %}
+
+                                    <span
+                                        class="
+                                            production-reports-efficiency
+
+                                            {% if row.efficiency >= 100 %}
+                                                production-reports-efficiency--good
+                                            {% else %}
+                                                production-reports-efficiency--low
+                                            {% endif %}
+                                        "
+                                    >
+                                        {{ row.efficiency }}%
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="production-reports-value-empty">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="9"
+                                class="production-reports-table__empty"
+                            >
+                                Brak jednostek produkcyjnych
+                                w wybranym okresie.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

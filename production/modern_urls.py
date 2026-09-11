@@ -57,6 +57,10 @@ from production.modern_views.daily_planning import (
     DailyPlanningPreviewView,
 )
 
+from production.modern_views.reports import (
+    ProductionReportsView,
+)
+
 
 app_name = "modern_production"
 
@@ -319,5 +323,13 @@ urlpatterns += [
         "planning/day/<str:day>/preview/",
         DailyPlanningPreviewView.as_view(),
         name="daily-planning-preview",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "reports/",
+        ProductionReportsView.as_view(),
+        name="production-reports",
     ),
 ]
