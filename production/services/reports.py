@@ -422,4 +422,130 @@ def get_production_report(
             get_unit_rows(
                 units
             ),
+
+        "workers":
+            get_worker_report(
+                units
+            ),
     }
+
+def get_worker_report(units):
+    data = defaultdict(
+        lambda: {
+            "units_count": 0,
+            "orders": set(),
+            "stations": set(),
+            "real_seconds": 0,
+            "estimated_seconds": 0,
+            "quantity": 0,
+        }
+    )
+
+    for unit in units:
+
+        real_seconds = (
+            get_unit_real_seconds(
+                unit
+            )
+        )
+
+        estimated_seconds = (
+            get_unit_estimated_seconds(
+                unit
+            )
+        )
+
+        persons = list(
+            unit.persons.all()
+        )
+
+        if not persons:
+            continue
+
+
+        for person in persons:
+
+            row = data[
+                person.id
+            ]
+
+            row["person"] = person
+
+            row["units_count"] += 1
+
+            row["orders"].add(
+                unit.production_order_id
+            )
+
+            if unit.work_station_id:
+
+                row["stations"].add(
+                    unit.work_station_id
+                )
+
+            row["real_seconds"] += (
+                real_seconds
+            )
+
+            row["estimated_seconds"] += (
+                estimated_seconds
+            )
+
+            row["quantity"] += (
+                unit.quantity_end
+                or unit.quantity_start
+                or 0
+            )
+
+
+    result = []
+
+
+    for row in data.values():
+
+        row["orders_count"] = len(
+            row["orders"]
+        )
+
+        row["stations_count"] = len(
+            row["stations"]
+        )
+
+        row["real_time"] = (
+            format_seconds(
+                row["real_seconds"]
+            )
+        )
+
+        row["estimated_time"] = (
+            format_seconds(
+                row["estimated_seconds"]
+            )
+        )
+
+        row["efficiency"] = (
+            get_unit_efficiency(
+                estimated_seconds=
+                    row["estimated_seconds"],
+
+                real_seconds=
+                    row["real_seconds"],
+            )
+        )
+
+        result.append(
+            row
+        )
+
+
+    result.sort(
+        key=lambda row: (
+            row["efficiency"]
+            if row["efficiency"] is not None
+            else -1
+        ),
+        reverse=True,
+    )
+
+
+    return result

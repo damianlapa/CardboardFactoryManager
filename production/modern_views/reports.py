@@ -216,6 +216,9 @@ class ProductionReportsView(
 
             "unit_rows":
                 report["units"],
+
+            "worker_rows":
+                report["workers"],
         }
 
 
