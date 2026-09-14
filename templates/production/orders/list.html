@@ -247,12 +247,10 @@
 
                         {% endif %}
 
-                    </div>
-
-                    <div class="production-order-row__dates">
+                    </div><div>
 
     <span class="production-table-label">
-        Czas
+        Od zamówienia
     </span>
 
     <strong>
@@ -263,9 +261,14 @@
         {% endif %}
     </strong>
 
-    <small>
-        od zamówienia
-    </small>
+</div>
+
+
+<div>
+
+    <span class="production-table-label">
+        Od dostawy
+    </span>
 
     <strong>
         {% if order.days_since_cardboard_delivery is not None %}
@@ -274,10 +277,6 @@
             —
         {% endif %}
     </strong>
-
-    <small>
-        od dostawy tektury
-    </small>
 
 </div>
 

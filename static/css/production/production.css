@@ -536,14 +536,16 @@
     display: grid;
 
     grid-template-columns:
-        minmax(130px, 1fr)
-        minmax(150px, 1.4fr)
-        minmax(110px, 1fr)
-        minmax(120px, 1fr)
-        90px
-        70px
-        110px
-        20px;
+        minmax(130px, 1fr)   /* numer */
+        minmax(150px, 1.4fr) /* klient */
+        minmax(110px, 1fr)   /* produkt */
+        minmax(120px, 1fr)   /* tektura */
+        95px                 /* od zamówienia */
+        95px                 /* od dostawy */
+        90px                 /* ilość */
+        70px                 /* operacje */
+        110px                /* status */
+        20px;                /* strzałka */
 
     align-items: center;
 
