@@ -249,6 +249,38 @@
 
                     </div>
 
+                    <div class="production-order-row__dates">
+
+    <span class="production-table-label">
+        Czas
+    </span>
+
+    <strong>
+        {% if order.days_since_customer_order is not None %}
+            {{ order.days_since_customer_order }} dni
+        {% else %}
+            —
+        {% endif %}
+    </strong>
+
+    <small>
+        od zamówienia
+    </small>
+
+    <strong>
+        {% if order.days_since_cardboard_delivery is not None %}
+            {{ order.days_since_cardboard_delivery }} dni
+        {% else %}
+            —
+        {% endif %}
+    </strong>
+
+    <small>
+        od dostawy tektury
+    </small>
+
+</div>
+
 
                     <div>
 

@@ -141,12 +141,86 @@ class AllProductionOrders(
                 )
             )
 
+        # ========================================================
+        # WAREHOUSE ORDER DATES
+        # ========================================================
+
+        orders = list(orders)
+
+        today = datetime.date.today()
+
+        warehouse_orders = (
+            Order.objects
+            .select_related("provider")
+            .only(
+                "id",
+                "order_id",
+                "provider",
+                "customer_date",
+                "delivery_date",
+            )
+        )
+
+        warehouse_order_map = {
+            f"{warehouse_order.provider} {warehouse_order.order_id}":
+                warehouse_order
+            for warehouse_order in warehouse_orders
+        }
+
+        for production_order in orders:
+
+            warehouse_order = warehouse_order_map.get(
+                production_order.id_number
+            )
+
+            production_order.days_since_customer_order = None
+            production_order.days_since_cardboard_delivery = None
+
+            if not warehouse_order:
+                continue
+
+            # --------------------------------------------
+            # DNI OD ZAMÓWIENIA KLIENTA
+            # --------------------------------------------
+
+            if warehouse_order.customer_date:
+
+                customer_date = warehouse_order.customer_date
+
+                if isinstance(
+                        customer_date,
+                        datetime.datetime,
+                ):
+                    customer_date = customer_date.date()
+
+                production_order.days_since_customer_order = (
+                        today - customer_date
+                ).days
+
+            # --------------------------------------------
+            # DNI OD DOSTAWY TEKTURY
+            # --------------------------------------------
+
+            if warehouse_order.delivery_date:
+
+                delivery_date = warehouse_order.delivery_date
+
+                if isinstance(
+                        delivery_date,
+                        datetime.datetime,
+                ):
+                    delivery_date = delivery_date.date()
+
+                production_order.days_since_cardboard_delivery = (
+                        today - delivery_date
+                ).days
+
         context = {
             "production_orders":
                 orders,
 
             "orders_count":
-                orders.count(),
+                len(orders),
 
             "search":
                 search,
