@@ -364,38 +364,6 @@
         {{ unit.production_order.customer }}
     </span>
 
-    <div class="production-active-item__dates">
-
-        <span>
-            <i class="fa-regular fa-calendar"></i>
-
-            Zamówienie:
-            {% if unit.days_since_customer_order is not None %}
-                <strong>
-                    {{ unit.days_since_customer_order }} dni
-                </strong>
-            {% else %}
-                —
-            {% endif %}
-        </span>
-
-        <span>
-            <i class="fa-solid fa-truck"></i>
-
-            Tektura:
-            {% if unit.days_since_cardboard_delivery is not None %}
-                <strong>
-                    {{ unit.days_since_cardboard_delivery }} dni
-                </strong>
-            {% else %}
-                —
-            {% endif %}
-        </span>
-
-    </div>
-
-</div>
-
 
                         <div class="production-active-item__people">
 
