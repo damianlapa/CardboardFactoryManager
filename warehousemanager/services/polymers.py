@@ -588,7 +588,7 @@ def get_unused_polymers_context(*, months=12):
     # ======================================================
 
     polymers = list(
-        Photopolymer.objects
+        Photopolymer.objects.filter(active=True)
         .select_related(
             "customer",
         )
