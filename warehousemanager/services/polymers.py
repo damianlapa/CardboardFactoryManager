@@ -53,6 +53,7 @@ def get_polymer_list_context(
     customer_id="",
     producer="",
     status="",
+    historical=""
 ):
     today = datetime.date.today()
 
@@ -60,7 +61,7 @@ def get_polymer_list_context(
     customer_id = str(customer_id or "").strip()
     producer = (producer or "").strip()
     status = (status or "").strip()
-
+    historical = (historical or "").strip()
 
     # ======================================================
     # SERVICES
@@ -107,8 +108,10 @@ def get_polymer_list_context(
     # POLYMERS
     # ======================================================
 
+    historical = (True, False) if historical else (True,)
+
     polymers_queryset = (
-        Photopolymer.objects
+        Photopolymer.objects.filter(active__in=historical)
         .select_related(
             "customer",
         )

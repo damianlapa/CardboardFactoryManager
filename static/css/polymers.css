@@ -1855,3 +1855,59 @@
 
     text-align: right;
 }
+
+/* =========================================================
+   PROJECT LINK
+   ========================================================= */
+
+.polymer-project-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    min-height: 30px;
+
+    padding: 5px 10px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.polymer-project-status--available {
+    color: var(--app-text);
+
+    background: rgba(70, 150, 110, 0.08);
+
+    border: 1px solid rgba(70, 150, 110, 0.18);
+
+    text-decoration: none;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+
+.polymer-project-status--available:hover {
+    background: rgba(70, 150, 110, 0.14);
+    border-color: rgba(70, 150, 110, 0.30);
+}
+
+
+.polymer-project-status--missing {
+    color: #9b4b4b;
+
+    background: #fbeaea;
+
+    border: 1px solid #f3cccc;
+}
+
+
+.polymer-project-status i {
+    font-size: 12px;
+}

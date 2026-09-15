@@ -65,6 +65,10 @@ class PolymerListView(
                 "status",
                 "",
             ),
+            historical=request.GET.get(
+                "historical",
+                "",
+            ),
         )
 
         return render(

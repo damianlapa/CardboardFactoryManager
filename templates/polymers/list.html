@@ -47,6 +47,20 @@
 
 
         <div class="polymer-header__actions">
+            <a
+    href="{% url 'polymers' %}?historical=tak"
+    class="app-btn app-btn-secondary"
+>
+    <i class="fa-solid fa-box-archive"></i>
+    Wszystkie
+</a>
+            <a
+    href="{% url 'polymers-unused' %}"
+    class="app-btn app-btn-secondary"
+>
+    <i class="fa-solid fa-box-archive"></i>
+    Nieużywane
+</a>
 
             {% if perms.warehousemanager.add_photopolymer_service %}
 
@@ -448,6 +462,7 @@
                             <th>Numer</th>
                             <th>Klient</th>
                             <th>Nazwa</th>
+                            <th>Projekt</th>
                             <th>Producent</th>
                             <th>Kolory</th>
                             <th>Dostarczenie</th>
@@ -503,10 +518,41 @@
 
                                     </td>
 
+                                    <td>
+
+    {% if polymer.link %}
+
+        <a
+            href="{{ polymer.link }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="polymer-project-status polymer-project-status--available"
+            title="Otwórz projekt"
+        >
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            Projekt
+        </a>
+
+    {% else %}
+
+        <span
+            class="polymer-project-status polymer-project-status--missing"
+            title="Brak linku do projektu"
+        >
+            <i class="fa-solid fa-link-slash"></i>
+            Brak linku
+        </span>
+
+    {% endif %}
+
+</td>
+
 
                                     <td>
                                         {{ polymer.producer }}
                                     </td>
+
+
 
 
                                     <td>
