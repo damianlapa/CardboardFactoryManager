@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Nieużywane polimery | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Nieużywane polimery
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/polymers.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="polymer-detail-page">
+
+    <header class="polymer-detail-header">
+
+        <div>
+
+            <a
+                href="{% url 'polymers' %}"
+                class="polymer-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Wróć do polimerów
+            </a>
+
+            <div class="polymer-detail-title">
+
+                <div>
+
+                    <div class="polymer-eyebrow">
+                        Analiza
+                    </div>
+
+                    <h1>
+                        Nieużywane polimery
+                    </h1>
+
+                    <p>
+                        Projekty bez użycia od
+                        {{ months }}
+                        mies.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- FILTER -->
+
+    <section class="polymer-detail-card">
+
+        <form method="get">
+
+            <div class="polymer-info-grid">
+
+                <div class="polymer-info-item">
+
+                    <span>
+                        Brak użycia od
+                    </span>
+
+                    <select
+                        name="months"
+                        onchange="this.form.submit()"
+                    >
+
+                        <option
+                            value="3"
+                            {% if months == 3 %}
+                                selected
+                            {% endif %}
+                        >
+                            3 miesiące
+                        </option>
+
+                        <option
+                            value="6"
+                            {% if months == 6 %}
+                                selected
+                            {% endif %}
+                        >
+                            6 miesięcy
+                        </option>
+
+                        <option
+                            value="12"
+                            {% if months == 12 %}
+                                selected
+                            {% endif %}
+                        >
+                            12 miesięcy
+                        </option>
+
+                        <option
+                            value="18"
+                            {% if months == 18 %}
+                                selected
+                            {% endif %}
+                        >
+                            18 miesięcy
+                        </option>
+
+                        <option
+                            value="24"
+                            {% if months == 24 %}
+                                selected
+                            {% endif %}
+                        >
+                            24 miesiące
+                        </option>
+
+                        <option
+                            value="36"
+                            {% if months == 36 %}
+                                selected
+                            {% endif %}
+                        >
+                            36 miesięcy
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="polymer-info-item">
+
+                    <span>
+                        Data graniczna
+                    </span>
+
+                    <strong>
+                        {{ cutoff_date|date:"d.m.Y" }}
+                    </strong>
+
+                </div>
+
+
+                <div class="polymer-info-item">
+
+                    <span>
+                        Projekty / grupy
+                    </span>
+
+                    <strong>
+                        {{ groups_count }}
+                    </strong>
+
+                </div>
+
+
+                <div class="polymer-info-item">
+
+                    <span>
+                        Polimery
+                    </span>
+
+                    <strong>
+                        {{ polymers_count }}
+                    </strong>
+
+                </div>
+
+
+                <div class="polymer-info-item">
+
+                    <span>
+                        Nigdy nieużywane
+                    </span>
+
+                    <strong>
+                        {{ never_used_count }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <!-- RESULTS -->
+
+    {% for group in groups %}
+
+        <section class="polymer-detail-card">
+
+            <div class="polymer-detail-card__header">
+
+                <div>
+
+                    <h2>
+                        {{ group.name }}
+                    </h2>
+
+                    <p>
+                        {{ group.customer }}
+
+                        {% if group.is_group %}
+                            · grupa
+                            {{ group.polymers_count }}
+                            polimerów
+                        {% endif %}
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    {% if group.last_use %}
+
+                        <strong>
+                            {{ group.last_use|date:"d.m.Y" }}
+                        </strong>
+
+                    {% else %}
+
+                        <strong>
+                            Nigdy
+                        </strong>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="polymer-history-table-wrapper">
+
+                <table class="polymer-history-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Polimer</th>
+                            <th>Ostatnie użycie</th>
+                            <th>Zlecenia</th>
+                            <th></th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for item in group.polymers %}
+
+                            <tr>
+
+                                <td>
+
+                                    <strong>
+                                        #{{ item.number }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if item.last_use %}
+
+                                        {{ item.last_use|date:"d.m.Y" }}
+
+                                    {% else %}
+
+                                        Nigdy
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+                                    {{ item.orders_count }}
+                                </td>
+
+
+                                <td>
+
+                                    <a
+                                        href="{% url 'polymer-details' item.object.id %}"
+                                    >
+                                        Szczegóły
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    {% empty %}
+
+        <section class="polymer-detail-card">
+
+            <div class="polymer-empty-state">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+                <strong>
+                    Brak wyników
+                </strong>
+
+                <span>
+                    Nie znaleziono projektów
+                    nieużywanych od
+                    {{ months }} miesięcy.
+                </span>
+
+            </div>
+
+        </section>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

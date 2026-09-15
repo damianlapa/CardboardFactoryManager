@@ -14,8 +14,6 @@ from warehousemanager.models import Photopolymer, PhotopolymerService
 from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
 )
-from django.shortcuts import render
-from django.views import View
 
 from warehousemanager.functions import (
     visit_counter,
@@ -23,6 +21,14 @@ from warehousemanager.functions import (
 from warehousemanager.services.polymers import (
     get_polymer_list_context,
     get_polymer_detail_context,
+)
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from django.shortcuts import render
+
+from warehousemanager.services.polymers import (
+    get_unused_polymers_context,
 )
 
 
@@ -265,4 +271,34 @@ class PolymerServiceDeleteView(
                 "polymer_id":
                     self.object.photopolymer_id,
             },
+        )
+
+
+class UnusedPolymersView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = "login"
+
+    template_name = (
+        "polymers/unused.html"
+    )
+
+    def get(self, request):
+
+        months = request.GET.get(
+            "months",
+            12,
+        )
+
+        context = (
+            get_unused_polymers_context(
+                months=months,
+            )
+        )
+
+        return render(
+            request,
+            self.template_name,
+            context,
         )

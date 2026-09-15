@@ -47,7 +47,8 @@ from warehousemanager.modern_views.polymers import (
     PolymerUpdateView,
     PolymerServiceCreateView,
     PolymerServiceDeleteView,
-    PolymerServiceUpdateView
+    PolymerServiceUpdateView,
+    UnusedPolymersView
 )
 
 
@@ -367,6 +368,12 @@ urlpatterns = [
         "photopolymers/service/<int:pk>/delete/",
         PolymerServiceDeleteView.as_view(),
         name="polymer-service-delete",
+    ),
+
+    path(
+        "polymers/unused/",
+        UnusedPolymersView.as_view(),
+        name="polymers-unused",
     ),
 
     # ========================================================

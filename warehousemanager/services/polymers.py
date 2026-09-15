@@ -9,6 +9,12 @@ from warehousemanager.models import (
     POLYMERS_PRODUCERS,
 )
 
+from collections import defaultdict
+from dateutil.relativedelta import relativedelta
+
+from production.models import ProductionOrder
+from warehouse.models import Order
+
 from django.shortcuts import get_object_or_404
 
 
@@ -560,4 +566,326 @@ def get_polymer_service_context(
             or service.return_date
             >= datetime.date.today()
         ),
+    }
+
+
+def get_unused_polymers_context(*, months=12):
+    today = datetime.date.today()
+
+    try:
+        months = int(months)
+    except (TypeError, ValueError):
+        months = 12
+
+    months = max(1, min(months, 120))
+
+    cutoff_date = today - relativedelta(
+        months=months
+    )
+
+    # ======================================================
+    # POLYMERS
+    # ======================================================
+
+    polymers = list(
+        Photopolymer.objects
+        .select_related(
+            "customer",
+        )
+        .order_by(
+            "customer__name",
+            "name",
+            "identification_number",
+            "identification_letter",
+        )
+    )
+
+    polymer_ids = [
+        polymer.id
+        for polymer in polymers
+    ]
+
+    # ======================================================
+    # PRODUCTION ORDERS
+    #
+    # nowa logika:
+    # ProductionOrder.photopolymer
+    # ======================================================
+
+    production_orders = list(
+        ProductionOrder.objects
+        .filter(
+            photopolymer_id__in=polymer_ids,
+        )
+        .select_related(
+            "photopolymer",
+        )
+    )
+
+    # ======================================================
+    # ODCZYT NUMERÓW ORDER
+    # ======================================================
+
+    order_numbers = set()
+
+    for production_order in production_orders:
+        if not production_order.id_number:
+            continue
+
+        try:
+            order_number = (
+                production_order.id_number
+                .rsplit(" ", 1)[-1]
+                .strip()
+            )
+
+            if order_number:
+                order_numbers.add(
+                    order_number
+                )
+
+        except (AttributeError, IndexError):
+            continue
+
+    # ======================================================
+    # WAREHOUSE ORDERS
+    # ======================================================
+
+    warehouse_orders = (
+        Order.objects
+        .filter(
+            order_id__in=order_numbers,
+        )
+        .select_related(
+            "provider",
+        )
+    )
+
+    warehouse_order_map = {
+        f"{order.provider} {order.order_id}":
+            order
+        for order in warehouse_orders
+    }
+
+    # ======================================================
+    # LAST USE PER POLYMER
+    # ======================================================
+
+    polymer_last_use = {}
+
+    polymer_orders_count = defaultdict(int)
+
+    for production_order in production_orders:
+
+        warehouse_order = (
+            warehouse_order_map.get(
+                production_order.id_number
+            )
+        )
+
+        if not warehouse_order:
+            continue
+
+        order_date = warehouse_order.order_date
+
+        if not order_date:
+            continue
+
+        polymer_id = (
+            production_order.photopolymer_id
+        )
+
+        polymer_orders_count[
+            polymer_id
+        ] += 1
+
+        current_last_use = (
+            polymer_last_use.get(
+                polymer_id
+            )
+        )
+
+        if (
+            current_last_use is None
+            or order_date > current_last_use
+        ):
+            polymer_last_use[
+                polymer_id
+            ] = order_date
+
+    # ======================================================
+    # GROUPING
+    #
+    # grupa = customer + normalized name
+    #
+    # brak nazwy:
+    # każdy polimer osobno
+    # ======================================================
+
+    groups = {}
+
+    for polymer in polymers:
+
+        normalized_name = (
+            (polymer.name or "")
+            .strip()
+            .casefold()
+        )
+
+        if normalized_name:
+
+            group_key = (
+                polymer.customer_id,
+                normalized_name,
+            )
+
+        else:
+
+            # bez nazwy nie grupujemy przypadkowych
+            # polimerów razem
+            group_key = (
+                polymer.customer_id,
+                f"__polymer_{polymer.id}",
+            )
+
+        if group_key not in groups:
+
+            groups[group_key] = {
+                "customer":
+                    polymer.customer,
+
+                "name":
+                    polymer.name or "Bez nazwy",
+
+                "polymers":
+                    [],
+
+                "last_use":
+                    None,
+
+                "orders_count":
+                    0,
+            }
+
+        last_use = polymer_last_use.get(
+            polymer.id
+        )
+
+        groups[group_key][
+            "polymers"
+        ].append({
+            "object":
+                polymer,
+
+            "number": (
+                f"{polymer.identification_number}"
+                f"{polymer.identification_letter or ''}"
+            ),
+
+            "last_use":
+                last_use,
+
+            "orders_count":
+                polymer_orders_count.get(
+                    polymer.id,
+                    0,
+                ),
+        })
+
+        groups[group_key][
+            "orders_count"
+        ] += polymer_orders_count.get(
+            polymer.id,
+            0,
+        )
+
+        # data całej grupy =
+        # najnowsze użycie dowolnego polimeru
+        if last_use:
+
+            current_group_last_use = (
+                groups[group_key][
+                    "last_use"
+                ]
+            )
+
+            if (
+                current_group_last_use is None
+                or last_use >
+                current_group_last_use
+            ):
+                groups[group_key][
+                    "last_use"
+                ] = last_use
+
+    # ======================================================
+    # FILTER UNUSED
+    # ======================================================
+
+    unused_groups = []
+
+    for group in groups.values():
+
+        last_use = group["last_use"]
+
+        # brak historii traktujemy jako
+        # "nigdy nieużywany"
+        if (
+            last_use is None
+            or last_use <= cutoff_date
+        ):
+
+            group["is_group"] = (
+                len(group["polymers"]) > 1
+            )
+
+            group["polymers_count"] = (
+                len(group["polymers"])
+            )
+
+            unused_groups.append(group)
+
+    # ======================================================
+    # SORTOWANIE
+    #
+    # najstarsze / nigdy używane najpierw
+    # ======================================================
+
+    unused_groups.sort(
+        key=lambda group: (
+            group["last_use"] is not None,
+            group["last_use"]
+            or datetime.date.min,
+            str(group["customer"]),
+            group["name"],
+        )
+    )
+
+    never_used_count = sum(
+        1
+        for group in unused_groups
+        if group["last_use"] is None
+    )
+
+    return {
+        "groups":
+            unused_groups,
+
+        "months":
+            months,
+
+        "cutoff_date":
+            cutoff_date,
+
+        "groups_count":
+            len(unused_groups),
+
+        "polymers_count":
+            sum(
+                group["polymers_count"]
+                for group in unused_groups
+            ),
+
+        "never_used_count":
+            never_used_count,
     }
