@@ -624,77 +624,191 @@
 
 
     <!-- =================================================== -->
-    <!-- PRODUCTION USAGE                                    -->
-    <!-- =================================================== -->
+<!-- PRODUCTION USAGE                                    -->
+<!-- =================================================== -->
 
-    <section class="polymer-detail-card">
+<section class="polymer-detail-card">
 
-        <div class="polymer-detail-card__header">
+    <div class="polymer-detail-card__header">
 
-            <div>
+        <div>
 
-                <h2>
-                    Historia produkcji
-                </h2>
+            <h2>
+                Historia produkcji
+            </h2>
 
-                <p>
-                    Ostatnie użycia polimeru
-                </p>
+            <p>
+                Podsumowanie wykorzystania polimeru
+            </p>
+
+        </div>
+
+        <span class="polymer-detail-count">
+            {{ production_orders_count }}
+        </span>
+
+    </div>
+
+
+    {% if production_usage %}
+
+        <!-- ============================================= -->
+        <!-- SUMMARY                                       -->
+        <!-- ============================================= -->
+
+        <div class="polymer-info-grid">
+
+            <div class="polymer-info-item">
+
+                <span>
+                    Wyprodukowano łącznie
+                </span>
+
+                <strong>
+                    {{ production_total_quantity }} szt.
+                </strong>
 
             </div>
 
-            <span class="polymer-detail-count">
-                {{ production_usage|length }}
-            </span>
+
+            <div class="polymer-info-item">
+
+                <span>
+                    Liczba zleceń
+                </span>
+
+                <strong>
+                    {{ production_orders_count }}
+                </strong>
+
+            </div>
+
+
+            <div class="polymer-info-item">
+
+                <span>
+                    Pierwsza produkcja
+                </span>
+
+                <strong>
+                    {% if production_first_date %}
+                        {{ production_first_date|date:"d.m.Y" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+
+            </div>
+
+
+            <div class="polymer-info-item">
+
+                <span>
+                    Ostatnia produkcja
+                </span>
+
+                <strong>
+                    {% if production_last_date %}
+                        {{ production_last_date|date:"d.m.Y" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+
+            </div>
 
         </div>
 
 
-        {% if production_usage %}
+        <!-- ============================================= -->
+        <!-- ORDERS                                        -->
+        <!-- ============================================= -->
 
-            <div class="polymer-usage-list">
+        <div class="polymer-history-table-wrapper">
 
-                {% for unit in production_usage %}
+            <table class="polymer-history-table">
 
-                    <div class="polymer-usage-item">
+                <thead>
 
-                        <div>
+                    <tr>
+                        <th>Zlecenie</th>
+                        <th>Klient</th>
+                        <th>Data zamówienia</th>
+                        <th>Ilość</th>
+                    </tr>
 
-                            <strong>
-                                {{ unit }}
-                            </strong>
+                </thead>
 
-                            <span>
-                                Produkcja
-                            </span>
 
-                        </div>
+                <tbody>
 
-                    </div>
+                    {% for usage in production_usage %}
 
-                {% endfor %}
+                        <tr>
 
-            </div>
+                            <td>
 
-        {% else %}
+                                <strong>
+                                    {{ usage.number }}
+                                </strong>
 
-            <div class="polymer-empty-state polymer-empty-state--small">
+                            </td>
 
-                <i class="fa-solid fa-industry"></i>
 
-                <strong>
-                    Brak historii produkcyjnej
-                </strong>
+                            <td>
+                                {{ usage.customer }}
+                            </td>
 
-                <span>
-                    Nie znaleziono zakończonych operacji z tym polimerem.
-                </span>
 
-            </div>
+                            <td>
 
-        {% endif %}
+                                {% if usage.order_date %}
+                                    {{ usage.order_date|date:"d.m.Y" }}
+                                {% else %}
+                                    —
+                                {% endif %}
 
-    </section>
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    {{ usage.quantity }} szt.
+                                </strong>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    {% else %}
+
+        <div class="polymer-empty-state polymer-empty-state--small">
+
+            <i class="fa-solid fa-industry"></i>
+
+            <strong>
+                Brak historii produkcyjnej
+            </strong>
+
+            <span>
+                Polimer nie został jeszcze przypisany do żadnego zlecenia produkcyjnego.
+            </span>
+
+        </div>
+
+    {% endif %}
+
+</section>
 
 </div>
 

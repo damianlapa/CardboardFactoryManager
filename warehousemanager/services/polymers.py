@@ -267,6 +267,9 @@ def get_polymer_list_context(
 
 
 def get_polymer_detail_context(*, polymer_id):
+    from production.models import ProductionOrder
+    from warehouse.models import Order
+
     today = datetime.date.today()
 
     polymer = get_object_or_404(
@@ -279,6 +282,10 @@ def get_polymer_detail_context(*, polymer_id):
         ),
         id=polymer_id,
     )
+
+    # ======================================================
+    # SERVICES
+    # ======================================================
 
     services = list(
         PhotopolymerService.objects
@@ -299,13 +306,9 @@ def get_polymer_detail_context(*, polymer_id):
             service.return_date is None
             or service.return_date >= today
         ):
-            current_services.append(
-                service
-            )
+            current_services.append(service)
         else:
-            history_services.append(
-                service
-            )
+            history_services.append(service)
 
     current_service_ids = {
         polymer.id
@@ -315,32 +318,187 @@ def get_polymer_detail_context(*, polymer_id):
 
     status = get_polymer_status(
         polymer=polymer,
-        current_service_ids=
-            current_service_ids,
+        current_service_ids=current_service_ids,
         today=today,
     )
 
-    production_usage = list(
-        polymer.polymer_usage()
-        .select_related(
-            "production_order",
-            "work_station",
+    # ======================================================
+    # PRODUCTION HISTORY
+    #
+    # NOWA LOGIKA:
+    # Photopolymer -> ProductionOrder.photopolymer
+    # ======================================================
+
+    production_orders = list(
+        ProductionOrder.objects
+        .filter(
+            photopolymer=polymer,
         )
-        .order_by(
-            "-end",
-            "-id",
-        )[:30]
+        .select_related(
+            "customer",
+        )
     )
 
+    # ======================================================
+    # WAREHOUSE ORDERS
+    #
+    # ProductionOrder.id_number:
+    #   "JASS 123/26"
+    #
+    # Order.order_id:
+    #   "123/26"
+    # ======================================================
+
+    order_numbers = []
+
+    for production_order in production_orders:
+        if not production_order.id_number:
+            continue
+
+        order_number = (
+            production_order.id_number
+            .rsplit(" ", 1)[-1]
+            .strip()
+        )
+
+        if order_number:
+            order_numbers.append(
+                order_number
+            )
+
+    warehouse_orders = list(
+        Order.objects
+        .filter(
+            order_id__in=order_numbers,
+        )
+        .select_related(
+            "provider",
+            "customer",
+        )
+    )
+
+    # ======================================================
+    # MAPA ZAMÓWIEŃ
+    #
+    # klucz:
+    # "JASS 123/26"
+    # ======================================================
+
+    warehouse_order_map = {
+        f"{order.provider} {order.order_id}":
+            order
+        for order in warehouse_orders
+    }
+
+    # ======================================================
+    # PRODUCTION USAGE
+    # ======================================================
+
+    production_usage = []
+
+    for production_order in production_orders:
+
+        warehouse_order = (
+            warehouse_order_map.get(
+                production_order.id_number
+            )
+        )
+
+        order_date = (
+            warehouse_order.order_date
+            if warehouse_order
+            else None
+        )
+
+        quantity = (
+            production_order.quantity
+            or 0
+        )
+
+        production_usage.append({
+            "production_order":
+                production_order,
+
+            "warehouse_order":
+                warehouse_order,
+
+            "number":
+                production_order.id_number,
+
+            "customer":
+                production_order.customer,
+
+            "quantity":
+                quantity,
+
+            # zgodnie z założeniem:
+            # pokazujemy datę zamówienia
+            "order_date":
+                order_date,
+        })
+
+    # ======================================================
+    # SORTOWANIE
+    # najnowsze zamówienia najpierw
+    # ======================================================
+
+    production_usage.sort(
+        key=lambda row: (
+            row["order_date"]
+            is not None,
+
+            row["order_date"]
+            or datetime.date.min,
+        ),
+        reverse=True,
+    )
+
+    # ======================================================
+    # SUMMARY
+    # ======================================================
+
+    production_total_quantity = sum(
+        row["quantity"]
+        for row in production_usage
+    )
+
+    production_dates = [
+        row["order_date"]
+        for row in production_usage
+        if row["order_date"]
+    ]
+
+    production_first_date = (
+        min(production_dates)
+        if production_dates
+        else None
+    )
+
+    production_last_date = (
+        max(production_dates)
+        if production_dates
+        else None
+    )
+
+    production_orders_count = len(
+        production_usage
+    )
+
+    # ======================================================
+    # CONTEXT
+    # ======================================================
+
     return {
-        "polymer": polymer,
+        "polymer":
+            polymer,
 
         "number": (
             f"{polymer.identification_number}"
             f"{polymer.identification_letter or ''}"
         ),
 
-        "status": status,
+        "status":
+            status,
 
         "status_label":
             POLYMER_STATUS_LABELS[
@@ -358,8 +516,21 @@ def get_polymer_detail_context(*, polymer_id):
         "history_services":
             history_services,
 
+        # production
         "production_usage":
             production_usage,
+
+        "production_total_quantity":
+            production_total_quantity,
+
+        "production_orders_count":
+            production_orders_count,
+
+        "production_first_date":
+            production_first_date,
+
+        "production_last_date":
+            production_last_date,
     }
 
 def get_polymer_service(*, service_id):
