@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'css/modern/colors.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="color-orders-page">
+
+    <div class="color-orders-header">
+
+        <div>
+            <h1>Zamówienia farb</h1>
+
+            <p>
+                Zamówienia farb fleksograficznych i historia przyjęć.
+            </p>
+        </div>
+
+        <a
+            href="{% url 'color-order-create' %}"
+            class="color-order-primary-button"
+        >
+            + Nowe zamówienie
+        </a>
+
+    </div>
+
+
+    <div class="color-order-filters">
+
+        <a
+            href="{% url 'color-order-list' %}"
+            class="color-order-filter {% if not selected_status %}active{% endif %}"
+        >
+            Wszystkie
+        </a>
+
+        <a
+            href="?status=open"
+            class="color-order-filter {% if selected_status == 'open' %}active{% endif %}"
+        >
+            Zamówione
+        </a>
+
+        <a
+            href="?status=received"
+            class="color-order-filter {% if selected_status == 'received' %}active{% endif %}"
+        >
+            Przyjęte
+        </a>
+
+        <a
+            href="?status=cancelled"
+            class="color-order-filter {% if selected_status == 'cancelled' %}active{% endif %}"
+        >
+            Anulowane
+        </a>
+
+    </div>
+
+
+    <div class="color-order-table-card">
+
+        <div class="color-order-table-scroll">
+
+            <div class="color-order-list-grid color-order-list-grid--header">
+
+                <div>#</div>
+                <div>Data</div>
+                <div>Dostawca</div>
+                <div>Numer</div>
+                <div>Pozycje</div>
+                <div>Ilość</div>
+                <div>Wartość</div>
+                <div>Status</div>
+                <div></div>
+
+            </div>
+
+
+            {% for order in orders %}
+
+                <a
+                    href="{% url 'color-order-detail' order.pk %}"
+                    class="color-order-list-grid color-order-list-row"
+                >
+
+                    <div class="color-order-id">
+                        #{{ order.id }}
+                    </div>
+
+
+                    <div>
+                        {{ order.order_date|date:"d.m.Y" }}
+                    </div>
+
+
+                    <div class="color-order-provider">
+                        {{ order.get_provider_display }}
+                    </div>
+
+
+                    <div class="color-order-number">
+                        {% if order.number %}
+                            {{ order.number }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+
+
+                    <div>
+                        {{ order.items.count }}
+                    </div>
+
+
+                    <div class="color-order-weight">
+                        <strong>
+                            {{ order.ordered_quantity_kg }}
+                        </strong>
+                        <span>kg</span>
+                    </div>
+
+
+                    <div class="color-order-value">
+                        {{ order.total_value }} zł
+                    </div>
+
+
+                    <div>
+
+                        {% if order.status == "open" %}
+
+                            <span class="color-order-status color-order-status--open">
+                                Zamówione
+                            </span>
+
+                        {% elif order.status == "received" %}
+
+                            <span class="color-order-status color-order-status--received">
+                                Przyjęte
+                            </span>
+
+                        {% elif order.status == "cancelled" %}
+
+                            <span class="color-order-status color-order-status--cancelled">
+                                Anulowane
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="color-order-list-arrow">
+                        ›
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <div class="color-empty-state">
+
+                    <div class="color-empty-state__icon">
+                        ◻
+                    </div>
+
+                    <div class="color-empty-state__title">
+                        Brak zamówień
+                    </div>
+
+                    <div class="color-empty-state__description">
+                        Nie utworzono jeszcze żadnego zamówienia farb.
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -387,3 +387,38 @@ urlpatterns = [
         name="person-pin-change",
     ),
 ]
+
+
+from .modern_views.color_orders import (
+    ColorOrderCreateView,
+    ColorOrderDetailView,
+    ColorOrderReceiveView,
+    ColorOrderListView,
+)
+
+
+urlpatterns += [
+    path(
+        "colors/orders/create/",
+        ColorOrderCreateView.as_view(),
+        name="color-order-create",
+    ),
+
+    path(
+        "colors/orders/<int:pk>/",
+        ColorOrderDetailView.as_view(),
+        name="color-order-detail",
+    ),
+
+    path(
+        "colors/orders/<int:pk>/receive/",
+        ColorOrderReceiveView.as_view(),
+        name="color-order-receive",
+    ),
+
+    path(
+        "colors/orders/",
+        ColorOrderListView.as_view(),
+        name="color-order-list",
+    ),
+]

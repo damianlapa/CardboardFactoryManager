@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'css/modern/colors.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="color-order-create">
+
+    <a
+        href="{% url 'color-order-list' %}"
+        class="color-back-link"
+    >
+        ← Zamówienia farb
+    </a>
+
+    <div class="page-header">
+        <div>
+            <h1>Nowe zamówienie farb</h1>
+
+            <p>
+                Dodaj farby, ilość w kilogramach oraz cenę za kilogram.
+            </p>
+        </div>
+    </div>
+
+
+    <form method="post" id="color-order-form">
+        {% csrf_token %}
+
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+
+        <!-- ====================================================== -->
+        <!-- DANE ZAMÓWIENIA                                       -->
+        <!-- ====================================================== -->
+
+        <div class="order-data">
+
+            <div class="form-field">
+                <label for="{{ form.provider.id_for_label }}">
+                    Dostawca
+                </label>
+
+                {{ form.provider }}
+
+                {{ form.provider.errors }}
+            </div>
+
+
+            <div class="form-field">
+                <label for="{{ form.order_date.id_for_label }}">
+                    Data zamówienia
+                </label>
+
+                {{ form.order_date }}
+
+                {{ form.order_date.errors }}
+            </div>
+
+
+            <div class="form-field">
+                <label for="{{ form.number.id_for_label }}">
+                    Numer zamówienia
+                </label>
+
+                {{ form.number }}
+
+                {{ form.number.errors }}
+            </div>
+
+
+            <div class="form-field">
+                <label for="{{ form.notes.id_for_label }}">
+                    Uwagi
+                </label>
+
+                {{ form.notes }}
+
+                {{ form.notes.errors }}
+            </div>
+
+        </div>
+
+
+        <!-- ====================================================== -->
+        <!-- POZYCJE ZAMÓWIENIA                                    -->
+        <!-- ====================================================== -->
+
+        <div class="items-section">
+
+            <div class="items-header">
+
+                <h2>
+                    Farby
+                </h2>
+
+                <button
+                    type="button"
+                    id="add-item"
+                    class="btn-secondary"
+                >
+                    + Dodaj farbę
+                </button>
+
+            </div>
+
+
+            {{ formset.management_form }}
+
+
+            {% if formset.non_form_errors %}
+                <div class="form-errors">
+                    {{ formset.non_form_errors }}
+                </div>
+            {% endif %}
+
+
+            <div id="items-container">
+
+                {% for item_form in formset %}
+
+                    <div class="order-item">
+
+                        {{ item_form.id }}
+
+
+                        <div class="form-field">
+
+                            <label for="{{ item_form.color.id_for_label }}">
+                                Farba
+                            </label>
+
+                            {{ item_form.color }}
+
+                            {{ item_form.color.errors }}
+
+                        </div>
+
+
+                        <div class="form-field">
+
+                            <label for="{{ item_form.quantity_kg.id_for_label }}">
+                                Ilość [kg]
+                            </label>
+
+                            {{ item_form.quantity_kg }}
+
+                            {{ item_form.quantity_kg.errors }}
+
+                        </div>
+
+
+                        <div class="form-field">
+
+                            <label for="{{ item_form.price_per_kg.id_for_label }}">
+                                Cena / kg
+                            </label>
+
+                            {{ item_form.price_per_kg }}
+
+                            {{ item_form.price_per_kg.errors }}
+
+                        </div>
+
+
+                        <div class="item-value">
+
+                            <label>
+                                Wartość
+                            </label>
+
+                            <strong class="calculated-value">
+                                0.00 zł
+                            </strong>
+
+                        </div>
+
+
+                        <div class="delete-wrapper">
+
+                            {{ item_form.DELETE }}
+
+                            <button
+                                type="button"
+                                class="remove-item"
+                            >
+                                Usuń
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+        <!-- ====================================================== -->
+        <!-- PODSUMOWANIE                                          -->
+        <!-- ====================================================== -->
+
+        <div class="order-summary">
+
+            <span>
+                Łączna wartość zamówienia
+            </span>
+
+            <strong id="order-total">
+                0.00 zł
+            </strong>
+
+        </div>
+
+
+        <!-- ====================================================== -->
+        <!-- ACTIONS                                                -->
+        <!-- ====================================================== -->
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                class="btn-primary"
+            >
+                Zapisz zamówienie
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- ========================================================== -->
+<!-- TEMPLATE NOWEJ POZYCJI                                    -->
+<!-- ========================================================== -->
+
+<div id="empty-form-template" style="display:none;">
+
+    <div class="order-item">
+
+        {{ formset.empty_form.id }}
+
+
+        <div class="form-field">
+
+            <label>
+                Farba
+            </label>
+
+            {{ formset.empty_form.color }}
+
+        </div>
+
+
+        <div class="form-field">
+
+            <label>
+                Ilość [kg]
+            </label>
+
+            {{ formset.empty_form.quantity_kg }}
+
+        </div>
+
+
+        <div class="form-field">
+
+            <label>
+                Cena / kg
+            </label>
+
+            {{ formset.empty_form.price_per_kg }}
+
+        </div>
+
+
+        <div class="item-value">
+
+            <label>
+                Wartość
+            </label>
+
+            <strong class="calculated-value">
+                0.00 zł
+            </strong>
+
+        </div>
+
+
+        <div class="delete-wrapper">
+
+            {{ formset.empty_form.DELETE }}
+
+            <button
+                type="button"
+                class="remove-item"
+            >
+                Usuń
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================== -->
+<!-- JS                                                        -->
+<!-- ========================================================== -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const container = document.getElementById("items-container");
+    const addButton = document.getElementById("add-item");
+
+    const totalForms = document.getElementById(
+        "id_{{ formset.prefix }}-TOTAL_FORMS"
+    );
+
+    const emptyTemplate = document.getElementById(
+        "empty-form-template"
+    );
+
+
+    function parseNumber(value) {
+
+        if (!value) {
+            return 0;
+        }
+
+        const number = parseFloat(
+            String(value).replace(",", ".")
+        );
+
+        return isNaN(number)
+            ? 0
+            : number;
+    }
+
+
+    function calculateTotals() {
+
+        let orderTotal = 0;
+
+
+        container
+            .querySelectorAll(".order-item")
+            .forEach(function (row) {
+
+                const deleteInput = row.querySelector(
+                    'input[name$="-DELETE"]'
+                );
+
+
+                if (
+                    deleteInput &&
+                    deleteInput.checked
+                ) {
+                    return;
+                }
+
+
+                const quantityInput = row.querySelector(
+                    'input[name$="-quantity_kg"]'
+                );
+
+                const priceInput = row.querySelector(
+                    'input[name$="-price_per_kg"]'
+                );
+
+                const valueElement = row.querySelector(
+                    ".calculated-value"
+                );
+
+
+                const quantity = parseNumber(
+                    quantityInput?.value
+                );
+
+                const price = parseNumber(
+                    priceInput?.value
+                );
+
+
+                const value = quantity * price;
+
+
+                if (valueElement) {
+                    valueElement.textContent =
+                        value.toFixed(2) + " zł";
+                }
+
+
+                orderTotal += value;
+
+            });
+
+
+        const totalElement =
+            document.getElementById("order-total");
+
+
+        if (totalElement) {
+            totalElement.textContent =
+                orderTotal.toFixed(2) + " zł";
+        }
+
+    }
+
+
+    function bindRow(row) {
+
+        row
+            .querySelectorAll(
+                'input[name$="-quantity_kg"], ' +
+                'input[name$="-price_per_kg"]'
+            )
+            .forEach(function (input) {
+
+                input.addEventListener(
+                    "input",
+                    calculateTotals
+                );
+
+            });
+
+
+        const removeButton =
+            row.querySelector(".remove-item");
+
+
+        if (removeButton) {
+
+            removeButton.addEventListener(
+                "click",
+                function () {
+
+                    const deleteInput =
+                        row.querySelector(
+                            'input[name$="-DELETE"]'
+                        );
+
+
+                    /*
+                     * Jeśli formularz już istnieje w formsecie,
+                     * zaznaczamy DELETE.
+                     */
+
+                    if (deleteInput) {
+                        deleteInput.checked = true;
+                    }
+
+
+                    row.style.display = "none";
+
+                    calculateTotals();
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /*
+     * Podpinamy istniejące wiersze.
+     */
+
+    container
+        .querySelectorAll(".order-item")
+        .forEach(function (row) {
+            bindRow(row);
+        });
+
+
+    /*
+     * Dodawanie nowej pozycji.
+     */
+
+    addButton.addEventListener(
+        "click",
+        function () {
+
+            const index =
+                parseInt(totalForms.value, 10);
+
+
+            const html =
+                emptyTemplate.innerHTML.replace(
+                    /__prefix__/g,
+                    index
+                );
+
+
+            const wrapper =
+                document.createElement("div");
+
+
+            wrapper.innerHTML =
+                html.trim();
+
+
+            const newRow =
+                wrapper.firstElementChild;
+
+
+            container.appendChild(
+                newRow
+            );
+
+
+            totalForms.value =
+                index + 1;
+
+
+            bindRow(
+                newRow
+            );
+
+
+            calculateTotals();
+
+        }
+    );
+
+
+    calculateTotals();
+
+});
+</script>
+
+{% endblock %}

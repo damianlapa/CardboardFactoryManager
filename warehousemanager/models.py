@@ -868,6 +868,167 @@ class Color(models.Model):
         return color_hex
 
 
+
+
+
+from decimal import Decimal
+
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+
+class ColorOrder(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_RECEIVED = "received"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = (
+        (STATUS_OPEN, "Zamówione"),
+        (STATUS_RECEIVED, "Przyjęte"),
+        (STATUS_CANCELLED, "Anulowane"),
+    )
+
+    provider = models.CharField(
+        max_length=32,
+        choices=COLORS_PROVIDERS
+    )
+
+    order_date = models.DateField(datetime.date.today)
+
+    received_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_OPEN,
+    )
+
+    number = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-order_date", "-id"]
+
+    def __str__(self):
+        return f"Farby #{self.pk} - {self.get_provider_display()} - {self.order_date}"
+
+    @property
+    def total_value(self):
+        return sum(
+            (item.total_value for item in self.items.all()),
+            Decimal("0.00"),
+        )
+
+    @property
+    def ordered_quantity_kg(self):
+        return sum(
+            (item.quantity_kg for item in self.items.all()),
+            Decimal("0.00"),
+        )
+
+    @property
+    def received_quantity_kg(self):
+        return sum(
+            (item.received_quantity_kg for item in self.items.all()),
+            Decimal("0.00"),
+        )
+
+    @transaction.atomic
+    def receive(self, received_date=None):
+        if self.status == self.STATUS_RECEIVED:
+            raise ValidationError(
+                "To zamówienie zostało już przyjęte."
+            )
+
+        if self.status == self.STATUS_CANCELLED:
+            raise ValidationError(
+                "Nie można przyjąć anulowanego zamówienia."
+            )
+
+        # Każda pozycja musi mieć wpisane fizyczne wiadra
+        for item in self.items.all():
+            if not item.buckets.exists():
+                raise ValidationError(
+                    f"Brak wiader dla koloru: {item.color}"
+                )
+
+        self.status = self.STATUS_RECEIVED
+        self.received_date = received_date or timezone.localdate()
+
+        self.save(
+            update_fields=[
+                "status",
+                "received_date",
+            ]
+        )
+
+
+class ColorOrderItem(models.Model):
+    order = models.ForeignKey(
+        ColorOrder,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    color = models.ForeignKey(
+        Color,
+        on_delete=models.PROTECT,
+        related_name="order_items",
+    )
+
+    quantity_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    price_per_kg = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+    )
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.color} - {self.quantity_kg} kg"
+
+    @property
+    def total_value(self):
+        return (
+            Decimal(self.quantity_kg or 0)
+            * Decimal(self.price_per_kg or 0)
+        ).quantize(Decimal("0.01"))
+
+    @property
+    def received_quantity_kg(self):
+        return sum(
+            (bucket.weight for bucket in self.buckets.all()),
+            Decimal("0.00"),
+        )
+
+    @property
+    def quantity_difference_kg(self):
+        return (
+            self.received_quantity_kg
+            - Decimal(self.quantity_kg or 0)
+        ).quantize(Decimal("0.01"))
+
+
 class ColorBucket(models.Model):
     color = models.ForeignKey(Color, on_delete=models.PROTECT)
     provider = models.CharField(max_length=32, choices=COLORS_PROVIDERS)
@@ -875,6 +1036,13 @@ class ColorBucket(models.Model):
     production_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)
     usage = models.TextField(null=True, blank=True)
+    order_item = models.ForeignKey(
+        ColorOrderItem,
+        on_delete=models.PROTECT,
+        related_name="buckets",
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return f'{self.color} #{self.id} {self.provider}'

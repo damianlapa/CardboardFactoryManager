@@ -233,3 +233,92 @@ class PolymerServiceForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+from django import forms
+from django.forms import inlineformset_factory
+
+from .models import ColorOrder, ColorOrderItem
+
+
+class ColorOrderForm(forms.ModelForm):
+    class Meta:
+        model = ColorOrder
+        fields = [
+            "provider",
+            "order_date",
+            "number",
+            "notes",
+        ]
+
+        widgets = {
+            "provider": forms.Select(),
+            "order_date": forms.DateInput(
+                attrs={
+                    "type": "date",
+                }
+            ),
+            "number": forms.TextInput(),
+            "notes": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                }
+            ),
+        }
+
+
+class ColorOrderItemForm(forms.ModelForm):
+    class Meta:
+        model = ColorOrderItem
+        fields = [
+            "color",
+            "quantity_kg",
+            "price_per_kg",
+        ]
+
+        widgets = {
+            "color": forms.Select(),
+            "quantity_kg": forms.NumberInput(
+                attrs={
+                    "step": "0.01",
+                    "min": "0.01",
+                }
+            ),
+            "price_per_kg": forms.NumberInput(
+                attrs={
+                    "step": "0.01",
+                    "min": "0",
+                }
+            ),
+        }
+
+    def clean_quantity_kg(self):
+        value = self.cleaned_data["quantity_kg"]
+
+        if value <= 0:
+            raise forms.ValidationError(
+                "Ilość musi być większa od 0 kg."
+            )
+
+        return value
+
+    def clean_price_per_kg(self):
+        value = self.cleaned_data["price_per_kg"]
+
+        if value < 0:
+            raise forms.ValidationError(
+                "Cena nie może być ujemna."
+            )
+
+        return value
+
+
+ColorOrderItemFormSet = inlineformset_factory(
+    ColorOrder,
+    ColorOrderItem,
+    form=ColorOrderItemForm,
+    extra=1,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+)
