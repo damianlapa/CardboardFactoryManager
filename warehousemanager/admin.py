@@ -35,6 +35,8 @@ admin.site.register(GluerNumber)
 admin.site.register(WorkStationQualification)
 admin.site.register(LocalSetting)
 admin.site.register(CustomerDeliveryPlace)
+admin.site.register(ColorOrder)
+admin.site.register(ColorOrderItem)
 
 from django.contrib import admin
 from .models import Buyer
