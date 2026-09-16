@@ -9,6 +9,15 @@ from production.modern_views.orders import (
     ProductionOrderDetailView,
 )
 
+from production.modern_views.workstations import (
+    StartProductionUnitView,
+    FinishProductionUnitView,
+    PlanProductionUnitView,
+    RemoveProductionUnitFromPlanView,
+    MoveProductionUnitUpView,
+    MoveProductionUnitDownView
+)
+
 
 urlpatterns = [
     # path('', ProductionMenu.as_view(), name='production-menu'),
@@ -46,12 +55,12 @@ urlpatterns += [
 
 # production units
 urlpatterns += [
-    path('unit/start/<int:unit_id>/', StartProductionUnit.as_view(), name='unit-start'),
-    path('unit/finish/<int:unit_id>/', FinishProductionUnit.as_view(), name='unit-finish'),
-    path('unit/plan/<int:unit_id>/', PlanProductionUnit.as_view(), name='unit-plan'),
-    path('unit/remove/<int:unit_id>/', RemoveProductionUnit.as_view(), name='unit-remove'),
-    path('unit/up/<int:unit_id>/', UpProductionUnit.as_view(), name='unit-up'),
-    path('unit/down/<int:unit_id>/', DownProductionUnit.as_view(), name='unit-down'),
+    # path('unit/start/<int:unit_id>/', StartProductionUnit.as_view(), name='unit-start'),
+    # path('unit/finish/<int:unit_id>/', FinishProductionUnit.as_view(), name='unit-finish'),
+    # path('unit/plan/<int:unit_id>/', PlanProductionUnit.as_view(), name='unit-plan'),
+    # path('unit/remove/<int:unit_id>/', RemoveProductionUnit.as_view(), name='unit-remove'),
+    # path('unit/up/<int:unit_id>/', UpProductionUnit.as_view(), name='unit-up'),
+    # path('unit/down/<int:unit_id>/', DownProductionUnit.as_view(), name='unit-down'),
 ]
 
 # worker
@@ -182,5 +191,42 @@ urlpatterns += [
         ),
 ]
 
+urlpatterns += [
+    path(
+        "units/<int:unit_id>/start/",
+        StartProductionUnitView.as_view(),
+        name="unit-start",
+    ),
+
+    path(
+        "units/<int:unit_id>/finish/",
+        FinishProductionUnitView.as_view(),
+        name="unit-finish",
+    ),
+
+    path(
+        "units/<int:unit_id>/plan/",
+        PlanProductionUnitView.as_view(),
+        name="unit-plan",
+    ),
+
+    path(
+        "units/<int:unit_id>/remove-from-plan/",
+        RemoveProductionUnitFromPlanView.as_view(),
+        name="unit-remove-from-plan",
+    ),
+
+    path(
+        "units/<int:unit_id>/move-up/",
+        MoveProductionUnitUpView.as_view(),
+        name="unit-move-up",
+    ),
+
+    path(
+        "units/<int:unit_id>/move-down/",
+        MoveProductionUnitDownView.as_view(),
+        name="unit-move-down",
+    ),
+]
 
 
