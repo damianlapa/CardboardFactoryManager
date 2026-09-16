@@ -894,7 +894,7 @@ class ColorOrder(models.Model):
         choices=COLORS_PROVIDERS
     )
 
-    order_date = models.DateField(datetime.date.today)
+    order_date = models.DateField(default=datetime.date.today)
 
     received_date = models.DateField(
         null=True,

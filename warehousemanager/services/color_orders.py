@@ -160,6 +160,11 @@ def receive_color_order(
                 color=item.color,
                 weight=weight,
                 order_item=item,
+                provider=color_order.provider,
+                production_date=color_order.order_date,
+                expiration_date=color_order.order_date + datetime.timedelta(days=183),
+                usage=""
+
 
                 # tutaj później możemy dodać:
                 # received_date=received_date,
