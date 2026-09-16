@@ -80,6 +80,13 @@ def can_view_deliveries_menu(user):
     )
 
 
+def can_view_colors(user):
+    return (
+        is_boss(user)
+        or is_office_worker(user)
+    )
+
+
 def get_sidebar_access(user):
     return {
         "dashboard": can_view_dashboard(user),
@@ -92,5 +99,6 @@ def get_sidebar_access(user):
         "absences": can_view_absences_menu(user),
         "polymers": can_view_polymers_menu(user),
         "punches": can_view_punches_menu(user),
-        "deliveries": can_view_deliveries_menu(user)
+        "deliveries": can_view_deliveries_menu(user),
+        "colors": can_view_colors(user)
     }

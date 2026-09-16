@@ -513,7 +513,7 @@
                                             href="{% url 'polymer-details' polymer.id %}"
                                             class="polymer-row-link"
                                         >
-                                            {{ polymer.name|default:"—" }}
+                                            {{ polymer.name|default:"—"|truncatechars:30 }}
                                         </a>
 
                                     </td>
