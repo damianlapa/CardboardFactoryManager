@@ -1052,7 +1052,7 @@ class Photopolymer(models.Model):
     producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
     project = models.FileField(upload_to='projects', null=True, blank=True)
     colors = models.ManyToManyField(Color)
-    identification_number = models.IntegerField()
+    identification_number = models.IntegerField(null=True, blank=True)
     identification_letter = models.CharField(max_length=8, blank=True, null=True)
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     dimensions = models.CharField(max_length=32, blank=True, null=True)
