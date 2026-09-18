@@ -107,7 +107,7 @@ class AllProductionOrders(
             )
             .order_by(
                 F("priority").desc(nulls_last=True),
-                "-add_date",
+                "add_date",
             )
         )
 
