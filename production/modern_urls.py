@@ -62,6 +62,11 @@ from production.modern_views.reports import (
 )
 
 
+from production.modern_views.order_priorities import (
+    ProductionOrderPriorityUpdateView
+)
+
+
 app_name = "modern_production"
 
 
@@ -331,5 +336,15 @@ urlpatterns += [
         "reports/",
         ProductionReportsView.as_view(),
         name="production-reports",
+    ),
+]
+
+
+
+urlpatterns += [
+    path(
+        "orders/<int:production_order_id>/priority/",
+        ProductionOrderPriorityUpdateView.as_view(),
+        name="production-order-priority-update",
     ),
 ]

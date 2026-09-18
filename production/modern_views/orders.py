@@ -3,7 +3,7 @@ import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
 from django.http import JsonResponse
 from django.shortcuts import (
     get_object_or_404,
@@ -106,7 +106,7 @@ class AllProductionOrders(
                 )
             )
             .order_by(
-                "-priority",
+                F("priority").desc(nulls_last=True),
                 "-add_date",
             )
         )

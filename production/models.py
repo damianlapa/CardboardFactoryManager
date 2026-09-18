@@ -6,6 +6,7 @@ from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 from warehouse.models import MonthResults, DeliveryItem, Order
 from decimal import Decimal, ROUND_HALF_UP
 import datetime
+from django.conf import settings
 
 PRODUCTION_ORDER_STATUSES = (
     ('ORDERED', 'ORDERED'),
@@ -69,7 +70,22 @@ class ProductionOrder(models.Model):
     quantity = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=PRODUCTION_ORDER_STATUSES, default='UNCOMPLETED')
     completed = models.DateTimeField(null=True, blank=True)
-    priority = models.BooleanField(default=False)
+    PRIORITY_CHOICES = (
+        (1, "Niski"),
+        (2, "Wysoki"),
+        (3, "Krytyczny"),
+    )
+
+    priority = models.PositiveSmallIntegerField(
+        choices=PRIORITY_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    priority_date = models.DateField(
+        null=True,
+        blank=True,
+    )
     notes = models.CharField(max_length=1000, null=True, blank=True)
     add_date = models.DateTimeField(auto_now_add=True)
     photopolymer = models.ForeignKey("warehousemanager.Photopolymer", on_delete=models.PROTECT, null=True, blank=True, related_name="orders")
@@ -148,6 +164,72 @@ class ProductionOrder(models.Model):
 
     class Meta:
         ordering = ['add_date']
+
+
+from django.conf import settings
+from django.db import models
+
+
+class ProductionOrderPriorityHistory(models.Model):
+
+    PRIORITY_CHOICES = (
+        (1, "Niski"),
+        (2, "Wysoki"),
+        (3, "Krytyczny"),
+    )
+
+    order = models.ForeignKey(
+        ProductionOrder,
+        on_delete=models.CASCADE,
+        related_name="priority_history",
+    )
+
+    priority = models.PositiveSmallIntegerField(
+        choices=ProductionOrder.PRIORITY_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    priority_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="production_priority_changes",
+    )
+
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = [
+            "-changed_at",
+            "-id",
+        ]
+
+        indexes = [
+            models.Index(
+                fields=["order", "-changed_at"],
+            ),
+            models.Index(
+                fields=["changed_at"],
+            ),
+        ]
+
+    def __str__(self):
+        priority = self.priority if self.priority else "brak"
+
+        return (
+            f"{self.order} | "
+            f"priority={priority} | "
+            f"{self.changed_at:%Y-%m-%d %H:%M}"
+        )
 
 
 class WorkStation(models.Model):
