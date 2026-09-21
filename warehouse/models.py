@@ -55,6 +55,7 @@ class Provider(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=128, unique=True)
+    alter_name = models.CharField(max_length=128, null=True, blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     FEFCO_code = models.CharField(max_length=4, default="201", choices=FEFCO_CODES)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
@@ -64,6 +65,7 @@ class Product(models.Model):
     def clean(self):
         if self.name:
             self.name = norm_names(self.name)
+            self.alter_name = create_alter_name(norm_names(self.name))
         if self.dimensions:
             self.dimensions = norm_dimensions(self.dimensions)
         if self.flute:
@@ -74,6 +76,7 @@ class Product(models.Model):
         # zabezpieczenie nawet jak ktoś nie woła full_clean()
         if self.name:
             self.name = norm_names(self.name)
+            self.alter_name = create_alter_name(norm_names(self.name))
         if self.dimensions:
             self.dimensions = norm_dimensions(self.dimensions)
         if self.flute:
