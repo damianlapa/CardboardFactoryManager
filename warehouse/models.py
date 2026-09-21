@@ -2215,6 +2215,7 @@ from django.db import models
 class ShipmentUnit(models.Model):
     order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name="shipment_units")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, related_name="shipment_customers", null=True, blank=True)
     palette = models.ForeignKey(Palette, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)

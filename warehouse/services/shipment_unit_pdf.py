@@ -729,13 +729,13 @@ class ShipmentUnitPDF:
 
     def _customer_name(self):
         return self._safe_text(
-            self.order.customer
+            self.shipment_unit.customer
         ).upper()
 
     def _product_name(self):
         product = (
-            self.shipment_unit.product
-            or self.order.product
+            self.shipment_unit.product.alter_name
+            or self.order.product.alter_name
         )
 
         return self._safe_text(product)

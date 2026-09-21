@@ -1,5 +1,6 @@
 # warehouse/views.py
 
+from warehousemanager.models import Buyer
 from django.views.generic import ListView
 from warehouse.services.products import safe_get_or_create_product
 from warehouse.forms import WarehouseStockFifoSellForm
@@ -3264,6 +3265,7 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             "default_palette": packaging.palette if packaging else None,
             "shipment_units": self.get_shipment_units(order),
             "shipment_unit_history": shipment_unit_history,
+            "customers": Buyer.objects.all()
         }
 
         context.update(kwargs)
@@ -3291,6 +3293,7 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
         quantity_raw = request.POST.get("quantity")
         units_count_raw = request.POST.get("units_count", "1")
         palette_id = request.POST.get("palette")
+        customer_id_raw = request.POST.get("customer")
 
         try:
             quantity = int(quantity_raw)
@@ -3301,6 +3304,11 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             units_count = int(units_count_raw)
         except (TypeError, ValueError):
             units_count = 0
+
+        try:
+            buyer = Buyer.objects.get(id=int(customer_id_raw))
+        except Buyer.DoesNotExist:
+            buyer = None
 
         palette = None
 
@@ -3359,6 +3367,19 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
                 ),
             )
 
+        if not buyer:
+            return render(
+                request,
+                self.template_name,
+                self.get_context(
+                    order,
+                    quantity=quantity_raw,
+                    units_count=units_count_raw,
+                    selected_palette_id=palette_id,
+                    error="Klient nie istnieje.",
+                ),
+            )
+
         with transaction.atomic():
             for _ in range(units_count):
                 ShipmentUnit.objects.create(
@@ -3366,6 +3387,7 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
                     quantity=quantity,
                     palette=palette,
                     created_by=request.user,
+                    customer=buyer
                 )
 
         messages.success(

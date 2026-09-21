@@ -548,6 +548,11 @@
                 </tr>
 
                 <tr>
+                    <th>Alternatywna nazwa</th>
+                    <td>{{ order.product.alter_name|default:"Brak produktu" }}</td>
+                </tr>
+
+                <tr>
                     <th>Pracownik</th>
                     <td>
                         {% if request.user.get_full_name %}
@@ -583,6 +588,22 @@
 
             <form method="post">
                 {% csrf_token %}
+
+                <div class="shipment-form-field">
+                    <label for="quantity">
+                        Klient
+                    </label>
+
+                    <select name="customer" id="customer">
+                        {% for c in customers %}
+                            {% if c == order.customer %}
+                                <option selected value="{{ c.id }}">{{ c }}</option>
+                            {% else %}
+                                <option value="{{ c.id }}">{{ c }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
 
                 <div class="shipment-form-field">
                     <label for="quantity">
@@ -741,7 +762,7 @@
                                 </span>
 
                                 <span class="shipment-attribute-value">
-                                    {{ shipment_unit.product|default:"Brak" }}
+                                    {{ shipment_unit.product.alter_name|default:"Brak" }}
                                 </span>
                             </div>
 
@@ -771,11 +792,11 @@
 
                             <div class="shipment-attribute">
                                 <span class="shipment-attribute-label">
-                                    Zlecenie
+                                    Klient
                                 </span>
 
                                 <span class="shipment-attribute-value">
-                                    {{ shipment_unit.order }}
+                                    {{ shipment_unit.customer }}
                                 </span>
                             </div>
 
