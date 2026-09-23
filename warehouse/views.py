@@ -3678,7 +3678,7 @@ def build_shipment_summary(items):
         shipment_unit = item.shipment_unit
         order = shipment_unit.order
 
-        customer = order.customer
+        customer = shipment_unit.customer or order.customer
         product = shipment_unit.product or order.product
         palette = shipment_unit.palette
 
@@ -3687,7 +3687,7 @@ def build_shipment_summary(items):
 
         if product:
             product_id = product.id
-            product_name = str(product)
+            product_name = str(product.alternative_name)
         else:
             product_id = None
             product_name = "Brak produktu"
