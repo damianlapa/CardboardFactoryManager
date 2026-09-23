@@ -3687,7 +3687,7 @@ def build_shipment_summary(items):
 
         if product:
             product_id = product.id
-            product_name = str(product.alternative_name)
+            product_name = str(product.alter_name)
         else:
             product_id = None
             product_name = "Brak produktu"
