@@ -1,6 +1,7 @@
 from warehouse.models import CustomerStockList, CustomerStockItem, WarehouseStock
 
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 
 
 def add_customer_stock_item(*, stock_list, warehouse_stock_id, minimum_quantity):
@@ -86,3 +87,49 @@ def get_customer_stock_context(user):
         },
         "available_stocks": available_stocks,
     }
+
+
+def update_customer_stock_item(
+    *,
+    stock_list,
+    item_id,
+    minimum_quantity,
+):
+    item = get_object_or_404(
+        CustomerStockItem,
+        pk=item_id,
+        stock_list=stock_list,
+    )
+
+    try:
+        minimum_quantity = int(minimum_quantity)
+    except (TypeError, ValueError):
+        raise ValidationError(
+            "Minimalna ilość musi być liczbą."
+        )
+
+    if minimum_quantity < 0:
+        raise ValidationError(
+            "Minimalna ilość nie może być ujemna."
+        )
+
+    item.minimum_quantity = minimum_quantity
+    item.save(
+        update_fields=["minimum_quantity"]
+    )
+
+    return item
+
+
+def delete_customer_stock_item(
+    *,
+    stock_list,
+    item_id,
+):
+    item = get_object_or_404(
+        CustomerStockItem,
+        pk=item_id,
+        stock_list=stock_list,
+    )
+
+    item.delete()

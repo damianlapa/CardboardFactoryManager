@@ -7,7 +7,9 @@ from django.views import View
 from warehouse.models import CustomerStockList
 from warehouse.services.customer_stock import (
     add_customer_stock_item,
+    delete_customer_stock_item,
     get_customer_stock_context,
+    update_customer_stock_item,
 )
 
 
@@ -37,12 +39,16 @@ class CustomerStockListView(LoginRequiredMixin, View):
 
         action = request.POST.get("action")
 
-        if action == "add":
-            try:
+        try:
+            if action == "add":
                 add_customer_stock_item(
                     stock_list=stock_list,
-                    warehouse_stock_id=request.POST.get("warehouse_stock"),
-                    minimum_quantity=request.POST.get("minimum_quantity"),
+                    warehouse_stock_id=request.POST.get(
+                        "warehouse_stock"
+                    ),
+                    minimum_quantity=request.POST.get(
+                        "minimum_quantity"
+                    ),
                 )
 
                 messages.success(
@@ -50,17 +56,42 @@ class CustomerStockListView(LoginRequiredMixin, View):
                     "Stan magazynowy został dodany.",
                 )
 
-            except ValidationError as e:
-                messages.error(
-                    request,
-                    e.message,
+            elif action == "update":
+                update_customer_stock_item(
+                    stock_list=stock_list,
+                    item_id=request.POST.get("item_id"),
+                    minimum_quantity=request.POST.get(
+                        "minimum_quantity"
+                    ),
                 )
 
-            except Exception as e:
-                messages.error(
+                messages.success(
                     request,
-                    f"Nie udało się dodać pozycji: {e}",
+                    "Minimalny stan został zmieniony.",
                 )
+
+            elif action == "delete":
+                delete_customer_stock_item(
+                    stock_list=stock_list,
+                    item_id=request.POST.get("item_id"),
+                )
+
+                messages.success(
+                    request,
+                    "Pozycja została usunięta.",
+                )
+
+        except ValidationError as e:
+            messages.error(
+                request,
+                e.message,
+            )
+
+        except Exception as e:
+            messages.error(
+                request,
+                f"Wystąpił błąd: {e}",
+            )
 
         return redirect(
             "modern_warehouse:customer-stock-list"

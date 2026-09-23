@@ -133,6 +133,10 @@
                         Status
                     </div>
 
+                    <div class="actions-column">
+                        Akcje
+                    </div>
+
                 </div>
 
 
@@ -213,6 +217,31 @@
                             {% endif %}
 
                         </div>
+
+                        <div class="actions-column">
+
+    <button
+        type="button"
+        class="customer-stock-action-button edit"
+        data-action="edit"
+        data-item-id="{{ item.id }}"
+        data-stock-name="{{ item.warehouse_stock.stock.name }}"
+        data-minimum="{{ item.minimum_quantity }}"
+    >
+        Edytuj
+    </button>
+
+    <button
+        type="button"
+        class="customer-stock-action-button delete"
+        data-action="delete"
+        data-item-id="{{ item.id }}"
+        data-stock-name="{{ item.warehouse_stock.stock.name }}"
+    >
+        Usuń
+    </button>
+
+</div>
 
                     </div>
 
@@ -362,6 +391,191 @@
                     class="customer-stock-button-primary"
                 >
                     Dodaj
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div
+    id="customerStockEditModal"
+    class="customer-stock-modal"
+>
+
+    <div
+        class="customer-stock-modal-backdrop"
+        data-close-edit-modal
+    ></div>
+
+    <div class="customer-stock-modal-dialog">
+
+        <div class="customer-stock-modal-header">
+
+            <div>
+                <h2>
+                    Edytuj minimalny stan
+                </h2>
+
+                <p id="customerStockEditName"></p>
+            </div>
+
+            <button
+                type="button"
+                class="customer-stock-modal-close"
+                data-close-edit-modal
+                aria-label="Zamknij"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="action"
+                value="update"
+            >
+
+            <input
+                type="hidden"
+                name="item_id"
+                id="customerStockEditItemId"
+            >
+
+            <div class="customer-stock-modal-body">
+
+                <div class="customer-stock-field">
+
+                    <label for="customerStockEditMinimum">
+                        Minimalna ilość
+                    </label>
+
+                    <input
+                        type="number"
+                        name="minimum_quantity"
+                        id="customerStockEditMinimum"
+                        min="0"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+            <div class="customer-stock-modal-footer">
+
+                <button
+                    type="button"
+                    class="customer-stock-button-secondary"
+                    data-close-edit-modal
+                >
+                    Anuluj
+                </button>
+
+                <button
+                    type="submit"
+                    class="customer-stock-button-primary"
+                >
+                    Zapisz
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div
+    id="customerStockDeleteModal"
+    class="customer-stock-modal"
+>
+
+    <div
+        class="customer-stock-modal-backdrop"
+        data-close-delete-modal
+    ></div>
+
+    <div class="customer-stock-modal-dialog customer-stock-delete-dialog">
+
+        <div class="customer-stock-modal-header">
+
+            <div>
+                <h2>
+                    Usuń pozycję
+                </h2>
+
+                <p>
+                    Ta operacja usunie pozycję tylko z Twojej listy.
+                    Stan magazynowy pozostanie bez zmian.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="customer-stock-modal-close"
+                data-close-delete-modal
+                aria-label="Zamknij"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="action"
+                value="delete"
+            >
+
+            <input
+                type="hidden"
+                name="item_id"
+                id="customerStockDeleteItemId"
+            >
+
+            <div class="customer-stock-modal-body">
+
+                <div class="customer-stock-delete-message">
+
+                    Czy na pewno chcesz usunąć:
+
+                    <strong id="customerStockDeleteName"></strong>
+
+                    z listy obserwowanych stanów?
+
+                </div>
+
+            </div>
+
+            <div class="customer-stock-modal-footer">
+
+                <button
+                    type="button"
+                    class="customer-stock-button-secondary"
+                    data-close-delete-modal
+                >
+                    Anuluj
+                </button>
+
+                <button
+                    type="submit"
+                    class="customer-stock-button-danger"
+                >
+                    Usuń
                 </button>
 
             </div>

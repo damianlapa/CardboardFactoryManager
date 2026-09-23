@@ -211,12 +211,13 @@
     display: grid;
 
     grid-template-columns:
-        minmax(260px, 2.5fr)
-        minmax(150px, 1.2fr)
-        110px
-        110px
-        110px
-        100px;
+    minmax(260px, 2.5fr)
+    minmax(150px, 1.2fr)
+    110px
+    110px
+    110px
+    90px
+    140px;
 
     align-items: center;
 
@@ -707,14 +708,15 @@
 @media (max-width: 1200px) {
 
     .customer-stock-row {
-        grid-template-columns:
-            minmax(220px, 2fr)
-            minmax(130px, 1fr)
-            90px
-            90px
-            90px
-            90px;
-    }
+    grid-template-columns:
+        minmax(220px, 2fr)
+        minmax(130px, 1fr)
+        90px
+        90px
+        90px
+        80px
+        130px;
+}
 
 }
 
@@ -754,4 +756,109 @@
         width: 100%;
     }
 
+}
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.actions-column {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 6px;
+}
+
+.customer-stock-action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: auto;
+    min-height: 30px;
+
+    padding: 0 9px;
+
+    border: 1px solid var(--app-border);
+    border-radius: 7px;
+
+    background: var(--app-surface);
+
+    color: var(--app-text);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.customer-stock-action-button.edit:hover {
+    border-color: var(--app-primary);
+
+    color: var(--app-primary);
+}
+
+.customer-stock-action-button.delete:hover {
+    border-color: #dc2626;
+
+    background: rgba(220, 38, 38, 0.05);
+
+    color: #dc2626;
+}
+
+
+/* =========================================
+   DELETE MODAL
+========================================= */
+
+.customer-stock-delete-dialog {
+    width: min(480px, 100%);
+}
+
+.customer-stock-delete-message {
+    font-size: 14px;
+    line-height: 1.6;
+
+    color: var(--app-text);
+}
+
+.customer-stock-delete-message strong {
+    display: block;
+
+    margin-top: 8px;
+
+    color: var(--app-text);
+}
+
+.customer-stock-button-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: auto;
+    min-height: 38px;
+
+    padding: 0 16px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #dc2626;
+
+    color: #fff;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.customer-stock-button-danger:hover {
+    background: #b91c1c;
 }
