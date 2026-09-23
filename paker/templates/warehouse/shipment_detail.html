@@ -626,7 +626,7 @@
 
                         <div>
                             <strong>Klient:</strong>
-                            {{ item.shipment_unit.order.customer }}
+                            {{ item.shipment_unit.customer }}
                         </div>
 
                         <div>
@@ -641,7 +641,7 @@
 
                         <div>
                             <strong>Produkt:</strong>
-                            {{ item.shipment_unit.product|default:item.shipment_unit.order.product }}
+                            {{ item.shipment_unit.product.alter_name|default:item.shipment_unit.order.product.alter_name }}
                         </div>
 
                         <div>
