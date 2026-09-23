@@ -2442,3 +2442,70 @@ class ShipmentItem(models.Model):
             f"– unit #{self.shipment_unit_id}"
         )
 
+
+from django.conf import settings
+
+
+class CustomerStockList(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="customer_stock_list",
+    )
+
+    warehouse_stocks = models.ManyToManyField(
+        WarehouseStock,
+        through="CustomerStockItem",
+        related_name="customer_stock_lists",
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"Customer stock list - {self.user}"
+
+
+class CustomerStockItem(models.Model):
+    stock_list = models.ForeignKey(
+        CustomerStockList,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    warehouse_stock = models.ForeignKey(
+        WarehouseStock,
+        on_delete=models.CASCADE,
+        related_name="customer_stock_items",
+    )
+
+    minimum_quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["stock_list", "warehouse_stock"],
+                name="unique_customer_stock_item",
+            )
+        ]
+        ordering = ["warehouse_stock__stock__name"]
+
+    def __str__(self):
+        return (
+            f"{self.stock_list.user} | "
+            f"{self.warehouse_stock.stock.name} | "
+            f"min: {self.minimum_quantity}"
+        )
+
+    @property
+    def current_quantity(self):
+        return self.warehouse_stock.quantity
+
+    @property
+    def shortage(self):
+        return max(
+            self.minimum_quantity - self.warehouse_stock.quantity,
+            0,
+        )
+
+    @property
+    def below_minimum(self):
+        return self.warehouse_stock.quantity < self.minimum_quantity

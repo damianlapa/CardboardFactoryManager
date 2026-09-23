@@ -23,6 +23,14 @@ urlpatterns = [
     path('deliveries/', include('deliveries.urls')),
     path('whm/', include('warehousemanager.urls')),
     path('warehouse/', include('warehouse.urls', namespace='warehouse')),
+
+    path(
+            "modern_warehouse/",
+            include(
+                "warehouse.modern_urls"
+            ),
+        ),
+
     path("maintenance/", include("maintenance.urls")),
 
     path('admin/', admin.site.urls, name='admin'),

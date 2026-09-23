@@ -35,7 +35,9 @@ from .models import (
     ShipmentUnit,
     ShipmentUnitHistory,
     Shipment,
-    ShipmentItem
+    ShipmentItem,
+    CustomerStockList,
+    CustomerStockItem,
 )
 
 
@@ -551,6 +553,81 @@ class ProductPackagingAdmin(admin.ModelAdmin):
     search_fields = ("product__name", "palette__name")
     autocomplete_fields = ["product", "palette"]
     ordering = ("product__name",)
+
+
+class CustomerStockItemInline(admin.TabularInline):
+    model = CustomerStockItem
+    extra = 1
+    autocomplete_fields = ["warehouse_stock"]
+
+
+@admin.register(CustomerStockList)
+class CustomerStockListAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "items_count",
+    ]
+
+    search_fields = [
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+    ]
+
+    autocomplete_fields = ["user"]
+
+    inlines = [
+        CustomerStockItemInline,
+    ]
+
+    def items_count(self, obj):
+        return obj.items.count()
+
+    items_count.short_description = "Liczba pozycji"
+
+
+@admin.register(CustomerStockItem)
+class CustomerStockItemAdmin(admin.ModelAdmin):
+    list_display = [
+        "stock_list",
+        "warehouse_stock",
+        "current_quantity_display",
+        "minimum_quantity",
+        "shortage_display",
+        "below_minimum_display",
+    ]
+
+    list_filter = [
+        "stock_list",
+        "warehouse_stock__warehouse",
+    ]
+
+    search_fields = [
+        "stock_list__user__username",
+        "warehouse_stock__stock__name",
+        "warehouse_stock__warehouse__name",
+    ]
+
+    autocomplete_fields = [
+        "stock_list",
+        "warehouse_stock",
+    ]
+
+    def current_quantity_display(self, obj):
+        return obj.current_quantity
+
+    current_quantity_display.short_description = "Stan"
+
+    def shortage_display(self, obj):
+        return obj.shortage
+
+    shortage_display.short_description = "Brakuje"
+
+    def below_minimum_display(self, obj):
+        return obj.below_minimum
+
+    below_minimum_display.boolean = True
+    below_minimum_display.short_description = "Poniżej minimum"
 
 
 admin.site.register(ShipmentUnit)

@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Zapasy klientów
+{% endblock %}
+
+{% block style %}
+    <link
+        rel="stylesheet"
+        href="{% static 'css/warehouse/customer_stock.css' %}"
+    >
+{% endblock %}
+
+{% block content %}
+
+<div class="customer-stock-page">
+
+    <div class="customer-stock-header">
+
+        <div class="customer-stock-heading">
+            <h1>Zapasy klientów</h1>
+
+            <p>
+                Kontrola minimalnych stanów magazynowych
+            </p>
+        </div>
+
+        <button
+            type="button"
+            class="customer-stock-add-button"
+            id="customerStockAddButton"
+        >
+            + Dodaj pozycję
+        </button>
+
+    </div>
+
+
+    <div class="customer-stock-summary">
+
+        <div class="summary-card">
+            <span class="summary-label">
+                Obserwowane pozycje
+            </span>
+
+            <strong class="summary-value">
+                {{ summary.total }}
+            </strong>
+        </div>
+
+
+        <div
+            class="
+                summary-card
+                {% if summary.below_minimum %}
+                    summary-card-danger
+                {% endif %}
+            "
+        >
+            <span class="summary-label">
+                Poniżej minimum
+            </span>
+
+            <strong class="summary-value">
+                {{ summary.below_minimum }}
+            </strong>
+        </div>
+
+
+        <div
+            class="
+                summary-card
+                {% if summary.shortage %}
+                    summary-card-warning
+                {% endif %}
+            "
+        >
+            <span class="summary-label">
+                Łącznie brakuje
+            </span>
+
+            <strong class="summary-value">
+                {{ summary.shortage }}
+            </strong>
+        </div>
+
+    </div>
+
+
+    <div class="customer-stock-panel">
+
+        <div class="panel-header">
+
+            <div>
+                <h2>Stany magazynowe</h2>
+
+                <span>
+                    Pozycje przypisane do Twojej listy
+                </span>
+            </div>
+
+        </div>
+
+
+        {% if items %}
+
+            <div class="customer-stock-table">
+
+                <div class="customer-stock-row customer-stock-table-header">
+
+                    <div>
+                        Towar
+                    </div>
+
+                    <div>
+                        Magazyn
+                    </div>
+
+                    <div class="number-column">
+                        Stan
+                    </div>
+
+                    <div class="number-column">
+                        Minimum
+                    </div>
+
+                    <div class="number-column">
+                        Brakuje
+                    </div>
+
+                    <div class="status-column">
+                        Status
+                    </div>
+
+                </div>
+
+
+                {% for item in items %}
+
+                    <div
+                        class="
+                            customer-stock-row
+                            {% if item.below_minimum %}
+                                customer-stock-row-danger
+                            {% endif %}
+                        "
+                    >
+
+                        <div class="product-column">
+
+                            <strong class="product-name">
+                                {{ item.warehouse_stock.stock.name }}
+                            </strong>
+
+                            {% if item.warehouse_stock.stock.stock_type %}
+                                <span class="product-type">
+                                    {{ item.warehouse_stock.stock.stock_type }}
+                                </span>
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="warehouse-column">
+                            {{ item.warehouse_stock.warehouse.name }}
+                        </div>
+
+
+                        <div class="number-column current-quantity">
+                            {{ item.current_quantity }}
+                        </div>
+
+
+                        <div class="number-column minimum-quantity">
+                            {{ item.minimum_quantity }}
+                        </div>
+
+
+                        <div class="number-column">
+
+                            {% if item.shortage %}
+
+                                <strong class="shortage-value">
+                                    {{ item.shortage }}
+                                </strong>
+
+                            {% else %}
+
+                                <span class="no-shortage">
+                                    —
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="status-column">
+
+                            {% if item.below_minimum %}
+
+                                <span class="stock-status stock-status-danger">
+                                    Brak
+                                </span>
+
+                            {% else %}
+
+                                <span class="stock-status stock-status-ok">
+                                    OK
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="customer-stock-empty">
+
+                <div class="empty-icon">
+                    📦
+                </div>
+
+                <h3>
+                    Brak obserwowanych pozycji
+                </h3>
+
+                <p>
+                    Nie masz jeszcze żadnych stanów magazynowych
+                    dodanych do swojej listy.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<div
+    id="customerStockModal"
+    class="customer-stock-modal"
+>
+
+    <div
+        class="customer-stock-modal-backdrop"
+        id="customerStockModalBackdrop"
+    ></div>
+
+
+    <div class="customer-stock-modal-dialog">
+
+        <div class="customer-stock-modal-header">
+
+            <div>
+                <h2>
+                    Dodaj stan magazynowy
+                </h2>
+
+                <p>
+                    Wybierz pozycję i ustaw minimalny stan.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="customer-stock-modal-close"
+                id="customerStockModalClose"
+                aria-label="Zamknij"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="action"
+                value="add"
+            >
+
+
+            <div class="customer-stock-modal-body">
+
+                <div class="customer-stock-field">
+
+                    <label for="warehouse_stock">
+                        Stan magazynowy
+                    </label>
+
+                    <select
+                        id="warehouse_stock"
+                        name="warehouse_stock"
+                        required
+                    >
+
+                        <option value="">
+                            Wybierz...
+                        </option>
+
+                        {% for ws in available_stocks %}
+
+                            <option value="{{ ws.id }}">
+                                {{ ws.stock.name }}
+                                — {{ ws.warehouse.name }}
+                                — stan: {{ ws.quantity }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="customer-stock-field">
+
+                    <label for="minimum_quantity">
+                        Minimalna ilość
+                    </label>
+
+                    <input
+                        id="minimum_quantity"
+                        name="minimum_quantity"
+                        type="number"
+                        min="0"
+                        value="0"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="customer-stock-modal-footer">
+
+                <button
+                    type="button"
+                    class="customer-stock-button-secondary"
+                    id="customerStockModalCancel"
+                >
+                    Anuluj
+                </button>
+
+                <button
+                    type="submit"
+                    class="customer-stock-button-primary"
+                >
+                    Dodaj
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script
+        src="{% static 'js/warehouse/customer_stock.js' %}"
+        defer
+    ></script>
+{% endblock %}
