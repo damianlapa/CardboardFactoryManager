@@ -1,76 +1,96 @@
-import xml.etree.ElementTree as ET
-
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+from warehouse.services.edi.aquila import (
+    AquilaOrder,
+    AquilaScores,
+    build_xml,
+    send_order,
+)
+
+
+def get_test_order():
+    return AquilaOrder(
+        board_grade="3B355A1",
+        order_number="TEST-000",
+
+        length=700,
+        width=570,
+
+        quantity=755,
+
+        delivery_date="20261016",
+
+        webshop_comment="TEST-005",
+
+        scores=AquilaScores.no_scores(
+            width=570,
+        ),
+    )
 
 
 @login_required
 def edi_test_xml(request):
-    namespace = "http://vpk.be/AQUILA/SalesOrder"
+    try:
+        order = get_test_order()
 
-    root = ET.Element(
-        f"{{{namespace}}}SalesOrder_aquila"
-    )
+        xml_body = build_xml(order)
 
-    header = ET.SubElement(root, "Header")
+        response = HttpResponse(
+            xml_body,
+            content_type="application/xml; charset=utf-8",
+        )
 
-    ET.SubElement(header, "DeliveryDate").text = "20261016"
-    ET.SubElement(header, "CustomerPurchaseOrder").text = "TEST"
-    ET.SubElement(header, "ShipTo").text = "83867"
+        response["Content-Disposition"] = (
+            'attachment; filename="PAKER_TEST.xml"'
+        )
 
-    cumulative = ET.SubElement(header, "CumulativeQuantity")
-    cumulative.set("UnitOfMeasure", "")
+        return response
 
-    ET.SubElement(header, "CustomerNumber").text = "38465"
-    ET.SubElement(header, "LabelType")
+    except ValueError as e:
+        return HttpResponse(
+            str(e),
+            status=400,
+        )
 
-    rate = ET.SubElement(header, "Rate")
-    rate.set("UnitOfMeasure", "")
 
-    items = ET.SubElement(root, "Items")
-    item = ET.SubElement(items, "Item")
+@login_required
+@csrf_exempt
+def edi_test_send(request):
+    if request.method != "POST":
+        return HttpResponse(
+            "Do wysłania wymagany jest POST.",
+            status=405,
+        )
 
-    ET.SubElement(item, "CustomerReferenceLineNumber").text = "1"
-    ET.SubElement(item, "MaterialNumber").text = "sheets"
-    ET.SubElement(item, "BoardGrade").text = "5BC640A1"
-    ET.SubElement(item, "MaterialDescription").text = "(1600x800)"
+    try:
+        order = get_test_order()
 
-    price = ET.SubElement(item, "Price")
-    price.set("Currency", "PLN")
-    price.text = "1.100"
+        result = send_order(order)
 
-    ET.SubElement(item, "Remark")
-    ET.SubElement(item, "LabelType")
-    ET.SubElement(item, "MaxOverDeliveryTotal")
-    ET.SubElement(item, "MaxUnderDeliveryTotal")
+        return JsonResponse(
+            result,
+            json_dumps_params={
+                "ensure_ascii": False,
+                "indent": 2,
+            },
+        )
 
-    ET.SubElement(item, "MaterialDescription").text = "5BC640A1,1600x800"
+    except ValueError as e:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": str(e),
+            },
+            status=400,
+        )
 
-    sheet = ET.SubElement(item, "Sheet")
-    ET.SubElement(sheet, "WidthX").text = "800"
-
-    ET.SubElement(item, "WidthY").text = "0"
-    ET.SubElement(item, "Length").text = "1600"
-    ET.SubElement(item, "QuantityPce").text = "400"
-    ET.SubElement(item, "QuantityM2").text = "512.000"
-
-    scores = ET.SubElement(item, "Scores")
-    scores.set("NumberOfScores", "0")
-    scores.set("Scored", "800")
-
-    ET.SubElement(item, "score_type").text = "0"
-
-    ET.SubElement(item, "WebshopComment").text = "TEST"
-    ET.SubElement(item, "RequestedDelDate").text = "20261016"
-    ET.SubElement(item, "ProposedDelDate").text = "20261016"
-
-    xml_body = ET.tostring(
-        root,
-        encoding="utf-8",
-        xml_declaration=True,
-    )
-
-    return HttpResponse(
-        xml_body,
-        content_type="application/xml; charset=utf-8",
-    )
+    except Exception as e:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": str(e),
+            },
+            status=500,
+        )
