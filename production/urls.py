@@ -230,3 +230,10 @@ urlpatterns += [
 ]
 
 
+urlpatterns += [
+    path(
+        "reports/die-cut-production/pdf/",
+        DieCutProductionPdfView.as_view(),
+        name="die-cut-production-pdf",
+    ),
+]

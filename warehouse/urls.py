@@ -11,6 +11,8 @@ from warehouse.product_complex_views import *
 from warehouse.price_list_view import PriceListUploadView
 from warehouse.monthly_reports_views import MonthlyWarehouseReportView
 
+from warehouse.edi_views import edi_test_xml
+
 
 app_name = 'warehouse'
 
@@ -239,5 +241,13 @@ urlpatterns += [
         "shipments/",
         ShipmentListView.as_view(),
         name="shipment-list",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "edi/test-xml/",
+        edi_test_xml,
+        name="edi-test-xml",
     ),
 ]
