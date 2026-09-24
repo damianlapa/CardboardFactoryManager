@@ -24,6 +24,7 @@ from warehousemanager.modern_views.vacations import (
 from warehousemanager.modern_views.employees import (
     ModernEmployeeListView,
     ModernEmployeeDetailView,
+    ModernEmployeeContractCreateView,
 )
 from warehousemanager.modern_views.punches import (
     ModernPunchCreateView,
@@ -108,6 +109,12 @@ urlpatterns = [
         "person/<int:person_id>/",
         ModernEmployeeDetailView.as_view(),
         name="person-details",
+    ),
+
+    path(
+        "person/<int:person_id>/contract/add/",
+        ModernEmployeeContractCreateView.as_view(),
+        name="employee-contract-add",
     ),
 
 

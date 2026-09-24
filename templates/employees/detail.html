@@ -314,17 +314,30 @@
 
                 <div class="app-card__header">
 
-                    <div>
-                        <h2 class="app-card__title">
-                            Umowy
-                        </h2>
+    <div>
+        <h2 class="app-card__title">
+            Umowy
+        </h2>
 
-                        <div class="employee-section-description">
-                            Historia zatrudnienia
-                        </div>
-                    </div>
+        <div class="employee-section-description">
+            Historia zatrudnienia
+        </div>
+    </div>
 
-                </div>
+    {% if access.can_edit %}
+
+        <button
+            type="button"
+            class="app-btn app-btn-primary"
+            id="openContractModal"
+        >
+            <i class="fa-solid fa-plus"></i>
+            Dodaj umowę
+        </button>
+
+    {% endif %}
+
+</div>
 
 
                 {% if contracts %}
@@ -543,5 +556,312 @@
     </aside>
 
 </div>
+
+{% if access.can_edit %}
+
+<div
+    class="employee-modal"
+    id="contractModal"
+    aria-hidden="true"
+>
+    <div
+        class="employee-modal__backdrop"
+        data-close-contract-modal
+    ></div>
+
+    <div
+        class="employee-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contractModalTitle"
+    >
+
+        <div class="employee-modal__header">
+
+            <div>
+                <h2
+                    class="employee-modal__title"
+                    id="contractModalTitle"
+                >
+                    Dodaj umowę
+                </h2>
+
+                <div class="employee-section-description">
+                    {{ employee.first_name }}
+                    {{ employee.last_name }}
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="employee-modal__close"
+                data-close-contract-modal
+                aria-label="Zamknij"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form
+            method="post"
+            action="{% url 'employee-contract-add' employee.id %}"
+        >
+
+            {% csrf_token %}
+
+            <div class="employee-modal__body">
+
+                <div class="employee-form-grid">
+
+                    <div class="employee-form-field">
+
+                        <label for="contractType">
+                            Typ umowy
+                        </label>
+
+                        <select
+                            id="contractType"
+                            name="type"
+                            required
+                        >
+                            <option value="">
+                                Wybierz...
+                            </option>
+
+                            <option value="UOP">
+                                Umowa o pracę
+                            </option>
+
+                            <option value="UZ">
+                                Umowa zlecenie
+                            </option>
+
+                            <option value="FZ">
+                                Firma zewnętrzna
+                            </option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="employee-form-field">
+
+                        <label for="contractPosition">
+                            Stanowisko
+                        </label>
+
+
+                        <select
+                            id="contractPosition"
+                            name="position"
+                            required
+                        >
+                            {% for o in occupancy %}
+                            <option value="{{ o.1 }}">
+                                {{ o.1 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                    </div>
+
+
+                    <div class="employee-form-field">
+
+                        <label for="contractDateStart">
+                            Data rozpoczęcia
+                        </label>
+
+                        <input
+                            type="date"
+                            id="contractDateStart"
+                            name="date_start"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="employee-form-field">
+
+                        <label for="contractDateEnd">
+                            Data zakończenia
+                        </label>
+
+                        <input
+                            type="date"
+                            id="contractDateEnd"
+                            name="date_end"
+                        >
+
+                        <small>
+                            Pozostaw puste dla umowy bezterminowej.
+                        </small>
+
+                    </div>
+
+
+                    {% if access.can_view_salary %}
+
+                        <div class="employee-form-field">
+
+                            <label for="contractSalary">
+                                Wynagrodzenie
+                            </label>
+
+                            <input
+                                type="number"
+                                id="contractSalary"
+                                name="salary"
+                                min="0"
+                                step="0.01"
+                                inputmode="decimal"
+                            >
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="employee-form-field employee-form-field--full">
+
+                        <label for="contractExtraInfo">
+                            Dodatkowe informacje
+                        </label>
+
+                        <textarea
+                            id="contractExtraInfo"
+                            name="extra_info"
+                            maxlength="255"
+                            rows="3"
+                        ></textarea>
+
+                    </div>
+
+
+                    <div class="employee-form-field employee-form-field--full">
+
+                        <label class="employee-checkbox">
+
+                            <input
+                                type="checkbox"
+                                name="first"
+                            >
+
+                            <span>
+                                Pierwsza umowa pracownika
+                            </span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="employee-modal__footer">
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-secondary"
+                    data-close-contract-modal
+                >
+                    Anuluj
+                </button>
+
+                <button
+                    type="submit"
+                    class="app-btn app-btn-primary"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    Dodaj umowę
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const modal = document.getElementById("contractModal");
+    const openButton = document.getElementById("openContractModal");
+
+    if (!modal || !openButton) {
+        return;
+    }
+
+    const closeButtons = modal.querySelectorAll(
+        "[data-close-contract-modal]"
+    );
+
+    function openModal() {
+        modal.classList.add("employee-modal--open");
+        modal.setAttribute("aria-hidden", "false");
+
+        document.body.classList.add(
+            "employee-modal-open"
+        );
+
+        const firstInput = modal.querySelector(
+            "select, input, textarea"
+        );
+
+        if (firstInput) {
+            setTimeout(function () {
+                firstInput.focus();
+            }, 50);
+        }
+    }
+
+    function closeModal() {
+        modal.classList.remove("employee-modal--open");
+        modal.setAttribute("aria-hidden", "true");
+
+        document.body.classList.remove(
+            "employee-modal-open"
+        );
+    }
+
+    openButton.addEventListener(
+        "click",
+        openModal
+    );
+
+    closeButtons.forEach(function (button) {
+        button.addEventListener(
+            "click",
+            closeModal
+        );
+    });
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key === "Escape" &&
+                modal.classList.contains(
+                    "employee-modal--open"
+                )
+            ) {
+                closeModal();
+            }
+
+        }
+    );
+
+});
+</script>
+
+{% endif %}
 
 {% endblock %}
