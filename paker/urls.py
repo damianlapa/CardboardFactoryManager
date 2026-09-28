@@ -19,7 +19,7 @@ urlpatterns = [
             "production.modern_urls"
         ),
     ),
-    # path('orders/', include('orders.urls')),
+    path('orders/', include('orders.urls')),
     path('deliveries/', include('deliveries.urls')),
     path('whm/', include('warehousemanager.urls')),
     path('warehouse/', include('warehouse.urls', namespace='warehouse')),
