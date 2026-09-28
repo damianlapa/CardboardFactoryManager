@@ -3,6 +3,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Optional
 
+from django.conf import settings
+
 import requests
 
 
@@ -18,9 +20,13 @@ EDI_URL = (
     "&qos=EO"
 )
 
-EDI_USERNAME = "WPISZ_LOGIN"
-EDI_PASSWORD = "WPISZ_HASLO"
+EDI_USERNAME = (
+    settings.AQUILA_EDI_USERNAME
+)
 
+EDI_PASSWORD = (
+    settings.AQUILA_EDI_PASSWORD
+)
 
 CUSTOMER_NUMBER = "38465"
 SHIP_TO = "83867"

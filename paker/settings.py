@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'warehousemanager',
     'production',
-    # 'orders',
+    'orders',
     'deliveries',
     'warehouse',
     'maintenance',
@@ -182,5 +182,15 @@ LOGGING = {
 }
 
 UNDO_OPERATIONS_PASSWORD = os.environ.get("UNDO_OPERATIONS_PASSWORD", "")
+
+# AQUILA SETTINGS
+
+AQUILA_EDI_USERNAME = os.environ.get(
+    "AQUILA_EDI_USERNAME"
+)
+
+AQUILA_EDI_PASSWORD = os.environ.get(
+    "AQUILA_EDI_PASSWORD"
+)
 
 django_heroku.settings(locals())

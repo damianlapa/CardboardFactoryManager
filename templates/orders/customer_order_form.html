@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Nowe zamówienie | PAKER
+{% endblock %}
+
+{% block page_title %}
+Nowe zamówienie
+{% endblock %}
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/orders/customer_order_form.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="orders-create-page">
+
+    <section class="orders-create-card">
+
+        <div class="orders-create-card__header">
+
+            <span class="orders-create-card__eyebrow">
+                NOWE ZAMÓWIENIE
+            </span>
+
+            <h1>
+                Zarejestruj zamówienie klienta
+            </h1>
+
+            <p>
+                Numer zamówienia zostanie nadany automatycznie.
+            </p>
+
+        </div>
+
+
+        <form
+            method="post"
+            class="orders-create-form"
+        >
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+
+            <div class="orders-create-form__footer">
+
+                <a
+                    href="{% url 'orders:customer_order_list' %}"
+                    class="btn btn-light"
+                >
+                    Anuluj
+                </a>
+
+                <button
+                    type="submit"
+                    class="orders-create-button"
+                >
+                    <i class="fa-solid fa-check"></i>
+
+                    Utwórz zamówienie
+                </button>
+
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+
+{% endblock %}

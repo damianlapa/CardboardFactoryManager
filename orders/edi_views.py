@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from warehouse.services.edi.aquila import (
+from orders.services.edi.aquila import (
     AquilaOrder,
     AquilaScores,
     build_xml,

@@ -116,6 +116,26 @@
 
         {% endif %}
 
+        <!-- ORDERS -->
+
+        <a
+            href="{% url 'orders:customer_order_list' %}"
+            class="
+                app-navigation__item
+                {% if request.resolver_match.namespace == 'orders' %}
+                    is-active
+                {% endif %}
+            "
+        >
+            <span class="app-navigation__icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </span>
+
+            <span>
+                Zamówienia
+            </span>
+        </a>
+
 
         <!-- PRODUCTION -->
 

@@ -1,0 +1,210 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}
+Import cennika tektury
+{% endblock %}
+
+{% block content %}
+
+<div id="content-main">
+
+    <h1>Import cennika tektury</h1>
+
+    <p>
+        Wybierz dostawcę oraz plik PDF.
+        Najpierw możesz sprawdzić podgląd danych,
+        a następnie zapisać cennik do bazy.
+    </p>
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+        style="margin-top: 20px;"
+    >
+
+        {% csrf_token %}
+
+        <fieldset class="module aligned">
+
+            {{ form.as_p }}
+
+        </fieldset>
+
+        <div class="submit-row">
+
+            <button
+                type="submit"
+                name="action"
+                value="preview"
+                class="button"
+            >
+                Sprawdź plik
+            </button>
+
+            <button
+                type="submit"
+                name="action"
+                value="import"
+                class="default"
+            >
+                Importuj do bazy
+            </button>
+
+        </div>
+
+    </form>
+
+
+    {% if preview %}
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Podgląd importu</h2>
+
+        <div style="
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--darkened-bg);
+            border-radius: 5px;
+        ">
+
+            <strong>Format:</strong>
+            {{ preview.format }}
+
+            <br>
+
+            <strong>Numer:</strong>
+            {{ preview.number }}
+
+            <br>
+
+            <strong>Obowiązuje od:</strong>
+            {{ preview.valid_from }}
+
+            <br>
+
+            <strong>Liczba pozycji:</strong>
+            {{ preview.items }}
+
+        </div>
+
+
+        <div
+            style="
+                overflow-x: auto;
+                max-height: 600px;
+                overflow-y: auto;
+            "
+        >
+
+            <table id="result_list">
+
+                <thead>
+
+                    <tr>
+                        <th>Indeks</th>
+                        <th>Warstwy</th>
+                        <th>Fala</th>
+                        <th>Gramatura</th>
+                        <th>ECT</th>
+                        <th>Pokrycie</th>
+                        <th>Status</th>
+                        <th>Skład</th>
+                        <th>Ceny</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for item in preview.preview %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ item.index }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ item.layers }}
+                            </td>
+
+                            <td>
+                                {{ item.flute }}
+                            </td>
+
+                            <td>
+                                {{ item.gsm }}
+                            </td>
+
+                            <td>
+                                {{ item.ect|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ item.cover|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ item.provider_status_raw }}
+                            </td>
+
+                            <td style="min-width: 300px;">
+                                {{ item.composition }}
+                            </td>
+
+                            <td style="min-width: 220px;">
+
+                                {% for tier in item.tiers %}
+
+                                    <div>
+
+                                        {{ tier.min_area_m2 }}
+
+                                        -
+
+                                        {% if tier.max_area_m2 %}
+                                            {{ tier.max_area_m2 }}
+                                        {% else %}
+                                            ∞
+                                        {% endif %}
+
+                                        m²
+
+                                        →
+
+                                        <strong>
+                                            {{ tier.price_per_1000_m2 }}
+                                        </strong>
+
+                                    </div>
+
+                                {% endfor %}
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="9">
+                                Brak wykrytych pozycji.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

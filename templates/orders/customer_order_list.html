@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}
+Zamówienia | PAKER
+{% endblock %}
+
+
+{% block page_title %}
+Zamówienia
+{% endblock %}
+
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/orders/customer_order_list.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="orders-page">
+
+
+    <!-- ================================================= -->
+    <!-- HEADER                                            -->
+    <!-- ================================================= -->
+
+    <section class="orders-header">
+
+        <div class="orders-header__content">
+
+            <div>
+
+                <div class="orders-header__eyebrow">
+                    ORDERS
+                </div>
+
+                <h1>
+                    Zamówienia klientów
+                </h1>
+
+                <p>
+                    Rejestracja zamówień, przygotowanie materiału
+                    i przekazanie do produkcji.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="orders-button orders-button--primary"
+                data-order-modal-open
+            >
+                <i class="fa-solid fa-plus"></i>
+
+                <span>
+                    Nowe zamówienie
+                </span>
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- SUMMARY                                           -->
+    <!-- ================================================= -->
+
+    <section class="orders-summary">
+
+        <div class="orders-summary-card">
+
+            <span class="orders-summary-card__label">
+                Zamówienia
+            </span>
+
+            <strong>
+                {{ summary.total }}
+            </strong>
+
+        </div>
+
+
+        <div class="orders-summary-card">
+
+            <span class="orders-summary-card__label">
+                Bez wymagań materiałowych
+            </span>
+
+            <strong>
+                {{ summary.without_requirement }}
+            </strong>
+
+        </div>
+
+
+        <div class="orders-summary-card">
+
+            <span class="orders-summary-card__label">
+                Materiał z magazynu
+            </span>
+
+            <strong>
+                {{ summary.stock }}
+            </strong>
+
+        </div>
+
+
+        <div class="orders-summary-card">
+
+            <span class="orders-summary-card__label">
+                Materiał zamawiany
+            </span>
+
+            <strong>
+                {{ summary.purchase }}
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- FILTERS                                           -->
+    <!-- ================================================= -->
+
+    <section class="orders-filters">
+
+        <form
+            method="get"
+            class="orders-filters__form"
+        >
+
+            <div class="orders-filter orders-filter--search">
+
+                <label for="orders-search">
+                    Szukaj
+                </label>
+
+                <div class="orders-search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        id="orders-search"
+                        type="text"
+                        name="q"
+                        value="{{ filters.query }}"
+                        placeholder="Numer, klient, produkt..."
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="orders-filter">
+
+                <label>
+                    Rok
+                </label>
+
+                <select name="year">
+
+                    <option value="">
+                        Wszystkie
+                    </option>
+
+                    {% for year in filter_options.years %}
+
+                        <option
+                            value="{{ year }}"
+                            {% if filters.year|stringformat:"s" == year|stringformat:"s" %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ year }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="orders-filter">
+
+                <label>
+                    Klient
+                </label>
+
+                <select name="customer">
+
+                    <option value="">
+                        Wszyscy
+                    </option>
+
+                    {% for customer in filter_options.customers %}
+
+                        <option
+                            value="{{ customer.id }}"
+                            {% if filters.customer|stringformat:"s" == customer.id|stringformat:"s" %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ customer.name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="orders-filter">
+
+                <label>
+                    Status
+                </label>
+
+                <select name="status">
+
+                    <option value="">
+                        Wszystkie
+                    </option>
+
+                    {% for value, label in filter_options.statuses %}
+
+                        <option
+                            value="{{ value }}"
+                            {% if filters.status == value %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ label }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="orders-filter">
+
+                <label>
+                    Materiał
+                </label>
+
+                <select name="material">
+
+                    <option value="">
+                        Wszystkie
+                    </option>
+
+                    <option
+                        value="missing"
+                        {% if filters.material == "missing" %}
+                            selected
+                        {% endif %}
+                    >
+                        Brak wymagań
+                    </option>
+
+                    <option
+                        value="pending"
+                        {% if filters.material == "pending" %}
+                            selected
+                        {% endif %}
+                    >
+                        Do decyzji
+                    </option>
+
+                    <option
+                        value="stock"
+                        {% if filters.material == "stock" %}
+                            selected
+                        {% endif %}
+                    >
+                        Magazyn
+                    </option>
+
+                    <option
+                        value="purchase"
+                        {% if filters.material == "purchase" %}
+                            selected
+                        {% endif %}
+                    >
+                        Zakup
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="orders-filters__actions">
+
+                <button
+                    type="submit"
+                    class="orders-button"
+                >
+                    Filtruj
+                </button>
+
+                <a
+                    href="{% url 'orders:customer_order_list' %}"
+                    class="orders-button orders-button--ghost"
+                >
+                    Wyczyść
+                </a>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- TABLE                                             -->
+    <!-- ================================================= -->
+
+    <section class="orders-list">
+
+        <div class="orders-list__header">
+
+            <div>
+                <strong>
+                    Lista zamówień
+                </strong>
+
+                <span>
+                    {{ summary.total }} wyników
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="orders-table-wrap">
+
+            <table class="orders-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Numer
+                        </th>
+
+                        <th>
+                            Klient
+                        </th>
+
+                        <th>
+                            Produkt
+                        </th>
+
+                        <th class="orders-table__number">
+                            Ilość
+                        </th>
+
+                        <th>
+                            Zamówienie
+                        </th>
+
+                        <th>
+                            Termin
+                        </th>
+
+                        <th>
+                            Materiał
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Utworzył
+                        </th>
+
+                        <th class="orders-table__arrow"></th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for order in orders %}
+
+                        <tr
+                            class="orders-row"
+                            data-row-href="{% url 'orders:customer_order_detail' order.pk %}"
+                        >
+
+                            <td>
+
+                                <a
+                                    href="{% url 'orders:customer_order_detail' order.pk %}"
+                                    class="orders-number"
+                                >
+                                    {{ order.order_number }}
+                                </a>
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="orders-main-value">
+                                    {{ order.customer }}
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="orders-product">
+                                    {{ order.product }}
+                                </div>
+
+                            </td>
+
+
+                            <td class="orders-table__number">
+
+                                <strong>
+                                    {{ order.quantity }}
+                                </strong>
+
+                                <span class="orders-unit">
+                                    szt.
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if order.order_date %}
+
+                                    {{ order.order_date|date:"d.m.Y" }}
+
+                                {% else %}
+
+                                    <span class="orders-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if order.requested_delivery_date %}
+
+                                    {{ order.requested_delivery_date|date:"d.m.Y" }}
+
+                                {% else %}
+
+                                    <span class="orders-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if not order.has_requirement %}
+
+                                    <span class="orders-badge orders-badge--muted">
+                                        Brak wymagań
+                                    </span>
+
+                                {% elif order.has_stock_allocation %}
+
+                                    <span class="orders-badge orders-badge--stock">
+                                        <i class="fa-solid fa-warehouse"></i>
+                                        Magazyn
+                                    </span>
+
+                                {% elif order.has_purchase_allocation %}
+
+                                    <span class="orders-badge orders-badge--purchase">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                        Zakup
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="orders-badge orders-badge--pending">
+                                        Do decyzji
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <span
+                                    class="
+                                        orders-badge
+                                        orders-badge--status
+                                        orders-badge--status-{{ order.status|lower }}
+                                    "
+                                >
+                                    {{ order.get_status_display }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if order.created_by %}
+
+                                    <span class="orders-user">
+                                        {{ order.created_by.get_full_name|default:order.created_by.username }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="orders-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="orders-table__arrow">
+
+                                <i class="fa-solid fa-chevron-right"></i>
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="10"
+                                class="orders-empty"
+                            >
+
+                                <i class="fa-regular fa-folder-open"></i>
+
+                                <strong>
+                                    Brak zamówień
+                                </strong>
+
+                                <span>
+                                    Nie znaleziono zamówień dla wybranych filtrów.
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- ============================================= -->
+        <!-- PAGINATION                                    -->
+        <!-- ============================================= -->
+
+        {% if page_obj.paginator.num_pages > 1 %}
+
+            <div class="orders-pagination">
+
+                <div class="orders-pagination__info">
+
+                    Strona
+
+                    <strong>
+                        {{ page_obj.number }}
+                    </strong>
+
+                    z
+
+                    <strong>
+                        {{ page_obj.paginator.num_pages }}
+                    </strong>
+
+                </div>
+
+
+                <div class="orders-pagination__buttons">
+
+                    {% if page_obj.has_previous %}
+
+                        <a
+                            href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                            class="orders-page-button"
+                        >
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+
+                    {% endif %}
+
+
+                    {% if page_obj.has_next %}
+
+                        <a
+                            href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}"
+                            class="orders-page-button"
+                        >
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- CREATE ORDER MODAL                                    -->
+<!-- ===================================================== -->
+
+<div
+    class="orders-modal {% if open_create_modal %}is-open{% endif %}"
+    id="createOrderModal"
+    aria-hidden="{% if open_create_modal %}false{% else %}true{% endif %}"
+>
+
+    <div
+        class="orders-modal__backdrop"
+        data-order-modal-close
+    ></div>
+
+
+    <div class="orders-modal__dialog">
+
+        <div class="orders-modal__header">
+
+            <div>
+
+                <span class="orders-modal__eyebrow">
+                    NOWE ZAMÓWIENIE
+                </span>
+
+                <h2>
+                    Zarejestruj zamówienie klienta
+                </h2>
+
+                <p>
+                    Numer zostanie nadany automatycznie po zapisaniu.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="orders-modal__close"
+                data-order-modal-close
+                aria-label="Zamknij"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form
+            method="post"
+            class="orders-create-form"
+        >
+
+            {% csrf_token %}
+
+
+            {% if create_form.non_field_errors %}
+
+                <div class="orders-form-errors">
+
+                    {{ create_form.non_field_errors }}
+
+                </div>
+
+            {% endif %}
+
+
+            <div class="orders-form-grid">
+
+
+                <div class="orders-form-field">
+
+                    <label for="{{ create_form.customer.id_for_label }}">
+                        Klient
+                    </label>
+
+                    {{ create_form.customer }}
+
+                    {{ create_form.customer.errors }}
+
+                </div>
+
+
+                <div class="orders-form-field">
+
+                    <label for="{{ create_form.product.id_for_label }}">
+                        Produkt
+                    </label>
+
+                    {{ create_form.product }}
+
+                    {{ create_form.product.errors }}
+
+                </div>
+
+
+                <div class="orders-form-field">
+
+                    <label for="{{ create_form.quantity.id_for_label }}">
+                        Ilość
+                    </label>
+
+                    {{ create_form.quantity }}
+
+                    {{ create_form.quantity.errors }}
+
+                </div>
+
+
+                <div class="orders-form-field">
+
+                    <label for="{{ create_form.order_date.id_for_label }}">
+                        Data zamówienia
+                    </label>
+
+                    {{ create_form.order_date }}
+
+                    {{ create_form.order_date.errors }}
+
+                </div>
+
+
+                <div class="orders-form-field">
+
+                    <label for="{{ create_form.requested_delivery_date.id_for_label }}">
+                        Oczekiwany termin
+                    </label>
+
+                    {{ create_form.requested_delivery_date }}
+
+                    {{ create_form.requested_delivery_date.errors }}
+
+                </div>
+
+
+                <div class="orders-form-field orders-form-field--wide">
+
+                    <label for="{{ create_form.notes.id_for_label }}">
+                        Uwagi
+                    </label>
+
+                    {{ create_form.notes }}
+
+                    {{ create_form.notes.errors }}
+
+                </div>
+
+            </div>
+
+
+            <div class="orders-modal__footer">
+
+                <button
+                    type="button"
+                    class="orders-button orders-button--ghost"
+                    data-order-modal-close
+                >
+                    Anuluj
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="orders-button orders-button--primary"
+                >
+                    <i class="fa-solid fa-check"></i>
+
+                    Utwórz zamówienie
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="{% static 'js/orders/customer_order_list.js' %}"
+></script>
+
+{% endblock %}

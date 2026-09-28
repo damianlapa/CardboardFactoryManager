@@ -1,0 +1,1326 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}
+Zamówienie {{ order.order_number }} | PAKER
+{% endblock %}
+
+
+{% block page_title %}
+Zamówienie {{ order.order_number }}
+{% endblock %}
+
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/orders/customer_order_detail.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="orders-detail">
+
+
+    <!-- ================================================== -->
+    <!-- HEADER -->
+    <!-- ================================================== -->
+
+    <section class="orders-detail-header">
+
+        <div class="orders-detail-header__left">
+
+            <span class="orders-detail-header__eyebrow">
+                ZAMÓWIENIE KLIENTA
+            </span>
+
+            <h1>
+                {{ order.order_number }}
+            </h1>
+
+            <span class="orders-detail-header__subtitle">
+
+                {{ order.customer }}
+
+                {% if order.product %}
+                    · {{ order.product }}
+                {% endif %}
+
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <span class="orders-purchase-status">
+                {{ order.get_status_display }}
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- CUSTOMER ORDER -->
+    <!-- ================================================== -->
+
+    <section class="orders-card">
+
+        <div class="orders-card__header">
+
+            <h2>
+                Zamówienie klienta
+            </h2>
+
+            <span>
+                Podstawowe informacje
+            </span>
+
+        </div>
+
+
+        <div class="orders-card__body">
+
+            <div class="orders-info-grid">
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Klient
+                    </span>
+
+                    <span class="orders-info-item__value">
+                        {{ order.customer }}
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Produkt
+                    </span>
+
+                    <span
+                        class="orders-info-item__value"
+                        title="{{ order.product }}"
+                    >
+                        {{ order.product }}
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Ilość
+                    </span>
+
+                    <span class="orders-info-item__value">
+                        {{ order.quantity }} szt.
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Status
+                    </span>
+
+                    <span class="orders-info-item__value">
+                        {{ order.get_status_display }}
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Data zamówienia
+                    </span>
+
+                    <span class="orders-info-item__value">
+
+                        {% if order.order_date %}
+                            {{ order.order_date|date:"d.m.Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Oczekiwany termin
+                    </span>
+
+                    <span class="orders-info-item__value">
+
+                        {% if order.requested_delivery_date %}
+                            {{ order.requested_delivery_date|date:"d.m.Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Utworzył
+                    </span>
+
+                    <span class="orders-info-item__value">
+
+                        {% if order.created_by %}
+                            {{ order.created_by.get_full_name|default:order.created_by.username }}
+                        {% else %}
+                            —
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+
+                <div class="orders-info-item">
+
+                    <span class="orders-info-item__label">
+                        Utworzono
+                    </span>
+
+                    <span class="orders-info-item__value">
+                        {{ order.created_at|date:"d.m.Y H:i" }}
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- MATERIAL REQUIREMENT -->
+    <!-- ================================================== -->
+
+    <section class="orders-card">
+
+        <div class="orders-card__header">
+
+            <h2>
+                Wymagania materiałowe
+            </h2>
+
+            {% if requirement %}
+
+                <span>
+                    Parametry tektury do produkcji
+                </span>
+
+            {% else %}
+
+                <span>
+                    Uzupełnij wymagania materiałowe
+                </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="orders-card__body">
+
+
+            {% if requirement %}
+
+
+                <div class="orders-requirement-grid">
+
+
+                    <!-- FORMAT -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Format arkusza
+                        </span>
+
+                        <strong>
+                            {{ requirement.sheet_length }}
+                            ×
+                            {{ requirement.sheet_width }}
+                            mm
+                        </strong>
+
+                    </div>
+
+
+                    <!-- PIECES PER SHEET -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Sztuk z arkusza
+                        </span>
+
+                        <strong>
+                            {{ requirement.pieces_per_sheet }}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- SHEETS -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Potrzebna ilość
+                        </span>
+
+                        <strong>
+                            {{ requirement.required_sheet_quantity }}
+                            ark.
+                        </strong>
+
+                    </div>
+
+
+                    <!-- AREA -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Powierzchnia
+                        </span>
+
+                        <strong>
+                            {{ requirement.required_area_m2|floatformat:2 }}
+                            m²
+                        </strong>
+
+                    </div>
+
+
+                    <!-- FLUTE -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Fala
+                        </span>
+
+                        <strong>
+                            {{ requirement.flute|default:"—" }}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- LAYERS -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Warstwy
+                        </span>
+
+                        <strong>
+                            {{ requirement.layers|default:"—" }}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- GSM -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Minimalna gramatura
+                        </span>
+
+                        <strong>
+
+                            {% if requirement.min_gsm %}
+                                {{ requirement.min_gsm }} g/m²
+                            {% else %}
+                                —
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ECT -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Minimalne ECT
+                        </span>
+
+                        <strong>
+                            {{ requirement.min_ect|default:"—" }}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- COVER -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Pokrycie
+                        </span>
+
+                        <strong>
+
+                            {% if requirement.cover %}
+                                {{ requirement.get_cover_display }}
+                            {% else %}
+                                —
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- SCORES -->
+
+                    <div class="orders-requirement-box">
+
+                        <span class="orders-requirement-box__label">
+                            Bigi
+                        </span>
+
+                        {% if requirement_scores_display %}
+
+                            <strong>
+                                {{ requirement_scores_display }}
+                            </strong>
+
+                            <div
+                                style="
+                                    margin-top: 4px;
+                                    font-size: 10px;
+                                    color: #6b7280;
+                                "
+                            >
+                                kolejne odcinki w mm
+                            </div>
+
+                        {% else %}
+
+                            <strong>
+                                —
+                            </strong>
+
+                        {% endif %}
+
+                    </div>
+
+
+                </div>
+
+
+                {% if requirement.notes %}
+
+                    <div
+                        style="
+                            margin-top: 16px;
+                            padding: 12px 14px;
+                            background: #f8fafc;
+                            border-radius: 9px;
+                            font-size: 12px;
+                        "
+                    >
+
+                        <strong>
+                            Uwagi:
+                        </strong>
+
+                        {{ requirement.notes }}
+
+                    </div>
+
+                {% endif %}
+
+
+            {% else %}
+
+
+                <!-- ====================================== -->
+                <!-- REQUIREMENT FORM -->
+                <!-- ====================================== -->
+
+                <form
+                    method="post"
+                    class="orders-requirement-form"
+                >
+
+                    {% csrf_token %}
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="add_requirement"
+                    >
+
+
+                    {{ requirement_form.as_p }}
+
+
+                    <div class="orders-form-actions">
+
+                        <button
+                            type="submit"
+                            class="orders-btn orders-btn--primary"
+                        >
+
+                            <i class="fa-solid fa-check"></i>
+
+                            Zapisz wymagania materiałowe
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+
+            {% endif %}
+
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- MATERIAL PURCHASED -->
+    <!-- ================================================== -->
+
+    {% if purchase_allocation %}
+
+        {% with item=purchase_allocation.cardboard_order_item %}
+
+            <section class="orders-card orders-purchase">
+
+                <div class="orders-card__header">
+
+                    <div>
+
+                        <h2>
+                            Materiał zamówiony
+                        </h2>
+
+                    </div>
+
+
+                    <span class="orders-purchase-status">
+
+                        <i class="fa-solid fa-check"></i>
+
+                        {{ item.order.get_status_display }}
+
+                    </span>
+
+                </div>
+
+
+                <div class="orders-card__body">
+
+
+                    <div class="orders-purchase-summary">
+
+
+                        <!-- PROVIDER -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Dostawca
+                            </span>
+
+                            <span class="orders-info-item__value">
+                                {{ item.order.provider }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- ORDER NUMBER -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Numer zamówienia
+                            </span>
+
+                            <span class="orders-info-item__value">
+                                {{ item.order.number }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- ORDER DATE -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Data zamówienia
+                            </span>
+
+                            <span class="orders-info-item__value">
+                                {{ item.order.order_date|date:"d.m.Y" }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- MATERIAL INDEX -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Indeks tektury
+                            </span>
+
+                            <span class="orders-info-item__value">
+                                {{ item.cardboard.index }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- FORMAT -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Format
+                            </span>
+
+                            <span class="orders-info-item__value">
+
+                                {{ item.sheet_length }}
+                                ×
+                                {{ item.sheet_width }}
+                                mm
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- QUANTITY -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Ilość
+                            </span>
+
+                            <span class="orders-info-item__value">
+                                {{ item.quantity }} ark.
+                            </span>
+
+                        </div>
+
+
+                        <!-- PRICE -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Cena
+                            </span>
+
+                            <span class="orders-info-item__value">
+
+                                {{ item.price_per_1000_m2 }}
+                                PLN / 1000 m²
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- VALUE -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Wartość
+                            </span>
+
+                            <span class="orders-info-item__value">
+                                {{ item.value }} PLN
+                            </span>
+
+                        </div>
+
+
+                        <!-- AREA -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Powierzchnia
+                            </span>
+
+                            <span class="orders-info-item__value">
+
+                                {{ item.total_area_m2|floatformat:2 }}
+                                m²
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- SCORES SNAPSHOT -->
+
+                        <div class="orders-info-item">
+
+                            <span class="orders-info-item__label">
+                                Bigi
+                            </span>
+
+                            <span class="orders-info-item__value">
+
+                                {% if purchase_scores_display %}
+
+                                    {{ purchase_scores_display }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        {% endwith %}
+
+    {% endif %}
+
+
+    <!-- ================================================== -->
+    <!-- PURCHASE OFFERS -->
+    <!-- ================================================== -->
+
+    {% if requirement and not purchase_allocation %}
+
+        <section class="orders-card">
+
+            <div class="orders-card__header">
+
+                <h2>
+                    Oferty materiału
+                </h2>
+
+                <span>
+                    Oferty spełniające wymagania
+                </span>
+
+            </div>
+
+
+            <div class="orders-card__body">
+
+
+                <!-- ====================================== -->
+                <!-- SUMMARY -->
+                <!-- ====================================== -->
+
+                <div class="material-offers-summary">
+
+                    <div class="material-offers-summary__item">
+
+                        Arkusz:
+
+                        <strong>
+                            {{ requirement.sheet_length }}
+                            ×
+                            {{ requirement.sheet_width }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="material-offers-summary__item">
+
+                        Ilość:
+
+                        <strong>
+                            {{ requirement.required_sheet_quantity }}
+                            ark.
+                        </strong>
+
+                    </div>
+
+
+                    <div class="material-offers-summary__item">
+
+                        Powierzchnia:
+
+                        <strong>
+                            {{ requirement.required_area_m2|floatformat:2 }}
+                            m²
+                        </strong>
+
+                    </div>
+
+
+                    {% if requirement_scores_display %}
+
+                        <div class="material-offers-summary__item">
+
+                            Bigi:
+
+                            <strong>
+                                {{ requirement_scores_display }}
+                            </strong>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- ====================================== -->
+                <!-- OFFERS TABLE -->
+                <!-- ====================================== -->
+
+                {% if offers %}
+
+                    <div class="material-offers-table-wrap">
+
+                        <table class="material-offers-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Dostawca
+                                    </th>
+
+                                    <th>
+                                        Indeks
+                                    </th>
+
+                                    <th>
+                                        Typ
+                                    </th>
+
+                                    <th>
+                                        Gramatura
+                                    </th>
+
+                                    <th>
+                                        ECT
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                    <th>
+                                        Cena
+                                    </th>
+
+                                    <th>
+                                        Wartość
+                                    </th>
+
+                                    <th>
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                {% for offer in offers %}
+
+                                    <tr>
+
+
+                                        <!-- PROVIDER -->
+
+                                        <td>
+                                            <strong>
+                                                {{ offer.provider }}
+                                            </strong>
+                                        </td>
+
+
+                                        <!-- INDEX -->
+
+                                        <td>
+
+                                            <span class="material-offer-index">
+                                                {{ offer.index }}
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- TYPE -->
+
+                                        <td>
+
+                                            {{ offer.layers }}
+                                            /
+                                            {{ offer.flute }}
+
+                                        </td>
+
+
+                                        <!-- GSM -->
+
+                                        <td>
+
+                                            {{ offer.gsm }}
+                                            g/m²
+
+                                        </td>
+
+
+                                        <!-- ECT -->
+
+                                        <td>
+
+                                            {{ offer.ect|default:"—" }}
+
+                                        </td>
+
+
+                                        <!-- STATUS -->
+
+                                        <td>
+
+                                            {{ offer.provider_status }}
+
+                                        </td>
+
+
+                                        <!-- PRICE -->
+
+                                        <td>
+
+                                            {{ offer.price_per_1000_m2 }}
+
+                                            <span
+                                                style="
+                                                    font-size: 10px;
+                                                    color: #6b7280;
+                                                "
+                                            >
+                                                PLN / 1000 m²
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- VALUE -->
+
+                                        <td>
+
+                                            <span class="material-offer-value">
+
+                                                {{ offer.total_value }}
+                                                PLN
+
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- ACTION -->
+
+                                        <td>
+
+                                            <button
+                                                type="button"
+                                                class="material-offer-button"
+
+                                                data-purchase-offer
+
+                                                data-requirement-id="{{ requirement.id }}"
+
+                                                data-price-item-id="{{ offer.price_item_id }}"
+
+                                                data-provider="{{ offer.provider }}"
+
+                                                data-provider-shortcut="{{ offer.provider.shortcut|default:'' }}"
+
+                                                data-index="{{ offer.index }}"
+
+                                                data-price="{{ offer.price_per_1000_m2 }}"
+
+                                                data-value="{{ offer.total_value }}"
+                                            >
+
+                                                <i class="fa-solid fa-cart-plus"></i>
+
+                                                Wybierz
+
+                                            </button>
+
+                                        </td>
+
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                {% else %}
+
+
+                    <div class="orders-empty-state">
+
+                        <i class="fa-solid fa-circle-exclamation"></i>
+
+                        Brak aktualnych ofert spełniających
+                        wymagania materiałowe.
+
+                    </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+        </section>
+
+    {% endif %}
+
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- PURCHASE MODAL -->
+<!-- ====================================================== -->
+
+{% if requirement and not purchase_allocation %}
+
+<div
+    class="modal fade"
+    id="materialPurchaseModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <form method="post">
+
+                {% csrf_token %}
+
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="purchase_material"
+                >
+
+
+                <input
+                    type="hidden"
+                    name="requirement_id"
+                    id="purchaseRequirementId"
+                >
+
+
+                <input
+                    type="hidden"
+                    name="price_list_item_id"
+                    id="purchasePriceItemId"
+                >
+
+
+                <!-- ====================================== -->
+                <!-- HEADER -->
+                <!-- ====================================== -->
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <h5 class="modal-title">
+                            Zamów materiał
+                        </h5>
+
+                        <div
+                            style="
+                                margin-top: 3px;
+                                font-size: 11px;
+                                color: #6b7280;
+                            "
+                        >
+                            Potwierdź wybraną ofertę
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Zamknij"
+                    ></button>
+
+                </div>
+
+
+                <!-- ====================================== -->
+                <!-- BODY -->
+                <!-- ====================================== -->
+
+                <div class="modal-body">
+
+
+                    <div
+                        id="purchaseOfferSummary"
+                        class="mb-3"
+                    >
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label
+                            class="form-label"
+                            for="purchaseOrderNumber"
+                        >
+                            Numer zamówienia u dostawcy
+                        </label>
+
+                        <input
+                            id="purchaseOrderNumber"
+                            type="text"
+                            name="order_number"
+                            class="form-control"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label
+                            class="form-label"
+                            for="purchaseOrderDate"
+                        >
+                            Data zamówienia
+                        </label>
+
+                        <input
+                            id="purchaseOrderDate"
+                            type="date"
+                            name="order_date"
+                            class="form-control"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+    <label
+        class="form-label"
+        for="purchaseDeliveryDate"
+    >
+        Oczekiwana data dostawy
+    </label>
+
+    <input
+        id="purchaseDeliveryDate"
+        type="date"
+        name="delivery_date"
+        class="form-control"
+        required
+    >
+
+</div>
+
+
+                    <div
+                        style="
+                            margin-top: 14px;
+                            padding: 10px 12px;
+                            background: #f8fafc;
+                            border-radius: 8px;
+                            font-size: 11px;
+                            color: #6b7280;
+                        "
+                    >
+
+                        Format:
+
+                        <strong>
+                            {{ requirement.sheet_length }}
+                            ×
+                            {{ requirement.sheet_width }}
+                        </strong>
+
+                        ·
+
+                        {{ requirement.required_sheet_quantity }}
+                        ark.
+
+                        {% if requirement_scores_display %}
+
+                            · Bigi:
+
+                            <strong>
+                                {{ requirement_scores_display }}
+                            </strong>
+
+                        {% endif %}
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- ====================================== -->
+                <!-- FOOTER -->
+                <!-- ====================================== -->
+
+                <div class="modal-footer">
+
+    <button
+        type="button"
+        class="btn btn-light"
+        data-bs-dismiss="modal"
+    >
+        Anuluj
+    </button>
+
+
+    <!-- NORMAL PROVIDER -->
+
+    <button
+        type="submit"
+        class="btn btn-dark"
+        id="normalPurchaseButton"
+    >
+        <i class="fa-solid fa-check"></i>
+
+        Utwórz zamówienie
+    </button>
+
+
+    <!-- AQUILA XML PREVIEW -->
+
+    <button
+        type="submit"
+        name="edi_action"
+        value="preview"
+        class="btn btn-outline-dark"
+        id="aquilaPreviewButton"
+        hidden
+    >
+        <i class="fa-solid fa-code"></i>
+
+        Pokaż XML
+    </button>
+
+
+    <!-- AQUILA SEND -->
+
+    <button
+        type="submit"
+        name="edi_action"
+        value="send"
+        class="btn btn-dark"
+        id="aquilaSendButton"
+        hidden
+    >
+        <i class="fa-solid fa-paper-plane"></i>
+
+        Wyślij do Aquila
+    </button>
+
+</div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="{% static 'js/orders/customer_order_detail.js' %}"
+></script>
+
+{% endblock %}
