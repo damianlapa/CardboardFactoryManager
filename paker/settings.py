@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'warehousemanager',
     'production',
-    'orders',
+    # 'orders',
     'deliveries',
     'warehouse',
     'maintenance',
