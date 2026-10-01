@@ -78,6 +78,38 @@ class CustomerOrderForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        Product = self.fields["product"].queryset.model
+
+        # Domyślnie brak produktów
+        self.fields["product"].queryset = Product.objects.none()
+
+        # POST - klient został już wybrany
+        if "customer" in self.data:
+            try:
+                customer_id = int(self.data.get("customer"))
+
+                self.fields["product"].queryset = (
+                    Product.objects
+                    .filter(order__customer_id=customer_id)
+                    .distinct()
+                    .order_by("name")
+                )
+
+            except (TypeError, ValueError):
+                pass
+
+        # Edycja istniejącego zamówienia
+        elif self.instance.pk and self.instance.customer_id:
+            self.fields["product"].queryset = (
+                Product.objects
+                .filter(order__customer_id=self.instance.customer_id)
+                .distinct()
+                .order_by("name")
+            )
+
 
 class MaterialRequirementForm(forms.ModelForm):
 
@@ -179,4 +211,46 @@ class MaterialPurchaseForm(forms.Form):
                 "type": "date",
             }
         ),
+    )
+
+
+######## TEMPORARY
+
+from django import forms
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault(
+            "widget",
+            MultipleFileInput(
+                attrs={
+                    "accept": ".txt",
+                }
+            ),
+        )
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+
+        if isinstance(data, (list, tuple)):
+            return [
+                single_file_clean(file, initial)
+                for file in data
+            ]
+
+        return [
+            single_file_clean(data, initial)
+        ]
+
+
+class ProductMaterialRequirementImportForm(forms.Form):
+    files = MultipleFileField(
+        label="Pliki historyczne",
+        help_text="Wybierz pliki TXT z historią zamówień.",
     )

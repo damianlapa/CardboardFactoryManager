@@ -45,6 +45,7 @@ Nowe zamówienie
         <form
             method="post"
             class="orders-create-form"
+            data-products-url="{% url 'orders:customer_products' %}"
         >
 
             {% csrf_token %}
@@ -77,5 +78,13 @@ Nowe zamówienie
     </section>
 
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script
+    src="{% static 'js/orders/customer_order_form.js' %}"
+></script>
 
 {% endblock %}

@@ -52,6 +52,16 @@ document.addEventListener(
                 "aquilaSendButton"
             );
 
+        const jassboardPreviewButton =
+            document.getElementById(
+                "jassboardPreviewButton"
+            );
+
+        const jassboardSendButton =
+            document.getElementById(
+                "jassboardSendButton"
+            );
+
 
         // ==================================================
         // DEFAULT ORDER DATE
@@ -90,6 +100,22 @@ document.addEventListener(
 
 
         // ==================================================
+        // BUTTON VISIBILITY
+        // ==================================================
+
+        function hideAllPurchaseButtons() {
+
+            normalButton.hidden = true;
+
+            aquilaPreviewButton.hidden = true;
+            aquilaSendButton.hidden = true;
+
+            jassboardPreviewButton.hidden = true;
+            jassboardSendButton.hidden = true;
+        }
+
+
+        // ==================================================
         // OFFER
         // ==================================================
 
@@ -112,6 +138,10 @@ document.addEventListener(
                                 button.dataset
                                     .priceItemId;
 
+
+                            // ==================================
+                            // SUMMARY
+                            // ==================================
 
                             summary.innerHTML = `
                                 <div>
@@ -142,13 +172,17 @@ document.addEventListener(
                             `;
 
 
+                            // ==================================
+                            // PROVIDER
+                            // ==================================
+
                             const providerName =
                                 (
                                     button.dataset.provider
                                     || ""
                                 )
-                                .trim()
-                                .toUpperCase();
+                                    .trim()
+                                    .toUpperCase();
 
                             const providerShortcut =
                                 (
@@ -156,9 +190,13 @@ document.addEventListener(
                                         .providerShortcut
                                     || ""
                                 )
-                                .trim()
-                                .toUpperCase();
+                                    .trim()
+                                    .toUpperCase();
 
+
+                            // ==================================
+                            // AQUILA
+                            // ==================================
 
                             const isAquila =
                                 providerName === "AQUILA"
@@ -168,27 +206,57 @@ document.addEventListener(
                                 providerShortcut === "AQUILA";
 
 
-                            if (isAquila) {
+                            // ==================================
+                            // JASSBOARD
+                            // ==================================
 
-                                normalButton.hidden = true;
+                            const isJassboard =
+                                providerName === "JASS"
+                                ||
+                                providerName === "JASSBOARD"
+                                ||
+                                providerShortcut === "JASS"
+                                ||
+                                providerShortcut === "JASSBOARD";
+
+
+                            // ==================================
+                            // RESET
+                            // ==================================
+
+                            hideAllPurchaseButtons();
+
+
+                            // ==================================
+                            // BUTTONS
+                            // ==================================
+
+                            if (isAquila) {
 
                                 aquilaPreviewButton.hidden =
                                     false;
 
                                 aquilaSendButton.hidden =
+                                    false;
+
+                            } else if (isJassboard) {
+
+                                jassboardPreviewButton.hidden =
+                                    false;
+
+                                jassboardSendButton.hidden =
                                     false;
 
                             } else {
 
-                                normalButton.hidden = false;
-
-                                aquilaPreviewButton.hidden =
-                                    true;
-
-                                aquilaSendButton.hidden =
-                                    true;
+                                normalButton.hidden =
+                                    false;
                             }
 
+
+                            // ==================================
+                            // SHOW MODAL
+                            // ==================================
 
                             modal.show();
                         }

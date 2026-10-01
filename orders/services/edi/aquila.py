@@ -28,8 +28,13 @@ EDI_PASSWORD = (
     settings.AQUILA_EDI_PASSWORD
 )
 
-CUSTOMER_NUMBER = "38465"
-SHIP_TO = "83867"
+AQUILA_CUSTOMER_NUMBER = (
+    settings.AQUILA_CUSTOMER_NUMBER
+)
+
+AQUILA_SHIP_TO = (
+    settings.AQUILA_SHIP_TO
+)
 
 NAMESPACE = "http://vpk.be/AQUILA/SalesOrder"
 
@@ -153,8 +158,8 @@ class AquilaOrder:
 
     scores: Optional[AquilaScores] = None
 
-    customer_number: str = CUSTOMER_NUMBER
-    ship_to: str = SHIP_TO
+    customer_number: str = AQUILA_CUSTOMER_NUMBER
+    ship_to: str = AQUILA_SHIP_TO
 
 
 # ============================================================

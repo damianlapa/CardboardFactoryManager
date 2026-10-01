@@ -193,4 +193,31 @@ AQUILA_EDI_PASSWORD = os.environ.get(
     "AQUILA_EDI_PASSWORD"
 )
 
+AQUILA_CUSTOMER_NUMBER = os.environ.get(
+    "AQUILA_CUSTOMER_NUMBER"
+)
+
+AQUILA_SHIP_TO = os.environ.get(
+    "AQUILA_SHIP_TO"
+)
+
+# JASSBOARD SETTINGS
+JASSBOARD_BASE_URL = os.environ.get(
+    "JASSBOARD_BASE_URL",
+    "https://strefaklienta.jassboard.com/",
+)
+
+JASSBOARD_EMAIL = os.environ.get(
+    "JASSBOARD_EMAIL"
+)
+
+JASSBOARD_PASSWORD = os.environ.get(
+    "JASSBOARD_PASSWORD"
+)
+
+JASSBOARD_ADDRESS_ERP_ID = os.environ.get(
+    "JASSBOARD_ADDRESS_ERP_ID"
+)
+JASSBOARD_VERIFY_SSL = False
+
 django_heroku.settings(locals())

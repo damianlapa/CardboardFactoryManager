@@ -708,6 +708,7 @@ Zamówienia
         <form
             method="post"
             class="orders-create-form"
+            data-products-url="{% url 'orders:customer_products' %}"
         >
 
             {% csrf_token %}
@@ -842,6 +843,9 @@ Zamówienia
 
 <script
     src="{% static 'js/orders/customer_order_list.js' %}"
+></script>
+<script
+    src="{% static 'js/orders/customer_order_form.js' %}"
 ></script>
 
 {% endblock %}

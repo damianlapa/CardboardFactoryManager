@@ -1,0 +1,1116 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1>
+            Import konfiguracji surowcowych
+        </h1>
+
+        <p class="text-muted">
+            Wybierz pliki historyczne TXT.
+            Na tym etapie wykonywana jest tylko analiza danych.
+            Żadne dane nie są zapisywane do bazy.
+        </p>
+    </div>
+
+
+    {% if import_error %}
+
+        <div class="alert alert-danger">
+            <strong>Błąd analizy:</strong>
+            {{ import_error }}
+        </div>
+
+    {% endif %}
+
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <form
+                method="post"
+                enctype="multipart/form-data"
+            >
+
+                {% csrf_token %}
+
+                <div class="mb-3">
+
+                    {{ form.files.label_tag }}
+
+                    <div class="mt-2">
+                        {{ form.files }}
+                    </div>
+
+                    {% if form.files.help_text %}
+
+                        <div class="form-text">
+                            {{ form.files.help_text }}
+                        </div>
+
+                    {% endif %}
+
+                    {% if form.files.errors %}
+
+                        <div class="text-danger mt-2">
+                            {{ form.files.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Analizuj pliki
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    {% if result %}
+
+        <!-- ===================================================== -->
+        <!-- WCZYTANE PLIKI -->
+        <!-- ===================================================== -->
+
+        <div class="card mb-4">
+
+            <div class="card-header">
+                <strong>
+                    Wczytane pliki
+                </strong>
+            </div>
+
+            <div class="card-body">
+
+                <table class="table table-sm mb-0">
+
+                    <thead>
+
+                        <tr>
+                            <th>Plik</th>
+                            <th>Rekordy</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for file in result.files %}
+
+                            <tr>
+
+                                <td>
+                                    {{ file.name }}
+                                </td>
+
+                                <td>
+                                    {{ file.records }}
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- PODSUMOWANIE -->
+        <!-- ===================================================== -->
+
+        <div class="card mb-4">
+
+            <div class="card-header">
+                <strong>
+                    Podsumowanie
+                </strong>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Wszystkie rekordy
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.total_records }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Unikalne produkty
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.unique_products }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Dopasowane produkty
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.matched }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Gotowe rekordy
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.ready_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Możliwe do importu
+                        </strong>
+
+                        <div class="fs-4 text-success">
+                            {{ result.importable_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Już istnieją
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.already_exists_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Nie znaleziono produktu
+                        </strong>
+
+                        <div class="fs-4 text-danger">
+                            {{ result.not_found_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Niejednoznaczne produkty
+                        </strong>
+
+                        <div class="fs-4 text-warning">
+                            {{ result.ambiguous_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Konflikty historii
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.conflicts_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Indeks tektury znaleziony
+                        </strong>
+
+                        <div class="fs-4 text-success">
+                            {{ result.cardboard_grade_found_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Brak indeksu tektury
+                        </strong>
+
+                        <div class="fs-4 text-danger">
+                            {{ result.cardboard_grade_not_found_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Niejednoznaczny indeks
+                        </strong>
+
+                        <div class="fs-4 text-warning">
+                            {{ result.cardboard_grade_ambiguous_count }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3 mb-3">
+
+                        <strong>
+                            Brak rozpoznanej fali
+                        </strong>
+
+                        <div class="fs-4">
+                            {{ result.skipped_without_flute_count }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- DOPASOWANE PRODUKTY -->
+        <!-- ===================================================== -->
+
+        {% if result.ready %}
+
+            <div class="card mb-4">
+
+                <div class="card-header">
+                    <strong>
+                        Dopasowane produkty
+                    </strong>
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-striped table-hover mb-0">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Produkt
+                                </th>
+
+                                <th>
+                                    Data
+                                </th>
+
+                                <th>
+                                    Indeks tektury
+                                </th>
+
+                                <th>
+                                    Arkusz
+                                </th>
+
+                                <th>
+                                    Fala
+                                </th>
+
+                                <th>
+                                    Warstwy
+                                </th>
+
+                                <th>
+                                    GSM
+                                </th>
+
+                                <th>
+                                    ECT
+                                </th>
+
+                                <th>
+                                    Użytki
+                                </th>
+
+                                <th>
+                                    Bigi
+                                </th>
+
+                                <th>
+                                    Historia
+                                </th>
+
+                                <th>
+                                    Indeks
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for row in result.ready %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ row.product.name }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.date|date:"Y-m-d" }}
+                                    </td>
+
+
+                                    <td>
+                                        <strong>
+                                            {{ row.latest.cardboard }}
+                                        </strong>
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ row.latest.sheet_length }}
+                                        ×
+                                        {{ row.latest.sheet_width }}
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.flute|default:"—" }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.layers|default:"—" }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if row.latest.min_gsm %}
+
+                                            {{ row.latest.min_gsm }}
+                                            g/m²
+
+                                        {% else %}
+
+                                            <span class="text-muted">
+                                                —
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if row.latest.min_ect is not None %}
+
+                                            {{ row.latest.min_ect }}
+
+                                        {% else %}
+
+                                            <span class="text-muted">
+                                                —
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.pieces_per_sheet }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if row.latest.scores %}
+
+                                            {{ row.latest.scores }}
+
+                                        {% else %}
+
+                                            <span class="text-muted">
+                                                —
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.history_count }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if row.latest.cardboard_grade_status == "FOUND" %}
+
+                                            <span class="badge bg-success">
+                                                znaleziony
+                                            </span>
+
+                                        {% elif row.latest.cardboard_grade_status == "AMBIGUOUS" %}
+
+                                            <span class="badge bg-warning text-dark">
+                                                konflikt
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="badge bg-danger">
+                                                brak
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if row.can_import %}
+
+                                            <span class="badge bg-success">
+                                                gotowy
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="badge bg-danger">
+                                                wymaga sprawdzenia
+                                            </span>
+
+                                        {% endif %}
+
+
+                                        {% if row.has_conflict %}
+
+                                            <span class="badge bg-secondary">
+                                                zmiany w historii
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ===================================================== -->
+        <!-- BRAK INDEKSU TEKTURY -->
+        <!-- ===================================================== -->
+
+        {% if result.cardboard_grade_not_found %}
+
+            <div class="card border-danger mb-4">
+
+                <div class="card-header">
+                    <strong>
+                        Nie znaleziono indeksu tektury w cennikach
+                    </strong>
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-sm mb-0">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Produkt
+                                </th>
+
+                                <th>
+                                    Data
+                                </th>
+
+                                <th>
+                                    Indeks tektury
+                                </th>
+
+                                <th>
+                                    Arkusz
+                                </th>
+
+                                <th>
+                                    Fala
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for row in result.cardboard_grade_not_found %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ row.product.name }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.date|date:"Y-m-d" }}
+                                    </td>
+
+
+                                    <td>
+
+                                        <strong class="text-danger">
+                                            {{ row.latest.cardboard }}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ row.latest.sheet_length }}
+                                        ×
+                                        {{ row.latest.sheet_width }}
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.flute|default:"—" }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ===================================================== -->
+        <!-- NIEJEDNOZNACZNY INDEKS -->
+        <!-- ===================================================== -->
+
+        {% if result.cardboard_grade_ambiguous %}
+
+            <div class="card border-warning mb-4">
+
+                <div class="card-header">
+
+                    <strong>
+                        Niejednoznaczne indeksy tektury
+                    </strong>
+
+                </div>
+
+                <div class="card-body">
+
+                    {% for row in result.cardboard_grade_ambiguous %}
+
+                        <div class="mb-4">
+
+                            <h5>
+                                {{ row.product.name }}
+                            </h5>
+
+                            <div class="mb-2">
+
+                                Indeks:
+
+                                <strong>
+                                    {{ row.latest.cardboard }}
+                                </strong>
+
+                            </div>
+
+
+                            <table class="table table-sm">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>
+                                            Dostawca
+                                        </th>
+
+                                        <th>
+                                            Indeks
+                                        </th>
+
+                                        <th>
+                                            Fala
+                                        </th>
+
+                                        <th>
+                                            Warstwy
+                                        </th>
+
+                                        <th>
+                                            GSM
+                                        </th>
+
+                                        <th>
+                                            ECT
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody>
+
+                                    {% for grade in row.latest.cardboard_grade_candidates %}
+
+                                        <tr>
+
+                                            <td>
+                                                {{ grade.provider }}
+                                            </td>
+
+                                            <td>
+                                                {{ grade.index }}
+                                            </td>
+
+                                            <td>
+                                                {{ grade.flute }}
+                                            </td>
+
+                                            <td>
+                                                {{ grade.layers }}
+                                            </td>
+
+                                            <td>
+                                                {{ grade.gsm }}
+                                            </td>
+
+                                            <td>
+                                                {{ grade.ect|default:"—" }}
+                                            </td>
+
+                                        </tr>
+
+                                    {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ===================================================== -->
+        <!-- HISTORIA / KONFLIKTY -->
+        <!-- ===================================================== -->
+
+        {% if result.conflicts %}
+
+            <div class="card mb-4">
+
+                <div class="card-header">
+
+                    <strong>
+                        Zmiany konfiguracji w historii
+                    </strong>
+
+                </div>
+
+                <div class="card-body">
+
+                    {% for conflict in result.conflicts %}
+
+                        <div class="mb-5">
+
+                            <h5>
+                                {{ conflict.product.name }}
+                            </h5>
+
+
+                            <div class="text-muted mb-2">
+
+                                Użyty zostanie najnowszy rekord:
+
+                                <strong>
+                                    {{ conflict.latest.date|date:"Y-m-d" }}
+                                </strong>
+
+                            </div>
+
+
+                            <table class="table table-sm">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>
+                                            Data
+                                        </th>
+
+                                        <th>
+                                            Indeks
+                                        </th>
+
+                                        <th>
+                                            Arkusz
+                                        </th>
+
+                                        <th>
+                                            Fala
+                                        </th>
+
+                                        <th>
+                                            Użytki
+                                        </th>
+
+                                        <th>
+                                            Bigi
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody>
+
+                                    {% for history in conflict.history %}
+
+                                        <tr>
+
+                                            <td>
+                                                {{ history.date|date:"Y-m-d" }}
+                                            </td>
+
+
+                                            <td>
+                                                {{ history.cardboard }}
+                                            </td>
+
+
+                                            <td>
+
+                                                {{ history.sheet_length }}
+                                                ×
+                                                {{ history.sheet_width }}
+
+                                            </td>
+
+
+                                            <td>
+                                                {{ history.flute|default:"—" }}
+                                            </td>
+
+
+                                            <td>
+                                                {{ history.pieces_per_sheet }}
+                                            </td>
+
+
+                                            <td>
+                                                {{ history.scores|default:"—" }}
+                                            </td>
+
+                                        </tr>
+
+                                    {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ===================================================== -->
+        <!-- NIE ZNALEZIONO PRODUCT -->
+        <!-- ===================================================== -->
+
+        {% if result.not_found %}
+
+            <div class="card border-danger mb-4">
+
+                <div class="card-header">
+
+                    <strong>
+                        Nie znaleziono produktu w bazie
+                    </strong>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="table table-sm mb-0">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Oczekiwana nazwa
+                                </th>
+
+                                <th>
+                                    Data
+                                </th>
+
+                                <th>
+                                    Indeks tektury
+                                </th>
+
+                                <th>
+                                    Arkusz
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for row in result.not_found %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ row.expected_name }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.date|date:"Y-m-d" }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.cardboard }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ row.latest.sheet_length }}
+                                        ×
+                                        {{ row.latest.sheet_width }}
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ===================================================== -->
+        <!-- JUŻ ISTNIEJĄCE REQUIREMENTS -->
+        <!-- ===================================================== -->
+
+        {% if result.already_exists %}
+
+            <div class="card mb-4">
+
+                <div class="card-header">
+
+                    <strong>
+                        Produkty posiadające już konfigurację
+                    </strong>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="table table-sm mb-0">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Produkt
+                                </th>
+
+                                <th>
+                                    Data
+                                </th>
+
+                                <th>
+                                    Indeks
+                                </th>
+
+                                <th>
+                                    GSM
+                                </th>
+
+                                <th>
+                                    ECT
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for row in result.already_exists %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ row.product.name }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.date|date:"Y-m-d" }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.cardboard }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.min_gsm|default:"—" }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ row.latest.min_ect|default:"—" }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

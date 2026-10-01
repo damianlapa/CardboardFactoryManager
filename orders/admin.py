@@ -12,8 +12,10 @@ from .models import (
     CardboardOrder,
     CardboardOrderItem,
     MaterialAllocation,
-    MaterialRequirementScore
+    MaterialRequirementScore,
+    ProductMaterialRequirement
 )
+
 
 from .forms import CardboardPriceListImportForm
 from .services.price_list_import import import_cardboard_price_list
@@ -786,3 +788,82 @@ class MaterialAllocationAdmin(admin.ModelAdmin):
     readonly_fields = (
         "created_at",
     )
+
+
+@admin.register(ProductMaterialRequirement)
+class ProductMaterialRequirementAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "product",
+        "sheet_format",
+        "pieces_per_sheet",
+        "flute",
+        "min_gsm",
+        "min_ect",
+        "cover",
+        "scores",
+    )
+
+    search_fields = (
+        "product__name",
+        "product__dimensions",
+        "flute",
+        "scores",
+    )
+
+    list_filter = (
+        "layers",
+        "flute",
+        "cover",
+    )
+
+    autocomplete_fields = (
+        "product",
+    )
+
+    ordering = (
+        "product__name",
+    )
+
+    fieldsets = (
+        (
+            "Produkt",
+            {
+                "fields": (
+                    "product",
+                ),
+            },
+        ),
+        (
+            "Format arkusza",
+            {
+                "fields": (
+                    ("sheet_length", "sheet_width"),
+                    "pieces_per_sheet",
+                    "scores",
+                ),
+            },
+        ),
+        (
+            "Parametry tektury",
+            {
+                "fields": (
+                    ("layers", "flute"),
+                    ("min_gsm", "min_ect"),
+                    "cover",
+                ),
+            },
+        ),
+        (
+            "Dodatkowe informacje",
+            {
+                "fields": (
+                    "notes",
+                ),
+            },
+        ),
+    )
+
+    @admin.display(description="Format")
+    def sheet_format(self, obj):
+        return f"{obj.sheet_length}x{obj.sheet_width}"

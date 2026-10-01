@@ -476,47 +476,111 @@ Zamówienie {{ order.order_number }}
 
             {% else %}
 
-
-                <!-- ====================================== -->
-                <!-- REQUIREMENT FORM -->
-                <!-- ====================================== -->
-
-                <form
-                    method="post"
-                    class="orders-requirement-form"
-                >
-
-                    {% csrf_token %}
-
-                    <input
-                        type="hidden"
-                        name="action"
-                        value="add_requirement"
-                    >
+    <!-- ====================================== -->
+    <!-- REQUIREMENT FORM -->
+    <!-- ====================================== -->
 
 
-                    {{ requirement_form.as_p }}
+    {% if product_requirement_template %}
+
+        <div class="orders-template-notice">
+
+            <div class="orders-template-notice__icon">
+
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+            </div>
 
 
-                    <div class="orders-form-actions">
+            <div class="orders-template-notice__content">
 
-                        <button
-                            type="submit"
-                            class="orders-btn orders-btn--primary"
-                        >
+                <strong>
+                    Wczytano konfigurację produktu
+                </strong>
 
-                            <i class="fa-solid fa-check"></i>
+                <span>
+                    Parametry surowca zostały automatycznie
+                    pobrane z zapisanej konfiguracji produktu.
+                    Możesz je zmienić przed zapisaniem.
+                </span>
 
-                            Zapisz wymagania materiałowe
-
-                        </button>
-
-                    </div>
-
-                </form>
+            </div>
 
 
-            {% endif %}
+            <div class="orders-template-notice__product">
+
+                {{ order.product }}
+
+            </div>
+
+        </div>
+
+
+    {% else %}
+
+        <div class="orders-template-notice orders-template-notice--empty">
+
+            <div class="orders-template-notice__icon">
+
+                <i class="fa-solid fa-circle-info"></i>
+
+            </div>
+
+
+            <div class="orders-template-notice__content">
+
+                <strong>
+                    Brak zapisanej konfiguracji produktu
+                </strong>
+
+                <span>
+                    Uzupełnij wymagania materiałowe ręcznie.
+                </span>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+
+    <form
+        method="post"
+        class="orders-requirement-form"
+    >
+
+        {% csrf_token %}
+
+
+        <input
+            type="hidden"
+            name="action"
+            value="add_requirement"
+        >
+
+
+        {{ requirement_form.as_p }}
+
+
+        <div class="orders-form-actions">
+
+            <button
+                type="submit"
+                class="orders-btn orders-btn--primary"
+            >
+
+                <i class="fa-solid fa-check"></i>
+
+                Zapisz wymagania materiałowe
+
+            </button>
+
+        </div>
+
+    </form>
+
+{% endif %}
 
 
         </div>
@@ -1266,7 +1330,6 @@ Zamówienie {{ order.order_number }}
         id="normalPurchaseButton"
     >
         <i class="fa-solid fa-check"></i>
-
         Utwórz zamówienie
     </button>
 
@@ -1282,7 +1345,6 @@ Zamówienie {{ order.order_number }}
         hidden
     >
         <i class="fa-solid fa-code"></i>
-
         Pokaż XML
     </button>
 
@@ -1298,17 +1360,38 @@ Zamówienie {{ order.order_number }}
         hidden
     >
         <i class="fa-solid fa-paper-plane"></i>
-
         Wyślij do Aquila
     </button>
 
-</div>
 
-            </form>
+    <!-- JASSBOARD JSON PREVIEW -->
 
-        </div>
+    <button
+        type="submit"
+        name="edi_action"
+        value="preview"
+        class="btn btn-outline-dark"
+        id="jassboardPreviewButton"
+        hidden
+    >
+        <i class="fa-solid fa-code"></i>
+        Pokaż JSON
+    </button>
 
-    </div>
+
+    <!-- JASSBOARD SEND -->
+
+    <button
+        type="submit"
+        name="edi_action"
+        value="send"
+        class="btn btn-dark"
+        id="jassboardSendButton"
+        hidden
+    >
+        <i class="fa-solid fa-paper-plane"></i>
+        Wyślij do JASS
+    </button>
 
 </div>
 

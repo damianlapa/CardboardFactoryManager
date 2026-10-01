@@ -932,3 +932,89 @@ class CardboardOrderItemScore(models.Model):
 
     def __str__(self):
         return f"{self.position_mm} mm"
+
+
+class ProductMaterialRequirement(models.Model):
+
+    class Cover(models.TextChoices):
+        GREY = "GREY", "Szara"
+        WHITE_ONE_SIDE = "WHITE_ONE_SIDE", "Jednostronnie biała"
+        WHITE_TWO_SIDES = "WHITE_TWO_SIDES", "Dwustronnie biała"
+        OTHER = "OTHER", "Inna"
+
+    product = models.OneToOneField(
+        "warehouse.Product",
+        on_delete=models.CASCADE,
+        related_name="material_requirement_template",
+    )
+
+    sheet_length = models.PositiveIntegerField(
+        help_text="Długość arkusza w mm",
+    )
+
+    sheet_width = models.PositiveIntegerField(
+        help_text="Szerokość arkusza w mm",
+    )
+
+    pieces_per_sheet = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("1.00"),
+    )
+
+    layers = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    flute = models.CharField(
+        max_length=8,
+        blank=True,
+        default="",
+    )
+
+    min_gsm = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    min_ect = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Minimalne ECT kN/m",
+    )
+
+    cover = models.CharField(
+        max_length=32,
+        choices=Cover.choices,
+        null=True,
+        blank=True,
+    )
+
+    scores = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        help_text="Bigi, np. 100/200/100",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    def __str__(self):
+        return (
+            f"{self.product} | "
+            f"{self.sheet_length}x{self.sheet_width}"
+        )

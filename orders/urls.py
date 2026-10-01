@@ -6,6 +6,8 @@ from .views import (
     CustomerOrderDetailView,
 )
 
+from .help_views.products import customer_products
+
 from orders.edi_views import edi_test_xml, edi_test_send
 
 app_name = "orders"
@@ -59,5 +61,42 @@ urlpatterns += [
         "edi/test-send/",
         edi_test_send,
         name="edi-test-send",
+    ),
+]
+
+
+######## TEMPORARY
+
+from django.urls import path
+
+from .views import (
+    ProductMaterialRequirementImportView, ProductMaterialRequirementBulkImportView
+)
+
+
+urlpatterns += [
+    path(
+        "material-requirements/import/",
+        ProductMaterialRequirementImportView.as_view(),
+        name="product_material_requirement_import",
+    ),
+
+    path(
+        "material-requirements/bulk-import/",
+        ProductMaterialRequirementBulkImportView.as_view(),
+        name="product-material-requirement-bulk-import",
+    ),
+]
+
+
+######################
+# HELP VIEWS         #
+######################
+
+urlpatterns += [
+    path(
+        "ajax/customer-products/",
+        customer_products,
+        name="customer_products",
     ),
 ]

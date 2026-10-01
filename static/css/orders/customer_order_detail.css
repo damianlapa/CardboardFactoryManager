@@ -555,3 +555,101 @@
     }
 
 }
+
+.orders-template-notice {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    margin-bottom: 20px;
+    padding: 14px 16px;
+
+    background: #f0fdf4;
+
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #22c55e;
+
+    border-radius: 10px;
+}
+
+.orders-template-notice__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+
+    background: #dcfce7;
+
+    border-radius: 8px;
+
+    color: #15803d;
+
+    font-size: 15px;
+}
+
+.orders-template-notice__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    min-width: 0;
+
+    font-size: 12px;
+}
+
+.orders-template-notice__content strong {
+    color: #166534;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.orders-template-notice__content span {
+    color: #4b5563;
+}
+
+.orders-template-notice__product {
+    margin-left: auto;
+
+    max-width: 320px;
+
+    padding: 5px 9px;
+
+    background: #ffffff;
+
+    border: 1px solid #d1fae5;
+    border-radius: 6px;
+
+    color: #166534;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* Brak konfiguracji */
+
+.orders-template-notice--empty {
+    background: #f8fafc;
+
+    border-color: #e2e8f0;
+    border-left-color: #94a3b8;
+}
+
+.orders-template-notice--empty
+.orders-template-notice__icon {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.orders-template-notice--empty
+.orders-template-notice__content strong {
+    color: #475569;
+}
