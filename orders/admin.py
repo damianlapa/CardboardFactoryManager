@@ -13,7 +13,8 @@ from .models import (
     CardboardOrderItem,
     MaterialAllocation,
     MaterialRequirementScore,
-    ProductMaterialRequirement
+    ProductMaterialRequirement,
+    CustomerOrderSequence
 )
 
 
@@ -867,3 +868,6 @@ class ProductMaterialRequirementAdmin(admin.ModelAdmin):
     @admin.display(description="Format")
     def sheet_format(self, obj):
         return f"{obj.sheet_length}x{obj.sheet_width}"
+
+
+admin.site.register(CustomerOrderSequence)
