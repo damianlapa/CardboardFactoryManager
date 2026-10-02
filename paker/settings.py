@@ -218,6 +218,6 @@ JASSBOARD_PASSWORD = os.environ.get(
 JASSBOARD_ADDRESS_ERP_ID = os.environ.get(
     "JASSBOARD_ADDRESS_ERP_ID"
 )
-JASSBOARD_VERIFY_SSL = False
+JASSBOARD_VERIFY_SSL = True
 
 django_heroku.settings(locals())
