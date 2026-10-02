@@ -7,6 +7,7 @@ from .views import (
 )
 
 from .help_views.products import customer_products
+from .help_views.jassboard_calendar import JassBoardCalendarView
 
 from orders.edi_views import edi_test_xml, edi_test_send
 
@@ -99,4 +100,11 @@ urlpatterns += [
         customer_products,
         name="customer_products",
     ),
+
+    path(
+        "jassboard/calendar/",
+        JassBoardCalendarView.as_view(),
+        name="jassboard_calendar",
+    ),
 ]
+

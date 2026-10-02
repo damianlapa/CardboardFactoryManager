@@ -222,3 +222,13 @@ class JassBoardClient:
                     "application/json",
             },
         )
+
+    def get_order(self, order_id):
+
+        return self._request(
+            "GET",
+            "/Api/Orders/Get",
+            params={
+                "id": order_id,
+            },
+        )

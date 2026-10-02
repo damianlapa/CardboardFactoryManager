@@ -147,7 +147,7 @@ def build_jassboard_order(
             str(order_number)[:19],
 
         "NrPozZamKlienta":
-            "1",
+            "",
 
         "IndeksKlienta":
             "",
@@ -191,11 +191,7 @@ def build_jassboard_order(
             "",
 
         "Uwagi":
-            str(
-                requirement
-                .customer_order
-                .order_number
-            )[:200],
+            "",
 
         "UtworzonoZaPomoca":
             "PAKER",
@@ -249,5 +245,26 @@ def send_jassboard_purchase(
     result = client.add_order(
         payload
     )
+
+    errors = (
+        result.get("errorMessageList")
+        or []
+    )
+
+    if errors:
+        raise ValidationError(
+            "JassBoard odrzucił zamówienie: "
+            + "; ".join(str(e) for e in errors)
+        )
+
+    order_id = result.get("id")
+
+    if not order_id:
+        raise ValidationError(
+            (
+                "JassBoard nie zwrócił ID zamówienia. "
+                f"Odpowiedź API: {result}"
+            )
+        )
 
     return result

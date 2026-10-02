@@ -36,6 +36,15 @@ document.addEventListener(
                 "purchaseOrderDate"
             );
 
+        const deliveryDateInput =
+            document.getElementById(
+                "purchaseDeliveryDate"
+            );
+
+        const orderNumberInput =
+            document.getElementById(
+                "purchaseOrderNumber"
+            );
 
         const normalButton =
             document.getElementById(
@@ -105,13 +114,72 @@ document.addEventListener(
 
         function hideAllPurchaseButtons() {
 
-            normalButton.hidden = true;
+            if (normalButton) {
+                normalButton.hidden = true;
+            }
 
-            aquilaPreviewButton.hidden = true;
-            aquilaSendButton.hidden = true;
+            if (aquilaPreviewButton) {
+                aquilaPreviewButton.hidden = true;
+            }
 
-            jassboardPreviewButton.hidden = true;
-            jassboardSendButton.hidden = true;
+            if (aquilaSendButton) {
+                aquilaSendButton.hidden = true;
+            }
+
+            if (jassboardPreviewButton) {
+                jassboardPreviewButton.hidden = true;
+            }
+
+            if (jassboardSendButton) {
+                jassboardSendButton.hidden = true;
+            }
+        }
+
+
+        // ==================================================
+        // RESET DELIVERY DATE
+        // ==================================================
+
+        function resetDeliveryDateLimits() {
+
+            if (!deliveryDateInput) {
+                return;
+            }
+
+            deliveryDateInput.min = "";
+            deliveryDateInput.max = "";
+            deliveryDateInput.disabled = false;
+        }
+
+
+        // ==================================================
+        // JASSBOARD CALENDAR
+        // ==================================================
+
+        async function loadJassboardCalendar(
+            boardType
+        ) {
+
+            const response = await fetch(
+                `/orders/jassboard/calendar/?type=${encodeURIComponent(boardType)}`
+            );
+
+            const data =
+                await response.json();
+
+            if (
+                !response.ok
+                ||
+                !data.ok
+            ) {
+                throw new Error(
+                    data.error
+                    ||
+                    "Nie udało się pobrać kalendarza JASS."
+                );
+            }
+
+            return data;
         }
 
 
@@ -128,7 +196,19 @@ document.addEventListener(
 
                     button.addEventListener(
                         "click",
-                        function () {
+                        async function () {
+
+                            // ==================================
+                            // RESET
+                            // ==================================
+
+                            hideAllPurchaseButtons();
+                            resetDeliveryDateLimits();
+
+
+                            // ==================================
+                            // HIDDEN INPUTS
+                            // ==================================
 
                             requirementInput.value =
                                 button.dataset
@@ -193,6 +273,27 @@ document.addEventListener(
                                     .trim()
                                     .toUpperCase();
 
+                            // ==================================
+                            // SUPPLIER ORDER NUMBER
+                            // ==================================
+
+                            if (orderNumberInput) {
+
+                                const supplierName =
+                                    providerShortcut
+                                    || providerName;
+
+                                const customerOrderNumber =
+                                    button.dataset.orderNumber
+                                    || "";
+
+                                orderNumberInput.value =
+                                    `${supplierName} ${customerOrderNumber}`;
+
+                                 orderNumberInput.value =
+                                    `${supplierName} ${customerOrderNumber}`;
+                            }
+
 
                             // ==================================
                             // AQUILA
@@ -221,42 +322,141 @@ document.addEventListener(
 
 
                             // ==================================
-                            // RESET
-                            // ==================================
-
-                            hideAllPurchaseButtons();
-
-
-                            // ==================================
-                            // BUTTONS
+                            // AQUILA BUTTONS
                             // ==================================
 
                             if (isAquila) {
 
-                                aquilaPreviewButton.hidden =
-                                    false;
+                                if (aquilaPreviewButton) {
+                                    aquilaPreviewButton.hidden =
+                                        false;
+                                }
 
-                                aquilaSendButton.hidden =
-                                    false;
+                                if (aquilaSendButton) {
+                                    aquilaSendButton.hidden =
+                                        false;
+                                }
 
-                            } else if (isJassboard) {
-
-                                jassboardPreviewButton.hidden =
-                                    false;
-
-                                jassboardSendButton.hidden =
-                                    false;
-
-                            } else {
-
-                                normalButton.hidden =
-                                    false;
+                                modal.show();
+                                return;
                             }
 
 
                             // ==================================
-                            // SHOW MODAL
+                            // JASSBOARD
                             // ==================================
+
+                            if (isJassboard) {
+
+                                if (jassboardPreviewButton) {
+                                    jassboardPreviewButton.hidden =
+                                        false;
+                                }
+
+                                if (jassboardSendButton) {
+                                    jassboardSendButton.hidden =
+                                        false;
+                                }
+
+
+                                // ==============================
+                                // BOARD TYPE
+                                // ==============================
+
+                                const layers =
+                                    parseInt(
+                                        button.dataset.layers
+                                        || "0",
+                                        10
+                                    );
+
+                                let boardType =
+                                    "TF35";
+
+                                if (layers === 2) {
+                                    boardType =
+                                        "TF2";
+                                }
+
+
+                                // ==============================
+                                // GET JASSBOARD CALENDAR
+                                // ==============================
+
+                                if (deliveryDateInput) {
+
+                                    try {
+
+                                        deliveryDateInput.disabled =
+                                            true;
+
+                                        const calendar =
+                                            await loadJassboardCalendar(
+                                                boardType
+                                            );
+
+
+                                        // ======================
+                                        // MIN DATE
+                                        // ======================
+
+                                        if (
+                                            calendar.min_date
+                                        ) {
+
+                                            deliveryDateInput.min =
+                                                calendar.min_date;
+
+                                            deliveryDateInput.value =
+                                                calendar.min_date;
+                                        }
+
+
+                                        // ======================
+                                        // MAX DATE
+                                        // ======================
+
+                                        if (
+                                            calendar.max_date
+                                        ) {
+
+                                            deliveryDateInput.max =
+                                                calendar.max_date;
+                                        }
+
+                                    } catch (error) {
+
+                                        console.error(
+                                            "JASSBOARD CALENDAR ERROR:",
+                                            error
+                                        );
+
+                                        alert(
+                                            "Nie udało się pobrać "
+                                            + "dostępnej daty JASS.\n\n"
+                                            + error.message
+                                        );
+
+                                    } finally {
+
+                                        deliveryDateInput.disabled =
+                                            false;
+                                    }
+                                }
+
+                                modal.show();
+                                return;
+                            }
+
+
+                            // ==================================
+                            // NORMAL PROVIDER
+                            // ==================================
+
+                            if (normalButton) {
+                                normalButton.hidden =
+                                    false;
+                            }
 
                             modal.show();
                         }
