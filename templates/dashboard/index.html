@@ -48,6 +48,169 @@
 
     </header>
 
+    <!-- =================================================== -->
+<!-- MY TASKS                                            -->
+<!-- =================================================== -->
+
+<section class="dashboard-section">
+
+    <div class="dashboard-section-header">
+
+        <div>
+            <h2>Moje zadania</h2>
+
+            <p>
+                Najbliższe rzeczy do wykonania
+            </p>
+        </div>
+
+        <a
+            href="{% url 'tasks:list' %}"
+            class="dashboard-section-link"
+        >
+            Wszystkie zadania
+
+            {% if tasks.count %}
+                <span class="dashboard-task-count">
+                    {{ tasks.count }}
+                </span>
+            {% endif %}
+
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        {% if tasks.tasks %}
+
+            <div class="dashboard-task-list">
+
+                {% for task in tasks.tasks %}
+
+                    <a
+                        href="{% url 'tasks:list' %}"
+                        class="
+                            dashboard-task-item
+                            dashboard-task-item--priority-{{ task.priority }}
+                        "
+                    >
+
+                        <div class="dashboard-task-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+
+
+                        <div class="dashboard-task-content">
+
+                            <strong>
+                                {{ task.title }}
+                            </strong>
+
+
+                            {% if task.description %}
+
+                                <span>
+                                    {{ task.description|truncatechars:80 }}
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="dashboard-task-meta">
+
+                            {% if task.due_date %}
+
+                                <span
+                                    class="
+                                        dashboard-task-date
+
+                                        {% if task.due_date < today %}
+                                            dashboard-task-date--overdue
+                                        {% elif task.due_date == today %}
+                                            dashboard-task-date--today
+                                        {% endif %}
+                                    "
+                                >
+
+                                    {% if task.due_date < today %}
+
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        Po terminie
+
+                                    {% elif task.due_date == today %}
+
+                                        <i class="fa-solid fa-clock"></i>
+                                        Dzisiaj
+
+                                    {% else %}
+
+                                        <i class="fa-regular fa-calendar"></i>
+                                        {{ task.due_date|date:"d.m.Y" }}
+
+                                    {% endif %}
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="dashboard-task-date">
+                                    Bez terminu
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </a>
+
+                {% endfor %}
+
+            </div>
+
+
+            {% if tasks.count > 5 %}
+
+                <div class="dashboard-task-footer">
+
+                    <a href="{% url 'tasks:list' %}">
+                        + {{ tasks.count|add:"-5" }}
+                        kolejnych zadań
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+
+        {% else %}
+
+            <div class="dashboard-empty">
+
+                <div class="dashboard-empty-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <strong>
+                    Wszystko zrobione
+                </strong>
+
+                <span>
+                    Nie masz obecnie żadnych otwartych zadań.
+                </span>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
 
     <!-- =================================================== -->
     <!-- COMPANY OVERVIEW                                    -->

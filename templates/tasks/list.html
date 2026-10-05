@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/tasks/tasks.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div
+    class="tasks-page"
+    data-toggle-url-template="{% url 'tasks:toggle' 0 %}"
+    data-update-url-template="{% url 'tasks:update' 0 %}"
+    data-delete-url-template="{% url 'tasks:delete' 0 %}"
+>
+
+    <header class="tasks-header">
+
+        <div class="tasks-header-text">
+            <h1>Moje zadania</h1>
+            <p>Zadania i notatki do wykonania</p>
+        </div>
+
+        <button
+            type="button"
+            class="tasks-add-button"
+            data-task-open
+        >
+            + Dodaj zadanie
+        </button>
+
+    </header>
+
+
+    <section class="tasks-section">
+
+        <div class="tasks-section-header">
+            <h2>Do zrobienia</h2>
+        </div>
+
+
+        <div
+            class="tasks-list"
+            data-active-task-list
+        >
+
+            {% for task in tasks %}
+
+                <article
+                    class="task-card"
+                    data-task-id="{{ task.id }}"
+                    data-priority="{{ task.priority }}"
+                    data-due-date="{{ task.due_date|date:'Y-m-d' }}"
+                >
+
+                    <button
+                        type="button"
+                        class="task-toggle"
+                        data-task-toggle
+                        title="Oznacz jako wykonane"
+                    >
+                        ✓
+                    </button>
+
+
+                    <div class="task-body">
+
+                        <div
+                            class="task-title"
+                            data-task-title
+                        >
+                            {{ task.title }}
+                        </div>
+
+
+                        <div
+                            class="task-description"
+                            data-task-description
+                            {% if not task.description %}hidden{% endif %}
+                        >
+                            {{ task.description }}
+                        </div>
+
+
+                        <div class="task-meta">
+
+                            <span
+                                class="task-date"
+                                data-task-date
+                                {% if not task.due_date %}hidden{% endif %}
+                            >
+                                {{ task.due_date|date:"d.m.Y" }}
+                            </span>
+
+                            <span
+                                class="task-priority"
+                                data-task-priority
+                            >
+                                {{ task.get_priority_display }}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="task-actions">
+
+                        <button
+                            type="button"
+                            class="task-edit"
+                            data-task-edit
+                            title="Edytuj zadanie"
+                        >
+                            ✎
+                        </button>
+
+                        <button
+                            type="button"
+                            class="task-delete"
+                            data-task-delete
+                            title="Usuń zadanie"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+                </article>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div
+            class="tasks-empty"
+            data-active-empty
+            {% if tasks %}hidden{% endif %}
+        >
+            Nie masz żadnych zadań do wykonania.
+        </div>
+
+    </section>
+
+
+    <section
+        class="tasks-completed"
+        data-completed-section
+        {% if not completed_tasks %}hidden{% endif %}
+    >
+
+        <details>
+
+            <summary>
+                Ostatnio wykonane
+            </summary>
+
+
+            <div
+                class="tasks-list tasks-list-completed"
+                data-completed-task-list
+            >
+
+                {% for task in completed_tasks %}
+
+                    <article
+                        class="task-card task-card-completed"
+                        data-task-id="{{ task.id }}"
+                        data-priority="{{ task.priority }}"
+                        data-due-date="{{ task.due_date|date:'Y-m-d' }}"
+                    >
+
+                        <button
+                            type="button"
+                            class="task-toggle"
+                            data-task-toggle
+                            title="Przywróć zadanie"
+                        >
+                            ↶
+                        </button>
+
+
+                        <div class="task-body">
+
+                            <div
+                                class="task-title"
+                                data-task-title
+                            >
+                                {{ task.title }}
+                            </div>
+
+                            <div
+                                class="task-description"
+                                data-task-description
+                                {% if not task.description %}hidden{% endif %}
+                            >
+                                {{ task.description }}
+                            </div>
+
+                            <div
+                                class="task-meta"
+                                data-completed-meta
+                            >
+                                Wykonano:
+
+                                <span data-completed-at>
+                                    {{ task.completed_at|date:"d.m.Y H:i" }}
+                                </span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="task-actions">
+
+                            <button
+                                type="button"
+                                class="task-edit"
+                                data-task-edit
+                                title="Edytuj zadanie"
+                            >
+                                ✎
+                            </button>
+
+                            <button
+                                type="button"
+                                class="task-delete"
+                                data-task-delete
+                                title="Usuń zadanie"
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                    </article>
+
+                {% endfor %}
+
+            </div>
+
+        </details>
+
+    </section>
+
+
+    <div
+        class="task-modal"
+        data-task-modal
+        hidden
+    >
+
+        <div
+            class="task-modal-backdrop"
+            data-task-close
+        ></div>
+
+
+        <div class="task-modal-dialog">
+
+            <header class="task-modal-header">
+
+                <h2 data-modal-title>
+                    Nowe zadanie
+                </h2>
+
+                <button
+                    type="button"
+                    class="task-modal-close"
+                    data-task-close
+                    title="Zamknij"
+                >
+                    ×
+                </button>
+
+            </header>
+
+
+            <form
+                method="post"
+                action="{% url 'tasks:create' %}"
+                class="task-form"
+                data-task-form
+            >
+
+                {% csrf_token %}
+
+
+                <input
+                    type="hidden"
+                    name="task_id"
+                    data-task-id-input
+                >
+
+
+                <label class="task-form-field">
+
+                    <span>Zadanie</span>
+
+                    <input
+                        type="text"
+                        name="title"
+                        placeholder="Co trzeba zrobić?"
+                        required
+                    >
+
+                </label>
+
+
+                <label class="task-form-field">
+
+                    <span>Notatka</span>
+
+                    <textarea
+                        name="description"
+                        rows="4"
+                        placeholder="Dodatkowe informacje..."
+                    ></textarea>
+
+                </label>
+
+
+                <div class="task-form-row">
+
+                    <label class="task-form-field">
+
+                        <span>Termin</span>
+
+                        <input
+                            type="date"
+                            name="due_date"
+                        >
+
+                    </label>
+
+
+                    <label class="task-form-field">
+
+                        <span>Priorytet</span>
+
+                        <select name="priority">
+
+                            <option value="1">
+                                Niski
+                            </option>
+
+                            <option
+                                value="2"
+                                selected
+                            >
+                                Normalny
+                            </option>
+
+                            <option value="3">
+                                Wysoki
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                </div>
+
+
+                <div class="task-form-actions">
+
+                    <button
+                        type="button"
+                        class="button-secondary"
+                        data-task-close
+                    >
+                        Anuluj
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="button-primary"
+                        data-submit-button
+                    >
+                        Dodaj zadanie
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{% static 'js/tasks/tasks.js' %}"></script>
+{% endblock %}

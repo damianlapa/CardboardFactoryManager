@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'deliveries',
     'warehouse',
     'maintenance',
+    'tasks'
 ]
 
 MIDDLEWARE = [

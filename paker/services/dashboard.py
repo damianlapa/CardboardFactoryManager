@@ -15,6 +15,8 @@ from warehousemanager.models import (
 
 from deliveries.models import Event
 
+from tasks.services.tasks import get_user_task_summary
+
 
 POLISH_WEEKDAYS = {
     0: "Poniedziałek",
@@ -134,6 +136,11 @@ def get_dashboard_context(*, user):
         context["personal"] = (
             get_personal_dashboard_data(user)
         )
+
+    context["tasks"] = get_user_task_summary(
+        user=user,
+        limit=5,
+    )
 
     return context
 
@@ -268,8 +275,4 @@ def get_inventory_dashboard_data():
 
 
 def get_financial_dashboard_data():
-    return {}
-
-
-def get_personal_dashboard_data(user):
     return {}
