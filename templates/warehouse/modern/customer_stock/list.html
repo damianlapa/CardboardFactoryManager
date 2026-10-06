@@ -129,6 +129,14 @@
                         Brakuje
                     </div>
 
+                    <div class="number-column">
+                        Zamówiono
+                    </div>
+
+                    <div class="number-column">
+                        Dojechało
+                    </div>
+
                     <div class="status-column">
                         Status
                     </div>
@@ -197,6 +205,16 @@
 
                             {% endif %}
 
+                        </div>
+
+
+                        <div class="number-column ordered-quantity">
+                            {{ item.ordered_quantity }}
+                        </div>
+
+
+                        <div class="number-column delivered-quantity">
+                            {{ item.delivered_quantity }}
                         </div>
 
 

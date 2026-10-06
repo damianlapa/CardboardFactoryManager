@@ -1,4 +1,12 @@
-from warehouse.models import CustomerStockList, CustomerStockItem, WarehouseStock
+from django.db.models import Sum
+
+from orders.models import CardboardOrderItem
+from warehouse.models import (
+    CustomerStockList,
+    CustomerStockItem,
+    WarehouseStock,
+    Order,
+)
 
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
@@ -56,10 +64,61 @@ def get_customer_stock_context(user):
     below_minimum = 0
     shortage = 0
 
+    stock_names = list(
+        items.values_list(
+            "warehouse_stock__stock__name",
+            flat=True,
+        )
+    )
+
+    ordered_by_product = {
+        row["requirement__customer_order__product__name"]: row["total"] or 0
+        for row in (
+            CardboardOrderItem.objects
+            .filter(
+                requirement__customer_order__product__name__in=stock_names,
+            )
+            .values(
+                "requirement__customer_order__product__name"
+            )
+            .annotate(
+                total=Sum("quantity")
+            )
+        )
+    }
+
+    delivered_by_product = {
+        row["product__name"]: row["total"] or 0
+        for row in (
+            Order.objects
+            .filter(
+                product__name__in=stock_names,
+            )
+            .values(
+                "product__name"
+            )
+            .annotate(
+                total=Sum("delivered_quantity")
+            )
+        )
+    }
+
     for item in items:
         if item.below_minimum:
             below_minimum += 1
             shortage += item.shortage
+
+        product_name = item.warehouse_stock.stock.name
+
+        item.ordered_quantity = ordered_by_product.get(
+            product_name,
+            0,
+        )
+
+        item.delivered_quantity = delivered_by_product.get(
+            product_name,
+            0,
+        )
 
     available_stocks = (
         WarehouseStock.objects
