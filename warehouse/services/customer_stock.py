@@ -1,6 +1,6 @@
 from django.db.models import Sum
 
-from orders.models import CardboardOrderItem
+from orders.models import CardboardOrderItem, MaterialRequirement
 from warehouse.models import (
     CustomerStockList,
     CustomerStockItem,
@@ -110,15 +110,63 @@ def get_customer_stock_context(user):
 
         product_name = item.warehouse_stock.stock.name
 
-        item.ordered_quantity = ordered_by_product.get(
-            product_name,
-            0,
+        from warehouse.models import Product, DeliveryItem
+
+        product = (
+            Product.objects
+            .filter(name=product_name)
+            .first()
         )
 
-        item.delivered_quantity = delivered_by_product.get(
-            product_name,
-            0,
+        item.ordered_quantity = (
+                MaterialRequirement.objects
+                .filter(
+                    customer_order__product__name=product_name,
+                )
+                .aggregate(
+                    total=Sum("required_sheet_quantity")
+                )["total"]
+                or 0
         )
+
+        # =========================================================
+        # MATERIAŁ AKTUALNIE NA MAGAZYNIE
+        # =========================================================
+
+        item.delivered_quantity = 0
+
+        if product:
+            active_orders = (
+                Order.objects
+                .filter(
+                    product=product,
+                    finished=False,
+                )
+            )
+
+            material_stock_names = (
+                DeliveryItem.objects
+                .filter(
+                    order__in=active_orders,
+                    stock__isnull=False,
+                )
+                .values_list(
+                    "stock__name",
+                    flat=True,
+                )
+                .distinct()
+            )
+
+            item.delivered_quantity = (
+                    WarehouseStock.objects
+                    .filter(
+                        stock__name__in=material_stock_names,
+                    )
+                    .aggregate(
+                        total=Sum("quantity")
+                    )["total"]
+                    or 0
+            )
 
     available_stocks = (
         WarehouseStock.objects
