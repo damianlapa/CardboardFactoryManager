@@ -79,6 +79,7 @@ class CustomerOrderForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        from warehousemanager.models import Buyer
         super().__init__(*args, **kwargs)
 
         Product = self.fields["product"].queryset.model
@@ -90,10 +91,11 @@ class CustomerOrderForm(forms.ModelForm):
         if "customer" in self.data:
             try:
                 customer_id = int(self.data.get("customer"))
+                customer_name = Buyer.objects.get(id=customer_id)
 
                 self.fields["product"].queryset = (
                     Product.objects
-                    .filter(order__customer_id=customer_id)
+                    .filter(name__icontains=customer_name)
                     .distinct()
                     .order_by("name")
                 )
