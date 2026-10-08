@@ -4,6 +4,7 @@ from .views import (
     CustomerOrderListView,
     CustomerOrderCreateView,
     CustomerOrderDetailView,
+    cardboard_offer_search_view
 )
 
 from .help_views.products import customer_products
@@ -105,6 +106,14 @@ urlpatterns += [
         "jassboard/calendar/",
         JassBoardCalendarView.as_view(),
         name="jassboard_calendar",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "cardboard/offers/search/",
+        cardboard_offer_search_view,
+        name="cardboard_offer_search",
     ),
 ]
 

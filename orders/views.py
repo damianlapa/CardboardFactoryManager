@@ -1,3 +1,4 @@
+import datetime
 from decimal import Decimal, ROUND_CEILING
 
 from django.contrib import messages
@@ -1446,3 +1447,37 @@ class ProductMaterialRequirementBulkImportView(
         return redirect(
             request.path
         )
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+from orders.forms import CardboardOfferSearchForm
+from orders.services.cardboard_offer_search import search_offers
+
+
+@login_required
+def cardboard_offer_search_view(request):
+
+    form = CardboardOfferSearchForm(
+        request.GET if request.GET else None
+    )
+
+    results = None
+
+    if request.GET and form.is_valid():
+        results = search_offers(
+            form.cleaned_data
+        )
+
+    context = {
+        "form": form,
+        "results": results,
+        "today": datetime.datetime.now().date(),
+    }
+
+    return render(
+        request,
+        "orders/cardboard_offer_search.html",
+        context,
+    )

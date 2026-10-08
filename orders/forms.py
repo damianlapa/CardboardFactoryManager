@@ -256,3 +256,101 @@ class ProductMaterialRequirementImportForm(forms.Form):
         label="Pliki historyczne",
         help_text="Wybierz pliki TXT z historią zamówień.",
     )
+
+
+from django import forms
+
+from orders.models import CardboardGrade
+
+
+class CardboardOfferSearchForm(forms.Form):
+
+    sheet_length = forms.IntegerField(
+        label="Długość arkusza (mm)",
+        min_value=1,
+    )
+
+    sheet_width = forms.IntegerField(
+        label="Szerokość arkusza (mm)",
+        min_value=1,
+    )
+
+    quantity = forms.IntegerField(
+        label="Ilość arkuszy",
+        min_value=1,
+    )
+
+    layers = forms.TypedChoiceField(
+        label="Warstwy",
+        choices=[
+            (3, "3"),
+            (5, "5"),
+        ],
+        coerce=int,
+    )
+
+    flute = forms.ChoiceField(
+        label="Fala",
+        choices=[
+            ("B", "B"),
+            ("C", "C"),
+            ("E", "E"),
+            ("BC", "BC"),
+            ("EB", "EB"),
+            ("EE", "EE"),
+        ],
+    )
+
+    min_gsm = forms.IntegerField(
+        label="Minimalna gramatura (g/m²)",
+        min_value=1,
+        required=False,
+    )
+
+    min_ect = forms.DecimalField(
+        label="Minimalne ECT",
+        min_value=0,
+        decimal_places=2,
+        required=False,
+    )
+
+    cover = forms.ChoiceField(
+        label="Pokrycie",
+        choices=[
+            ("", "Dowolne"),
+            *CardboardGrade.Cover.choices,
+        ],
+        required=False,
+    )
+
+    scores = forms.CharField(
+        label="Bigi (opcjonalnie)",
+        required=False,
+        help_text=(
+            "Np. 205/412/205. "
+            "Bigi nie wpływają na dopasowanie cennikowe."
+        ),
+    )
+
+    def clean(self):
+        data = super().clean()
+
+        allowed = {
+            3: {"B", "C", "E"},
+            5: {"BC", "EB", "EE"},
+        }
+
+        layers = data.get("layers")
+        flute = data.get("flute")
+
+        if (
+            layers in allowed
+            and flute
+            and flute not in allowed[layers]
+        ):
+            self.add_error(
+                "flute",
+                "Ta fala nie odpowiada wybranej liczbie warstw.",
+            )
+
+        return data

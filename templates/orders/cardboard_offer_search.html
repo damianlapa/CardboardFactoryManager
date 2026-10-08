@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.offer-wrap{max-width:1400px;margin:20px auto;padding:0 18px;color:var(--app-text,#243041)}
+.offer-panel{background:var(--app-surface,#fff);border:1px solid var(--app-border,#dce2e8);border-radius:14px;padding:22px;margin:16px 0}
+.offer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.offer-field label{display:block;font-weight:600;font-size:13px;margin-bottom:6px}
+.offer-field input,.offer-field select{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--app-border,#ccd3dd);border-radius:8px;background:var(--app-surface,#fff);color:var(--app-text,#243041)}
+.offer-btn{background:#2563eb;color:white;border:0;border-radius:9px;padding:12px 20px;margin-top:16px;cursor:pointer;font-weight:700}
+.offer-table{width:100%;border-collapse:collapse;min-width:850px}.offer-table th,.offer-table td{padding:12px;border-bottom:1px solid var(--app-border,#e3e6eb);text-align:left}.offer-table th{font-size:12px;opacity:.75}.offer-scroll{overflow-x:auto}
+.offer-good{border-left:4px solid #16a34a}.offer-alt{border-left:4px solid #f59e0b}.offer-diff{color:#b45309;font-size:12px;margin:3px 0}.offer-muted{opacity:.7;font-size:13px}
+</style>
+<div class="offer-wrap">
+<h1>Wyszukiwarka ofert tektury</h1>
+<p class="offer-muted">Porównanie aktualnych cenników dostawców. Bez tworzenia zamówienia.</p>
+<section class="offer-panel"><form method="get"><div class="offer-grid">
+{% for field in form %}<div class="offer-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="offer-muted">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<div class="offer-diff">{{ error }}</div>{% endfor %}</div>{% endfor %}
+</div>{% for error in form.non_field_errors %}<p class="offer-diff">{{ error }}</p>{% endfor %}<button class="offer-btn" type="submit">Wyszukaj oferty</button></form></section>
+{% if results %}
+<p>Powierzchnia: <strong>{{ results.area|floatformat:2 }} m²</strong> · Cenniki obowiązujące na {{ today|date:'d.m.Y' }}</p>
+<section class="offer-panel offer-good"><h2>Oferty zgodne ({{ results.matched|length }})</h2>
+{% include 'orders/includes/cardboard_offer_rows.html' with rows=results.matched %}</section>
+<section class="offer-panel offer-alt"><details open><summary><strong>Alternatywy ({{ results.alternatives|length }})</strong></summary>
+<p class="offer-muted">Alternatywy nie spełniają wszystkich wymagań. Przed zakupem wymagają weryfikacji technicznej.</p>
+{% include 'orders/includes/cardboard_offer_rows.html' with rows=results.alternatives %}</details></section>
+{% endif %}</div>
+{% endblock %}
