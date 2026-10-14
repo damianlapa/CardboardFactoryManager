@@ -560,6 +560,14 @@ def parse_offer_1900(text):
     )
 
     if not date_match:
+        date_match = re.search(
+            r"Cennik obowiązuje dla wysyłek od dnia\s*:\s*"
+            r"(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+
+    if not date_match:
         raise ValueError(
             "Nie znaleziono daty obowiązywania cennika."
         )
