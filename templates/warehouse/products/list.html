@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block style %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/warehouse/products.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="products-page">
+  <header class="products-heading">
+    <div><h1>Towary</h1><p>Kontrola kompletności pakowania i wymagań materiałowych</p></div>
+  </header>
+
+  <form class="products-filters" method="get">
+    <label for="product-search">Szukaj produktu</label>
+    <div class="products-filter-row">
+      <input id="product-search" type="search" name="search" value="{{ search }}" placeholder="Nazwa, wymiary, fala...">
+      <select name="status" aria-label="Filtr kompletności">
+        <option value="all" {% if status == 'all' %}selected{% endif %}>Wszystkie</option>
+        <option value="complete" {% if status == 'complete' %}selected{% endif %}>Kompletne</option>
+        <option value="missing" {% if status == 'missing' %}selected{% endif %}>Z brakami</option>
+        <option value="packaging" {% if status == 'packaging' %}selected{% endif %}>Braki pakowania</option>
+        <option value="material" {% if status == 'material' %}selected{% endif %}>Braki materiałowe</option>
+      </select>
+      <button type="submit">Filtruj</button>
+      <a href="?" class="products-reset">Wyczyść</a>
+    </div>
+  </form>
+
+  <div class="products-stats">
+    <a href="?search={{ search|urlencode }}&status=all" class="products-stat"><span>Wszystkie</span><strong>{{ counters.total }}</strong></a>
+    <a href="?search={{ search|urlencode }}&status=complete" class="products-stat"><span>Kompletne</span><strong>{{ counters.complete }}</strong></a>
+    <a href="?search={{ search|urlencode }}&status=missing" class="products-stat"><span>Z brakami</span><strong>{{ counters.missing }}</strong></a>
+    <a href="?search={{ search|urlencode }}&status=packaging" class="products-stat"><span>Braki pakowania</span><strong>{{ counters.packaging }}</strong></a>
+    <a href="?search={{ search|urlencode }}&status=material" class="products-stat"><span>Braki materiałowe</span><strong>{{ counters.material }}</strong></a>
+  </div>
+
+  <div class="products-list">
+    {% for row in rows %}
+    <details class="product-card {% if not row.complete %}product-card--missing{% endif %}">
+      <summary class="product-card__summary">
+        <div class="product-card__identity">
+          <strong>{{ row.product.name }}</strong>
+          <small>FEFCO {{ row.product.FEFCO_code }} · {{ row.product.dimensions|default:'Brak wymiarów produktu' }} · {{ row.product.flute|default:'Brak fali produktu' }} · {{ row.product.gsm }} g/m²</small>
+        </div>
+        <div class="product-card__summary-info">
+          <span class="product-card__mini {% if row.packaging_missing %}is-missing{% else %}is-ok{% endif %}">Pakowanie {% if row.packaging_missing %}({{ row.packaging_missing|length }}){% else %}✓{% endif %}</span>
+          <span class="product-card__mini {% if row.material_missing %}is-missing{% else %}is-ok{% endif %}">Materiał {% if row.material_missing %}({{ row.material_missing|length }}){% else %}✓{% endif %}</span>
+          <span class="product-card__status {% if row.complete %}is-ok{% else %}is-missing{% endif %}">{% if row.complete %}Kompletny{% else %}Braki: {{ row.missing_count }}{% endif %}</span>
+        </div>
+      </summary>
+      <div class="product-card__details">
+        <section class="product-card__section">
+          <div class="product-card__section-heading"><h2>Pakowanie</h2>{% if request.user.is_staff or request.user.is_superuser %}<button type="button" class="products-edit-button" data-edit-url="{% url 'modern_warehouse:product_config_edit' row.product.pk 'packaging' %}">✎ Edytuj</button>{% endif %}</div>
+          {% if row.packaging %}
+          <dl class="product-card__fields">
+            <div><dt>Paleta</dt><dd>{{ row.packaging.palette|default:'—' }}</dd></div>
+            <div><dt>Słupki</dt><dd>{{ row.packaging.columns }}</dd></div>
+            <div><dt>Warstwy</dt><dd>{{ row.packaging.layers }}</dd></div>
+            <div><dt>Sztuk w paczce</dt><dd>{{ row.packaging.qty_per_pack }}</dd></div>
+            <div><dt>Sztuk na palecie</dt><dd>{{ row.packaging.qty_per_pallet }}</dd></div>
+            {% if row.packaging.additional_info %}<div><dt>Uwagi</dt><dd>{{ row.packaging.additional_info }}</dd></div>{% endif %}
+          </dl>
+          {% endif %}
+          {% if row.packaging_missing %}<div class="product-card__issues"><strong>Do uzupełnienia:</strong><ul>{% for issue in row.packaging_missing %}<li>{{ issue }}</li>{% endfor %}</ul></div>{% else %}<p class="product-card__success">Konfiguracja pakowania kompletna.</p>{% endif %}
+        </section>
+        <section class="product-card__section">
+          <div class="product-card__section-heading"><h2>Wymagania materiałowe</h2>{% if request.user.is_staff or request.user.is_superuser %}<button type="button" class="products-edit-button" data-edit-url="{% url 'modern_warehouse:product_config_edit' row.product.pk 'material' %}">✎ Edytuj</button>{% endif %}</div>
+          {% if row.material %}
+          <dl class="product-card__fields">
+            <div><dt>Arkusz</dt><dd>{{ row.material.sheet_length }} × {{ row.material.sheet_width }} mm</dd></div>
+            <div><dt>Produktów z arkusza</dt><dd>{{ row.material.pieces_per_sheet }}</dd></div>
+            <div><dt>Warstwy</dt><dd>{{ row.material.layers|default:'—' }}</dd></div>
+            <div><dt>Fala</dt><dd>{{ row.material.flute|default:'—' }}</dd></div>
+            <div><dt>Minimalna gramatura</dt><dd>{{ row.material.min_gsm|default:'—' }} g/m²</dd></div>
+            <div><dt>Minimalne ECT</dt><dd>{% if row.material.min_ect %}{{ row.material.min_ect }} kN/m{% else %}—{% endif %}</dd></div>
+            <div><dt>Pokrycie</dt><dd>{{ row.material.get_cover_display|default:'—' }}</dd></div>
+            {% if row.material.scores %}<div><dt>Bigowanie</dt><dd>{{ row.material.scores }}</dd></div>{% endif %}
+            {% if row.material.notes %}<div><dt>Uwagi</dt><dd>{{ row.material.notes }}</dd></div>{% endif %}
+          </dl>
+          {% endif %}
+          {% if row.material_missing %}<div class="product-card__issues"><strong>Do uzupełnienia:</strong><ul>{% for issue in row.material_missing %}<li>{{ issue }}</li>{% endfor %}</ul></div>{% else %}<p class="product-card__success">Wymagania materiałowe kompletne.</p>{% endif %}
+        </section>
+      </div>
+    </details>
+    {% empty %}
+    <div class="products-empty">Nie znaleziono produktów spełniających kryteria.</div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="products-pagination" aria-label="Strony produktów">
+    {% if page_obj.has_previous %}<a href="?search={{ search|urlencode }}&status={{ status }}&page={{ page_obj.previous_page_number }}">← Poprzednia</a>{% endif %}
+    <span>Strona {{ page_obj.number }} z {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?search={{ search|urlencode }}&status={{ status }}&page={{ page_obj.next_page_number }}">Następna →</a>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+<div id="products-edit-modal" class="products-modal" hidden role="dialog" aria-modal="true" aria-labelledby="products-modal-title">
+  <div class="products-modal__panel" id="products-modal-content"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/warehouse/products.js' %}" defer></script>
+{% endblock %}

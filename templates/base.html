@@ -162,6 +162,31 @@
         {% endif %}
 
 
+        <!-- PRODUCTs -->
+
+        {% if sidebar_access.products %}
+
+            <a
+                href="{% url 'modern_warehouse:products' %}"
+                class="
+                    app-navigation__item
+                    {% if request.resolver_match.namespace == 'modern_products' %}
+                        is-active
+                    {% endif %}
+                "
+            >
+                <span class="app-navigation__icon">
+                    <i class="fa-solid fa-boxes-packing"></i>
+                </span>
+
+                <span>
+                    Towary
+                </span>
+            </a>
+
+        {% endif %}
+
+
         <!-- DELIVERIES -->
 
         {% if sidebar_access.deliveries %}
