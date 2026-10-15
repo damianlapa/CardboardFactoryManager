@@ -11,6 +11,9 @@ from warehouse.product_complex_views import *
 from warehouse.price_list_view import PriceListUploadView
 from warehouse.monthly_reports_views import MonthlyWarehouseReportView
 
+# Add at the top of warehouse/urls.py:
+from warehouse.lead_time import lead_time_report
+
 
 
 
@@ -242,4 +245,12 @@ urlpatterns += [
         ShipmentListView.as_view(),
         name="shipment-list",
     ),
+]
+
+
+
+
+# Add to urlpatterns (inside existing list or via +=):
+urlpatterns += [
+    path('orders/lead-time/', lead_time_report, name='lead-time-report'),
 ]
