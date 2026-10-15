@@ -98,6 +98,11 @@ class ProductConfigurationEditView(LoginRequiredMixin, View):
     form_template = 'warehouse/products/_modal_form.html'
 
     def get_form(self, product, kind, data=None):
+        if kind == "product":
+            return ProductForm(
+                data=data,
+                instance=product,
+            )
         if kind == 'packaging':
             instance = ProductPackaging.objects.filter(product=product).first()
             return PackagingForm(data=data, instance=instance)
@@ -107,13 +112,35 @@ class ProductConfigurationEditView(LoginRequiredMixin, View):
         return None
 
     def dispatch(self, request, *args, **kwargs):
-        self.product = get_object_or_404(Product, pk=kwargs['pk'])
-        self.kind = kwargs['kind']
-        if self.kind not in ('packaging', 'material'):
-            return JsonResponse({'ok': False, 'message': 'Nieznany typ konfiguracji.'}, status=404)
-        # Dopasuj do własnej polityki dostępu, jeżeli edycja jest zastrzeżona dla innych grup.
+        self.product = get_object_or_404(
+            Product,
+            pk=kwargs["pk"],
+        )
+
+        self.kind = kwargs["kind"]
+
+        if self.kind not in (
+                "product",
+                "packaging",
+                "material",
+        ):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "Nieznany typ konfiguracji.",
+                },
+                status=404,
+            )
+
         if not request.user.is_staff and not request.user.is_superuser:
-            return JsonResponse({'ok': False, 'message': 'Brak uprawnień do edycji.'}, status=403)
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "Brak uprawnień do edycji.",
+                },
+                status=403,
+            )
+
         return super().dispatch(request, *args, **kwargs)
 
     def render_form(self, form):
@@ -138,3 +165,25 @@ class ProductConfigurationEditView(LoginRequiredMixin, View):
             obj.product = self.product
             obj.save()
         return JsonResponse({'ok': True, 'message': 'Zapisano zmiany.'})
+
+
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ('name', 'FEFCO_code', 'dimensions', 'flute', 'gsm', 'price')
+        labels = {
+            'name': 'Nazwa produktu',
+            'FEFCO_code': 'Kod FEFCO',
+            'dimensions': 'Wymiary produktu',
+            'flute': 'Fala produktu',
+            'gsm': 'Gramatura (g/m²)',
+            'price': 'Cena',
+        }
+
+    def clean_name(self):
+        # Normalizacja taka sama jak w Product.save(), aby sprawdzić unikalność przed zapisem.
+        from warehouse.services.naming import norm_names
+        name = norm_names(self.cleaned_data['name'])
+        if Product.objects.filter(name=name).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Produkt o tej nazwie już istnieje.')
+        return name

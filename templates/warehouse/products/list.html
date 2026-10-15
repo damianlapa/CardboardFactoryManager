@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block style %}
-{{ block.super }}
 <link rel="stylesheet" href="{% static 'css/warehouse/products.css' %}">
 {% endblock %}
 
@@ -52,6 +51,22 @@
       </summary>
       <div class="product-card__details">
         <section class="product-card__section">
+          <div class="product-card__section-heading">
+            <h2>Dane produktu</h2>
+            {% if request.user.is_staff or request.user.is_superuser %}
+              <button type="button" class="products-edit-button" data-edit-url="{% url 'modern_warehouse:product_config_edit' row.product.pk 'product' %}">✎ Edytuj produkt</button>
+            {% endif %}
+          </div>
+          <dl class="product-card__fields">
+            <div><dt>Nazwa</dt><dd>{{ row.product.name }}</dd></div>
+            <div><dt>Kod FEFCO</dt><dd>{{ row.product.get_FEFCO_code_display }}</dd></div>
+            <div><dt>Wymiary</dt><dd>{{ row.product.dimensions|default:'—' }}</dd></div>
+            <div><dt>Fala</dt><dd>{{ row.product.flute|default:'—' }}</dd></div>
+            <div><dt>Gramatura</dt><dd>{{ row.product.gsm }} g/m²</dd></div>
+            <div><dt>Cena</dt><dd>{{ row.product.price }}</dd></div>
+          </dl>
+        </section>
+        <section class="product-card__section">
           <div class="product-card__section-heading"><h2>Pakowanie</h2>{% if request.user.is_staff or request.user.is_superuser %}<button type="button" class="products-edit-button" data-edit-url="{% url 'modern_warehouse:product_config_edit' row.product.pk 'packaging' %}">✎ Edytuj</button>{% endif %}</div>
           {% if row.packaging %}
           <dl class="product-card__fields">
@@ -100,9 +115,5 @@
 <div id="products-edit-modal" class="products-modal" hidden role="dialog" aria-modal="true" aria-labelledby="products-modal-title">
   <div class="products-modal__panel" id="products-modal-content"></div>
 </div>
-
-{% endblock %}
-
-{% block scripts %}
 <script src="{% static 'js/warehouse/products.js' %}" defer></script>
 {% endblock %}
