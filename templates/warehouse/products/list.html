@@ -9,6 +9,15 @@
 <div class="products-page">
   <header class="products-heading">
     <div><h1>Towary</h1><p>Kontrola kompletności pakowania i wymagań materiałowych</p></div>
+    <button
+    type="button"
+    class="products-add-btn"
+    data-product-create
+    data-edit-url="{% url 'modern_warehouse:product_create' %}"
+>
+    <i class="bi bi-plus-lg"></i>
+    Dodaj produkt
+</button>
   </header>
 
   <form class="products-filters" method="get">

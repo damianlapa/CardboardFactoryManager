@@ -1,7 +1,7 @@
 from warehouse.modern_views.customer_stock import CustomerStockListView
 
 from django.urls import path
-from warehouse.modern_views.products import ModernProductListView, ProductConfigurationEditView
+from warehouse.modern_views.products import ModernProductListView, ProductConfigurationEditView, ProductCreateView
 
 app_name = "modern_warehouse"
 
@@ -25,4 +25,10 @@ urlpatterns += [
 
 urlpatterns += [
     path("<int:pk>/edit/<str:kind>/", ProductConfigurationEditView.as_view(), name="product_config_edit"),
+    path(
+        "create/",
+        ProductCreateView.as_view(),
+        name="product_create",
+    ),
+
 ]

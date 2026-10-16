@@ -1,0 +1,160 @@
+<div class="products-modal__head">
+    <div>
+        <h2 id="products-modal-title">
+            {{ heading }}
+        </h2>
+
+        <p>
+            Wprowadź dane produktu. Pakowanie i wymagania materiałowe możesz dodać opcjonalnie.
+        </p>
+    </div>
+
+    <button
+        type="button"
+        class="products-modal__close"
+        data-modal-close
+        aria-label="Zamknij"
+    >
+        &times;
+    </button>
+</div>
+
+<form
+    id="products-edit-form"
+    class="products-modal__form"
+    method="post"
+    novalidate
+>
+    {% csrf_token %}
+
+    <section class="products-create-section">
+        <div class="products-create-section__heading">
+            <span class="products-create-section__number">1</span>
+            <div>
+                <h3>Dane produktu</h3>
+                <p>Podstawowe informacje o towarze</p>
+            </div>
+        </div>
+
+        {% if product_form.non_field_errors %}
+            <div class="products-modal__errors">
+                {{ product_form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="products-modal__grid">
+            {% for field in product_form %}
+                <div class="products-modal__field">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                        {% if field.field.required %}*{% endif %}
+                    </label>
+
+                    {{ field }}
+
+                    {% if field.errors %}
+                        <div class="products-modal__error">
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <details class="products-create-section products-create-section--optional" {% if include_packaging %}open{% endif %}> 
+        <summary class="products-create-section__heading">
+            <span class="products-create-section__number">2</span>
+            <div><h3>Pakowanie</h3><p>Opcjonalne — kliknij, aby rozwinąć</p></div>
+            <span class="products-create-section__chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <label class="products-create-include">
+            <input type="checkbox" name="include_packaging" value="1" {% if include_packaging %}checked{% endif %}>
+            Zapisz konfigurację pakowania
+        </label>
+
+        {% if packaging_form.non_field_errors %}
+            <div class="products-modal__errors">
+                {{ packaging_form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="products-modal__grid">
+            {% for field in packaging_form %}
+                <div class="products-modal__field {% if field.name == 'additional_info' %}products-modal__field--wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                        {% if field.field.required %}*{% endif %}
+                    </label>
+
+                    {{ field }}
+
+                    {% if field.errors %}
+                        <div class="products-modal__error">
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <p class="products-modal__hint">
+            Sztuki na palecie zostaną obliczone automatycznie:
+            słupki × warstwy × sztuki w paczce.
+        </p>
+    </details>
+
+    <details class="products-create-section products-create-section--optional" {% if include_material %}open{% endif %}> 
+        <summary class="products-create-section__heading">
+            <span class="products-create-section__number">3</span>
+            <div><h3>Wymagania materiałowe</h3><p>Opcjonalne — kliknij, aby rozwinąć</p></div>
+            <span class="products-create-section__chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <label class="products-create-include">
+            <input type="checkbox" name="include_material" value="1" {% if include_material %}checked{% endif %}>
+            Zapisz wymagania materiałowe
+        </label>
+
+        {% if material_form.non_field_errors %}
+            <div class="products-modal__errors">
+                {{ material_form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="products-modal__grid">
+            {% for field in material_form %}
+                <div class="products-modal__field {% if field.name == 'notes' %}products-modal__field--wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                        {% if field.field.required %}*{% endif %}
+                    </label>
+
+                    {{ field }}
+
+                    {% if field.errors %}
+                        <div class="products-modal__error">
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </details>
+
+    <div class="products-modal__actions">
+        <button
+            type="button"
+            class="products-modal__cancel"
+            data-modal-close
+        >
+            Anuluj
+        </button>
+
+        <button
+            type="submit"
+            class="products-modal__save"
+        >
+            Dodaj produkt
+        </button>
+    </div>
+</form>

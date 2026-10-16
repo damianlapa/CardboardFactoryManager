@@ -75,7 +75,7 @@
       pending = false;
       if (submit.isConnected) {
         submit.disabled = false;
-        submit.textContent = 'Zapisz zmiany';
+        submit.textContent = currentUrl.includes('/create/') ? 'Dodaj produkt' : 'Zapisz zmiany';
       }
     }
   });

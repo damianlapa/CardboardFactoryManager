@@ -13,6 +13,7 @@ from warehouse.monthly_reports_views import MonthlyWarehouseReportView
 
 # Add at the top of warehouse/urls.py:
 from warehouse.lead_time import lead_time_report
+from warehouse.modern_views.products import ProductCreateView
 
 
 
@@ -254,3 +255,4 @@ urlpatterns += [
 urlpatterns += [
     path('orders/lead-time/', lead_time_report, name='lead-time-report'),
 ]
+

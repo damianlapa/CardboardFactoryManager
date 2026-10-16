@@ -11,6 +11,8 @@ from django.urls import reverse
 from django.views import View
 
 from warehouse.models import Product, ProductPackaging
+from warehousemanager.models import Buyer
+from warehouse.services.naming import build_product_name, norm_names
 from orders.models import ProductMaterialRequirement
 from warehouse.services.products import products_queryset, summarize_product
 
@@ -93,6 +95,36 @@ class MaterialForm(forms.ModelForm):
         return cleaned
 
 
+class ProductCreateForm:
+    def __init__(self, data=None):
+        self.product_form = ProductForm(data=data, prefix="product")
+        self.packaging_form = PackagingForm(data=data, prefix="packaging")
+        self.material_form = MaterialForm(data=data, prefix="material")
+        self.has_packaging = data is not None and data.get("include_packaging") == "1"
+        self.has_material = data is not None and data.get("include_material") == "1"
+
+    def is_valid(self):
+        valid = self.product_form.is_valid()
+        if self.has_packaging:
+            valid = self.packaging_form.is_valid() and valid
+        if self.has_material:
+            valid = self.material_form.is_valid() and valid
+        return valid
+
+    def save(self):
+        with transaction.atomic():
+            product = self.product_form.save()
+            if self.has_packaging:
+                packaging = self.packaging_form.save(commit=False)
+                packaging.product = product
+                packaging.save()
+            if self.has_material:
+                material = self.material_form.save(commit=False)
+                material.product = product
+                material.save()
+            return product
+
+
 class ProductConfigurationEditView(LoginRequiredMixin, View):
     login_url = 'login'
     form_template = 'warehouse/products/_modal_form.html'
@@ -149,7 +181,7 @@ class ProductConfigurationEditView(LoginRequiredMixin, View):
             'form': form,
             'kind': self.kind,
             'product': self.product,
-            'heading': 'Edytuj pakowanie' if self.kind == 'packaging' else 'Edytuj wymagania materiałowe',
+            'heading': {'product': 'Edytuj produkt', 'packaging': 'Edytuj pakowanie', 'material': 'Edytuj wymagania materiałowe'}[self.kind],
         }, request=self.request)
 
     def get(self, request, *args, **kwargs):
@@ -162,28 +194,132 @@ class ProductConfigurationEditView(LoginRequiredMixin, View):
             return JsonResponse({'ok': False, 'html': self.render_form(form)}, status=422)
         with transaction.atomic():
             obj = form.save(commit=False)
-            obj.product = self.product
+            if self.kind != "product":
+                obj.product = self.product
             obj.save()
         return JsonResponse({'ok': True, 'message': 'Zapisano zmiany.'})
 
 
 class ProductForm(forms.ModelForm):
+    customer = forms.ModelChoiceField(
+        queryset=Buyer.objects.all(), label="Klient", required=True,
+        empty_label="Wybierz klienta",
+    )
+    extra_name = forms.CharField(label="Nazwa dodatkowa", required=False, max_length=100)
+
     class Meta:
         model = Product
-        fields = ('name', 'FEFCO_code', 'dimensions', 'flute', 'gsm', 'price')
+        fields = ("FEFCO_code", "dimensions", "flute", "gsm", "price")
         labels = {
-            'name': 'Nazwa produktu',
-            'FEFCO_code': 'Kod FEFCO',
-            'dimensions': 'Wymiary produktu',
-            'flute': 'Fala produktu',
-            'gsm': 'Gramatura (g/m²)',
-            'price': 'Cena',
+            "FEFCO_code": "Kod FEFCO", "dimensions": "Wymiary produktu",
+            "flute": "Fala produktu", "gsm": "Gramatura (g/m²)", "price": "Cena",
         }
 
-    def clean_name(self):
-        # Normalizacja taka sama jak w Product.save(), aby sprawdzić unikalność przed zapisem.
-        from warehouse.services.naming import norm_names
-        name = norm_names(self.cleaned_data['name'])
-        if Product.objects.filter(name=name).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError('Produkt o tej nazwie już istnieje.')
-        return name
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            parts = [part.strip() for part in (self.instance.name or "").split("|")]
+            if parts:
+                customer = next(
+                    (buyer for buyer in Buyer.objects.all() if str(buyer).strip().casefold() == parts[0].casefold()),
+                    None,
+                )
+                if customer:
+                    self.fields["customer"].initial = customer
+            if len(parts) > 3:
+                self.fields["extra_name"].initial = " | ".join(parts[3:])
+
+    def clean(self):
+        cleaned = super().clean()
+        customer = cleaned.get("customer")
+        flute = cleaned.get("flute")
+        dimensions = cleaned.get("dimensions")
+        if customer and flute and dimensions:
+            name = norm_names(build_product_name(
+                customer=str(customer), flute=flute, dimensions=dimensions,
+                extra=cleaned.get("extra_name", ""),
+            ))
+            if len(name) > Product._meta.get_field("name").max_length:
+                self.add_error("extra_name", "Wygenerowana nazwa jest zbyt długa (maks. 128 znaków).")
+            elif Product.objects.filter(name=name).exclude(pk=self.instance.pk).exists():
+                self.add_error("extra_name", "Produkt o takiej nazwie już istnieje.")
+            else:
+                cleaned["generated_name"] = name
+        return cleaned
+
+    def save(self, commit=True):
+        product = super().save(commit=False)
+        product.name = self.cleaned_data["generated_name"]
+        if commit:
+            product.save()
+            self.save_m2m()
+        return product
+
+
+class ProductCreateView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    form_template = "warehouse/products/_modal_create.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not (
+            request.user.is_staff
+            or request.user.is_superuser
+        ):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "Brak uprawnień do dodawania produktów.",
+                },
+                status=403,
+            )
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def render_form(self, form):
+        from django.template.loader import render_to_string
+
+        return render_to_string(
+            self.form_template,
+            {
+                "heading": "Dodaj nowy produkt",
+                "product_form": form.product_form,
+                "packaging_form": form.packaging_form,
+                "material_form": form.material_form,
+                "include_packaging": form.has_packaging,
+                "include_material": form.has_material,
+            },
+            request=self.request,
+        )
+
+    def get(self, request, *args, **kwargs):
+        form = ProductCreateForm()
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "html": self.render_form(form),
+            }
+        )
+
+    def post(self, request, *args, **kwargs):
+        form = ProductCreateForm(request.POST)
+
+        if not form.is_valid():
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "html": self.render_form(form),
+                },
+                status=422,
+            )
+
+        product = form.save()
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "message": "Produkt i jego konfiguracja zostały zapisane.",
+                "product_id": product.pk,
+            }
+        )
