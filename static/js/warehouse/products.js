@@ -39,7 +39,6 @@
     const edit = event.target.closest('[data-edit-url]');
     if (edit) { event.preventDefault(); openModal(edit); return; }
     if (event.target.closest('[data-modal-close]')) closeModal();
-    if (event.target === modal) closeModal();
   });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !modal.hidden) closeModal();
