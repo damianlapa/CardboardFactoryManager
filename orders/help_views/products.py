@@ -21,7 +21,7 @@ def customer_products(request):
 
     products = (
         Product.objects
-        .filter(name__icontains=customer_name)
+        .filter(name__icontains=customer_name, active=True)
         .distinct()
         .order_by("name")
         .values("id", "name")

@@ -62,6 +62,7 @@ class Product(models.Model):
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
+    active = models.BooleanField(default=True)
 
     def clean(self):
         if self.name:

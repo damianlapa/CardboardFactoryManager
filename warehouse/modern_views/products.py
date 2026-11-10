@@ -209,10 +209,10 @@ class ProductForm(forms.ModelForm):
 
     class Meta:
         model = Product
-        fields = ("FEFCO_code", "dimensions", "flute", "gsm", "price")
+        fields = ("FEFCO_code", "dimensions", "flute", "gsm", "price", "active")
         labels = {
             "FEFCO_code": "Kod FEFCO", "dimensions": "Wymiary produktu",
-            "flute": "Fala produktu", "gsm": "Gramatura (g/m²)", "price": "Cena",
+            "flute": "Fala produktu", "gsm": "Gramatura (g/m²)", "price": "Cena", "active": "Aktywny"
         }
 
     def __init__(self, *args, **kwargs):
