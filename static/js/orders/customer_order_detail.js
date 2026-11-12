@@ -467,3 +467,28 @@ document.addEventListener(
 
     }
 );
+
+// Confirmation is rendered by Django once, only after a successful purchase.
+document.addEventListener("DOMContentLoaded", function () {
+    const confirmationElement = document.getElementById("purchaseSuccessModal");
+    if (!confirmationElement) {
+        return;
+    }
+
+    const confirmationModal = new bootstrap.Modal(confirmationElement);
+    const detailsButton = document.getElementById("purchaseSuccessDetailsButton");
+
+    if (detailsButton) {
+        detailsButton.addEventListener("click", function () {
+            confirmationElement.addEventListener("hidden.bs.modal", function () {
+                const details = document.getElementById("materialPurchaseDetails");
+                if (details) {
+                    details.focus({ preventScroll: true });
+                    details.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            }, { once: true });
+        });
+    }
+
+    confirmationModal.show();
+});

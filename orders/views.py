@@ -348,6 +348,24 @@ class CustomerOrderDetailView(
     # GET
     # ========================================================
 
+    def purchase_success_redirect(
+        self,
+        request,
+        *,
+        order,
+        cardboard_order,
+        sent=False,
+    ):
+        # Only called after successful sending (EDI/API) and local saving.
+        request.session[f"material_purchase_confirmation_{order.pk}"] = {
+            "number": str(cardboard_order.number),
+            "sent": sent,
+        }
+        return redirect(
+            "orders:customer_order_detail",
+            pk=order.pk,
+        )
+
     def get(
         self,
         request,
@@ -357,12 +375,16 @@ class CustomerOrderDetailView(
             pk
         )
 
+        context = self.get_context(order=order)
+        context["purchase_confirmation"] = request.session.pop(
+            f"material_purchase_confirmation_{order.pk}",
+            None,
+        )
+
         return render(
             request,
             self.template_name,
-            self.get_context(
-                order=order
-            ),
+            context,
         )
 
     # ========================================================
@@ -583,9 +605,11 @@ class CustomerOrderDetailView(
                             ),
                         )
 
-                        return redirect(
-                            "orders:customer_order_detail",
-                            pk=order.pk,
+                        return self.purchase_success_redirect(
+                            request,
+                            order=order,
+                            cardboard_order=cardboard_order,
+                            sent=True,
                         )
 
                     raise ValidationError(
@@ -705,9 +729,11 @@ class CustomerOrderDetailView(
                             ),
                         )
 
-                        return redirect(
-                            "orders:customer_order_detail",
-                            pk=order.pk,
+                        return self.purchase_success_redirect(
+                            request,
+                            order=order,
+                            cardboard_order=cardboard_order,
+                            sent=True,
                         )
 
                     raise ValidationError(
@@ -792,9 +818,11 @@ class CustomerOrderDetailView(
                 ),
             )
 
-            return redirect(
-                "orders:customer_order_detail",
-                pk=order.pk,
+            return self.purchase_success_redirect(
+                request,
+                order=order,
+                cardboard_order=cardboard_order,
+                sent=False,
             )
 
         return redirect(

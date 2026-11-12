@@ -19,6 +19,108 @@ Zamówienie {{ order.order_number }}
     href="{% static 'css/orders/customer_order_detail.css' %}"
 >
 
+
+<style>
+    #purchaseSuccessModal .modal-dialog {
+        max-width: 440px;
+    }
+
+    #purchaseSuccessModal .modal-content {
+        overflow: hidden;
+        border: 1px solid var(--app-border, var(--bs-border-color));
+        border-radius: 18px;
+        background: var(--app-card, var(--bs-body-bg));
+        color: var(--app-text, var(--bs-body-color));
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .18);
+    }
+
+    #purchaseSuccessModal .modal-header {
+        justify-content: center;
+        padding: 32px 28px 0;
+        text-align: center;
+    }
+
+    #purchaseSuccessModal .btn-close {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+    }
+
+    #purchaseSuccessModal .purchase-confirmation-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 62px;
+        height: 62px;
+        margin: 0 auto 18px;
+        border: 1px solid var(--app-border, var(--bs-border-color));
+        border-radius: 50%;
+        background: var(--app-bg, var(--bs-tertiary-bg));
+        font-size: 27px;
+    }
+
+    #purchaseSuccessModal .modal-title {
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: -.3px;
+    }
+
+    #purchaseSuccessModal .modal-body {
+        padding: 16px 28px 24px;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+    #purchaseSuccessModal .purchase-confirmation-hint {
+        margin: 12px 0 0;
+        color: var(--app-text-muted, var(--bs-secondary-color));
+        font-size: 12px;
+    }
+
+    #purchaseSuccessModal .modal-footer {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 0 28px 28px;
+    }
+
+    #purchaseSuccessModal .modal-footer .orders-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 46px;
+        margin: 0;
+        border-radius: 10px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: normal;
+    }
+
+    #purchaseSuccessModal .purchase-confirmation-secondary {
+        border: 1px solid var(--app-border, var(--bs-border-color));
+        background: var(--app-bg, var(--bs-tertiary-bg));
+        color: var(--app-text, var(--bs-body-color));
+    }
+
+    #purchaseSuccessModal .purchase-confirmation-back {
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--app-text, var(--bs-body-color));
+    }
+
+    #purchaseSuccessModal .purchase-confirmation-secondary:hover,
+    #purchaseSuccessModal .purchase-confirmation-back:hover {
+        border-color: currentColor;
+    }
+</style>
+
 {% endblock %}
 
 
@@ -596,7 +698,7 @@ Zamówienie {{ order.order_number }}
 
         {% with item=purchase_allocation.cardboard_order_item %}
 
-            <section class="orders-card orders-purchase">
+            <section class="orders-card orders-purchase" id="materialPurchaseDetails" tabindex="-1">
 
                 <div class="orders-card__header">
 
@@ -1398,7 +1500,100 @@ Zamówienie {{ order.order_number }}
     </button>
 
 </div>
+            </form>
+        </div>
+    </div>
+</div>
 
+{% endif %}
+
+{% if purchase_confirmation %}
+<div
+    class="modal fade"
+    id="purchaseSuccessModal"
+    tabindex="-1"
+    aria-labelledby="purchaseSuccessModalTitle"
+    aria-describedby="purchaseSuccessModalDescription"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <div class="purchase-confirmation-icon" aria-hidden="true">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h5 class="modal-title" id="purchaseSuccessModalTitle">
+                        Zamówienie przyjęte
+                    </h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+            <div class="modal-body" id="purchaseSuccessModalDescription">
+                <p class="mb-2">
+                    Zamówienie <strong>{{ purchase_confirmation.number }}</strong>
+                    {% if purchase_confirmation.sent %}
+                        zostało pomyślnie wysłane i zapisane w systemie.
+                    {% else %}
+                        zostało pomyślnie utworzone w systemie.
+                    {% endif %}
+                </p>
+                <p class="purchase-confirmation-hint">Wybierz, co chcesz zrobić dalej.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 gap-2">
+                <button type="button" class="orders-btn orders-btn--primary" id="purchaseSuccessDetailsButton" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                    Zobacz szczegóły
+                </button>
+                <a href="{% url 'orders:customer_order_create' %}" class="orders-btn purchase-confirmation-secondary">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    Zamów kolejne
+                </a>
+                <a href="{% url 'orders:customer_order_list' %}" class="orders-btn purchase-confirmation-back">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    Wróć do zamówień
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    function showPurchaseConfirmation() {
+        const element = document.getElementById("purchaseSuccessModal");
+        if (!element) {
+            return;
+        }
+        if (!window.bootstrap || !window.bootstrap.Modal) {
+            console.error("Nie można otworzyć potwierdzenia: brak Bootstrap Modal.");
+            return;
+        }
+
+        const modal = window.bootstrap.Modal.getOrCreateInstance(element);
+        const detailsButton = document.getElementById("purchaseSuccessDetailsButton");
+        if (detailsButton && !detailsButton.dataset.confirmationBound) {
+            detailsButton.dataset.confirmationBound = "true";
+            detailsButton.addEventListener("click", function () {
+                element.addEventListener("hidden.bs.modal", function () {
+                    const details = document.getElementById("materialPurchaseDetails");
+                    if (details) {
+                        details.focus({ preventScroll: true });
+                        details.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                }, { once: true });
+            });
+        }
+        modal.show();
+    }
+
+    // Wait for base.html scripts too, independently of the external JS cache.
+    if (document.readyState === "complete") {
+        showPurchaseConfirmation();
+    } else {
+        window.addEventListener("load", showPurchaseConfirmation, { once: true });
+    }
+})();
+</script>
 {% endif %}
 
 {% endblock %}
@@ -1407,7 +1602,7 @@ Zamówienie {{ order.order_number }}
 {% block scripts %}
 
 <script
-    src="{% static 'js/orders/customer_order_detail.js' %}"
+    src="{% static 'js/orders/customer_order_detail.js' %}?v=20261112-2"
 ></script>
 
 {% endblock %}
