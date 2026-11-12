@@ -24,25 +24,62 @@ class ModernProductListView(LoginRequiredMixin, View):
     def get(self, request):
         search = request.GET.get('search', '').strip()
         status = request.GET.get('status', 'all')
+        show_all = request.GET.get('show_all') == '1'
+
         if status not in {'all', 'complete', 'missing', 'packaging', 'material'}:
             status = 'all'
+
         base = products_queryset(search=search)
+
+        if not show_all:
+            base = base.filter(active=True)
+
         counters = base.aggregate(
             total=Count('pk'),
-            complete=Count('pk', filter=Q(has_valid_packaging=True, has_valid_material=True)),
-            packaging=Count('pk', filter=Q(has_valid_packaging=False)),
-            material=Count('pk', filter=Q(has_valid_material=False)),
+            complete=Count(
+                'pk',
+                filter=Q(
+                    has_valid_packaging=True,
+                    has_valid_material=True,
+                ),
+            ),
+            packaging=Count(
+                'pk',
+                filter=Q(has_valid_packaging=False),
+            ),
+            material=Count(
+                'pk',
+                filter=Q(has_valid_material=False),
+            ),
         )
         counters['missing'] = counters['total'] - counters['complete']
-        qs = products_queryset(search=search, status=status).select_related(
-            'packaging__palette', 'material_requirement_template'
+
+        qs = products_queryset(
+            search=search,
+            status=status,
+        ).select_related(
+            'packaging__palette',
+            'material_requirement_template',
         )
+
+        if not show_all:
+            qs = qs.filter(active=True)
+
         paginator = Paginator(qs, 30)
         page_obj = paginator.get_page(request.GET.get('page'))
-        rows = [summarize_product(product) for product in page_obj.object_list]
+
+        rows = [
+            summarize_product(product)
+            for product in page_obj.object_list
+        ]
+
         return render(request, self.template_name, {
-            'rows': rows, 'page_obj': page_obj, 'search': search,
-            'status': status, 'counters': counters,
+            'rows': rows,
+            'page_obj': page_obj,
+            'search': search,
+            'status': status,
+            'counters': counters,
+            'show_all': show_all,
         })
 
 

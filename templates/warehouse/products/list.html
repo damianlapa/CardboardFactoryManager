@@ -7,8 +7,21 @@
 
 {% block content %}
 <div class="products-page">
+  <a
+    href="?search={{ search|urlencode }}&amp;status={{ status|urlencode }}&amp;show_all={% if show_all %}0{% else %}1{% endif %}"
+    class="btn btn-secondary"
+>
+    {% if show_all %}
+        Pokaż tylko aktywne
+    {% else %}
+        Pokaż wszystkie produkty
+    {% endif %}
+</a>
+    <hr>
   <header class="products-heading">
+
     <div><h1>Towary</h1><p>Kontrola kompletności pakowania i wymagań materiałowych</p></div>
+
     <button
     type="button"
     class="products-add-btn"
@@ -23,6 +36,11 @@
   <form class="products-filters" method="get">
     <label for="product-search">Szukaj produktu</label>
     <div class="products-filter-row">
+      <input
+    type="hidden"
+    name="show_all"
+    value="{% if show_all %}1{% else %}0{% endif %}"
+>
       <input id="product-search" type="search" name="search" value="{{ search }}" placeholder="Nazwa, wymiary, fala...">
       <select name="status" aria-label="Filtr kompletności">
         <option value="all" {% if status == 'all' %}selected{% endif %}>Wszystkie</option>
