@@ -256,3 +256,12 @@ urlpatterns += [
     path('orders/lead-time/', lead_time_report, name='lead-time-report'),
 ]
 
+from warehouse.shipment_item_quantity_views import ShipmentItemQuantityListView
+
+urlpatterns += [
+    path(
+        "shipment-items/quantities/",
+        ShipmentItemQuantityListView.as_view(),
+        name="shipment-item-quantity-list",
+    ),
+]

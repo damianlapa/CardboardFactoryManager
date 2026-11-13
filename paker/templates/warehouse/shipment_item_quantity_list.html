@@ -1,0 +1,175 @@
+{% extends "__base3__.html" %}
+{% load l10n %}
+{% block content %}
+<style>
+.siq-page { max-width:1600px; margin:24px auto; padding:0 18px 30px; color:var(--app-text,#243047); }
+.siq-header { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; margin-bottom:18px; }
+.siq-header h1 { margin:0 0 8px; font-size:26px; }
+.siq-note { margin:0; color:var(--app-muted,#65748b); line-height:1.55; max-width:900px; }
+.siq-card { background:var(--app-card,#fff); border:1px solid var(--app-border,#dce3ed); border-radius:14px; padding:18px; margin-bottom:18px; }
+.siq-filters { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+.siq-field { display:flex; flex-direction:column; gap:6px; }
+.siq-field.search { flex:1; min-width:240px; }
+.siq-field label { font-size:13px; font-weight:700; }
+.siq-page input { border:1px solid var(--app-border,#cbd5e1); border-radius:8px; padding:9px 11px; background:var(--app-bg,#f8fafc); color:inherit; font:inherit; box-sizing:border-box; }
+.siq-page input:focus { outline:2px solid #60a5fa; outline-offset:1px; }
+.siq-check { display:flex; gap:8px; align-items:center; margin:0 0 10px; }
+.siq-button { display:inline-flex; justify-content:center; align-items:center; border:0; border-radius:8px; padding:10px 15px; background:var(--app-primary,#2563eb); color:white; font:inherit; font-weight:700; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.siq-button.secondary { background:var(--app-bg,#eef2f7); color:inherit; border:1px solid var(--app-border,#dce3ed); }
+.siq-button:disabled { opacity:.6; cursor:wait; }
+.siq-stats { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; margin-bottom:12px; font-size:14px; }
+.siq-scroll { overflow-x:auto; border:1px solid var(--app-border,#dce3ed); border-radius:12px; }
+.siq-table { width:100%; border-collapse:collapse; font-size:14px; background:var(--app-card,#fff); }
+.siq-table th { text-align:left; background:var(--app-bg,#f1f5f9); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+.siq-table th,.siq-table td { padding:13px 14px; border-bottom:1px solid var(--app-border,#e2e8f0); vertical-align:top; }
+.siq-table tr:last-child td { border-bottom:0; }
+.siq-table a { color:var(--app-primary,#2563eb); }
+.siq-sub { display:block; color:var(--app-muted,#65748b); margin-top:5px; font-size:12px; }
+.siq-product { min-width:200px; max-width:350px; overflow-wrap:anywhere; }
+.siq-unit { white-space:nowrap; }
+.siq-edit { min-width:230px; }
+.siq-input-row { display:flex; gap:8px; }
+.siq-input-row input { width:125px; min-width:100px; }
+.siq-feedback { display:block; margin-top:7px; font-size:12px; min-height:16px; }
+.siq-feedback.success { color:#16803c; }
+.siq-feedback.error { color:#c62828; }
+.siq-feedback.dirty { color:#a85b00; }
+.siq-pagination { display:flex; justify-content:center; gap:14px; align-items:center; margin-top:20px; flex-wrap:wrap; }
+.siq-empty { text-align:center; padding:32px!important; color:var(--app-muted,#65748b); }
+@media(max-width:700px) { .siq-page{padding:0 10px 20px;} .siq-header{display:block;} .siq-header .siq-button{margin-top:12px;} .siq-field.search{min-width:100%;} }
+</style>
+<div class="siq-page">
+    <div class="siq-header">
+        <div>
+            <h1>Korekta ilości w pozycjach wysyłek</h1>
+            <p class="siq-note">Wpisuj łączną liczbę sztuk w jednostce, niezależnie od liczby palet. Każdy wiersz zapisujesz osobno przyciskiem lub klawiszem Enter. Zmiana obejmuje również podsumowanie przypisanej wysyłki.</p>
+        </div>
+        <a class="siq-button secondary" href="{% url 'warehouse:shipment-list' %}">Wysyłki</a>
+    </div>
+    <div class="siq-card">
+        <form method="get" class="siq-filters">
+            <div class="siq-field search">
+                <label for="siq-search">Klient, produkt, zlecenie lub numer jednostki / wysyłki</label>
+                <input id="siq-search" type="search" name="q" value="{{ search }}" placeholder="Szukaj pozycji…">
+            </div>
+            <div class="siq-field">
+                <label for="siq-shipment">Numer wysyłki</label>
+                <input id="siq-shipment" type="number" name="shipment" min="1" step="1" value="{{ shipment_filter }}" placeholder="np. 6436" style="width:150px">
+            </div>
+            <label class="siq-check"><input type="checkbox" name="only_one" value="1" {% if only_one %}checked{% endif %}>Tylko ilość = 1</label>
+            <button class="siq-button" type="submit">Filtruj</button>
+            <a class="siq-button secondary" href="{% url 'warehouse:shipment-item-quantity-list' %}">Wyczyść</a>
+        </form>
+    </div>
+    <div class="siq-stats">
+        <span>Pozycje: <strong>{{ page_obj.paginator.count }}</strong> · Na stronie: {{ page_obj|length }}</span>
+        <span>Filtr „ilość = 1” wskazuje kandydatów do sprawdzenia, nie potwierdza błędnej ilości.</span>
+    </div>
+    <div class="siq-scroll">
+        <table class="siq-table">
+            <thead><tr><th>Wysyłka</th><th>Jednostka / skan</th><th>Klient i produkt</th><th>Zlecenie / seria</th><th>Palety</th><th>Łączna liczba sztuk</th></tr></thead>
+            <tbody>
+            {% for item in page_obj %}
+                {% with unit=item.shipment_unit %}
+                <tr>
+                    <td><a href="{% url 'warehouse:shipment-detail' shipment_id=item.shipment_id %}"><strong>#{{ item.shipment_id|unlocalize }}</strong></a><span class="siq-sub">{{ item.shipment.get_status_display }}</span></td>
+                    <td class="siq-unit"><strong>#{{ unit.id|unlocalize }}</strong><span class="siq-sub">Pozycja #{{ item.id|unlocalize }}<br>{{ item.scanned_at|date:"d.m.Y H:i" }}<br>{{ item.scanned_by.get_full_name|default:item.scanned_by.username }}</span></td>
+                    <td class="siq-product"><strong>{{ unit.customer|default:unit.order.customer }}</strong><span class="siq-sub">{% if unit.product %}{{ unit.product.alter_name|default:unit.product }}{% else %}{{ unit.order.product.alter_name|default:unit.order.product|default:"—" }}{% endif %}</span></td>
+                    <td>{{ unit.order }}<span class="siq-sub">Seria: {{ unit.order_id|unlocalize }}/{{ unit.order.order_year|default:"—" }}</span></td>
+                    <td><strong>{{ unit.palette_quantity }}</strong><span class="siq-sub">{{ unit.palette|default:"Brak palety" }}</span></td>
+                    <td class="siq-edit">
+                        <form method="post" action="{% url 'warehouse:shipment-item-quantity-list' %}" class="siq-row-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="item_id" value="{{ item.id|unlocalize }}">
+                            <input type="hidden" name="expected_quantity" value="{{ unit.quantity|unlocalize }}">
+                            <input type="hidden" name="q" value="{{ search }}">
+                            <input type="hidden" name="shipment" value="{{ shipment_filter }}">
+                            <input type="hidden" name="only_one" value="{% if only_one %}1{% endif %}">
+                            <input type="hidden" name="page" value="{{ page_obj.number|unlocalize }}">
+                            <div class="siq-input-row">
+                                <input type="number" name="quantity" value="{{ unit.quantity|unlocalize }}" min="1" max="2147483647" step="1" required aria-label="Liczba sztuk w jednostce {{ unit.id|unlocalize }}">
+                                <button type="submit" class="siq-button">Zapisz</button>
+                            </div>
+                            <span class="siq-feedback" role="status" aria-live="polite">Zapisane: <span class="siq-current">{{ unit.quantity }}</span> szt.</span>
+                        </form>
+                    </td>
+                </tr>
+                {% endwith %}
+            {% empty %}
+                <tr><td colspan="6" class="siq-empty">Brak pozycji spełniających kryteria.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <nav class="siq-pagination" aria-label="Strony pozycji wysyłek">
+        {% if page_obj.has_previous %}<a class="siq-button secondary" href="?{{ filter_query }}&amp;page={{ page_obj.previous_page_number|unlocalize }}">← Poprzednia</a>{% endif %}
+        <span>Strona {{ page_obj.number }} z {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a class="siq-button secondary" href="?{{ filter_query }}&amp;page={{ page_obj.next_page_number|unlocalize }}">Następna →</a>{% endif %}
+    </nav>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const forms = Array.from(document.querySelectorAll(".siq-row-form"));
+    const pending = new Set();
+    const busy = new Set();
+    forms.forEach(function (form, index) {
+        const input = form.elements.quantity;
+        const expected = form.elements.expected_quantity;
+        const button = form.querySelector("button");
+        const feedback = form.querySelector(".siq-feedback");
+        function show(text, kind) {
+            feedback.textContent = text;
+            feedback.className = "siq-feedback " + (kind || "");
+        }
+        input.addEventListener("input", function () {
+            if (input.value !== expected.value) {
+                pending.add(form);
+                show("Niezapisana zmiana", "dirty");
+            } else {
+                pending.delete(form);
+                show("Zapisane: " + expected.value + " szt.", "");
+            }
+        });
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            if (busy.has(form) || !form.reportValidity()) return;
+            const payload = new FormData(form);
+            busy.add(form);
+            button.disabled = true;
+            input.readOnly = true;
+            show("Zapisywanie…", "");
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST", body: payload, credentials: "same-origin",
+                    headers: {"X-Requested-With": "XMLHttpRequest"}
+                });
+                if (!(response.headers.get("Content-Type") || "").includes("application/json")) {
+                    throw new Error("Nie otrzymano potwierdzenia zapisu. Odśwież stronę i sprawdź ilość oraz zalogowanie.");
+                }
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.message || "Nie udało się zapisać ilości.");
+                expected.value = String(result.quantity);
+                input.value = String(result.quantity);
+                pending.delete(form);
+                show(result.message, "success");
+                const next = forms[index + 1];
+                if (next && !busy.has(next) && document.activeElement === input) {
+                    next.elements.quantity.focus();
+                    next.elements.quantity.select();
+                }
+            } catch (error) {
+                // A network failure can happen after commit: require a refresh to verify.
+                show(error.message || "Brak potwierdzenia zapisu. Odśwież stronę, aby sprawdzić ilość.", "error");
+            } finally {
+                busy.delete(form);
+                button.disabled = false;
+                input.readOnly = false;
+            }
+        });
+    });
+    window.addEventListener("beforeunload", function (event) {
+        if (pending.size || busy.size) { event.preventDefault(); event.returnValue = ""; }
+    });
+});
+</script>
+{% endblock %}
