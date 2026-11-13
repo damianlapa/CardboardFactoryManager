@@ -170,8 +170,6 @@ class ShipmentUnitPDF:
     # ============================================================
 
     def _build_left_table(self):
-        print(
-            self.order.production_date_result())
         production_date = (
             self.order.production_date_result()
             or self.shipment_unit.created
@@ -345,8 +343,14 @@ class ShipmentUnitPDF:
         )
 
         quantity_row = self._build_field_row(
-            "ILOŚĆ SZTUK",
+            "ILOŚĆ SZTUK ŁĄCZNIE",
             self.shipment_unit.quantity,
+            value_font_size=18,
+        )
+
+        palette_quantity_row = self._build_field_row(
+            "LICZBA PALET",
+            self.shipment_unit.palette_quantity,
             value_font_size=18,
         )
 
@@ -369,27 +373,29 @@ class ShipmentUnitPDF:
             ],
             [product_row],
             [quantity_row],
+            [palette_quantity_row],
             [series_row],
             [codes],
             [""],
         ]
 
+        # Zachowujemy obszar kodów i całkowitą wysokość etykiety.
+        header_height = 29 * mm
+        customer_height = 35 * mm
+        product_height = 18 * mm
+        quantity_height = 18 * mm
+        palette_quantity_height = 14 * mm
+        series_height = 14 * mm
+        footer_height = 15 * mm
+        codes_height = self.LABEL_HEIGHT - sum((
+            header_height, customer_height, product_height,
+            quantity_height, palette_quantity_height, series_height,
+            footer_height,
+        ))
         row_heights = [
-            29 * mm,
-            35 * mm,
-            18 * mm,
-            18 * mm,
-            14 * mm,
-            self.LABEL_HEIGHT
-            - (
-                29 * mm
-                + 35 * mm
-                + 18 * mm
-                + 18 * mm
-                + 14 * mm
-                + 29 * mm
-            ),
-            29 * mm,
+            header_height, customer_height, product_height,
+            quantity_height, palette_quantity_height, series_height,
+            codes_height, footer_height,
         ]
 
         table = Table(

@@ -1,6 +1,6 @@
 {% extends "warehouse/__mobile_loading_base__.html" %}
 {% block title %}
-    Skanowanie palety
+    Skanowanie jednostki
 {% endblock %}
 
 {% block content %}
@@ -113,26 +113,26 @@
 
     {% if used_in_other_shipment %}
         <div class="scan-status error">
-            Ta paleta jest już przypisana do wysyłki
+            Ta jednostka jest już przypisana do wysyłki
             #{{ existing_item.shipment_id }}.
         </div>
 
     {% elif already_in_active_shipment %}
         <div class="scan-status warning">
-            Ta paleta znajduje się już w aktywnym
+            Ta jednostka znajduje się już w aktywnym
             załadunku.
         </div>
 
     {% else %}
         <div class="scan-status success">
-            Paleta została poprawnie rozpoznana.
+            Jednostka została poprawnie rozpoznana.
         </div>
     {% endif %}
 
     <div class="unit-card">
 
         <div class="unit-header">
-            <div>PALETA</div>
+            <div>JEDNOSTKA WYSYŁKOWA</div>
 
             <div class="unit-id">
                 #{{ shipment_unit.id }}
@@ -142,7 +142,7 @@
         <div class="unit-row">
             <div class="unit-label">Klient</div>
             <div class="unit-value">
-                {{ order.customer }}
+                {{ shipment_unit.customer|default:order.customer }}
             </div>
         </div>
 
@@ -161,7 +161,7 @@
         </div>
 
         <div class="unit-row">
-            <div class="unit-label">Ilość</div>
+            <div class="unit-label">Łącznie sztuk</div>
             <div class="unit-value">
                 {{ shipment_unit.quantity }} szt.
             </div>
@@ -174,7 +174,15 @@
             </div>
         </div>
 
+        <div class="unit-row">
+            <div class="unit-label">Liczba palet</div>
+            <div class="unit-value">{{ shipment_unit.palette_quantity }}</div>
+        </div>
     </div>
+
+    <p>Dodanie do załadunku obejmuje całą jednostkę:
+        {{ shipment_unit.quantity }} szt. / {{ shipment_unit.palette_quantity }} palet.
+    </p>
 
     {% if not existing_item %}
         <form method="post">
@@ -194,7 +202,7 @@
         class="shipment-link"
     >
         Otwórz aktywny załadunek
-        ({{ active_shipment.units_count }} palet)
+        ({{ active_shipment.palettes_count }} palet)
     </a>
 
     <div class="summary">
@@ -203,8 +211,10 @@
         </strong>
 
         <div>
-            Palety: {{ active_shipment.units_count }}
+            Palety: {{ active_shipment.palettes_count }}
         </div>
+
+        <div>Jednostki: {{ active_shipment.units_count }}</div>
 
         <div>
             Sztuki: {{ active_shipment.total_quantity }}

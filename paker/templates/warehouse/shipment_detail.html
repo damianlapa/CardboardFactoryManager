@@ -443,7 +443,7 @@
             </div>
 
             <div class="summary-value">
-                {{ shipment.units_count }}
+                {{ shipment.palettes_count }}
             </div>
         </div>
 
@@ -593,7 +593,7 @@
         >
             <span class="items-toggle-row">
                 <span>
-                    Pokaż zeskanowane palety
+                    Pokaż zeskanowane jednostki
                     ({{ shipment.units_count }})
                 </span>
 
@@ -614,7 +614,7 @@
 
                     <div class="shipment-item-header">
                         <span>
-                            Paleta #{{ item.shipment_unit.id }}
+                            Jednostka #{{ item.shipment_unit.id }}
                         </span>
 
                         <span>
@@ -646,7 +646,7 @@
 
                         <div>
                             <strong>Paleta:</strong>
-                            {{ item.shipment_unit.palette|default:"—" }}
+                            {{ item.shipment_unit.palette|default:"—" }} — {{ item.shipment_unit.palette_quantity }} palet
                         </div>
 
                         <div>
@@ -828,8 +828,8 @@
 
             if (label) {
                 label.textContent = isOpen
-                    ? "Ukryj zeskanowane palety ({{ shipment.units_count }})"
-                    : "Pokaż zeskanowane palety ({{ shipment.units_count }})";
+                    ? "Ukryj zeskanowane jednostki ({{ shipment.units_count }})"
+                    : "Pokaż zeskanowane jednostki ({{ shipment.units_count }})";
             }
         });
     });

@@ -159,7 +159,7 @@
                     name="quantity"
                     id="quantity"
                     min="1"
-                    value="{% if quantity %}{{ quantity }}{% else %}{{ shipment_unit.quantity }}{% endif %}"
+                    value="{{ quantity }}"
                     required
                     autofocus
                 >
@@ -175,19 +175,24 @@
                         Automatycznie z pakowania
                     </option>
 
+                    <option value="No palette" {% if selected_palette_id == "No palette" %}selected{% endif %}>Brak</option>
                     {% for palette in palettes %}
                         <option
                             value="{{ palette.id }}"
                             {% if selected_palette_id|stringformat:"s" == palette.id|stringformat:"s" %}
                                 selected
-                            {% elif not selected_palette_id and shipment_unit.palette_id == palette.id %}
-                                selected
+                            
                             {% endif %}
                         >
                             {{ palette }}
                         </option>
                     {% endfor %}
                 </select>
+            </div>
+
+            <div class="shipment-edit-field">
+                <label for="palette_quantity">Liczba palet w jednostce</label>
+                <input type="number" name="palette_quantity" id="palette_quantity" min="0" step="1" value="{{ palette_quantity }}" required>
             </div>
 
             <div class="shipment-edit-actions">

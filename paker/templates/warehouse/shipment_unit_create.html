@@ -596,7 +596,7 @@
 
                     <select name="customer" id="customer">
                         {% for c in customers %}
-                            {% if c == order.customer %}
+                            {% if c.id|stringformat:"s" == selected_customer_id|stringformat:"s" %}
                                 <option selected value="{{ c.id }}">{{ c }}</option>
                             {% else %}
                                 <option value="{{ c.id }}">{{ c }}</option>
@@ -615,7 +615,7 @@
                         name="quantity"
                         id="quantity"
                         min="1"
-                        value="{% if quantity %}{{ quantity }}{% elif packaging %}{{ packaging.qty_per_pallet }}{% endif %}"
+                        value="{% if quantity != None %}{{ quantity }}{% elif packaging %}{{ packaging.qty_per_pallet }}{% endif %}"
                         required
                         autofocus
                     >
@@ -638,7 +638,7 @@
     >
 
     <small style="display: block; margin-top: 5px; color: #666;">
-        Każda jednostka zostanie utworzona z taką samą ilością sztuk.
+        Każda jednostka otrzyma podaną liczbę sztuk i palet. Liczba sztuk obejmuje wszystkie palety jednej jednostki.
     </small>
 </div>
                     <label for="palette">
@@ -650,19 +650,27 @@
                             Automatycznie z pakowania
                         </option>
 
+                        <option value="No palette" {% if selected_palette_id == "No palette" %}selected{% endif %}>
+                            Brak
+                        </option>
+
                         {% for palette in palettes %}
                             <option
                                 value="{{ palette.id }}"
                                 {% if selected_palette_id|stringformat:"s" == palette.id|stringformat:"s" %}
                                     selected
-                                {% elif not selected_palette_id and default_palette and default_palette.id == palette.id %}
-                                    selected
+                                
                                 {% endif %}
                             >
                                 {{ palette }}
                             </option>
                         {% endfor %}
                     </select>
+
+                    <label for="palette_quantity">
+                        Liczba palet w jednostce
+                    </label>
+                    <input type="number" name="palette_quantity" id="palette_quantity" value="{{ palette_quantity }}" min="0" step="1" required>
                 </div>
                 <div class="shipment-summary">
     <span>Łączna ilość:</span>
@@ -752,7 +760,7 @@
                                 </span>
 
                                 <span class="shipment-attribute-value">
-                                    {{ shipment_unit.palette|default:"Brak" }}
+                                    {{ shipment_unit.palette|default:"Brak" }} — {{ shipment_unit.palette_quantity }} palet
                                 </span>
                             </div>
 
@@ -898,7 +906,7 @@
                                         </span>
 
                                         <span class="shipment-attribute-value">
-                                            {{ shipment_unit.palette|default:"Brak" }}
+                                            {{ shipment_unit.palette|default:"Brak" }} — {{ shipment_unit.palette_quantity }} palet
                                         </span>
                                     </div>
 
@@ -984,6 +992,21 @@
 
     </div>
 
+    {% if shipment_unit_history %}
+    <section class="shipment-history">
+        <h2>Historia zmian jednostek</h2>
+        <div class="shipment-history-list">
+        {% for entry in shipment_unit_history %}
+            <article class="shipment-history-item">
+                <strong>{{ entry.get_action_display }} — jednostka #{{ entry.shipment_unit_original_id }}</strong>
+                <div>{{ entry.changed_at|date:"d.m.Y H:i" }} — {{ entry.changed_by.get_full_name|default:entry.changed_by.username }}</div>
+                <div>Stan przed zmianą: {{ entry.quantity }} szt., {{ entry.palette|default:"Brak" }}, liczba palet: {{ entry.palette_quantity|default_if_none:"brak danych" }}</div>
+            </article>
+        {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <a
         class="shipment-back"
         href="{% url 'warehouse:order-detail-view' order_id=order.id %}"
@@ -998,22 +1021,31 @@
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const quantityInput = document.getElementById("quantity");
-    const unitsCountInput = document.getElementById("units_count");
-    const totalQuantity = document.getElementById("totalQuantity");
-
-    function updateTotal() {
-        const quantity = parseInt(quantityInput.value, 10) || 0;
-        const unitsCount = parseInt(unitsCountInput.value, 10) || 0;
-        const total = quantity * unitsCount;
-
-        totalQuantity.textContent = total.toLocaleString("pl-PL") + " szt.";
+    const quantity = document.getElementById("quantity");
+    const units = document.getElementById("units_count");
+    const palette = document.getElementById("palette");
+    const pallets = document.getElementById("palette_quantity");
+    const total = document.getElementById("totalQuantity");
+    let previous = Number(pallets.value) || 1;
+    function update() {
+        const n = Number(units.value) || 0;
+        total.textContent = ((Number(quantity.value) || 0) * n).toLocaleString("pl-PL")
+            + " szt. / " + ((Number(pallets.value) || 0) * n).toLocaleString("pl-PL") + " palet";
     }
-
-    quantityInput.addEventListener("input", updateTotal);
-    unitsCountInput.addEventListener("input", updateTotal);
-
-    updateTotal();
+    function syncPalette() {
+        const none = palette.value === "No palette";
+        if (none) {
+            previous = Number(pallets.value) || previous;
+            pallets.value = 0;
+        } else if (pallets.readOnly) {
+            pallets.value = previous;
+        }
+        pallets.readOnly = none;
+        update();
+    }
+    [quantity, units, pallets].forEach(input => input.addEventListener("input", update));
+    palette.addEventListener("change", syncPalette);
+    syncPalette();
 });
 </script>
 {% endblock %}

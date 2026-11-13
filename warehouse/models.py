@@ -2219,7 +2219,8 @@ class ShipmentUnit(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, related_name="shipment_customers", null=True, blank=True)
     palette = models.ForeignKey(Palette, on_delete=models.PROTECT, null=True, blank=True)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(default=0)
+    palette_quantity = models.PositiveIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_shipment_units")
     # shipped = models.DateTimeField(null=True, blank=True)
@@ -2231,12 +2232,15 @@ class ShipmentUnit(models.Model):
         if self.order:
             self.product = self.order.product
 
-            if not self.palette:
+            if self._state.adding and not self.palette and self.palette_quantity > 0:
                 packaging = ProductPackaging.objects.filter(
                     product=self.product
                 ).first()
 
                 self.palette = packaging.palette if packaging else None
+
+        if self.palette is None:
+            self.palette_quantity = 0
 
         super().save(*args, **kwargs)
 
@@ -2288,6 +2292,8 @@ class ShipmentUnitHistory(models.Model):
     )
 
     quantity = models.PositiveIntegerField()
+    # Starsze wpisy historii nie mają wiarygodnej liczby palet.
+    palette_quantity = models.PositiveIntegerField(null=True, blank=True)
 
     action = models.CharField(
         max_length=16,
@@ -2393,6 +2399,10 @@ class Shipment(models.Model):
     @property
     def units_count(self):
         return self.items.count()
+
+    @property
+    def palettes_count(self):
+        return self.items.aggregate(total=models.Sum("shipment_unit__palette_quantity"))["total"] or 0
 
     @property
     def total_quantity(self):

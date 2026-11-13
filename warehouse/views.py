@@ -50,6 +50,44 @@ from django.core.exceptions import PermissionDenied
 logger = logging.getLogger(__name__)
 
 
+def parse_shipment_unit_data(data, product):
+    """quantity oznacza sumę sztuk w jednej jednostce wysyłkowej."""
+    try:
+        quantity = int(data.get("quantity", ""))
+    except (TypeError, ValueError):
+        raise ValueError("Podaj całkowitą liczbę sztuk.")
+    if quantity <= 0:
+        raise ValueError("Ilość sztuk musi być większa od zera.")
+    try:
+        palette_quantity = int(data.get("palette_quantity", ""))
+    except (TypeError, ValueError):
+        raise ValueError("Podaj całkowitą liczbę palet.")
+    if palette_quantity < 0:
+        raise ValueError("Liczba palet nie może być ujemna.")
+
+    palette_id = data.get("palette", "")
+    palette = None
+    if palette_id == "No palette":
+        palette_quantity = 0
+    elif not palette_id:
+        packaging = ProductPackaging.objects.select_related("palette").filter(product=product).first()
+        palette = packaging.palette if packaging else None
+    else:
+        try:
+            palette_pk = int(palette_id)
+        except (TypeError, ValueError):
+            raise ValueError("Wybrana paleta nie istnieje.")
+        palette = Palette.objects.filter(pk=palette_pk).first()
+        if palette is None:
+            raise ValueError("Wybrana paleta nie istnieje.")
+
+    if palette is None:
+        palette_quantity = 0
+    elif palette_quantity == 0:
+        raise ValueError("Dla wybranej palety liczba palet musi być większa od zera.")
+    return quantity, palette, palette_quantity
+
+
 def create_shipment_unit_history(*, shipment_unit, user, action):
     return ShipmentUnitHistory.objects.create(
         shipment_unit=shipment_unit,
@@ -58,6 +96,7 @@ def create_shipment_unit_history(*, shipment_unit, user, action):
         product=shipment_unit.product,
         palette=shipment_unit.palette,
         quantity=shipment_unit.quantity,
+        palette_quantity=shipment_unit.palette_quantity,
         action=action,
         changed_by=user,
     )
@@ -1804,6 +1843,9 @@ class SellProductList(PermissionRequiredMixin, View):
         context = {
             "warehouse_stocks": warehouse_stocks,
             "products": Product.objects.all().order_by("name"),  # do <select> w modalu
+            "palette_quantity": 1,
+            "selected_palette_id": "",
+            "selected_customer_id": order.customer_id,
             "customers": Buyer.objects.all().order_by("name"),
             "sells": sells
         }
@@ -3265,6 +3307,9 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
             "default_palette": packaging.palette if packaging else None,
             "shipment_units": self.get_shipment_units(order),
             "shipment_unit_history": shipment_unit_history,
+            "palette_quantity": 1,
+            "selected_palette_id": "",
+            "selected_customer_id": order.customer_id,
             "customers": Buyer.objects.all()
         }
 
@@ -3285,124 +3330,37 @@ class ShipmentUnitCreateView(LoginRequiredMixin, View):
         )
 
     def post(self, request, order_id):
-        order = get_object_or_404(
-            Order.objects.select_related("product"),
-            id=order_id,
-        )
-
-        quantity_raw = request.POST.get("quantity")
-        units_count_raw = request.POST.get("units_count", "1")
-        palette_id = request.POST.get("palette")
-        customer_id_raw = request.POST.get("customer")
-
+        order = get_object_or_404(Order.objects.select_related("product"), id=order_id)
+        submitted = {
+            "quantity": request.POST.get("quantity", ""),
+            "units_count": request.POST.get("units_count", "1"),
+            "palette_quantity": request.POST.get("palette_quantity", ""),
+            "selected_palette_id": request.POST.get("palette", ""),
+            "selected_customer_id": request.POST.get("customer", ""),
+        }
         try:
-            quantity = int(quantity_raw)
-        except (TypeError, ValueError):
-            quantity = 0
-
-        try:
-            units_count = int(units_count_raw)
-        except (TypeError, ValueError):
-            units_count = 0
-
-        try:
-            buyer = Buyer.objects.get(id=int(customer_id_raw))
-        except Buyer.DoesNotExist:
-            buyer = None
-
-        palette = None
-
-        if palette_id:
-            palette = Palette.objects.filter(id=palette_id).first()
-
-            if not palette:
-                return render(
-                    request,
-                    self.template_name,
-                    self.get_context(
-                        order,
-                        quantity=quantity_raw,
-                        units_count=units_count_raw,
-                        selected_palette_id=palette_id,
-                        error="Wybrana paleta nie istnieje.",
-                    ),
-                )
-
-        if quantity <= 0:
-            return render(
-                request,
-                self.template_name,
-                self.get_context(
-                    order,
-                    quantity=quantity_raw,
-                    units_count=units_count_raw,
-                    selected_palette_id=palette_id,
-                    error="Ilość sztuk musi być większa od zera.",
-                ),
-            )
-
-        if units_count <= 0:
-            return render(
-                request,
-                self.template_name,
-                self.get_context(
-                    order,
-                    quantity=quantity_raw,
-                    units_count=units_count_raw,
-                    selected_palette_id=palette_id,
-                    error="Liczba jednostek musi być większa od zera.",
-                ),
-            )
-
-        if units_count > 100:
-            return render(
-                request,
-                self.template_name,
-                self.get_context(
-                    order,
-                    quantity=quantity_raw,
-                    units_count=units_count_raw,
-                    selected_palette_id=palette_id,
-                    error="Jednorazowo możesz dodać maksymalnie 100 jednostek.",
-                ),
-            )
-
-        if not buyer:
-            return render(
-                request,
-                self.template_name,
-                self.get_context(
-                    order,
-                    quantity=quantity_raw,
-                    units_count=units_count_raw,
-                    selected_palette_id=palette_id,
-                    error="Klient nie istnieje.",
-                ),
-            )
+            quantity, palette, palette_quantity = parse_shipment_unit_data(request.POST, order.product)
+            try:
+                units_count = int(submitted["units_count"])
+            except (TypeError, ValueError):
+                raise ValueError("Podaj całkowitą liczbę jednostek.")
+            if not 1 <= units_count <= 100:
+                raise ValueError("Liczba jednostek musi wynosić od 1 do 100.")
+            try:
+                buyer = Buyer.objects.get(pk=int(submitted["selected_customer_id"]))
+            except (TypeError, ValueError, Buyer.DoesNotExist):
+                raise ValueError("Wybierz istniejącego klienta.")
+        except ValueError as exc:
+            return render(request, self.template_name, self.get_context(order, **submitted, error=str(exc)))
 
         with transaction.atomic():
             for _ in range(units_count):
                 ShipmentUnit.objects.create(
-                    order=order,
-                    quantity=quantity,
-                    palette=palette,
-                    created_by=request.user,
-                    customer=buyer
+                    order=order, quantity=quantity, palette=palette,
+                    palette_quantity=palette_quantity, created_by=request.user, customer=buyer,
                 )
-
-        messages.success(
-            request,
-            (
-                f"Dodano {units_count} "
-                f"{'jednostkę' if units_count == 1 else 'jednostki/jednostek'} "
-                f"po {quantity} szt."
-            ),
-        )
-
-        return redirect(
-            "warehouse:shipment-unit-create",
-            order_id=order.id,
-        )
+        messages.success(request, f"Dodano jednostki: {units_count}. Łącznie {quantity * units_count} szt., {palette_quantity * units_count} palet.")
+        return redirect("warehouse:shipment-unit-create", order_id=order.id)
 
 
 
@@ -3501,6 +3459,9 @@ class ShipmentUnitUpdateView(
         context = {
             "shipment_unit": shipment_unit,
             "order": shipment_unit.order,
+            "quantity": shipment_unit.quantity,
+            "palette_quantity": shipment_unit.palette_quantity,
+            "selected_palette_id": str(shipment_unit.palette_id) if shipment_unit.palette_id else "No palette",
             "palettes": Palette.objects.all().order_by("name"),
         }
 
@@ -3520,84 +3481,34 @@ class ShipmentUnitUpdateView(
 
     def post(self, request, shipment_unit_id):
         self.check_shipment_unit_permission()
-
         shipment_unit = self.get_shipment_unit()
-
-        quantity_raw = request.POST.get("quantity")
-        palette_id = request.POST.get("palette")
-
+        submitted = {
+            "quantity": request.POST.get("quantity", ""),
+            "palette_quantity": request.POST.get("palette_quantity", ""),
+            "selected_palette_id": request.POST.get("palette", ""),
+        }
         try:
-            quantity = int(quantity_raw)
-        except (TypeError, ValueError):
-            quantity = 0
+            quantity, palette, palette_quantity = parse_shipment_unit_data(request.POST, shipment_unit.order.product)
+        except ValueError as exc:
+            return render(request, self.template_name, self.get_context(shipment_unit, **submitted, error=str(exc)))
 
-        if quantity <= 0:
-            return render(
-                request,
-                self.template_name,
-                self.get_context(
-                    shipment_unit,
-                    quantity=quantity_raw,
-                    selected_palette_id=palette_id,
-                    error="Ilość musi być większa od zera.",
-                ),
-            )
-
-        palette = None
-
-        if palette_id:
-            palette = Palette.objects.filter(id=palette_id).first()
-
-            if not palette:
-                return render(
-                    request,
-                    self.template_name,
-                    self.get_context(
-                        shipment_unit,
-                        quantity=quantity_raw,
-                        selected_palette_id=palette_id,
-                        error="Wybrana paleta nie istnieje.",
-                    ),
-                )
-
-        # Nie zapisujemy historii, jeśli faktycznie nic się nie zmieniło
-        quantity_changed = shipment_unit.quantity != quantity
-        palette_changed = shipment_unit.palette_id != (
-            palette.id if palette else None
-        )
-
-        if not quantity_changed and not palette_changed:
-            messages.info(
-                request,
-                f"Nie wprowadzono zmian w jednostce #{shipment_unit.id}.",
-            )
-
-            return redirect(
-                "warehouse:shipment-unit-create",
-                order_id=shipment_unit.order_id,
-            )
+        if (shipment_unit.quantity == quantity
+                and shipment_unit.palette_id == (palette.pk if palette else None)
+                and shipment_unit.palette_quantity == palette_quantity):
+            messages.info(request, f"Nie wprowadzono zmian w jednostce #{shipment_unit.id}.")
+            return redirect("warehouse:shipment-unit-create", order_id=shipment_unit.order_id)
 
         with transaction.atomic():
-            # Historia przechowuje stan przed zmianą
             create_shipment_unit_history(
-                shipment_unit=shipment_unit,
-                user=request.user,
+                shipment_unit=shipment_unit, user=request.user,
                 action=ShipmentUnitHistory.ACTION_UPDATE,
             )
-
             shipment_unit.quantity = quantity
             shipment_unit.palette = palette
+            shipment_unit.palette_quantity = palette_quantity
             shipment_unit.save()
-
-        messages.success(
-            request,
-            f"Jednostka #{shipment_unit.id} została zaktualizowana.",
-        )
-
-        return redirect(
-            "warehouse:shipment-unit-create",
-            order_id=shipment_unit.order_id,
-        )
+        messages.success(request, f"Jednostka #{shipment_unit.id} została zaktualizowana.")
+        return redirect("warehouse:shipment-unit-create", order_id=shipment_unit.order_id)
 
 
 class ShipmentUnitDeleteView(
@@ -3668,7 +3579,7 @@ def build_shipment_summary(items):
 
     Dla każdego produktu:
     - suma sztuk,
-    - liczba jednostek/palet,
+    - suma liczby palet,
     - liczba poszczególnych typów palet.
     """
 
@@ -3725,11 +3636,12 @@ def build_shipment_summary(items):
         quantity = int(shipment_unit.quantity or 0)
 
         product_group["total_quantity"] += quantity
-        product_group["palettes_count"] += 1
-        product_group["palette_types"][palette_name] += 1
+        product_group["palettes_count"] += shipment_unit.palette_quantity
+        if shipment_unit.palette_quantity:
+            product_group["palette_types"][palette_name] += shipment_unit.palette_quantity
 
         customer_group["total_quantity"] += quantity
-        customer_group["palettes_count"] += 1
+        customer_group["palettes_count"] += shipment_unit.palette_quantity
 
     result = []
 
@@ -3808,6 +3720,7 @@ class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
                 "shipment_unit__order__product",
                 "shipment_unit__product",
                 "shipment_unit__palette",
+                "shipment_unit__customer",
                 "scanned_by",
             )
             .order_by("-scanned_at", "-id")
@@ -4003,6 +3916,7 @@ class ActiveShipmentView(LoginRequiredMixin, View):
                 "shipment_unit__order__product",
                 "shipment_unit__product",
                 "shipment_unit__palette",
+                "shipment_unit__customer",
                 "scanned_by",
             )
             .order_by("-scanned_at", "-id")
@@ -4132,6 +4046,7 @@ class ShipmentDetailView(LoginRequiredMixin, View):
                 "shipment_unit__order__product",
                 "shipment_unit__product",
                 "shipment_unit__palette",
+                "shipment_unit__customer",
                 "scanned_by",
             )
             .order_by("-scanned_at", "-id")
@@ -4173,6 +4088,9 @@ class ShipmentListView(LoginRequiredMixin, View):
                 annotated_units_count=Count(
                     "items",
                     distinct=True,
+                ),
+                annotated_palettes_count=Coalesce(
+                    Sum("items__shipment_unit__palette_quantity"), 0,
                 ),
                 annotated_total_quantity=Coalesce(
                     Sum("items__shipment_unit__quantity"),
