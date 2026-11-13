@@ -1845,7 +1845,7 @@ class SellProductList(PermissionRequiredMixin, View):
             "products": Product.objects.all().order_by("name"),  # do <select> w modalu
             "palette_quantity": 1,
             "selected_palette_id": "",
-            "selected_customer_id": order.customer_id,
+            # "selected_customer_id": order.customer_id,
             "customers": Buyer.objects.all().order_by("name"),
             "sells": sells
         }
