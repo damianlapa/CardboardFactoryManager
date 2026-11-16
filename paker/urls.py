@@ -13,6 +13,7 @@ from paker.views.dashboard import DashboardView
 
 urlpatterns = [
     path('production/', include('production.urls')),
+    path("quotations/", include("quotations.urls")),
     path(
         "modern_production/",
         include(

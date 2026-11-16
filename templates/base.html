@@ -162,6 +162,19 @@
         {% endif %}
 
 
+        <!-- QUOTATIONS -->
+
+        {% if sidebar_access.products %}
+
+        <a href="{% url 'quotations:dashboard' %}"
+           class="app-navigation__item {% if request.resolver_match.namespace == 'quotations' %}is-active{% endif %}">
+            <span class="app-navigation__icon"><i class="fa-solid fa-calculator" aria-hidden="true"></i></span>
+            <span>Wyceny</span>
+        </a>
+
+        {% endif %}
+
+
         <!-- PRODUCTs -->
 
         {% if sidebar_access.products %}

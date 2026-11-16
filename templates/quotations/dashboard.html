@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Centrum wycen | PAKER{% endblock %}
+{% block page_title %}Centrum wycen{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/quotations/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="quotation-dashboard">
+    <header class="qd-header">
+        <div>
+            <span class="qd-eyebrow">OFERTOWANIE · {{ today|date:"d.m.Y" }}</span>
+            <h1 class="app-page-title">Centrum wycen</h1>
+            <p class="qd-description">Klienci, wyceny i opakowania w jednym miejscu.</p>
+        </div>
+        <span class="qd-header-icon" aria-hidden="true"><i class="fa-solid fa-calculator"></i></span>
+    </header>
+
+    <section aria-labelledby="qd-summary-heading">
+        <div class="qd-section-heading">
+            <h2 id="qd-summary-heading">Przegląd wycen</h2>
+            <span>Wszystkie dane — niezależnie od filtrów listy</span>
+        </div>
+        <div class="qd-kpis">
+            <article class="app-card qd-kpi">
+                <span class="qd-kpi-icon" aria-hidden="true"><i class="fa-solid fa-file-invoice"></i></span>
+                <div><h3>Wyceny</h3><strong>{{ counters.total }}</strong><span>łącznie w systemie</span></div>
+            </article>
+            <article class="app-card qd-kpi">
+                <span class="qd-kpi-icon" aria-hidden="true"><i class="fa-regular fa-calendar"></i></span>
+                <div><h3>W tym miesiącu</h3><strong>{{ counters.month }}</strong><span>według daty wyceny</span></div>
+            </article>
+            <article class="app-card qd-kpi">
+                <span class="qd-kpi-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
+                <div><h3>Klienci wycen</h3><strong>{{ counters.customers }}</strong><span>firm w kartotece wycen</span></div>
+            </article>
+            <article class="app-card qd-kpi">
+                <span class="qd-kpi-icon" aria-hidden="true"><i class="fa-solid fa-box-open"></i></span>
+                <div><h3>Pozycje wycen</h3><strong>{{ counters.items }}</strong><span>wycenianych opakowań</span></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="app-card qd-list" aria-labelledby="qd-list-heading">
+        <div class="app-card__header qd-list-heading">
+            <div>
+                <h2 id="qd-list-heading" class="app-card__title">{% if has_filters %}Wyniki wyszukiwania{% else %}Wyceny{% endif %}</h2>
+                <p>Od najnowszej daty wyceny</p>
+            </div>
+            {% if not filter_errors %}<span class="qd-count">Liczba wycen: {{ page_obj.paginator.count }}</span>{% endif %}
+        </div>
+
+        <form class="qd-filters" method="get" action="{% url 'quotations:dashboard' %}" role="search" aria-label="Filtry wycen">
+            <div class="qd-field qd-field--search">
+                <label for="qd-search">Klient lub numer wyceny</label>
+                <input id="qd-search" name="search" type="search" maxlength="200" value="{{ filters.search }}" placeholder="Nazwa firmy lub np. #12">
+            </div>
+            <div class="qd-field">
+                <label for="qd-date-from">Data od</label>
+                <input id="qd-date-from" name="date_from" type="date" value="{{ filters.date_from }}">
+            </div>
+            <div class="qd-field">
+                <label for="qd-date-to">Data do</label>
+                <input id="qd-date-to" name="date_to" type="date" value="{{ filters.date_to }}">
+            </div>
+            <div class="qd-filter-actions">
+                <button class="app-btn app-btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Szukaj</button>
+                {% if has_filters %}<a class="app-btn app-btn-secondary" href="{% url 'quotations:dashboard' %}">Wyczyść</a>{% endif %}
+            </div>
+        </form>
+
+        {% if filter_errors %}
+            <div class="qd-errors" role="alert">
+                {% for error in filter_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% elif page_obj.paginator.count %}
+            <div class="qd-table-wrap" role="region" aria-label="Lista wycen" tabindex="0">
+                <table class="qd-table">
+                    <caption class="qd-sr-only">Wyceny uporządkowane od najnowszej daty</caption>
+                    <thead><tr><th scope="col">Numer wyceny</th><th scope="col">Klient</th><th scope="col">Data wyceny</th><th scope="col" class="qd-numeric">Liczba pozycji</th></tr></thead>
+                    <tbody>
+                        {% for quotation in page_obj %}
+                        <tr>
+                            <th scope="row"><span class="qd-number">#{{ quotation.pk }}</span></th>
+                            <td class="qd-customer">{{ quotation.customer.name }}</td>
+                            <td class="qd-date">{{ quotation.date|date:"d.m.Y" }}</td>
+                            <td class="qd-numeric"><span class="qd-items{% if not quotation.items_count %} qd-items--empty{% endif %}">{{ quotation.items_count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <footer class="qd-list-footer">
+                <span>Pozycje {{ page_obj.start_index }}–{{ page_obj.end_index }} z {{ page_obj.paginator.count }} wycen</span>
+                {% if page_obj.has_other_pages %}
+                <nav class="qd-pagination" aria-label="Strony listy wycen">
+                    {% if page_obj.has_previous %}
+                    <a class="app-btn app-btn-secondary" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Poprzednia</a>
+                    {% endif %}
+                    <span aria-current="page">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                    <a class="app-btn app-btn-secondary" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Następna</a>
+                    {% endif %}
+                </nav>
+                {% endif %}
+            </footer>
+        {% else %}
+            <div class="qd-empty">
+                <span class="qd-empty-icon" aria-hidden="true"><i class="fa-solid fa-file-invoice"></i></span>
+                {% if has_filters %}
+                    <h3>Brak pasujących wycen</h3>
+                    <p>Zmień nazwę firmy, numer wyceny lub zakres dat.</p>
+                    <a class="app-btn app-btn-secondary" href="{% url 'quotations:dashboard' %}">Pokaż wszystkie wyceny</a>
+                {% else %}
+                    <h3>Nie ma jeszcze żadnych wycen</h3>
+                    <p>Po dodaniu pierwszej wyceny pojawi się ona w tym miejscu.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
