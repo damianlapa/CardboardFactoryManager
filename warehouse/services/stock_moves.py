@@ -89,6 +89,7 @@ def move_ws(
     order_settlement=None,
     assembly=None,
     sell=None,
+    maintenance_part_usage=None
 ) -> MoveResult:
     """
     Jedyny legalny sposób zmiany WS.
@@ -143,6 +144,7 @@ def move_ws(
         quantity_after=after_at_date,
         date=date,
         sell=sell,
+        maintenance_part_usage=maintenance_part_usage,
     )
 
     # Jeśli wpisaliśmy w przeszłość albo w ten sam dzień co ostatnia historia:

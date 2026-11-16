@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {{ station }} | Produkcja
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/workstations.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="workstation-detail-page">
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="production-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:workstations' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Stanowiska
+            </a>
+
+
+            <div class="production-eyebrow">
+                Stanowisko produkcyjne
+            </div>
+
+
+            <h1>
+                {{ station.name }}
+            </h1>
+
+
+            <p>
+                Bieżąca produkcja, kolejka i planowane czasy realizacji.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- ACTIVE                                              -->
+    <!-- =================================================== -->
+
+    <section
+        class="
+            workstation-detail-section
+            workstation-detail-section--active
+        "
+    >
+
+        <div class="workstations-section__header">
+
+            <div>
+
+                <span class="workstations-section__eyebrow">
+                    Produkcja
+                </span>
+
+                <h2>
+                    Aktualnie w produkcji
+                </h2>
+
+                <p>
+                    Operacje uruchomione na stanowisku.
+                </p>
+
+            </div>
+
+
+            <span class="production-count">
+                {{ in_progress_rows|length }}
+            </span>
+
+        </div>
+
+
+        {% if in_progress_rows %}
+
+    <div class="workstation-unit-list">
+
+        {% for row in in_progress_rows %}
+
+            {% with unit=row.unit timing=row.timing %}
+
+                <div
+                    class="
+                        workstation-unit
+                        workstation-unit--active
+                        workstation-unit--timed
+                    "
+                >
+
+                    <!-- ORDER -->
+
+                    <div class="workstation-unit__main">
+
+                        <span>
+                            {{ unit.production_order.customer }}
+                        </span>
+
+                        <a
+                            href="{% url 'modern_production:unit-details' unit.id %}"
+                        >
+                            {{ unit.production_order.id_number }}
+                        </a>
+
+                        <small>
+                            Operacja {{ unit.sequence }}
+                        </small>
+
+                    </div>
+
+
+                    <!-- QUANTITY -->
+
+                    <div class="workstation-unit__quantity">
+
+                        <span>
+                            Ilość
+                        </span>
+
+                        <strong>
+                            {{ unit.quantity_start|default:unit.production_order.quantity|default:"—" }}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- TIMING -->
+
+                    <div class="workstation-unit__timing">
+
+                        <div>
+
+                            <span>
+                                Start
+                            </span>
+
+                            <strong>
+                                {% if unit.start %}
+                                    {{ unit.start|date:"H:i" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Planowany koniec
+                            </span>
+
+                            <strong>
+
+                                {% if timing.planned_end %}
+
+                                    {% if timing.planned_end.date == unit.start.date %}
+                                        {{ timing.planned_end|date:"H:i" }}
+                                    {% else %}
+                                        {{ timing.planned_end|date:"d.m H:i" }}
+                                    {% endif %}
+
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Pozostało
+                            </span>
+
+                            <strong
+                                class="
+                                    workstation-time
+
+                                    {% if timing.is_overdue %}
+                                        workstation-time--overdue
+                                    {% else %}
+                                        workstation-time--remaining
+                                    {% endif %}
+                                "
+                                {% if timing.planned_end %}
+                                    data-countdown-end="{{ timing.planned_end|date:'c' }}"
+                                {% endif %}
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- WORKERS -->
+
+                    <div class="workstation-unit__workers">
+
+                        {% for person in unit.persons.all %}
+
+                            <span>
+                                {{ person.first_name|first }}.
+                                {{ person.last_name }}
+                            </span>
+
+                        {% empty %}
+
+                            <span class="workstation-unit__workers-empty">
+                                Brak obsady
+                            </span>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- ACTION -->
+
+                    {% if perms.production.change_productionunit %}
+
+                        <form
+                            method="post"
+                            action="{% url 'modern_production:unit-finish' unit.id %}"
+                            data-workstation-action
+                            class="workstation-unit__finish"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="app-btn production-success-button"
+                            >
+                                <i class="fa-solid fa-check"></i>
+                                Zakończ
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                </div>
+
+            {% endwith %}
+
+        {% endfor %}
+
+    </div>
+
+        {% else %}
+
+            <div class="workstation-empty">
+
+                <i class="fa-solid fa-pause"></i>
+
+                <strong>
+                    Stanowisko jest wolne
+                </strong>
+
+                <span>
+                    Możesz uruchomić pierwszą operację z kolejki.
+                </span>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- QUEUE                                               -->
+    <!-- =================================================== -->
+
+    <section class="workstation-detail-section">
+
+        <div class="workstations-section__header">
+
+            <div>
+
+                <span class="workstations-section__eyebrow">
+                    Plan
+                </span>
+
+                <h2>
+                    Kolejka
+                </h2>
+
+                <p>
+                    Zaplanowane operacje i przewidywane czasy realizacji.
+                </p>
+
+            </div>
+
+
+            <span class="production-count">
+                {{ planned_count }}
+            </span>
+
+        </div>
+
+
+        {% if planned_rows %}
+
+    <div class="workstation-unit-list">
+
+        {% for row in planned_rows %}
+
+            {% with unit=row.unit timing=row.timing %}
+
+                <div
+                    class="
+                        workstation-unit
+                        workstation-unit--queue
+                        workstation-unit--timed
+                    "
+                >
+
+                    <!-- POSITION -->
+
+                    <div class="workstation-queue-position">
+                        {{ unit.order|default:forloop.counter }}
+                    </div>
+
+
+                    <!-- ORDER -->
+
+                    <div class="workstation-unit__main">
+
+                        <span>
+                            {{ unit.production_order.customer }}
+                        </span>
+
+                        <a
+                            href="{% url 'modern_production:unit-details' unit.id %}"
+                        >
+                            {{ unit.production_order.id_number }}
+                        </a>
+
+                        <small>
+                            Operacja {{ unit.sequence }}
+                        </small>
+
+                    </div>
+
+
+                    <!-- ESTIMATED TIME -->
+
+                    <div class="workstation-unit__quantity">
+
+                        <span>
+                            Czas operacji
+                        </span>
+
+                        <strong>
+                            {% if timing.estimated_time %}
+                                {{ timing.estimated_time }} min
+                            {% else %}
+                                —
+                            {% endif %}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- SCHEDULE -->
+
+                    <div class="workstation-unit__schedule">
+
+                        <div>
+
+                            <span>
+                                Planowany start
+                            </span>
+
+                            <strong>
+                                {% if timing.planned_start %}
+                                    {{ timing.planned_start|date:"d.m H:i" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Planowany koniec
+                            </span>
+
+                            <strong>
+                                {% if timing.planned_end %}
+                                    {{ timing.planned_end|date:"d.m H:i" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    {% if perms.production.change_productionunit %}
+
+                        <div class="workstation-unit__actions">
+
+                            <form
+                                method="post"
+                                action="{% url 'modern_production:unit-move-up' unit.id %}"
+                                data-workstation-action
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="production-icon-button"
+                                    title="Przesuń wyżej"
+                                >
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+
+                            </form>
+
+
+                            <form
+                                method="post"
+                                action="{% url 'modern_production:unit-move-down' unit.id %}"
+                                data-workstation-action
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="production-icon-button"
+                                    title="Przesuń niżej"
+                                >
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </button>
+
+                            </form>
+
+
+                            <form
+                                method="post"
+                                action="{% url 'modern_production:unit-remove-from-plan' unit.id %}"
+                                data-workstation-action
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="production-icon-button"
+                                    title="Usuń z kolejki"
+                                >
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+
+                            </form>
+
+
+                            {% if not in_progress_rows and forloop.first %}
+
+                                <form
+                                    method="post"
+                                    action="{% url 'modern_production:unit-start' unit.id %}"
+                                    data-workstation-action
+                                >
+                                    {% csrf_token %}
+
+                                    <button
+                                        type="submit"
+                                        class="app-btn app-btn-primary"
+                                    >
+                                        <i class="fa-solid fa-play"></i>
+                                        Start
+                                    </button>
+
+                                </form>
+
+                            {% endif %}
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endwith %}
+
+        {% endfor %}
+
+    </div>
+
+        {% else %}
+
+            <div class="workstation-empty">
+
+                <i class="fa-solid fa-list"></i>
+
+                <strong>
+                    Kolejka jest pusta
+                </strong>
+
+                <span>
+                    Brak zaplanowanych operacji.
+                </span>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- WAITING                                             -->
+    <!-- =================================================== -->
+
+    <section class="workstation-detail-section">
+
+        <details
+            class="workstation-collapsible"
+            data-state-key="waiting"
+        >
+
+            <summary>
+
+                <span>
+
+                    <i class="fa-solid fa-clock"></i>
+
+                    Niezaplanowane operacje
+
+                </span>
+
+
+                <strong>
+                    {{ waiting_count }}
+                </strong>
+
+            </summary>
+
+
+            {% if other_units %}
+
+                <div class="workstation-unit-list">
+
+                    {% for unit in other_units %}
+
+                        <div class="workstation-unit workstation-unit--waiting">
+
+
+                            <div class="workstation-unit__main">
+
+                                <span>
+                                    {{ unit.production_order.customer }}
+                                </span>
+
+
+                                <a
+                                    href="{% url 'modern_production:unit-details' unit.id %}"
+                                >
+                                    {{ unit.production_order.id_number }}
+                                </a>
+
+
+                                <small>
+                                    Operacja {{ unit.sequence }}
+                                </small>
+
+                            </div>
+
+
+                            <div class="workstation-unit__quantity">
+
+                                <span>
+                                    Czas operacji
+                                </span>
+
+                                <strong>
+                                    {% if unit.estimated_time %}
+                                        {{ unit.estimated_time }} min
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </strong>
+
+                            </div>
+
+
+                            <div class="workstation-unit__workers">
+
+                                {% for person in unit.persons.all %}
+
+                                    <span>
+                                        {{ person.first_name|first }}.
+                                        {{ person.last_name }}
+                                    </span>
+
+                                {% empty %}
+
+                                    <span class="workstation-unit__workers-empty">
+                                        Brak obsady
+                                    </span>
+
+                                {% endfor %}
+
+                            </div>
+
+
+                            {% if perms.production.change_productionunit %}
+
+                                <form
+                                    method="post"
+                                    action="{% url 'modern_production:unit-plan' unit.id %}"
+                                    data-workstation-action
+                                >
+
+                                    {% csrf_token %}
+
+                                    <button
+                                        type="submit"
+                                        class="app-btn app-btn-secondary"
+                                    >
+                                        <i class="fa-solid fa-calendar-plus"></i>
+                                        Zaplanuj
+                                    </button>
+
+                                </form>
+
+                            {% endif %}
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="workstation-empty">
+
+                    <strong>
+                        Brak niezaplanowanych operacji.
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+        </details>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- HISTORY                                             -->
+    <!-- =================================================== -->
+
+    <section class="workstation-detail-section">
+
+        <details
+            class="workstation-collapsible"
+            data-state-key="history"
+        >
+
+            <summary>
+
+                <span>
+
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+
+                    Historia 7 dni
+
+                </span>
+
+
+                <strong>
+                    {{ history_units|length }}
+                </strong>
+
+            </summary>
+
+
+            {% if history_units %}
+
+                <div class="workstation-history">
+
+                    {% for unit in history_units %}
+
+                        <a
+                            href="{% url 'modern_production:unit-details' unit.id %}"
+                            class="workstation-history-row"
+                        >
+
+                            <div>
+
+                                <strong>
+                                    {{ unit.production_order.id_number }}
+                                </strong>
+
+                                <span>
+                                    {{ unit.production_order.customer }}
+                                </span>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Start
+                                </span>
+
+                                <strong>
+                                    {{ unit.start|date:"d.m H:i"|default:"—" }}
+                                </strong>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Koniec
+                                </span>
+
+                                <strong>
+                                    {{ unit.end|date:"d.m H:i"|default:"—" }}
+                                </strong>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Czas
+                                </span>
+
+                                <strong>
+                                    {% if unit.estimated_time %}
+                                        {{ unit.estimated_time }} min
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </strong>
+
+                            </div>
+
+
+                            <i class="fa-solid fa-chevron-right"></i>
+
+                        </a>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="workstation-empty">
+
+                    <strong>
+                        Brak zakończonych operacji z ostatnich 7 dni.
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+        </details>
+
+    </section>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="{% static 'js/production/workstations.js' %}"
+></script>
+
+{% endblock %}

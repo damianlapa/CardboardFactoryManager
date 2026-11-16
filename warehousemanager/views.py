@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.views import View
@@ -25,6 +27,8 @@ class StartPage(View):
     def get(self, request):
         user = request.user
         visit_counter(user, 'index')
+        if user.groups.filter(name="WarehouseWorker").exists():
+            return redirect('warehouse:warehouse-list-view')
         return render(request, 'start-page.html', locals())
 
     def post(self, request):
@@ -39,40 +43,42 @@ class StartPage(View):
         return redirect('start-page')
 
 
-class LoginView(View):
-    def get(self, request):
-        print('here')
-        user = request.user
-        visit_counter(user, 'index')
-        next_url = request.GET.get('next')
-        print(next_url)
-        return render(request, 'start-page.html', locals())
-
-    def post(self, request):
-        name = request.POST.get('login')
-        password = request.POST.get('password')
-        next_url = request.POST.get('next')
-
-        user = authenticate(username=name, password=password)
-
-        if user is not None:
-            login(request, user)
-        if next_url:
-            return redirect(next_url)
-        return redirect('start-page')
-
-
-class LogoutView(View):
-    def get(self, request):
-        logout(request)
-
-        return redirect('start-page')
+# class LoginView(View):
+#     def get(self, request):
+#         user = request.user
+#         visit_counter(user, 'index')
+#         next_url = request.GET.get('next')
+#         return render(request, 'start-page.html', locals())
+#
+#     def post(self, request):
+#         name = request.POST.get('login')
+#         password = request.POST.get('password')
+#         next_url = request.POST.get('next')
+#
+#         user = authenticate(username=name, password=password)
+#
+#         if user is not None:
+#             login(request, user)
+#         if next_url:
+#             return redirect(next_url)
+#         return redirect('start-page')
+#
+#
+# class LogoutView(View):
+#     def get(self, request):
+#         logout(request)
+#
+#         return redirect('start-page')
 
 
 class MainPageView(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
     def get(self, request):
+        user = request.user
+        if user.groups.filter(name="WarehouseWorker").exists():
+            return redirect('warehouse:warehouse-list-view')
+        visit_counter(user, 'main_page')
         title = 'MAIN PAGE'
         orders = Order.objects.all()
         items = OrderItem.objects.all()
@@ -174,7 +180,11 @@ class AbsencesList(PermissionRequiredMixin, View):
             if month_date.month == datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
                 day_num = datetime.datetime.today().day
             else:
-                day_num = 32
+                day_num = 0
+                if month_date.year < datetime.datetime.today().year:
+                    day_num = 32
+                if month_date.month <= datetime.datetime.today().month and month_date.year == datetime.datetime.today().year:
+                    day_num = 32
             prev_month, next_month = previous_and_next_month(f'{month_split[1]}-{months.index(month_split[0]) + 1}-01')
 
         month_year = aa.split()
@@ -186,6 +196,19 @@ class AbsencesList(PermissionRequiredMixin, View):
                 job_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, month_days))
             workers = workers.exclude(
                 job_end__lt=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1, 1))
+            workers = list(workers)
+
+            from .models import LocalSetting
+            excluded_workers = LocalSetting.objects.filter(name='excluded_workers').first()
+            ew_list = []
+            if excluded_workers:
+                for ew in excluded_workers.value.split(','):
+                    worker = ew.split('_')
+                    worker = Person.objects.filter(first_name=worker[0], last_name=worker[1]).first()
+                    if worker:
+                        if worker in workers:
+                            workers.remove(worker)
+
             contracts = Contract.objects.filter(
                 date_start__lte=datetime.date(int(month_year[1]), months.index(month_year[0]) + 1,
                                               calendar.monthrange(year_num, month_num)[1]))
@@ -258,7 +281,7 @@ class AbsencesList(PermissionRequiredMixin, View):
             end_list_condition = next_month == f'{months[datetime.date.today().month]} {str(datetime.date.today().year)}'
         else:
             end_list_condition = next_month == f'{months[0]} {str(datetime.date.today().year + 1)}'
-        end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=31)
+        end_plus_31 = datetime.datetime.today() + datetime.timedelta(days=365)
         z = month_list('01-01-2017', datetime.datetime.strftime(end_plus_31, '%d-%m-%Y'))
 
         return render(request, 'warehousemanager-absenceslist.html', locals())
@@ -1234,7 +1257,8 @@ class ProfileView(LoginRequiredMixin, View):
             return render(request, 'warehousemanager-profile.html', locals())
 
 
-class MonthlyCardPresence(LoginRequiredMixin, View):
+class MonthlyCardPresence(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request, year, month, worker_id):
@@ -1552,7 +1576,8 @@ class MonthlyCardPresence(LoginRequiredMixin, View):
         return response
 
 
-class MonthlyCardPresenceAll(LoginRequiredMixin, View):
+class MonthlyCardPresenceAll(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request, year, month):
@@ -1903,7 +1928,8 @@ class MonthlyCardPresenceAll(LoginRequiredMixin, View):
         return response
 
 
-class WorkRemindersView(LoginRequiredMixin, View):
+class WorkRemindersView(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1915,7 +1941,8 @@ class WorkRemindersView(LoginRequiredMixin, View):
         return render(request, 'whm/workreminders.html', locals())
 
 
-class WorkReminderAdd(LoginRequiredMixin, View):
+class WorkReminderAdd(PermissionRequiredMixin, View):
+    permission_required = 'authentication_and_authorization.view_permission'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1934,7 +1961,8 @@ class WorkReminderAdd(LoginRequiredMixin, View):
             pass
 
 
-class GluerNumberView(LoginRequiredMixin, View):
+class GluerNumberView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.view_gluer_number"
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -2140,35 +2168,36 @@ class ActiveHours(LoginRequiredMixin, View):
         return render(request, 'whm/active_hours.html', locals())
 
 
-class WorkersVacationsTest(View):
-    def get(self, request):
-        result = ''
-        workers = Person.objects.all()
-        workers_cumulative = {}
-        for y in range(2017, datetime.date.today().year + 1):
-            result += f'<h1>{y}</h1>'
-            for w in workers:
-                if w.worker_vacation_in_year(y):
-                    if not w.job_end:
-                        vacations = 0 if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UW']
-                        vacations_on_demand = 0 if not 'UŻ' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UŻ']
-                        vacations += vacations_on_demand
-                        result += f'<h3>{w} - [{w.worker_vacation_in_year(y) - vacations}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
-                        if w in workers_cumulative.keys():
-                            workers_cumulative[w] += w.worker_vacation_in_year(y) - vacations
-                        else:
-                            workers_cumulative[w] = w.worker_vacation_in_year(y) - vacations
-            result += '<hr>'
-
-        result += '<hr>'
-        workers_data = [(worker, workers_cumulative[worker]) for worker in workers_cumulative.keys()]
-        workers_data.sort(key=lambda x:x[0].last_name)
-
-        for data in workers_data:
-            result += f'<h2>{data[0]} :: {data[1]}<h2>'
-
-
-        return HttpResponse(result)
+# to delete?
+# class WorkersVacationsTest(View):
+#     def get(self, request):
+#         result = ''
+#         workers = Person.objects.all()
+#         workers_cumulative = {}
+#         for y in range(2017, datetime.date.today().year + 1):
+#             result += f'<h1>{y}</h1>'
+#             for w in workers:
+#                 if w.worker_vacation_in_year(y):
+#                     if not w.job_end:
+#                         vacations = 0 if not 'UW' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UW']
+#                         vacations_on_demand = 0 if not 'UŻ' in w.worker_vacations(y).keys() else w.worker_vacations(y)['UŻ']
+#                         vacations += vacations_on_demand
+#                         result += f'<h3>{w} - [{w.worker_vacation_in_year(y) - vacations}] {w.worker_vacation_in_year(y)} - {w.worker_vacations(y)}</h3>'
+#                         if w in workers_cumulative.keys():
+#                             workers_cumulative[w] += w.worker_vacation_in_year(y) - vacations
+#                         else:
+#                             workers_cumulative[w] = w.worker_vacation_in_year(y) - vacations
+#             result += '<hr>'
+#
+#         result += '<hr>'
+#         workers_data = [(worker, workers_cumulative[worker]) for worker in workers_cumulative.keys()]
+#         workers_data.sort(key=lambda x:x[0].last_name)
+#
+#         for data in workers_data:
+#             result += f'<h2>{data[0]} :: {data[1]}<h2>'
+#
+#
+#         return HttpResponse(result)
 
 
 class NoteAdd(PermissionRequiredMixin, View):
@@ -2216,3 +2245,101 @@ class NoteDeleteView(PermissionRequiredMixin, View):
         note = Note.objects.get(id=note_id)
         note.delete()
         return redirect('deliveries-calendar')
+
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect, render
+from django.views import View
+
+from warehousemanager.forms import PersonPinForm
+from warehousemanager.models import Person
+
+
+class PersonPinChangeView(LoginRequiredMixin, View):
+    login_url = "login"
+    template_name = "whm/person_pin_change.html"
+
+    def get_person(self, request):
+        return Person.objects.filter(
+            user=request.user,
+            # job_end__isnull=True,
+        ).first()
+
+    def get(self, request):
+
+        print('%%%%')
+        person = self.get_person(request)
+
+        if not person:
+            messages.error(
+                request,
+                "Zalogowany użytkownik nie ma przypisanego aktywnego pracownika.",
+            )
+            return redirect("/")
+
+        form = PersonPinForm()
+
+        return render(request, self.template_name, {
+            "form": form,
+            "person": person,
+            "has_pin": person.has_pin(),
+        })
+
+    def post(self, request):
+        person = self.get_person(request)
+
+        if not person:
+            messages.error(
+                request,
+                "Zalogowany użytkownik nie ma przypisanego aktywnego pracownika.",
+            )
+            return redirect("/")
+
+        form = PersonPinForm(request.POST)
+        has_pin = person.has_pin()
+
+        if form.is_valid():
+            current_pin = (
+                form.cleaned_data.get("current_pin") or ""
+            ).strip()
+
+            new_pin = form.cleaned_data["new_pin"]
+
+            # Zmiana istniejącego PIN-u wymaga obecnego PIN-u
+            if has_pin:
+                if not current_pin:
+                    form.add_error(
+                        "current_pin",
+                        "Podaj obecny PIN.",
+                    )
+
+                elif not person.check_pin(current_pin):
+                    form.add_error(
+                        "current_pin",
+                        "Obecny PIN jest nieprawidłowy.",
+                    )
+
+                elif current_pin == new_pin:
+                    form.add_error(
+                        "new_pin",
+                        "Nowy PIN musi być inny niż obecny.",
+                    )
+
+            if not form.errors:
+                person.set_pin(new_pin)
+                person.save(update_fields=["pin"])
+
+                messages.success(
+                    request,
+                    "PIN został ustawiony." if not has_pin
+                    else "PIN został zmieniony.",
+                )
+
+                return redirect("person-pin-change")
+
+        return render(request, self.template_name, {
+            "form": form,
+            "person": person,
+            "has_pin": has_pin,
+        })

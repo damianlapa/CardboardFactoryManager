@@ -1,0 +1,85 @@
+{% extends "__base3__.html" %}
+{% block style %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/warehouse/order-settle-order.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+
+    <h2>Zapełnienie magazynu w czasie</h2>
+    <p class="text-muted">Łączna objętość wszystkich magazynów [m³]</p>
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-auto">
+            <label class="form-label">Od</label>
+            <input type="date" name="date_from" class="form-control"
+                   value="{{ date_from|date:'Y-m-d' }}">
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label">Do</label>
+            <input type="date" name="date_to" class="form-control"
+                   value="{{ date_to|date:'Y-m-d' }}">
+        </div>
+
+        <div class="col-auto d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">
+                Pokaż
+            </button>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-body">
+            <canvas id="warehouseVolumeChart" height="100"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const labels = {{ labels|safe }};
+    const values = {{ values|safe }};
+
+    const ctx = document.getElementById("warehouseVolumeChart");
+
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Objętość magazynu [m³]",
+                data: values,
+                tension: 0.25,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "m³"
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: "Data"
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

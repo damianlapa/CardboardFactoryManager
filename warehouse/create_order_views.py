@@ -1,5 +1,8 @@
+import math
+
 from django.views import View
 from django.http import HttpResponse
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from openpyxl import load_workbook
 from io import BytesIO
 import requests
@@ -7,7 +10,7 @@ import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 import gspread
-from warehouse.models import Order
+from warehouse.models import Order, ProductPackaging
 from warehousemanager.models import LocalSetting
 
 
@@ -93,20 +96,31 @@ def get_data_by_values(provider: str, number: str, year_short: str, year_full: s
     return None
 
 
-class GenerateOrderInlineView(View):
+class GenerateOrderInlineView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_order"
     def get(self, request, order_id, *args, **kwargs):
 
         order = Order.objects.get(id=order_id)
+        product = order.product
         num, year = order.order_id.split('/')
         order_provider = order.provider.shortcut
 
+        euro = False
+
         data = get_data_by_values(order_provider, num, year, f'20{year}')
 
+        if product:
+            inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
+            if inf_pakowanie:
+                euro = "EPAL" in inf_pakowanie.palette.name
+        else:
+            inf_pakowanie = ""
+
         # Pobierz plik wzoru z linku
-        euro = order.customer.name in euro_clients()
-        url = "https://paker.eu/wp-content/uploads/2025/09/wzor2.xlsx"
+        euro = order.customer.name in euro_clients() or euro
+        url = "https://paker.eu/wp-content/uploads/2026/04/wzor2.xlsx"
         if euro:
-            url = "https://paker.eu/wp-content/uploads/2025/07/wzor2euro.xlsx"
+            url = "https://paker.eu/wp-content/uploads/2026/04/wzor2euro.xlsx"
         response = requests.get(url)
 
         if response.status_code != 200:
@@ -115,6 +129,9 @@ class GenerateOrderInlineView(View):
         # Załaduj do workbooka i zmodyfikuj
         wb = load_workbook(filename=BytesIO(response.content))
         ws = wb.active
+
+        if inf_pakowanie:
+            ws['A50'] = inf_pakowanie.order_info()
 
         dane_polimeru = get_polymer_number(data[10].strip())
         if dane_polimeru:
@@ -197,6 +214,193 @@ class GenerateOrderInlineView(View):
                 ws['E17'] = wykrojnik
             else:
                 print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
+
+
+        # Zapisz do pamięci (RAM)
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Zwróć jako odpowiedź
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'inline; filename="{nazwa_zlecenia}.xlsx"'
+        return response
+
+import qrcode
+
+from io import BytesIO
+from openpyxl import load_workbook
+from openpyxl.drawing.image import Image as OpenpyxlImage
+from django.urls import reverse
+
+class GenerateOrderInlineView2(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_order"
+    def get(self, request, order_id, *args, **kwargs):
+
+        order = Order.objects.get(id=order_id)
+        product = order.product
+        num, year = order.order_id.split('/')
+        order_provider = order.provider.shortcut
+
+        euro = False
+
+        data = get_data_by_values(order_provider, num, year, f'20{year}')
+
+        # data = ["" for _ in range(100)]
+
+        if product:
+            inf_pakowanie = ProductPackaging.objects.filter(product=product).first()
+            if inf_pakowanie:
+                euro = "EPAL" in inf_pakowanie.palette.name
+        else:
+            inf_pakowanie = ""
+
+        # Pobierz plik wzoru z linku
+        euro = order.customer.name in euro_clients() or euro
+        url = "https://paker.eu/wp-content/uploads/2026/07/wzor2euro-—-f201.xlsx"
+        if euro:
+            url = "https://paker.eu/wp-content/uploads/2026/07/wzor2euro-—-f201.xlsx"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            return HttpResponse("Nie udało się pobrać wzoru", status=500)
+
+        # Załaduj do workbooka i zmodyfikuj
+        wb = load_workbook(filename=BytesIO(response.content))
+        ws = wb.active
+
+        if inf_pakowanie:
+            ws['A50'] = inf_pakowanie.order_info()
+
+        if data[10]:
+            dane_polimeru = get_polymer_number(data[10].strip())
+            if dane_polimeru:
+                ws['E14'] = dane_polimeru['number']
+                ws['M14'] = dane_polimeru['colors']
+
+        # INFORMACJE DODATKOWE
+        ws['A29'] = data[25]
+        numer_zlecenia = f'{data[0]} {data[1]}/{data[2]} {data[18]}'
+        nazwa_zlecenia = f'{data[0]} {data[1]}_{data[2]}_{data[18]}'
+        ws['J3'] = numer_zlecenia
+
+        # DATY
+        date = datetime.datetime.today()
+        ws['W1'] = date
+        if data[5]:
+            try:
+                date2 = datetime.datetime.strptime(data[5], '%Y-%m-%d').date() + datetime.timedelta(days=21)
+                day = date2.day if len(str(date2.day)) == 2 else f'0{date2.day}'
+                month = date2.month if len(str(date2.month)) == 2 else f'0{date2.month}'
+                date2 = f'{day}-{month}-{date2.year}'
+            except Exception as e:
+                date2 = ''
+            ws['W2'] = date2 if not data[7] else f'{data[7][8:]}-{data[7][5:7]}-{data[7][:4]}'
+
+        # proces produkcyjny
+
+        if data[9]:
+            stanowiska = data[9].split('/')
+            for num in range(len(stanowiska)):
+                komorka = 5 + num * 3
+                if stanowiska[num] == 'SKL':
+                    numer_sklejarka = get_gluer_number(data[23].lower().strip(), data[18].strip().upper())
+                    if numer_sklejarka:
+                        ws[f'Q{komorka}'] = f'SKLEJARKA({numer_sklejarka["number"]})'
+                        ws['A50'] = numer_sklejarka['comments']
+                    else:
+                        ws[f'Q{komorka}'] = f'SKLEJARKA(   )'
+                else:
+                    ws[f'Q{komorka}'] = stanowiska[num]
+
+        # wymiary
+        wymiary = data[23].lower().split('x')
+        if len(wymiary) == 3:
+            ws['A10'] = wymiary[0]
+            ws['G10'] = wymiary[1]
+            ws['M10'] = wymiary[2]
+        elif len(wymiary) == 2:
+            ws['A10'] = wymiary[0]
+            ws['G10'] = wymiary[1]
+        elif len(wymiary) == 1:
+            ws['A10'] = wymiary[0]
+
+        # oznaczenie
+        oznaczenie = f'{data[19]}{data[20]}{data[21]}'
+        ws['A23'] = oznaczenie
+
+        # format tektury
+        format_tektury = f'{data[12]}x{data[13]}'
+        ws['F23'] = format_tektury
+
+        # ilosc zamowiona
+        ilosc_zamowiona = data[14]
+        ws['L23'] = ilosc_zamowiona
+
+        # ilosc przyjeta
+        ilosc_przyjeta = data[15]
+        ws['N23'] = ilosc_przyjeta
+
+        # OZNACZENIE ETYKIETY
+        oznaczenie_etykiety = data[24]
+        ws['K62'] = oznaczenie_etykiety
+
+        if 'TYG' in data[9]:
+            if data[11]:
+                wykrojnik = get_punch_number(name=data[11].strip())
+            else:
+                wykrojnik = None
+            if wykrojnik:
+                ws['E17'] = wykrojnik
+            else:
+                print('BRAK WYKROJNIKA! -> SPRAWDŹ POPRAWNOŚĆ')
+
+        setup_values = order.setup_values()
+        if setup_values:
+            a, d, h, s, s2 = setup_values
+            a += math.ceil(int(wymiary[1])/2)
+            d += int(wymiary[0])
+            h += int(wymiary[2])
+            s += int(wymiary[1])
+            s2 += int(wymiary[1])
+        else:
+            a, d, h, s, s2 = ("-" for _ in range(5))
+
+        ws['AC71'] = a
+        ws['AC73'] = d
+        ws['AC75'] = h
+        ws['AC77'] = s
+        ws['AC79'] = s2
+
+        # KOD QR
+        qr_value = request.build_absolute_uri(
+            reverse("warehouse:order-detail-view", kwargs={"order_id": order.id})
+        )
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(qr_value)
+        qr.make(fit=True)
+
+        qr_pil_image = qr.make_image(fill_color="black", back_color="white")
+
+        qr_buffer = BytesIO()
+        qr_pil_image.save(qr_buffer, format="PNG")
+        qr_buffer.seek(0)
+
+        qr_excel_image = OpenpyxlImage(qr_buffer)
+        qr_excel_image.width = 122
+        qr_excel_image.height = 122
+
+        # Komórka, w której ma zaczynać się kod QR
+        ws.add_image(qr_excel_image, "B72")
 
         # Zapisz do pamięci (RAM)
         output = BytesIO()

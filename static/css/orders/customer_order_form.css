@@ -1,0 +1,166 @@
+.orders-create-page {
+    max-width: 860px;
+
+    margin: 0 auto;
+}
+
+.orders-create-card {
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid var(--app-border, #e5e7eb);
+    border-radius: 14px;
+}
+
+.orders-create-card__header {
+    padding: 20px 22px;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.orders-create-card__eyebrow {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+
+    color: #6b7280;
+}
+
+.orders-create-card__header h1 {
+    margin: 0;
+
+    font-size: 22px;
+    font-weight: 750;
+}
+
+.orders-create-card__header p {
+    margin: 6px 0 0;
+
+    font-size: 12px;
+
+    color: #6b7280;
+}
+
+.orders-create-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 16px;
+
+    padding: 22px;
+}
+
+.orders-create-form p {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    margin: 0;
+}
+
+.orders-create-form p:has(textarea) {
+    grid-column: 1 / -1;
+}
+
+.orders-create-form label {
+    font-size: 11px;
+    font-weight: 700;
+
+    color: #6b7280;
+}
+
+.orders-create-form input,
+.orders-create-form select,
+.orders-create-form textarea {
+    width: 100%;
+
+    min-height: 42px;
+
+    padding: 8px 10px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    font-size: 13px;
+}
+
+.orders-create-form textarea {
+    min-height: 100px;
+
+    resize: vertical;
+}
+
+.orders-create-form input:focus,
+.orders-create-form select:focus,
+.orders-create-form textarea:focus {
+    outline: none;
+
+    border-color: #6b7280;
+
+    box-shadow:
+        0 0 0 3px rgba(17, 24, 39, 0.06);
+}
+
+.orders-create-form .errorlist {
+    margin: 0;
+    padding: 0;
+
+    color: #b91c1c;
+
+    font-size: 11px;
+
+    list-style: none;
+}
+
+.orders-create-form__footer {
+    grid-column: 1 / -1;
+
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+
+    padding-top: 8px;
+}
+
+.orders-create-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 40px;
+
+    padding: 0 15px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: #111827;
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.orders-create-button:hover {
+    background: #1f2937;
+}
+
+@media (max-width: 700px) {
+
+    .orders-create-form {
+        grid-template-columns: 1fr;
+    }
+
+}

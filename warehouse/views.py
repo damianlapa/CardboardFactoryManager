@@ -1,49 +1,137 @@
 # warehouse/views.py
 
+from warehousemanager.models import Buyer
 from django.views.generic import ListView
 from warehouse.services.products import safe_get_or_create_product
 from warehouse.forms import WarehouseStockFifoSellForm
 from django.shortcuts import HttpResponse
 from django.views import View
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.db.models.deletion import ProtectedError
 from django.views.generic import CreateView, DetailView
 from django.urls import reverse
-from django.contrib import messages
-from django.shortcuts import redirect
 from warehouse.gs_connection import *
 from warehouse.models import *
-from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, \
-    OrderToOrderShiftForm, ManuallyOrdersForm
+from warehouse.forms import DeliveryItemForm, DeliveryForm, DeliveryPaletteFormSet, DeliverySpecialItemForm, ManuallyOrdersForm
 from warehousemanager.models import Buyer, LocalSetting
 from production.models import ProductionOrder, ProductionUnit
 import pdfplumber
-from django.db import transaction
-from django.db.models import Sum
-import datetime, calendar
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
+import calendar
 from collections import defaultdict
 from django.shortcuts import render
 from django.utils.timezone import now
 from django.db.models import Prefetch
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from warehouse.services.bom_preview import bom_preview_for_order
 from warehouse.services.bom_realization import realize_order_bom
 from warehouse.services.stock_moves import rebuild_ws_history_from_date
-from django.db.models import F
 from warehouse.models import attach_origin_orders_to_sell
-from warehousemanager.functions import  visit_counter
+from warehousemanager.functions import visit_counter
 from django.utils.dateparse import parse_date
 import datetime
 import secrets
 from django.conf import settings
+from warehouse.models import BOM, Order
+from warehouse.forms import OrderFromBOMForm
 from django.contrib import messages
-
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.db.models import Sum
+from django.core.exceptions import ValidationError
 import logging
+from django.core.exceptions import PermissionDenied
+
 logger = logging.getLogger(__name__)
+
+
+def parse_shipment_unit_data(data, product):
+    """quantity oznacza sumę sztuk w jednej jednostce wysyłkowej."""
+    try:
+        quantity = int(data.get("quantity", ""))
+    except (TypeError, ValueError):
+        raise ValueError("Podaj całkowitą liczbę sztuk.")
+    if quantity <= 0:
+        raise ValueError("Ilość sztuk musi być większa od zera.")
+    try:
+        palette_quantity = int(data.get("palette_quantity", ""))
+    except (TypeError, ValueError):
+        raise ValueError("Podaj całkowitą liczbę palet.")
+    if palette_quantity < 0:
+        raise ValueError("Liczba palet nie może być ujemna.")
+
+    palette_id = data.get("palette", "")
+    palette = None
+    if palette_id == "No palette":
+        palette_quantity = 0
+    elif not palette_id:
+        packaging = ProductPackaging.objects.select_related("palette").filter(product=product).first()
+        palette = packaging.palette if packaging else None
+    else:
+        try:
+            palette_pk = int(palette_id)
+        except (TypeError, ValueError):
+            raise ValueError("Wybrana paleta nie istnieje.")
+        palette = Palette.objects.filter(pk=palette_pk).first()
+        if palette is None:
+            raise ValueError("Wybrana paleta nie istnieje.")
+
+    if palette is None:
+        palette_quantity = 0
+    elif palette_quantity == 0:
+        raise ValueError("Dla wybranej palety liczba palet musi być większa od zera.")
+    return quantity, palette, palette_quantity
+
+
+def create_shipment_unit_history(*, shipment_unit, user, action):
+    return ShipmentUnitHistory.objects.create(
+        shipment_unit=shipment_unit,
+        shipment_unit_original_id=shipment_unit.id,
+        order=shipment_unit.order,
+        product=shipment_unit.product,
+        palette=shipment_unit.palette,
+        quantity=shipment_unit.quantity,
+        palette_quantity=shipment_unit.palette_quantity,
+        action=action,
+        changed_by=user,
+    )
+
+
+class ShipmentUnitOwnerRequiredMixin:
+    shipment_unit_url_kwarg = "shipment_unit_id"
+
+    def get_shipment_unit(self):
+        if not hasattr(self, "_shipment_unit"):
+            self._shipment_unit = get_object_or_404(
+                ShipmentUnit.objects.select_related(
+                    "order",
+                    "product",
+                    "palette",
+                    "created_by",
+                ),
+                id=self.kwargs[self.shipment_unit_url_kwarg],
+            )
+
+        return self._shipment_unit
+
+    def check_shipment_unit_permission(self):
+        shipment_unit = self.get_shipment_unit()
+        user = self.request.user
+
+        if user.is_superuser:
+            return
+
+        if shipment_unit.created_by_id == user.id:
+            return
+
+        raise PermissionDenied(
+            "Nie masz uprawnień do zmiany tej jednostki wysyłkowej."
+        )
 
 
 def _check_undo_password(request):
@@ -339,6 +427,27 @@ def load_orders(year, row=None, division=None, row_list=None, preview_only=False
                 else:
                     result += f"{order_id} no cardboard price or order date<br>\n"
 
+            from production.models import ProductionOrder
+            from warehousemanager.models import Punch, Photopolymer
+
+            try:
+                photopolymer = Photopolymer.objects.filter(name__icontains=data[10]).first() if data[10] else None
+                punch = Punch.objects.filter(name__icontains=data[11]).first() if data[11] else None
+                ProductionOrder.objects.get_or_create(
+                    id_number=f'{provider_shortcut} {order_id}',
+                    cardboard=f'{data[19]}',
+                    cardboard_dimensions=f'{data[12]}x{data[13]}',
+                    customer=Buyer.objects.get(name=data[18].upper()),
+                    dimensions=f'{data[23]}',
+                    ordered_quantity=f'{data[14]}',
+                    quantity=0,
+                    photopolymer=photopolymer,
+                    punch=punch,
+                )
+
+            except Exception as e:
+                result += f"{e}<br>\n"
+
         except Exception as e:
             result += f"{e}<br>\n"
 
@@ -349,24 +458,25 @@ def load_orders(year, row=None, division=None, row_list=None, preview_only=False
 
 
 def delete_delivery_ajax(request, delivery_id):
-    if request.method == "POST":
-        delivery = get_object_or_404(Delivery, id=delivery_id)
+    user = request.user
+    if user.has_perm('warehouse.delete_delivery'):
+        if request.method == "POST":
+            delivery = get_object_or_404(Delivery, id=delivery_id)
 
-        try:
-            with transaction.atomic():
-                delivery.deliverypalette_set.all().delete()
-                delivery.deliveryitem_set.all().delete()
-                delivery.delete()
-        except ProtectedError:
-            return JsonResponse({"success": False,
-                                 "message": f"Delivery {delivery.number} can not be deleted. One or more delivery item is already added to stock."})
+            try:
+                with transaction.atomic():
+                    delivery.deliverypalette_set.all().delete()
+                    delivery.deliveryitem_set.all().delete()
+                    delivery.delete()
+            except ProtectedError:
+                return JsonResponse({"success": False,
+                                     "message": f"Delivery {delivery.number} can not be deleted. One or more delivery item is already added to stock."})
 
-        return JsonResponse({"success": True, "message": f"Delivery {delivery.number} deleted successfully."})
-    return JsonResponse({"success": False, "message": "Invalid request method."})
+            return JsonResponse({"success": True, "message": f"Delivery {delivery.number} deleted successfully."})
+        return JsonResponse({"success": False, "message": "Invalid request method."})
 
 
 def parse_wz_pdf(pdf_file):
-    print('here')
     errors = []
     provider = ''
     wz_number = ''
@@ -391,7 +501,6 @@ def parse_wz_pdf(pdf_file):
     with pdfplumber.open(pdf_file) as pdf:
         all_text = ""
         for page in pdf.pages:
-            print(type(page.extract_text()))
             text = page.extract_text() or ""
             all_text += text + "\n"
 
@@ -416,7 +525,12 @@ def parse_wz_pdf(pdf_file):
                 palettes = f'{p_line[0]};{p_line[1]};{p_line[3].split(",")[0]}'
                 palletes_list.append(palettes)
             if "Nr zam. klienta:" in line:
-                number = line.split("Nr zam. klienta:")[1].split(" ")[0].strip()
+                number = line.split("Nr zam. klienta:")[1].strip().split(" ")[0].strip()
+                new_num = ""
+                for n in number:
+                    if n.isdigit() or n == '/':
+                        new_num += n
+                number = new_num
                 orders.append([number, cardboard, dimensions, quantity])
             if len(line.split(' ')) == 5 or len(line.split(' ')) == 6:
                 line_split = line.split(' ')
@@ -636,11 +750,11 @@ def collect_new_products_for_wz(parsed):
     }
 
 
-class LoadWZ(LoginRequiredMixin, View):
+class LoadWZ(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_delivery"
     login_url = reverse_lazy('login')
 
     def get(self, request):
-        print('#1')
         return render(request, "warehouse/load_wz.html")
 
     def post(self, request):
@@ -799,6 +913,10 @@ class LoadWZ(LoginRequiredMixin, View):
                         quantity=int(str(item[3]).replace(' ', '').replace(',', '')),
                         palettes_quantity=item[4] if len(item) > 4 else ''
                     )
+                    print(f'{order.provider.shortcut} {order.order_id}')
+                    production_order = ProductionOrder.objects.get(id_number=f'{order.provider.shortcut} {order.order_id}')
+                    production_order.quantity += delivery_item.quantity
+                    production_order.save()
                     result.append(f'{delivery_item} created')
                 except Order.DoesNotExist:
                     errors.append(f'Order {item[0]} does not exist.')
@@ -814,7 +932,8 @@ class LoadWZ(LoginRequiredMixin, View):
         })
 
 
-class OrderListView(LoginRequiredMixin, View):
+class OrderListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_order'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -822,14 +941,16 @@ class OrderListView(LoginRequiredMixin, View):
         sort_by = request.GET.get('sort', 'order_date')
         order_direction = request.GET.get('dir', 'asc')
         manual = request.GET.get('manual')
-        all_orders = request.GET.get('all')
+        # all_orders = request.GET.get('all')
+        customer = request.GET.get('customer')
+        providers = Provider.objects.all()
+        provider = request.GET.get('provider')
+        years = [str(y) for y in range(2022, datetime.date.today().year + 1)]
+        year = request.GET.get('year')
+        status = request.GET.get('status')
 
         if order_direction == 'desc':
             sort_by = f'-{sort_by}'
-        if all_orders:
-            orders = Order.objects.all().order_by(sort_by)
-        else:
-            orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
         if manual:
             year = request.GET.get('year')
             orders = Order.objects.filter(provider=Provider.objects.get(name=manual))
@@ -846,11 +967,46 @@ class OrderListView(LoginRequiredMixin, View):
 
             orders = [o[1] for o in orders_]
 
+        # if all_orders:
+        #     orders = Order.objects.all().order_by(sort_by)
+        # else:
+        #     orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
+
+        if any((customer, provider, year, status)):
+            orders = Order.objects.all()
+
+            if customer:
+                customers = Buyer.objects.filter(name__icontains=customer)
+                orders = orders.filter(customer__in=customers).order_by(sort_by)
+
+            if provider:
+                cardboard_providers = Provider.objects.filter(name__icontains=provider)
+                orders = orders.filter(provider__in=cardboard_providers).order_by(sort_by)
+
+            if year:
+                start = datetime.date(int(year), 1, 1)
+                end = datetime.date(int(year), 12, 31)
+                orders = orders.filter(order_date__lte=end, order_date__gte=start).order_by(sort_by)
+
+            if status:
+                print(status)
+                if status == "finished":
+                    orders = orders.filter(finished=True).order_by(sort_by)
+                elif status == "delivered":
+                    orders = orders.filter(delivered=True).order_by(sort_by)
+                else:
+                    orders = orders.filter(delivered=False, finished=False).order_by(sort_by)
+
+        else:
+            orders = Order.objects.filter(delivered=True, finished=False).order_by(sort_by)
+
+
         orders_num = len(list(orders))
         return render(request, 'warehouse/order_list.html', locals())
 
 
-class OrderDetailView(LoginRequiredMixin, View):
+class OrderDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_order'
     login_url = reverse_lazy('login')
 
     def post(self, request, order_id):
@@ -881,262 +1037,171 @@ class OrderDetailView(LoginRequiredMixin, View):
 
         return JsonResponse({"ok": False, "error": "Nieznana akcja."}, status=400)
 
-    # def get(self, request, order_id):
-    #     stock_types = StockType.objects.filter(
-    #         stock_type__in=["material", "product", "special"]
-    #     ).order_by("stock_type", "unit")
-    #     order = Order.objects.get(id=order_id)
-    #     warehouses = Warehouse.objects.all()
-    #     settlements = (
-    #         OrderSettlement.objects
-    #         .filter(order=order)
-    #         .select_related("material", "material__stock", "material__warehouse")
-    #         .prefetch_related("stocksupplysettlement_set__stock_supply")
-    #         .order_by("-settlement_date", "-id")
-    #     )
-    #     warehouse_stocks_history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
-    #
-    #     sales = (
-    #         ProductSell3.objects
-    #         .filter(Q(order=order) | Q(order_parts__order=order))
-    #         .distinct()
-    #         .prefetch_related("order_parts", "order_parts__order")
-    #     )
-    #
-    #     products = [order.product]
-    #
-    #     warehouse_products = None
-    #     for p in products:
-    #         stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
-    #         delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
-    #         dimensions = models.CharField(max_length=32, null=True, blank=True)
-    #         date = models.DateField(null=True, blank=True)
-    #         quantity = models.PositiveIntegerField(default=0)
-    #         name = models.CharField(max_length=64)
-    #         price = p.price
-    #         try:
-    #             warehouse_product_stock = Stock.objects.get(name=name)
-    #             warehouse_products.append(warehouse_product_stock)
-    #         except Stock.DoesNotExist:
-    #             pass
-    #
-    #     # attempt
-    #     items = DeliveryItem.objects.filter(order=order)
-    #     items = list(items)
-    #
-    #     stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
-    #     stock_materials = []
-    #     main_wh = Warehouse.objects.get(name="MAGAZYN GŁÓWNY")
-    #
-    #     all_materials_in_warehouse = (
-    #         WarehouseStock.objects
-    #         .select_related("stock", "stock__stock_type", "warehouse")
-    #         .filter(
-    #             warehouse=main_wh,
-    #             quantity__gt=0,
-    #             stock__stock_type__stock_type="material",
-    #         )
-    #         .order_by("stock__name")
-    #     )
-    #
-    #     for stock_supply in stock_supplies:
-    #         try:
-    #             stock = Stock.objects.get(name=stock_supply.name)
-    #             warehouse_stock = WarehouseStock.objects.get(stock=stock)
-    #             if warehouse_stock not in stock_materials:
-    #                 stock_materials.append(warehouse_stock)
-    #
-    #         except Exception as e:
-    #             pass
-    #
-    #     stocks = StockSupply.objects.all()
-    #
-    #     ld = None
-    #
-    #     try:
-    #         production_order = ProductionOrder.objects.get(id_number=f'{order.provider} {order.order_id}')
-    #         production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
-    #         cost = order.production_cost()
-    #         other = order.other_costs()
-    #         total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
-    #         earnings = order.total_sales()
-    #         result = round(earnings - total_expenses, 2)
-    #         if production_units:
-    #             last_unit = list(production_units)[-1]
-    #             lq = last_unit.quantity_end
-    #             ld = last_unit.end.date()
-    #     except ProductionOrder.DoesNotExist:
-    #         cost = order.production_cost()
-    #         other = order.other_costs()
-    #         total_expenses = round(sum((order.material_cost(), sum(cost), sum(other))), 2)
-    #         earnings = order.total_sales()
-    #         result = round(earnings - total_expenses, 2)
-    #         production_units = []
-    #
-    #     # product sell 3
-    #     products_sell = Product.objects.all()
-    #     default_product = order.product
-    #
-    #     customers_sell = Buyer.objects.all()
-    #     default_customer = order.customer
-    #
-    #     warehouse_stocks_sell = WarehouseStock.objects.all()
-    #     if settlements:
-    #         history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
-    #
-    #         for h in history:
-    #             if h.warehouse_stock.warehouse.name == 'MAGAZYN WYROBÓW GOTOWYCH':
-    #                 default_warehouse_stock = h.warehouse_stock
-    #                 quantity = h.warehouse_stock.quantity
-    #
-    #     today = datetime.date.today().isoformat()
-    #
-    #     if not ld:
-    #         if items:
-    #             for i in items:
-    #                 if ld:
-    #                     if ld < i.delivery.date:
-    #                         ld = i.delivery.date
-    #                 else:
-    #                     ld = i.delivery.date
-    #
-    #     return render(request, 'warehouse/order_details.html', locals())
-
     def get(self, request, order_id):
-        stock_types = StockType.objects.filter(
-            stock_type__in=["material", "product", "special"]
-        ).order_by("stock_type", "unit")
-
         order = (
             Order.objects
             .select_related("customer", "provider", "product", "bom")
             .get(id=order_id)
         )
 
+        stock_types = StockType.objects.filter(
+            stock_type__in=["material", "product", "special"]
+        ).order_by("stock_type", "unit")
+
         warehouses = Warehouse.objects.all()
 
-        settlements = OrderSettlement.objects.filter(order=order)
+        settlements = (
+            OrderSettlement.objects
+            .filter(order=order)
+            .select_related("material", "material__stock", "material__warehouse")
+        )
 
         warehouse_stocks_history = (
             WarehouseStockHistory.objects
             .filter(order_settlement__in=settlements)
-            .select_related("warehouse_stock", "order_settlement")
+            .select_related(
+                "warehouse_stock",
+                "warehouse_stock__stock",
+                "warehouse_stock__warehouse",
+                "order_settlement",
+            )
         )
 
-        sales = ProductSell3.objects.filter(order=order)
+        sales = (
+            ProductSell3.objects
+            .filter(order=order)
+            .select_related("customer", "product", "stock", "warehouse_stock")
+        )
 
-        shifts_to = OrderToOrderShift.objects.filter(order_to=order)
-        shifts = shifts_to
+        items = (
+            DeliveryItem.objects
+            .filter(order=order)
+            .select_related("delivery", "stock")
+        )
 
-        items = list(DeliveryItem.objects.filter(order=order))
+        stock_supplies = (
+            StockSupply.objects
+            .filter(delivery_item__in=items)
+            .select_related("stock_type", "delivery_item")
+        )
 
-        stock_supplies = StockSupply.objects.filter(delivery_item__in=items)
-        stock_materials = []
+        main_wh = Warehouse.objects.get(name="MAGAZYN GŁÓWNY")
 
-        for stock_supply in stock_supplies:
-            try:
-                stock = Stock.objects.get(name=stock_supply.name)
-                warehouse_stock = WarehouseStock.objects.get(stock=stock)
-                if warehouse_stock not in stock_materials:
-                    stock_materials.append(warehouse_stock)
-            except Exception:
-                pass
+        stock_names = list(stock_supplies.values_list("name", flat=True).distinct())
 
-        if shifts_to:
-            stock_materials = shifts_to[0].get_items()
-            shift_quantity = 0
-            for s in shifts_to:
-                shift_quantity += s.quantity
+        stock_materials = (
+            WarehouseStock.objects
+            .select_related("stock", "stock__stock_type", "warehouse")
+            .filter(
+                warehouse=main_wh,
+                stock__name__in=stock_names,
+                quantity__gt=0,
+            )
+            .order_by("stock__name")
+        )
 
-        # zostawiamy - potrzebne przy settle
-        stocks = StockSupply.objects.all()
+        all_materials_in_warehouse = (
+            WarehouseStock.objects
+            .select_related("stock", "stock__stock_type", "warehouse")
+            .filter(
+                warehouse=main_wh,
+                quantity__gt=0,
+                stock__stock_type__stock_type="material",
+            )
+            .order_by("stock__name")
+        )
+
+        # NIE ŁADUJ CAŁEGO StockSupply.objects.all()
+        stocks = StockSupply.objects.none()
 
         ld = None
         lq = None
 
-        try:
-            production_order = ProductionOrder.objects.get(
-                id_number=f"{order.provider} {order.order_id}"
-            )
-            production_units = ProductionUnit.objects.filter(
-                production_order=production_order
-            ).order_by("sequence")
+        production_order = (
+            ProductionOrder.objects
+            .filter(id_number=f"{order.provider} {order.order_id}")
+            .first()
+        )
 
-            cost = order.production_cost()
-            other = order.other_costs()
-            material_cost = order.material_cost()
-            total_expenses = round(sum((material_cost, sum(cost), sum(other))), 2)
-            earnings = order.total_sales()
-            result = round(earnings - total_expenses, 2)
+        if production_order:
+            production_units = (
+                ProductionUnit.objects
+                .filter(production_order=production_order)
+                .order_by("sequence")
+            )
 
             last_unit = production_units.order_by("-sequence").first()
             if last_unit:
                 lq = last_unit.quantity_end
-                ld = last_unit.end.date()
-
-        except ProductionOrder.DoesNotExist:
-            cost = order.production_cost()
-            other = order.other_costs()
-            material_cost = order.material_cost()
-            total_expenses = round(sum((material_cost, sum(cost), sum(other))), 2)
-            earnings = order.total_sales()
-            result = round(earnings - total_expenses, 2)
+                if last_unit.end:
+                    ld = last_unit.end.date()
+        else:
             production_units = []
 
+        cost = order.production_cost()
+        other = order.other_costs()
+        material_cost = order.material_cost()
+        total_expenses = round(sum((material_cost, sum(cost), sum(other))), 2)
+        earnings = order.total_sales()
+        result = round(earnings - total_expenses, 2)
 
-        products = [order.product]
+        products = [order.product] if order.product else []
 
-        customers_sell = Buyer.objects.all()
+        customers_sell = Buyer.objects.all().order_by("name")
         default_customer = order.customer
 
-        warehouse_stocks_sell = WarehouseStock.objects.all()
+        warehouse_stocks_sell = (
+            WarehouseStock.objects
+            .select_related("stock", "warehouse")
+            .filter(quantity__gt=0)
+            .order_by("warehouse__name", "stock__name")
+        )
+
         default_warehouse_stock = None
         quantity = None
 
-        if settlements:
-            history = WarehouseStockHistory.objects.filter(order_settlement__in=settlements)
-
-            for h in history:
-                if h.warehouse_stock and h.warehouse_stock.warehouse.name == "MAGAZYN WYROBÓW GOTOWYCH":
-                    default_warehouse_stock = h.warehouse_stock
-                    quantity = h.warehouse_stock.quantity
-                    break
+        for h in warehouse_stocks_history:
+            ws = h.warehouse_stock
+            if ws and ws.warehouse.name == "MAGAZYN WYROBÓW GOTOWYCH":
+                default_warehouse_stock = ws
+                quantity = ws.quantity
+                break
 
         today = datetime.date.today().isoformat()
 
-        if not ld and items:
+        if not ld:
             for i in items:
-                if ld:
-                    if ld < i.delivery.date:
+                if i.delivery:
+                    if not ld or ld < i.delivery.date:
                         ld = i.delivery.date
-                else:
-                    ld = i.delivery.date
 
         return render(request, "warehouse/order_details.html", locals())
 
 
-class AddShiftView(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+# to delete
+# class AddShiftView(LoginRequiredMixin, View):
+#     login_url = reverse_lazy('login')
+#
+#     def post(self, request, order_id):
+#         order_from = get_object_or_404(Order, id=order_id)
+#         form = OrderToOrderShiftForm(request.POST)
+#
+#         if form.is_valid():
+#             shift: OrderToOrderShift = form.save(commit=False)
+#             shift.order_from = order_from
+#             # jeśli masz logikę wyliczania wartości, możesz tu ją uzupełnić
+#             # shift.value = shift.quantity * (shift.order_to.product.price or 0)
+#             shift.save()
+#             messages.success(request, "Shift added.")
+#             return redirect(request.META.get('HTTP_REFERER', '/'))
+#         else:
+#             messages.error(request, f"Cannot add shift: {form.errors.as_text()}")
+#
+#         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    def post(self, request, order_id):
-        order_from = get_object_or_404(Order, id=order_id)
-        form = OrderToOrderShiftForm(request.POST)
 
-        if form.is_valid():
-            shift: OrderToOrderShift = form.save(commit=False)
-            shift.order_from = order_from
-            # jeśli masz logikę wyliczania wartości, możesz tu ją uzupełnić
-            # shift.value = shift.quantity * (shift.order_to.product.price or 0)
-            shift.save()
-            messages.success(request, "Shift added.")
-            return redirect(request.META.get('HTTP_REFERER', '/'))
-        else:
-            messages.error(request, f"Cannot add shift: {form.errors.as_text()}")
-
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-
-class DeliveriesView(LoginRequiredMixin, View):
+class DeliveriesView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_delivery'
     login_url = reverse_lazy('login')
 
     PAGE_SIZE = 30
@@ -1188,7 +1253,8 @@ class DeliveriesView(LoginRequiredMixin, View):
         })
 
 
-class DeliveryDetailView(LoginRequiredMixin, View):
+class DeliveryDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_delivery'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1198,7 +1264,8 @@ class DeliveryDetailView(LoginRequiredMixin, View):
         return render(request, 'warehouse/delivery_details.html', locals())
 
 
-class DeliverySpecialDetailView(LoginRequiredMixin, View):
+class DeliverySpecialDetailView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_deliveryspecial'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1208,7 +1275,8 @@ class DeliverySpecialDetailView(LoginRequiredMixin, View):
         return render(request, 'warehouse/delivery_special_details.html', locals())
 
 
-class DeliveryEditView(LoginRequiredMixin, View):
+class DeliveryEditView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.edit_delivery'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1237,7 +1305,8 @@ class DeliveryEditView(LoginRequiredMixin, View):
         return render(request, "warehouse/delivery-edit.html", context)
 
 
-class AddDeliveryItem(LoginRequiredMixin, View):
+class AddDeliveryItem(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def post(self, request):
@@ -1248,7 +1317,8 @@ class AddDeliveryItem(LoginRequiredMixin, View):
             return redirect('warehouse:delivery-detail-view', delivery_id=delivery_id)
 
 
-class AddDeliverySpecialItem(LoginRequiredMixin, View):
+class AddDeliverySpecialItem(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryspecialitem'
     login_url = reverse_lazy('login')
 
     def post(self, request):
@@ -1265,7 +1335,8 @@ class AddDeliverySpecialItem(LoginRequiredMixin, View):
             return HttpResponse(r)
 
 
-class AddDeliveryItemToWarehouse(LoginRequiredMixin, View):
+class AddDeliveryItemToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id, item_id):
@@ -1275,7 +1346,8 @@ class AddDeliveryItemToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliveryToWarehouse(LoginRequiredMixin, View):
+class AddDeliveryToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def post(self, request, delivery_id):
@@ -1286,7 +1358,8 @@ class AddDeliveryToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliverySpecialToWarehouse(LoginRequiredMixin, View):
+class AddDeliverySpecialToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def post(self, request, delivery_id):
@@ -1297,7 +1370,8 @@ class AddDeliverySpecialToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
-class AddDeliverySpecialItemToWarehouse(LoginRequiredMixin, View):
+class AddDeliverySpecialItemToWarehouse(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_deliveryitem'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id, item_id):
@@ -1307,7 +1381,8 @@ class AddDeliverySpecialItemToWarehouse(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-special-detail-view", delivery_id=delivery_id)
 
 
-class WarehouseView(LoginRequiredMixin, View):
+class WarehouseView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_warehouse'
     login_url = reverse_lazy('login')
 
     def get(self, request, warehouse_id):
@@ -1329,7 +1404,8 @@ class WarehouseView(LoginRequiredMixin, View):
         return render(request, 'warehouse/warehouse_details.html', locals())
 
 
-class WarehouseListView(LoginRequiredMixin, View):
+class WarehouseListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_warehouse'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1338,7 +1414,8 @@ class WarehouseListView(LoginRequiredMixin, View):
         return render(request, 'warehouse/warehouse_list.html', locals())
 
 
-class DeliveriesStatistics(LoginRequiredMixin, View):
+class DeliveriesStatistics(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_delivery'
     login_url = reverse_lazy('login')
     template_name = 'warehouse/deliveries-statistics.html'
 
@@ -1527,7 +1604,8 @@ class DeliveriesStatistics(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
 
-class StockView(LoginRequiredMixin, View):
+class StockView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_stock'
     login_url = reverse_lazy('login')
 
     def get(self, request, stock_id):
@@ -1540,7 +1618,6 @@ class StockView(LoginRequiredMixin, View):
         history = WarehouseStockHistory.objects.filter(warehouse_stock__stock=stock)
 
         return render(request, 'warehouse/stock-details.html', locals())
-
 
 
 # toremove
@@ -1567,7 +1644,8 @@ class WarehouseStockView(LoginRequiredMixin, View):
         return render(request, 'warehouse/warehouse-stock-details.html', locals())
 
 
-class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
+class WarehouseStockHistoryDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehouse.view_warehousestockhistory'
     login_url = reverse_lazy('login')
     model = WarehouseStock
     template_name = "warehouse/warehouse_stock_history.html"
@@ -1592,7 +1670,8 @@ class WarehouseStockHistoryDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-class WarehouseStockDetailView(DetailView):
+class WarehouseStockDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehouse.view_warehousestock'
     model = WarehouseStock
     template_name = "warehouse/warehouse-stock-details.html"
     context_object_name = "ws"
@@ -1701,8 +1780,8 @@ class WarehouseStockDetailView(DetailView):
         return redirect(request.path)
 
 
-
-class LoadDeliveryToGSFile(LoginRequiredMixin, View):
+class LoadDeliveryToGSFile(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_delivery'
     login_url = reverse_lazy('login')
 
     def get(self, request, delivery_id):
@@ -1739,7 +1818,8 @@ class LoadDeliveryToGSFile(LoginRequiredMixin, View):
         return redirect("warehouse:delivery-detail-view", delivery_id=delivery_id)
 
 
-class SellProductList(LoginRequiredMixin, View):
+class SellProductList(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_productsell3'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1763,13 +1843,17 @@ class SellProductList(LoginRequiredMixin, View):
         context = {
             "warehouse_stocks": warehouse_stocks,
             "products": Product.objects.all().order_by("name"),  # do <select> w modalu
+            "palette_quantity": 1,
+            "selected_palette_id": "",
+            # "selected_customer_id": order.customer_id,
             "customers": Buyer.objects.all().order_by("name"),
             "sells": sells
         }
         return render(request, "warehouse/sell-product-list.html", context=context)
 
 
-class ProductSell3CreateView(LoginRequiredMixin, CreateView):
+class ProductSell3CreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'warehouse.add_productsell3'
     login_url = reverse_lazy('login')
 
     model = ProductSell3
@@ -1813,7 +1897,8 @@ class ProductSell3CreateView(LoginRequiredMixin, CreateView):
         return redirect(self.get_success_url())
 
 
-class PaletteView(LoginRequiredMixin, View):
+class PaletteView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_palette'
     login_url = reverse_lazy('login')
 
     def get(self, request):
@@ -1891,17 +1976,8 @@ class PaletteView(LoginRequiredMixin, View):
         return render(request, 'warehouse/palette.html', context)
 
 
-# from django.contrib import messages
-# from django.shortcuts import render, redirect
-# from django.urls import reverse_lazy
-# from django.views import View
-#
-# from .forms import ManuallyOrdersForm
-# from .models import Provider
-# from .utils import load_orders   # przykładowo, dostosuj import
-
-
-class AddOrdersManually(LoginRequiredMixin, View):
+class AddOrdersManually(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_order'
     login_url = reverse_lazy('login')
     template_name = "warehouse/add_orders.html"
 
@@ -2018,98 +2094,97 @@ class AddOrdersManually(LoginRequiredMixin, View):
 
 
 def add_product_sell3(request):
-    if request.method != "POST":
+    user = request.user
+    if user.has_perm('warehouse.add_productsell3'):
+        if request.method != "POST":
+            return redirect(request.META.get("HTTP_REFERER", "/"))
+
+        try:
+            with transaction.atomic():
+                warehouse_stock = WarehouseStock.objects.select_for_update().get(
+                    id=int(request.POST.get("warehouse_stock"))
+                )
+
+                # klient
+                customer_id = request.POST.get("customer")
+                customer = Buyer.objects.get(id=int(customer_id)) if customer_id else None
+                customer_alter_name = (request.POST.get("customer_alter_name") or "").strip() or None
+                if not customer and not customer_alter_name:
+                    raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
+
+                # order opcjonalny
+                order_id = request.POST.get("order")
+                order = Order.objects.get(id=int(order_id)) if order_id else None
+
+                quantity = int(request.POST.get("quantity_sell"))
+
+                # ...
+                date_raw = request.POST.get("date_sell")  # string z inputa
+                date = parse_date(date_raw)  # obsługuje 'YYYY-MM-DD'
+
+                # jeśli czasem wysyłasz 'dd-mm-YYYY' (bo tak masz w UI), dodaj fallback:
+                if date is None and date_raw:
+                    try:
+                        date = datetime.datetime.strptime(date_raw, "%d-%m-%Y").date()
+                    except ValueError:
+                        date = None
+
+                if date is None:
+                    raise ValidationError(f"Niepoprawna data sprzedaży: {date_raw}")
+                price = request.POST.get("price_sell")
+
+                if quantity <= 0:
+                    raise ValidationError("Ilość musi być większa od zera.")
+                if warehouse_stock.quantity < quantity:
+                    raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
+
+                # ✅ PRODUKT: jeśli formularz podał product -> bierzemy z POST (OrderDetail)
+                product_id = request.POST.get("product")
+                if product_id:
+                    product = Product.objects.get(id=int(product_id))
+                else:
+                    # fallback: jeśli Stock ma przypięty Product
+                    product = getattr(warehouse_stock.stock, "product", None)
+
+                # opcjonalna spójność: jeśli stock ma przypięty product, a user wybrał inny -> błąd
+                stock_prod = getattr(warehouse_stock.stock, "product", None)
+                if stock_prod and product and stock_prod.id != product.id:
+                    raise ValidationError("Wybrany produkt nie zgadza się z produktem powiązanym ze stockiem.")
+
+                sale = ProductSell3.objects.create(
+                    product=product,                      # ✅ dla OrderDetail będzie ustawiony
+                    stock=warehouse_stock.stock,           # ✅ zawsze
+                    customer=customer,
+                    customer_alter_name=customer_alter_name,
+                    warehouse_stock=warehouse_stock,
+                    order=order,
+                    quantity=quantity,
+                    price=price,
+                    date=date,
+                )
+
+                # rozchód
+                if sale.order_id:
+                    warehouse_stock.sell_from_order(sale)
+                    attach_origin_orders_to_sell(sale)     # ✅ też warto dopiąć po order-sellu
+                else:
+                    warehouse_stock.fifo_sell(sale)
+                    attach_origin_orders_to_sell(sale)
+
+                # aktualizacja ceny produktu tylko jeśli produkt istnieje
+                if sale.product_id:
+                    sale.product.price = price
+                    sale.product.save(update_fields=["price"])
+
+            messages.success(request, "Sprzedaż zapisana.")
+
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.exception("[ADD_SELL] ERROR")
+            messages.error(request, f"Błąd zapisu sprzedaży: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "/"))
-
-    try:
-        with transaction.atomic():
-            warehouse_stock = WarehouseStock.objects.select_for_update().get(
-                id=int(request.POST.get("warehouse_stock"))
-            )
-
-            # klient
-            customer_id = request.POST.get("customer")
-            customer = Buyer.objects.get(id=int(customer_id)) if customer_id else None
-            customer_alter_name = (request.POST.get("customer_alter_name") or "").strip() or None
-            if not customer and not customer_alter_name:
-                raise ValidationError("Podaj klienta lub wpisz nazwę ręcznie.")
-
-            # order opcjonalny
-            order_id = request.POST.get("order")
-            order = Order.objects.get(id=int(order_id)) if order_id else None
-
-            quantity = int(request.POST.get("quantity_sell"))
-
-            # ...
-            date_raw = request.POST.get("date_sell")  # string z inputa
-            date = parse_date(date_raw)  # obsługuje 'YYYY-MM-DD'
-
-            # jeśli czasem wysyłasz 'dd-mm-YYYY' (bo tak masz w UI), dodaj fallback:
-            if date is None and date_raw:
-                try:
-                    date = datetime.datetime.strptime(date_raw, "%d-%m-%Y").date()
-                except ValueError:
-                    date = None
-
-            if date is None:
-                raise ValidationError(f"Niepoprawna data sprzedaży: {date_raw}")
-            price = request.POST.get("price_sell")
-
-            if quantity <= 0:
-                raise ValidationError("Ilość musi być większa od zera.")
-            if warehouse_stock.quantity < quantity:
-                raise ValidationError("Nie ma wystarczającej ilości w magazynie!")
-
-            # ✅ PRODUKT: jeśli formularz podał product -> bierzemy z POST (OrderDetail)
-            product_id = request.POST.get("product")
-            if product_id:
-                product = Product.objects.get(id=int(product_id))
-            else:
-                # fallback: jeśli Stock ma przypięty Product
-                product = getattr(warehouse_stock.stock, "product", None)
-
-            # opcjonalna spójność: jeśli stock ma przypięty product, a user wybrał inny -> błąd
-            stock_prod = getattr(warehouse_stock.stock, "product", None)
-            if stock_prod and product and stock_prod.id != product.id:
-                raise ValidationError("Wybrany produkt nie zgadza się z produktem powiązanym ze stockiem.")
-
-            sale = ProductSell3.objects.create(
-                product=product,                      # ✅ dla OrderDetail będzie ustawiony
-                stock=warehouse_stock.stock,           # ✅ zawsze
-                customer=customer,
-                customer_alter_name=customer_alter_name,
-                warehouse_stock=warehouse_stock,
-                order=order,
-                quantity=quantity,
-                price=price,
-                date=date,
-            )
-
-            # rozchód
-            if sale.order_id:
-                warehouse_stock.sell_from_order(sale)
-                attach_origin_orders_to_sell(sale)     # ✅ też warto dopiąć po order-sellu
-            else:
-                warehouse_stock.fifo_sell(sale)
-                attach_origin_orders_to_sell(sale)
-
-            # aktualizacja ceny produktu tylko jeśli produkt istnieje
-            if sale.product_id:
-                sale.product.price = price
-                sale.product.save(update_fields=["price"])
-
-        messages.success(request, "Sprzedaż zapisana.")
-
-    except ValidationError as e:
-        messages.error(request, str(e))
-    except Exception as e:
-        logger.exception("[ADD_SELL] ERROR")
-        messages.error(request, f"Błąd zapisu sprzedaży: {e}")
-
-    return redirect(request.META.get("HTTP_REFERER", "/"))
-
-
-
 
 
 def assign_products_to_orders(year=None, row=None, division=None):
@@ -2246,24 +2321,14 @@ def clear_orders(request):
         o.save()
 
 
-# warehouse/views.py
-
-from django.views import View
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.db import transaction
-import datetime
-
-from warehouse.models import BOM, Order
-from warehouse.forms import OrderFromBOMForm
-
-
-class CreateOrderFromBOMView(View):
+class CreateOrderFromBOMView(PermissionRequiredMixin, View):
     """
     Tworzy Order i automatycznie podpina:
       - order.bom = BOM
       - order.product = BOM.product
     """
+    permission_required = 'warehouse.add_order'
+
     def get(self, request, bom_id: int):
 
         from warehouse.services.orders import next_free_order_id_for_bom
@@ -2322,7 +2387,8 @@ class CreateOrderFromBOMView(View):
             return render(request, "warehouse/bom_create_order.html", {"bom": bom, "form": form})
 
 
-class BOMListView(LoginRequiredMixin, ListView):
+class BOMListView(PermissionRequiredMixin, ListView):
+    permission_required = 'warehouse.view_bom'
     template_name = "warehouse/bom_list.html"
     model = BOM
     context_object_name = "boms"
@@ -2337,9 +2403,8 @@ class BOMListView(LoginRequiredMixin, ListView):
         return qs
 
 
-from django.db.models import Prefetch
-
-class BOMDetailView(LoginRequiredMixin, DetailView):
+class BOMDetailView(PermissionRequiredMixin, DetailView):
+    permission_required = 'warehouse.view_bom'
     model = BOM
     template_name = "warehouse/bom_detail.html"
     context_object_name = "bom"
@@ -2359,12 +2424,8 @@ class BOMDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-from django.views.decorators.http import require_POST
-from django.utils.decorators import method_decorator
-from django.middleware.csrf import get_token
-
-
-class ProductPackagingListView(LoginRequiredMixin, View):
+class ProductPackagingListView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.view_productpackaging'
     login_url = reverse_lazy("login")
 
     def get(self, request):
@@ -2391,7 +2452,8 @@ class ProductPackagingListView(LoginRequiredMixin, View):
 
 
 @method_decorator(require_POST, name="dispatch")
-class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
+class ProductPackagingUpsertAjaxView(PermissionRequiredMixin, View):
+    permission_required = 'warehouse.add_productpackaging'
     login_url = reverse_lazy("login")
 
     def post(self, request):
@@ -2401,6 +2463,7 @@ class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
             columns = int(request.POST.get("columns") or 0)
             layers = int(request.POST.get("layers") or 0)
             qty_per_pack = int(request.POST.get("qty_per_pack") or 0)
+            additional_info = request.POST.get("additional_info") or ""
         except (TypeError, ValueError):
             return JsonResponse({"success": False, "error": "Nieprawidłowe dane wejściowe."}, status=400)
 
@@ -2419,6 +2482,7 @@ class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
         packaging.columns = columns
         packaging.layers = layers
         packaging.qty_per_pack = qty_per_pack
+        packaging.additional_info = additional_info
 
         try:
             packaging.full_clean()
@@ -2434,163 +2498,1663 @@ class ProductPackagingUpsertAjaxView(LoginRequiredMixin, View):
             "columns": packaging.columns,
             "layers": packaging.layers,
             "qty_per_pack": packaging.qty_per_pack,
+            "additionalinfo": packaging.additional_info,
         })
 
 
-from django.core.exceptions import ValidationError
-from django.db import transaction
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
-from warehouse.services.stock_moves import move_ws
-
-
-from django.db.models import Sum
-from django.core.exceptions import ValidationError
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
-from django.db import transaction
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 def undo_order_settlement(request, settlement_id):
-    if request.method != "POST":
-        return redirect(request.META.get("HTTP_REFERER", "/"))
+    if request.user.has_perm('warehouse.add_ordersettlement'):
+        if request.method != "POST":
+            return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    if not _check_undo_password(request):
-        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
-        return redirect(request.META.get("HTTP_REFERER", "/"))
+        if not _check_undo_password(request):
+            messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+            return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    try:
-        with transaction.atomic():
-            settlement = OrderSettlement.objects.select_for_update().get(pk=settlement_id)
+        try:
+            with transaction.atomic():
+                settlement = OrderSettlement.objects.select_for_update().get(pk=settlement_id)
 
-            touched_ws_ids = set()
-            settlement_date = settlement.settlement_date
+                touched_ws_ids = set()
+                settlement_date = settlement.settlement_date
 
-            result_rows = list(
-                StockSupplySettlement.objects
-                .select_for_update()
-                .filter(settlement=settlement, as_result=True)
-                .select_related("stock_supply")
-                .order_by("id")
-            )
-
-            for row in result_rows:
-                supply = row.stock_supply
-
-                sold_qty = (
-                    StockSupplySell.objects
-                    .filter(stock_supply=supply)
-                    .aggregate(s=Sum("quantity"))["s"] or 0
+                result_rows = list(
+                    StockSupplySettlement.objects
+                    .select_for_update()
+                    .filter(settlement=settlement, as_result=True)
+                    .select_related("stock_supply")
+                    .order_by("id")
                 )
-                if sold_qty > 0:
-                    raise ValidationError(
-                        f"Nie można cofnąć rozliczenia. Partia '{supply.name}' została już sprzedana ({sold_qty})."
+
+                for row in result_rows:
+                    supply = row.stock_supply
+
+                    sold_qty = (
+                        StockSupplySell.objects
+                        .filter(stock_supply=supply)
+                        .aggregate(s=Sum("quantity"))["s"] or 0
                     )
+                    if sold_qty > 0:
+                        raise ValidationError(
+                            f"Nie można cofnąć rozliczenia. Partia '{supply.name}' została już sprzedana ({sold_qty})."
+                        )
 
-            hist_rows = list(
-                WarehouseStockHistory.objects
-                .select_for_update()
-                .filter(order_settlement=settlement)
-                .order_by("date", "id")
-            )
+                hist_rows = list(
+                    WarehouseStockHistory.objects
+                    .select_for_update()
+                    .filter(order_settlement=settlement)
+                    .order_by("date", "id")
+                )
 
-            for h in hist_rows:
-                touched_ws_ids.add(h.warehouse_stock_id)
+                for h in hist_rows:
+                    touched_ws_ids.add(h.warehouse_stock_id)
 
-            WarehouseStockHistory.objects.filter(order_settlement=settlement).delete()
+                WarehouseStockHistory.objects.filter(order_settlement=settlement).delete()
 
-            for row in result_rows:
-                supply = row.stock_supply
-                row.delete()
-                supply.delete()
+                for row in result_rows:
+                    supply = row.stock_supply
+                    row.delete()
+                    supply.delete()
 
-            material_rows = list(
-                StockSupplySettlement.objects
-                .select_for_update()
-                .filter(settlement=settlement, as_result=False)
-                .select_related("stock_supply")
-            )
+                material_rows = list(
+                    StockSupplySettlement.objects
+                    .select_for_update()
+                    .filter(settlement=settlement, as_result=False)
+                    .select_related("stock_supply")
+                )
 
-            touched_supplies = []
-            for row in material_rows:
-                if row.stock_supply_id:
-                    touched_supplies.append(row.stock_supply)
-                row.delete()
+                touched_supplies = []
+                for row in material_rows:
+                    if row.stock_supply_id:
+                        touched_supplies.append(row.stock_supply)
+                    row.delete()
 
-            for supply in touched_supplies:
-                supply.refresh_used_flag()
+                for supply in touched_supplies:
+                    supply.refresh_used_flag()
 
-            settlement.delete()
+                settlement.delete()
 
-            for ws_id in touched_ws_ids:
-                ws = WarehouseStock.objects.select_for_update().get(pk=ws_id)
-                rebuild_ws_history_from_date(ws=ws, from_date=settlement_date)
+                for ws_id in touched_ws_ids:
+                    ws = WarehouseStock.objects.select_for_update().get(pk=ws_id)
+                    rebuild_ws_history_from_date(ws=ws, from_date=settlement_date)
 
-        messages.success(request, "Rozliczenie zostało cofnięte.")
-    except Exception as e:
-        messages.error(request, f"Błąd cofania rozliczenia: {e}")
+            messages.success(request, "Rozliczenie zostało cofnięte.")
+        except Exception as e:
+            messages.error(request, f"Błąd cofania rozliczenia: {e}")
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
-
-from django.contrib import messages
-from django.db import transaction
-from django.shortcuts import get_object_or_404, redirect
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 def undo_product_sell(request, sell_id):
-    if request.method != "POST":
+    if request.user.has_perm('warehouse.delete_productsell3'):
+        if request.method != "POST":
+            return redirect(request.META.get("HTTP_REFERER", "/"))
+
+        if not _check_undo_password(request):
+            messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
+            return redirect(request.META.get("HTTP_REFERER", "/"))
+
+        try:
+            with transaction.atomic():
+                sell = ProductSell3.objects.select_for_update().get(pk=sell_id)
+
+                if not sell.warehouse_stock_id:
+                    raise ValueError("Sprzedaż nie ma przypisanego warehouse_stock.")
+
+                qty = int(sell.quantity or 0)
+                if qty <= 0:
+                    raise ValueError("Sprzedaż ma nieprawidłową ilość.")
+
+                sell_date = sell.date
+                ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
+
+                WarehouseStockHistory.objects.filter(sell=sell).delete()
+
+                supply_rows = list(
+                    StockSupplySell.objects
+                    .select_for_update()
+                    .filter(sell=sell)
+                    .select_related("stock_supply")
+                )
+
+                touched_supplies = []
+                for row in supply_rows:
+                    if row.stock_supply_id:
+                        touched_supplies.append(row.stock_supply)
+                    row.delete()
+
+                seen_ids = set()
+                for supply in touched_supplies:
+                    if supply.id in seen_ids:
+                        continue
+                    seen_ids.add(supply.id)
+                    supply.refresh_used_flag()
+
+                sell.order_parts.all().delete()
+                sell.delete()
+
+                rebuild_ws_history_from_date(ws=ws, from_date=sell_date)
+
+            messages.success(request, "Sprzedaż została cofnięta.")
+        except Exception as e:
+            messages.error(request, f"Błąd cofania sprzedaży: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    if not _check_undo_password(request):
-        messages.error(request, "Nieprawidłowe hasło do cofania operacji.")
-        return redirect(request.META.get("HTTP_REFERER", "/"))
 
-    try:
-        with transaction.atomic():
-            sell = ProductSell3.objects.select_for_update().get(pk=sell_id)
-
-            if not sell.warehouse_stock_id:
-                raise ValueError("Sprzedaż nie ma przypisanego warehouse_stock.")
-
-            qty = int(sell.quantity or 0)
-            if qty <= 0:
-                raise ValueError("Sprzedaż ma nieprawidłową ilość.")
-
-            sell_date = sell.date
-            ws = WarehouseStock.objects.select_for_update().get(pk=sell.warehouse_stock_id)
-
-            WarehouseStockHistory.objects.filter(sell=sell).delete()
-
-            supply_rows = list(
-                StockSupplySell.objects
-                .select_for_update()
-                .filter(sell=sell)
-                .select_related("stock_supply")
-            )
-
-            touched_supplies = []
-            for row in supply_rows:
-                if row.stock_supply_id:
-                    touched_supplies.append(row.stock_supply)
-                row.delete()
-
-            seen_ids = set()
-            for supply in touched_supplies:
-                if supply.id in seen_ids:
-                    continue
-                seen_ids.add(supply.id)
-                supply.refresh_used_flag()
-
-            sell.order_parts.all().delete()
-            sell.delete()
-
-            rebuild_ws_history_from_date(ws=ws, from_date=sell_date)
-
-        messages.success(request, "Sprzedaż została cofnięta.")
-    except Exception as e:
-        messages.error(request, f"Błąd cofania sprzedaży: {e}")
+def refresh_warehouses_values(request):
+    # if request.method != "POST":
+    #     return redirect(request.META.get("HTTP_REFERER", "/"))
+    warehouses = Warehouse.objects.all()
+    for w in warehouses:
+        w.count_warehouse_value()
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
+from decimal import Decimal, InvalidOperation
+
+from decimal import Decimal, InvalidOperation
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
+from django.utils.dateparse import parse_date
+from django.views import View
+
+from production.models import ProductionOrder, ProductionUnit
+from warehouse.models import Order, Product
+from warehousemanager.models import LocalSetting
+
+
+class OrderProfitabilityListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/order_profitability_list.html"
+
+    @staticmethod
+    def get_setting_decimal(name, default):
+        setting = LocalSetting.objects.filter(name=name).first()
+
+        if not setting:
+            return Decimal(str(default))
+
+        try:
+            return Decimal(str(setting.value).replace(",", "."))
+        except (InvalidOperation, TypeError, ValueError):
+            return Decimal(str(default))
+
+    def get(self, request):
+        from warehousemanager.models import Person
+
+        production_hourly_rate = self.get_setting_decimal(
+            "production_work_hour_value",
+            "57.00",
+        )
+
+        fully_loaded_hourly_rate = self.get_setting_decimal(
+            "work_hour_value",
+            "192.00",
+        )
+
+        if fully_loaded_hourly_rate < production_hourly_rate:
+            fully_loaded_hourly_rate = production_hourly_rate
+
+        persons = Person.objects.all().order_by(
+            "first_name",
+            "last_name",
+        )
+
+        date_from = request.GET.get("date_from", "")
+        date_to = request.GET.get("date_to", "")
+        customer = request.GET.get("customer", "").strip()
+        person_id = request.GET.get("person")
+        product_id = request.GET.get("product")
+        group_by = request.GET.get("group_by", "orders")
+
+        if group_by not in {"orders", "products"}:
+            group_by = "orders"
+
+        selected_person_id = None
+
+        if person_id:
+            try:
+                selected_person_id = int(person_id)
+            except (TypeError, ValueError):
+                selected_person_id = None
+
+        selected_product = None
+        selected_product_id = None
+
+        if product_id:
+            try:
+                selected_product_id = int(product_id)
+                selected_product = Product.objects.filter(
+                    pk=selected_product_id
+                ).first()
+
+                if not selected_product:
+                    selected_product_id = None
+
+            except (TypeError, ValueError):
+                selected_product_id = None
+                selected_product = None
+
+        has_filters = any([
+            selected_person_id,
+            customer,
+            date_from,
+            date_to,
+            selected_product_id,
+        ])
+
+        if not has_filters:
+            visit_counter(request.user, f"opfr")
+        else:
+            visit_counter(request.user, f"opfr: {selected_person_id}/{customer}/{date_from}/{date_to}/{selected_product_id}")
+
+        return render(request, self.template_name, {
+            "persons": persons,
+            "person_id": selected_person_id,
+            "customer": customer,
+            "date_from": date_from,
+            "date_to": date_to,
+            "group_by": group_by,
+            "product_id": selected_product_id,
+            "selected_product": selected_product,
+            "production_hourly_rate": production_hourly_rate,
+            "fully_loaded_hourly_rate": fully_loaded_hourly_rate,
+            "has_filters": has_filters,
+        })
+
+
+class OrderProfitabilityDataView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    PAGE_SIZE = 50
+
+    @staticmethod
+    def get_setting_decimal(name, default):
+        setting = LocalSetting.objects.filter(name=name).first()
+
+        if not setting:
+            return Decimal(str(default))
+
+        try:
+            return Decimal(str(setting.value).replace(",", "."))
+        except (InvalidOperation, TypeError, ValueError):
+            return Decimal(str(default))
+
+    def get_rates(self):
+        production_hourly_rate = self.get_setting_decimal(
+            "production_work_hour_value",
+            "57.00",
+        )
+
+        fully_loaded_hourly_rate = self.get_setting_decimal(
+            "work_hour_value",
+            "192.00",
+        )
+
+        if fully_loaded_hourly_rate < production_hourly_rate:
+            fully_loaded_hourly_rate = production_hourly_rate
+
+        return production_hourly_rate, fully_loaded_hourly_rate
+
+    def get_base_queryset(self, request):
+        from warehousemanager.models import Person
+
+        person_id = request.GET.get("person")
+        customer = request.GET.get("customer", "").strip()
+        product_id = request.GET.get("product")
+
+        date_from = parse_date(
+            request.GET.get("date_from") or ""
+        )
+
+        date_to = parse_date(
+            request.GET.get("date_to") or ""
+        )
+
+        qs = (
+            Order.objects
+            .select_related(
+                "provider",
+                "customer",
+                "product",
+            )
+            .order_by("-order_date", "-id")
+        )
+
+        if person_id:
+            try:
+                person_id = int(person_id)
+            except (TypeError, ValueError):
+                return Order.objects.none()
+
+            person = Person.objects.filter(
+                pk=person_id
+            ).first()
+
+            if not person:
+                return Order.objects.none()
+
+            qs = (
+                Order.produced_by_person(person)
+                .select_related(
+                    "provider",
+                    "customer",
+                    "product",
+                )
+                .order_by("-order_date", "-id")
+            )
+
+        if customer:
+            qs = qs.filter(
+                customer__name__icontains=customer
+            )
+
+        if product_id:
+            try:
+                product_id = int(product_id)
+            except (TypeError, ValueError):
+                return Order.objects.none()
+
+            qs = qs.filter(
+                product_id=product_id
+            )
+
+        if date_from:
+            qs = qs.filter(
+                order_date__gte=date_from
+            )
+
+        if date_to:
+            qs = qs.filter(
+                order_date__lte=date_to
+            )
+
+        return qs
+
+    def get_production_order(self, order):
+        return (
+            ProductionOrder.objects
+            .filter(
+                id_number=f"{order.provider} {order.order_id}"
+            )
+            .first()
+        )
+
+    def order_has_production_time(self, order):
+        production_order = self.get_production_order(order)
+
+        if not production_order:
+            return False
+
+        return ProductionUnit.objects.filter(
+            production_order=production_order,
+            start__isnull=False,
+            end__isnull=False,
+        ).exists()
+
+    def build_order_row(
+        self,
+        order,
+        production_hourly_rate,
+        fully_loaded_hourly_rate,
+    ):
+        settled_qty = int(
+            order.settled_quantity() or 0
+        )
+
+        sold_qty = int(
+            order.sold_quantity() or 0
+        )
+
+        if settled_qty <= 0:
+            return None
+
+        if sold_qty <= 0:
+            return None
+
+        if not order.product_id:
+            return None
+
+        if not self.order_has_production_time(order):
+            return None
+
+        material_cost = Decimal(
+            str(order.material_cost() or 0)
+        )
+
+        work_hours = Decimal(
+            str(order.production_work_hours() or 0)
+        )
+
+        sales = Decimal(
+            str(order.real_sales_value() or 0)
+        )
+
+        if work_hours <= 0:
+            return None
+
+        labor_cost = (
+            work_hours
+            * production_hourly_rate
+        )
+
+        production_cost = (
+            material_cost
+            + labor_cost
+        )
+
+        production_result = (
+            sales
+            - production_cost
+        )
+
+        additional_cost = (
+            fully_loaded_hourly_rate
+            - production_hourly_rate
+        ) * work_hours
+
+        fully_loaded_cost = (
+            production_cost
+            + additional_cost
+        )
+
+        fully_loaded_result = (
+            sales
+            - fully_loaded_cost
+        )
+
+        status = order.sales_profitability_status()
+
+        return {
+            "row_type": "order",
+            "id": order.id,
+            "product_id": order.product_id,
+            "order": f"{order.provider} {order.order_id}",
+            "order_url": reverse(
+                "warehouse:order-detail-view",
+                args=[order.id],
+            ),
+            "order_date": (
+                order.order_date.strftime("%d.%m.%Y")
+                if order.order_date
+                else ""
+            ),
+            "customer": (
+                str(order.customer)
+                if order.customer
+                else ""
+            ),
+            "product": (
+                order.product.name
+                if order.product
+                else ""
+            ),
+            "orders_count": 1,
+            "settled_qty": settled_qty,
+            "sold_qty": sold_qty,
+            "material_cost": float(material_cost),
+            "work_hours": float(work_hours),
+            "labor_cost": float(labor_cost),
+            "sales": float(sales),
+            "production_result": float(production_result),
+            "additional_cost": float(additional_cost),
+            "fully_loaded_cost": float(fully_loaded_cost),
+            "fully_loaded_result": float(fully_loaded_result),
+            "status": status,
+            "is_production_profit": production_result >= 0,
+            "is_fully_loaded_profit": fully_loaded_result >= 0,
+        }
+
+    def build_order_rows(self, request):
+        (
+            production_hourly_rate,
+            fully_loaded_hourly_rate,
+        ) = self.get_rates()
+
+        rows = []
+
+        for order in self.get_base_queryset(request):
+            row = self.build_order_row(
+                order=order,
+                production_hourly_rate=production_hourly_rate,
+                fully_loaded_hourly_rate=fully_loaded_hourly_rate,
+            )
+
+            if row:
+                rows.append(row)
+
+        return rows
+
+    def aggregate_product_rows(self, order_rows):
+        products = {}
+
+        for row in order_rows:
+            product_id = row.get("product_id")
+
+            if not product_id:
+                continue
+
+            if product_id not in products:
+                products[product_id] = {
+                    "row_type": "product",
+                    "product_id": product_id,
+                    "product": row["product"],
+                    "customers": set(),
+                    "orders_count": 0,
+                    "settled_qty": 0,
+                    "sold_qty": 0,
+                    "material_cost": Decimal("0.00"),
+                    "work_hours": Decimal("0.00"),
+                    "labor_cost": Decimal("0.00"),
+                    "sales": Decimal("0.00"),
+                    "production_result": Decimal("0.00"),
+                    "additional_cost": Decimal("0.00"),
+                    "fully_loaded_cost": Decimal("0.00"),
+                    "fully_loaded_result": Decimal("0.00"),
+                }
+
+            product = products[product_id]
+
+            if row["customer"]:
+                product["customers"].add(
+                    row["customer"]
+                )
+
+            product["orders_count"] += 1
+            product["settled_qty"] += row["settled_qty"]
+            product["sold_qty"] += row["sold_qty"]
+
+            for field in (
+                "material_cost",
+                "work_hours",
+                "labor_cost",
+                "sales",
+                "production_result",
+                "additional_cost",
+                "fully_loaded_cost",
+                "fully_loaded_result",
+            ):
+                product[field] += Decimal(
+                    str(row[field])
+                )
+
+        result = []
+
+        decimal_fields = (
+            "material_cost",
+            "work_hours",
+            "labor_cost",
+            "sales",
+            "production_result",
+            "additional_cost",
+            "fully_loaded_cost",
+            "fully_loaded_result",
+        )
+
+        for product in products.values():
+            product["customer"] = ", ".join(
+                sorted(product.pop("customers"))
+            )
+
+            product["is_production_profit"] = (
+                product["production_result"] >= 0
+            )
+
+            product["is_fully_loaded_profit"] = (
+                product["fully_loaded_result"] >= 0
+            )
+
+            for field in decimal_fields:
+                product[field] = float(
+                    product[field]
+                )
+
+            result.append(product)
+
+        return sorted(
+            result,
+            key=lambda item: (
+                item["product"] or ""
+            ).lower(),
+        )
+
+    def get(self, request):
+        try:
+            page = max(
+                int(request.GET.get("page", 1)),
+                1,
+            )
+        except (TypeError, ValueError):
+            page = 1
+
+        group_by = request.GET.get(
+            "group_by",
+            "orders",
+        )
+
+        if group_by not in {"orders", "products"}:
+            group_by = "orders"
+
+        order_rows = self.build_order_rows(request)
+
+        if group_by == "products":
+            all_rows = self.aggregate_product_rows(
+                order_rows
+            )
+        else:
+            all_rows = order_rows
+
+        paginator = Paginator(
+            all_rows,
+            self.PAGE_SIZE,
+        )
+
+        page_obj = paginator.get_page(page)
+
+        (
+            production_hourly_rate,
+            fully_loaded_hourly_rate,
+        ) = self.get_rates()
+
+        return JsonResponse({
+            "rows": list(page_obj.object_list),
+            "page": page_obj.number,
+            "has_next": page_obj.has_next(),
+            "has_previous": page_obj.has_previous(),
+            "num_pages": paginator.num_pages,
+            "total_rows": paginator.count,
+            "group_by": group_by,
+            "production_hourly_rate": float(
+                production_hourly_rate
+            ),
+            "fully_loaded_hourly_rate": float(
+                fully_loaded_hourly_rate
+            ),
+        })
+
+
+from django.contrib.auth import get_user_model, login
+class ShipmentUnitConfirmUserView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_confirm_user.html"
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+        user = request.user
+
+        return render(request, self.template_name, {
+            "order": order,
+            "user": user
+        })
+
+    def post(self, request, order_id):
+        from warehousemanager.models import Person
+
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        username = (request.POST.get("username") or "").strip()
+        pin = (request.POST.get("pin") or "").strip()
+
+        print(username, pin)
+
+        User = get_user_model()
+
+        try:
+            user = User.objects.get(
+                username=username,
+                is_active=True,
+            )
+
+            print(user)
+
+            person = Person.objects.get(
+                user=user,
+                # job_end__isnull=True,
+            )
+            print(person)
+
+        except (User.DoesNotExist, Person.DoesNotExist):
+            return render(request, self.template_name, {
+                "order": order,
+                "username": username,
+                "error": "Nieprawidłowa nazwa użytkownika lub PIN.",
+            })
+
+        print(person.check_pin(pin))
+
+        if not person.pin or not person.check_pin(pin):
+            return render(request, self.template_name, {
+                "order": order,
+                "username": username,
+                "error": "Nieprawidłowa nazwa użytkownika lub PIN.",
+            })
+
+        login(
+            request,
+            user,
+            backend="django.contrib.auth.backends.ModelBackend",
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-create",
+            order_id=order.id,
+        )
+
+
+class ShipmentUnitCreateView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_create.html"
+
+    def get_shipment_units(self, order):
+        shipped_items = ShipmentItem.objects.filter(
+            shipment_unit_id=OuterRef("pk"),
+            shipment__status=Shipment.STATUS_CONFIRMED,
+        )
+
+        loading_items = ShipmentItem.objects.filter(
+            shipment_unit_id=OuterRef("pk"),
+            shipment__status=Shipment.STATUS_DRAFT,
+        )
+
+        return (
+            ShipmentUnit.objects
+            .filter(order=order)
+            .select_related(
+                "product",
+                "palette",
+                "created_by",
+            )
+            .annotate(
+                is_shipped=Exists(shipped_items),
+                is_loading=Exists(loading_items),
+            )
+            .order_by("-created", "-id")
+        )
+
+    def get_context(self, order, **kwargs):
+        packaging = (
+            ProductPackaging.objects
+            .select_related("palette")
+            .filter(product=order.product)
+            .first()
+        )
+        shipment_unit_history = (
+            ShipmentUnitHistory.objects
+            .filter(order=order)
+            .select_related(
+                "shipment_unit",
+                "product",
+                "palette",
+                "changed_by",
+            )
+            .order_by("-changed_at", "-id")
+        )
+
+        context = {
+            "order": order,
+            "packaging": packaging,
+            "palettes": Palette.objects.all().order_by("name"),
+            "default_palette": packaging.palette if packaging else None,
+            "shipment_units": self.get_shipment_units(order),
+            "shipment_unit_history": shipment_unit_history,
+            "palette_quantity": 1,
+            "selected_palette_id": "",
+            "selected_customer_id": order.customer_id,
+            "customers": Buyer.objects.all()
+        }
+
+        context.update(kwargs)
+
+        return context
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(order),
+        )
+
+    def post(self, request, order_id):
+        order = get_object_or_404(Order.objects.select_related("product"), id=order_id)
+        submitted = {
+            "quantity": request.POST.get("quantity", ""),
+            "units_count": request.POST.get("units_count", "1"),
+            "palette_quantity": request.POST.get("palette_quantity", ""),
+            "selected_palette_id": request.POST.get("palette", ""),
+            "selected_customer_id": request.POST.get("customer", ""),
+        }
+        try:
+            quantity, palette, palette_quantity = parse_shipment_unit_data(request.POST, order.product)
+            try:
+                units_count = int(submitted["units_count"])
+            except (TypeError, ValueError):
+                raise ValueError("Podaj całkowitą liczbę jednostek.")
+            if not 1 <= units_count <= 100:
+                raise ValueError("Liczba jednostek musi wynosić od 1 do 100.")
+            try:
+                buyer = Buyer.objects.get(pk=int(submitted["selected_customer_id"]))
+            except (TypeError, ValueError, Buyer.DoesNotExist):
+                raise ValueError("Wybierz istniejącego klienta.")
+        except ValueError as exc:
+            return render(request, self.template_name, self.get_context(order, **submitted, error=str(exc)))
+
+        with transaction.atomic():
+            for _ in range(units_count):
+                ShipmentUnit.objects.create(
+                    order=order, quantity=quantity, palette=palette,
+                    palette_quantity=palette_quantity, created_by=request.user, customer=buyer,
+                )
+        messages.success(request, f"Dodano jednostki: {units_count}. Łącznie {quantity * units_count} szt., {palette_quantity * units_count} palet.")
+        return redirect("warehouse:shipment-unit-create", order_id=order.id)
+
+
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import FileResponse
+from django.urls import reverse_lazy
+from django.views import View
+
+from warehouse.models import ShipmentUnit
+from warehouse.services.shipment_unit_pdf import ShipmentUnitPDF
+
+
+class ShipmentUnitPrintView(
+    LoginRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def get(
+        self,
+        request,
+        shipment_unit_id,
+    ):
+        shipment_unit = get_object_or_404(
+            ShipmentUnit.objects.select_related(
+                "order",
+                "order__provider",
+                "order__customer",
+                "order__product",
+                "product",
+                "palette",
+                "created_by",
+            ),
+            id=shipment_unit_id,
+        )
+
+        pdf_buffer = ShipmentUnitPDF(
+            request=request,
+            shipment_unit=shipment_unit,
+        ).build()
+
+        filename = (
+            f"paletowka-"
+            f"{shipment_unit.id}.pdf"
+        )
+
+        response = FileResponse(
+            pdf_buffer,
+            content_type="application/pdf",
+        )
+
+        response["Content-Disposition"] = (
+            f'inline; filename="{filename}"'
+        )
+
+        return response
+
+
+class ShipmentUnitsPrintAllView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_units_print_all.html"
+
+    def get(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related("product"),
+            id=order_id,
+        )
+
+        shipment_units = (
+            ShipmentUnit.objects
+            .filter(order=order)
+            .select_related(
+                "order",
+                "product",
+                "palette",
+                "created_by",
+            )
+            .order_by("created", "id")
+        )
+
+        return render(request, self.template_name, {
+            "order": order,
+            "shipment_units": shipment_units,
+        })
+
+
+class ShipmentUnitUpdateView(
+    LoginRequiredMixin,
+    ShipmentUnitOwnerRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_unit_update.html"
+
+    def get_context(self, shipment_unit, **kwargs):
+        context = {
+            "shipment_unit": shipment_unit,
+            "order": shipment_unit.order,
+            "quantity": shipment_unit.quantity,
+            "palette_quantity": shipment_unit.palette_quantity,
+            "selected_palette_id": str(shipment_unit.palette_id) if shipment_unit.palette_id else "No palette",
+            "palettes": Palette.objects.all().order_by("name"),
+        }
+
+        context.update(kwargs)
+        return context
+
+    def get(self, request, shipment_unit_id):
+        self.check_shipment_unit_permission()
+
+        shipment_unit = self.get_shipment_unit()
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(shipment_unit),
+        )
+
+    def post(self, request, shipment_unit_id):
+        self.check_shipment_unit_permission()
+        shipment_unit = self.get_shipment_unit()
+        submitted = {
+            "quantity": request.POST.get("quantity", ""),
+            "palette_quantity": request.POST.get("palette_quantity", ""),
+            "selected_palette_id": request.POST.get("palette", ""),
+        }
+        try:
+            quantity, palette, palette_quantity = parse_shipment_unit_data(request.POST, shipment_unit.order.product)
+        except ValueError as exc:
+            return render(request, self.template_name, self.get_context(shipment_unit, **submitted, error=str(exc)))
+
+        if (shipment_unit.quantity == quantity
+                and shipment_unit.palette_id == (palette.pk if palette else None)
+                and shipment_unit.palette_quantity == palette_quantity):
+            messages.info(request, f"Nie wprowadzono zmian w jednostce #{shipment_unit.id}.")
+            return redirect("warehouse:shipment-unit-create", order_id=shipment_unit.order_id)
+
+        with transaction.atomic():
+            create_shipment_unit_history(
+                shipment_unit=shipment_unit, user=request.user,
+                action=ShipmentUnitHistory.ACTION_UPDATE,
+            )
+            shipment_unit.quantity = quantity
+            shipment_unit.palette = palette
+            shipment_unit.palette_quantity = palette_quantity
+            shipment_unit.save()
+        messages.success(request, f"Jednostka #{shipment_unit.id} została zaktualizowana.")
+        return redirect("warehouse:shipment-unit-create", order_id=shipment_unit.order_id)
+
+
+class ShipmentUnitDeleteView(
+    LoginRequiredMixin,
+    ShipmentUnitOwnerRequiredMixin,
+    View,
+):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, shipment_unit_id):
+        self.check_shipment_unit_permission()
+
+        shipment_unit = self.get_shipment_unit()
+
+        order_id = shipment_unit.order_id
+        deleted_unit_id = shipment_unit.id
+
+        with transaction.atomic():
+            create_shipment_unit_history(
+                shipment_unit=shipment_unit,
+                user=request.user,
+                action=ShipmentUnitHistory.ACTION_DELETE,
+            )
+
+            shipment_unit.delete()
+
+        messages.success(
+            request,
+            f"Jednostka #{deleted_unit_id} została usunięta.",
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-create",
+            order_id=order_id,
+        )
+
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core import signing
+from django.http import Http404
+from django.shortcuts import get_object_or_404, render
+from django.views import View
+
+def get_active_shipment(user):
+    shipment, _created = Shipment.objects.get_or_create(
+        created_by=user,
+        status=Shipment.STATUS_DRAFT
+    )
+
+    return shipment
+
+
+from django.core import signing
+from django.db import IntegrityError, transaction
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views import View
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from collections import defaultdict
+
+
+def build_shipment_summary(items):
+    """
+    Grupowanie:
+    klient -> produkt
+
+    Dla każdego produktu:
+    - suma sztuk,
+    - suma liczby palet,
+    - liczba poszczególnych typów palet.
+    """
+
+    grouped = {}
+
+    for item in items:
+        shipment_unit = item.shipment_unit
+        order = shipment_unit.order
+
+        customer = shipment_unit.customer or order.customer
+        product = shipment_unit.product or order.product
+        palette = shipment_unit.palette
+
+        customer_id = customer.id
+        customer_name = str(customer)
+
+        if product:
+            product_id = product.id
+            product_name = str(product.alter_name)
+        else:
+            product_id = None
+            product_name = "Brak produktu"
+
+        palette_name = (
+            str(palette)
+            if palette
+            else "Bez określonej palety"
+        )
+
+        if customer_id not in grouped:
+            grouped[customer_id] = {
+                "customer": customer,
+                "customer_name": customer_name,
+                "total_quantity": 0,
+                "palettes_count": 0,
+                "products": {},
+            }
+
+        customer_group = grouped[customer_id]
+
+        product_key = product_id or f"none-{product_name}"
+
+        if product_key not in customer_group["products"]:
+            customer_group["products"][product_key] = {
+                "product": product,
+                "product_name": product_name,
+                "total_quantity": 0,
+                "palettes_count": 0,
+                "palette_types": defaultdict(int),
+            }
+
+        product_group = customer_group["products"][product_key]
+
+        quantity = int(shipment_unit.quantity or 0)
+
+        product_group["total_quantity"] += quantity
+        product_group["palettes_count"] += shipment_unit.palette_quantity
+        if shipment_unit.palette_quantity:
+            product_group["palette_types"][palette_name] += shipment_unit.palette_quantity
+
+        customer_group["total_quantity"] += quantity
+        customer_group["palettes_count"] += shipment_unit.palette_quantity
+
+    result = []
+
+    for customer_group in grouped.values():
+        products = []
+
+        for product_group in customer_group["products"].values():
+            product_group["palette_types"] = [
+                {
+                    "name": palette_name,
+                    "quantity": palette_quantity,
+                }
+                for palette_name, palette_quantity
+                in sorted(product_group["palette_types"].items())
+            ]
+
+            products.append(product_group)
+
+        products.sort(
+            key=lambda row: row["product_name"].lower()
+        )
+
+        customer_group["products"] = products
+        result.append(customer_group)
+
+    result.sort(
+        key=lambda row: row["customer_name"].lower()
+    )
+
+    return result
+
+
+class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/loading_scan.html"
+
+    def get_shipment_unit(self, token):
+        try:
+            payload = signing.loads(
+                token,
+                salt="shipment-unit-loading",
+            )
+        except signing.BadSignature:
+            raise Http404("Nieprawidłowy kod palety.")
+
+        shipment_unit_id = payload.get("shipment_unit_id")
+
+        if not shipment_unit_id:
+            raise Http404(
+                "Kod nie zawiera identyfikatora palety."
+            )
+
+        return get_object_or_404(
+            ShipmentUnit.objects.select_related(
+                "order",
+                "order__customer",
+                "order__provider",
+                "order__product",
+                "product",
+                "palette",
+                "created_by",
+            ),
+            id=shipment_unit_id,
+        )
+
+    def get_context(self, request, shipment_unit, token):
+        visit_counter(request.user, "add_shipment_unit")
+        active_shipment = get_active_shipment(request.user)
+
+        shipment_items = (
+            active_shipment.items
+            .select_related(
+                "shipment_unit",
+                "shipment_unit__order",
+                "shipment_unit__order__customer",
+                "shipment_unit__order__product",
+                "shipment_unit__product",
+                "shipment_unit__palette",
+                "shipment_unit__customer",
+                "scanned_by",
+            )
+            .order_by("-scanned_at", "-id")
+        )
+
+        existing_item = (
+            ShipmentItem.objects
+            .select_related("shipment")
+            .filter(shipment_unit=shipment_unit)
+            .first()
+        )
+
+        return {
+            "shipment_unit": shipment_unit,
+            "order": shipment_unit.order,
+            "token": token,
+            "active_shipment": active_shipment,
+            "shipment_items": shipment_items,
+            "existing_item": existing_item,
+            "already_in_active_shipment": bool(
+                existing_item
+                and existing_item.shipment_id
+                == active_shipment.id
+            ),
+            "used_in_other_shipment": bool(
+                existing_item
+                and existing_item.shipment_id
+                != active_shipment.id
+            ),
+        }
+
+    def get(self, request, token):
+        shipment_unit = self.get_shipment_unit(token)
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                request,
+                shipment_unit,
+                token,
+            ),
+        )
+
+    def post(self, request, token):
+        shipment_unit = self.get_shipment_unit(token)
+
+        try:
+            with transaction.atomic():
+                active_shipment = (
+                    Shipment.objects
+                    .select_for_update()
+                    .get(
+                        created_by=request.user,
+                        status=Shipment.STATUS_DRAFT,
+                    )
+                )
+
+                existing_item = (
+                    ShipmentItem.objects
+                    .select_for_update()
+                    .filter(shipment_unit=shipment_unit)
+                    .select_related("shipment")
+                    .first()
+                )
+
+                if existing_item:
+                    if (
+                        existing_item.shipment_id
+                        == active_shipment.id
+                    ):
+                        messages.info(
+                            request,
+                            (
+                                f"Paleta #{shipment_unit.id} "
+                                "jest już w tym załadunku."
+                            ),
+                        )
+                    else:
+                        messages.error(
+                            request,
+                            (
+                                f"Paleta #{shipment_unit.id} "
+                                "została już przypisana do "
+                                f"wysyłki #{existing_item.shipment_id}."
+                            ),
+                        )
+
+                    return redirect(
+                        "warehouse:shipment-unit-loading-scan",
+                        token=token,
+                    )
+
+                ShipmentItem.objects.create(
+                    shipment=active_shipment,
+                    shipment_unit=shipment_unit,
+                    scanned_by=request.user,
+                )
+
+        except Shipment.DoesNotExist:
+            active_shipment = get_active_shipment(
+                request.user
+            )
+
+            try:
+                ShipmentItem.objects.create(
+                    shipment=active_shipment,
+                    shipment_unit=shipment_unit,
+                    scanned_by=request.user,
+                )
+            except IntegrityError:
+                messages.error(
+                    request,
+                    "Ta paleta została już wykorzystana.",
+                )
+
+                return redirect(
+                    "warehouse:shipment-unit-loading-scan",
+                    token=token,
+                )
+
+        except IntegrityError:
+            messages.error(
+                request,
+                "Ta paleta została już przypisana do wysyłki.",
+            )
+
+            return redirect(
+                "warehouse:shipment-unit-loading-scan",
+                token=token,
+            )
+
+        messages.success(
+            request,
+            (
+                f"Dodano paletę #{shipment_unit.id} "
+                "do aktywnego załadunku."
+            ),
+        )
+
+        return redirect(
+            "warehouse:shipment-unit-loading-scan",
+            token=token,
+        )
+
+
+class ShipmentItemDeleteView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, item_id):
+        item = get_object_or_404(
+            ShipmentItem.objects.select_related(
+                "shipment",
+                "shipment_unit",
+            ),
+            id=item_id,
+            shipment__created_by=request.user,
+            shipment__status=Shipment.STATUS_DRAFT,
+        )
+
+        shipment_id = item.shipment_id
+        shipment_unit_id = item.shipment_unit_id
+
+        item.delete()
+
+        messages.success(
+            request,
+            (
+                f"Usunięto paletę #{shipment_unit_id} "
+                f"z załadunku #{shipment_id}."
+            ),
+        )
+
+        return redirect(
+            "warehouse:shipment-detail",
+            shipment_id=shipment_id,
+        )
+
+
+class ActiveShipmentView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_detail.html"
+
+    def get(self, request):
+        shipment = get_active_shipment(request.user)
+
+        items = list(
+            shipment.items
+            .select_related(
+                "shipment_unit",
+                "shipment_unit__order",
+                "shipment_unit__order__customer",
+                "shipment_unit__order__product",
+                "shipment_unit__product",
+                "shipment_unit__palette",
+                "shipment_unit__customer",
+                "scanned_by",
+            )
+            .order_by("-scanned_at", "-id")
+        )
+
+        shipment_summary = build_shipment_summary(items)
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "shipment": shipment,
+                "items": items,
+                "shipment_summary": shipment_summary,
+            },
+        )
+
+
+from django.utils import timezone
+
+
+class ShipmentConfirmView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    def post(self, request, shipment_id):
+        car_number = (
+            request.POST.get("car_number") or ""
+        ).strip()
+
+        driver_name = (
+            request.POST.get("driver_name") or ""
+        ).strip()
+
+        notes = (
+            request.POST.get("notes") or ""
+        ).strip()
+
+        try:
+            with transaction.atomic():
+                shipment = get_object_or_404(
+                    Shipment.objects.select_for_update(),
+                    id=shipment_id,
+                    created_by=request.user,
+                    status=Shipment.STATUS_DRAFT,
+                )
+
+                if not shipment.items.exists():
+                    messages.error(
+                        request,
+                        (
+                            "Nie można potwierdzić pustego "
+                            "załadunku."
+                        ),
+                    )
+
+                    return redirect(
+                        "warehouse:active-shipment"
+                    )
+
+                if not car_number:
+                    messages.error(
+                        request,
+                        "Podaj numer rejestracyjny pojazdu.",
+                    )
+
+                    return redirect(
+                        "warehouse:active-shipment"
+                    )
+
+                shipment.car_number = car_number
+                shipment.driver_name = driver_name
+                shipment.notes = notes
+                shipment.status = Shipment.STATUS_CONFIRMED
+                shipment.confirmed_by = request.user
+                shipment.confirmed_at = timezone.now()
+
+                shipment.save(
+                    update_fields=[
+                        "car_number",
+                        "driver_name",
+                        "notes",
+                        "status",
+                        "confirmed_by",
+                        "confirmed_at",
+                    ]
+                )
+
+        except Exception as e:
+            messages.error(
+                request,
+                f"Nie udało się potwierdzić załadunku: {e}",
+            )
+
+            return redirect(
+                "warehouse:active-shipment"
+            )
+
+        messages.success(
+            request,
+            f"Załadunek #{shipment.id} został potwierdzony.",
+        )
+
+        return redirect(
+            "warehouse:shipment-detail",
+            shipment_id=shipment.id,
+        )
+
+class ShipmentDetailView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_detail.html"
+
+    def get(self, request, shipment_id):
+        shipment = get_object_or_404(
+            Shipment.objects.select_related(
+                "created_by",
+                "confirmed_by",
+            ),
+            id=shipment_id,
+        )
+
+        items = list(
+            shipment.items
+            .select_related(
+                "shipment_unit",
+                "shipment_unit__order",
+                "shipment_unit__order__customer",
+                "shipment_unit__order__product",
+                "shipment_unit__product",
+                "shipment_unit__palette",
+                "shipment_unit__customer",
+                "scanned_by",
+            )
+            .order_by("-scanned_at", "-id")
+        )
+
+        shipment_summary = build_shipment_summary(items)
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "shipment": shipment,
+                "items": items,
+                "shipment_summary": shipment_summary,
+            },
+        )
+
+
+from django.core.paginator import Paginator
+from django.db.models import Count, Sum, Q
+from django.db.models.functions import Coalesce
+
+
+class ShipmentListView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+    template_name = "warehouse/shipment_list.html"
+    archive_page_size = 20
+
+    def get(self, request):
+        search = (request.GET.get("q") or "").strip()
+
+        base_queryset = (
+            Shipment.objects
+            .select_related(
+                "created_by",
+                "confirmed_by",
+            )
+            .annotate(
+                annotated_units_count=Count(
+                    "items",
+                    distinct=True,
+                ),
+                annotated_palettes_count=Coalesce(
+                    Sum("items__shipment_unit__palette_quantity"), 0,
+                ),
+                annotated_total_quantity=Coalesce(
+                    Sum("items__shipment_unit__quantity"),
+                    0,
+                ),
+            )
+        )
+
+        active_shipments = (
+            base_queryset
+            .filter(status=Shipment.STATUS_DRAFT)
+            .order_by("-created_at", "-id")
+        )
+
+        archived_shipments = (
+            base_queryset
+            .exclude(status=Shipment.STATUS_DRAFT)
+        )
+
+        if search:
+            archive_filters = (
+                Q(car_number__icontains=search)
+                | Q(driver_name__icontains=search)
+                | Q(created_by__username__icontains=search)
+                | Q(created_by__first_name__icontains=search)
+                | Q(created_by__last_name__icontains=search)
+                | Q(confirmed_by__username__icontains=search)
+            )
+
+            if search.isdigit():
+                archive_filters |= Q(id=int(search))
+
+            archived_shipments = archived_shipments.filter(
+                archive_filters
+            )
+
+        archived_shipments = archived_shipments.order_by(
+            "-confirmed_at",
+            "-created_at",
+            "-id",
+        )
+
+        paginator = Paginator(
+            archived_shipments,
+            self.archive_page_size,
+        )
+
+        archive_page = paginator.get_page(
+            request.GET.get("page", 1)
+        )
+
+        own_active_shipment = (
+            active_shipments
+            .filter(created_by=request.user)
+            .first()
+        )
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "active_shipments": active_shipments,
+                "archive_page": archive_page,
+                "search": search,
+                "own_active_shipment": own_active_shipment,
+            },
+        )

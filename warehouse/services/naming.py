@@ -20,6 +20,13 @@ def norm_names(name: str) -> str:
     return " | ".join(parts)
 
 
+def create_alter_name(name: str) -> str:
+    parts = name.split('|')
+    parts = list(map(lambda x: x.strip(), parts))
+    parts = parts[1:]
+    return " | ".join(parts)
+
+
 def build_product_name(customer: str, flute: str, dimensions: str, extra: str = "") -> str:
     customer = norm_spaces(customer).upper()
     flute = norm_spaces(flute).upper()

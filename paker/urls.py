@@ -1,15 +1,38 @@
 from django.contrib import admin
 from django.urls import path, include
 from warehousemanager.views import *
-from django.conf.urls.static import static
+
+from paker.views.auth import (
+    LoginView,
+    LogoutView,
+    RootView
+)
+
+from paker.views.dashboard import DashboardView
 
 
 urlpatterns = [
     path('production/', include('production.urls')),
-    # path('orders/', include('orders.urls')),
+    path(
+        "modern_production/",
+        include(
+            "production.modern_urls"
+        ),
+    ),
+    path('orders/', include('orders.urls')),
     path('deliveries/', include('deliveries.urls')),
+    path('tasks/', include('tasks.urls')),
     path('whm/', include('warehousemanager.urls')),
     path('warehouse/', include('warehouse.urls', namespace='warehouse')),
+
+    path(
+            "modern_warehouse/",
+            include(
+                "warehouse.modern_urls"
+            ),
+        ),
+
+    path("maintenance/", include("maintenance.urls")),
 
     path('admin/', admin.site.urls, name='admin'),
 
@@ -17,25 +40,53 @@ urlpatterns = [
     path('buyers/', BuyersList.as_view(), name='buyers'),
 ]
 
+urlpatterns += [
+    path(
+        "login/",
+        LoginView.as_view(),
+        name="login",
+    ),
+
+    path(
+        "logout/",
+        LogoutView.as_view(),
+        name="logout",
+    ),
+
+    path(
+            "",
+            RootView.as_view(),
+            name="start-page",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "dashboard/",
+        DashboardView.as_view(),
+        name="dashboard",
+    ),
+]
+
 # absences
 urlpatterns += [
-    path('absences-list/', AbsencesList.as_view(), name='absence-list'),
+    # path('absences-list/', AbsencesList.as_view(), name='absence-list'),
     path('absences/', AbsencesAndHolidays.as_view(), name='absences'),
     path('add-absence/', AbsenceAdd.as_view(), name='add-absence'),
     path('person-absences/<int:person_id>/', PersonAbsences.as_view(), name='person-absences'),
     path('absence-delete/', AbsenceDelete.as_view(), name='absence-delete'),
 ]
 
-# ajax views
+# ajax modern_views
 urlpatterns += [
     path('get-local-var/<str:variable_name>/', GetLocalVar.as_view(), name='get-local-var'),
 ]
 
 # colors
 urlpatterns += [
-    path('colors/', ColorListView.as_view(), name='colors'),
-    path('color/<int:color_id>/', ColorDetail.as_view(), name='color'),
-    path('colors/refresh/', ColorRefresh.as_view(), name='color-refresh'),
+    # path('colors/', ColorListView.as_view(), name='colors'),
+    # path('color/<int:color_id>/', ColorDetail.as_view(), name='color'),
+    # path('colors/refresh/', ColorRefresh.as_view(), name='color-refresh'),
     path('colors/bucket/<int:bucket_id>/', BucketDetail.as_view(), name='bucket-details'),
     path('colors/bucket/<int:bucket_id>/qrcode/', BucketQRCode.as_view(), name='bucketQRcode')
 ]
@@ -48,9 +99,6 @@ urlpatterns += [
 
 # navigation
 urlpatterns += [
-    path('', StartPage.as_view(), name='start-page'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('login/', LoginView.as_view(), name='login'),
     path('main-page/', MainPageView.as_view(), name='main-page'),
 ]
 
@@ -61,25 +109,6 @@ urlpatterns += [
 # persons
 urlpatterns += [
     path('persons/', PersonListView.as_view(), name='persons'),
-    path('person/<int:person_id>/', PersonDetailView.as_view(), name='person-details')
-]
-
-# polymers
-urlpatterns += [
-    path('polymers/', PhotoPolymers.as_view(), name='photopolymers'),
-    path('polymer/<int:polymer_id>/', PhotoPolymerDetail.as_view(), name='polymer-details'),
-    path('polymer-create/', PolymerCreate.as_view(), name='polymer-create'),
-    path('polymer-update/<int:pk>/', PolymerUpdate.as_view(), name='polymer-update'),
-    path('polymer-delete/<int:pk>/', PolymerDelete.as_view(), name='polymer-delete'),
-]
-
-# punches
-urlpatterns += [
-    path('punches/', PunchesList.as_view(), name='punches'),
-    path('punch-add/', PunchAdd.as_view(), name='punch-add'),
-    path('punch/<str:punch_id>/', PunchDetails.as_view(), name='punch-details'),
-    path('punch-edit/<int:punch_id>/', PunchEdit.as_view(), name='punch-edit'),
-    path('punch-delete/<int:punch_id>/', PunchDelete.as_view(), name='punch-delete'),
 ]
 
 # reminders
@@ -100,8 +129,8 @@ urlpatterns += [
 
 # vacations
 urlpatterns += [
-    path('vacations/', AvailableVacation.as_view(), name='vacations'),
-    path('persons-vacations/<int:person_id>/', PersonsVacations.as_view(), name='persons-vacations')
+    # path('vacations/', AvailableVacation.as_view(), name='vacations'),
+    # path('persons-vacations/<int:person_id>/', PersonsVacations.as_view(), name='persons-vacations')
 ]
 
 # profile
@@ -137,9 +166,10 @@ urlpatterns += [
     path('active_hours/', ActiveHours.as_view(), name='active-hours')
 ]
 
-urlpatterns += [
-    path('wwtest/', WorkersVacationsTest.as_view())
-]
+#to delete?
+# urlpatterns += [
+#     path('wwtest/', WorkersVacationsTest.as_view())
+# ]
 
 urlpatterns += [
     path('add-note/', NoteAdd.as_view(), name='add-note'),

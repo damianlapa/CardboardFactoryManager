@@ -1,0 +1,653 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .part-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+    }
+
+    .part-gallery-item {
+        height: 140px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background: #fafafa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 6px;
+    }
+
+    .part-gallery-image {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .part-gallery-image:hover {
+        transform: scale(1.02);
+    }
+
+    .image-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .image-modal-box {
+        position: relative;
+        max-width: 95vw;
+        max-height: 95vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .image-modal-box img {
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        background: white;
+    }
+
+    .image-modal-close {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: white;
+        font-size: 26px;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .maintenance-detail-page {
+        padding: 16px;
+    }
+
+    .maintenance-title {
+        margin-bottom: 16px;
+    }
+
+    .maintenance-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr 420px;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .panel h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        font-size: 18px;
+    }
+
+    .panel h4 {
+        margin-top: 18px;
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .info-row {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .summary-boxes {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .summary-box {
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .summary-box.red {
+        background: #ffe9e9;
+        border: 1px solid #f1b5b5;
+        color: #9d1c1c;
+    }
+
+    .summary-box.yellow {
+        background: #fff8dd;
+        border: 1px solid #ead37a;
+        color: #8a6b00;
+    }
+
+    .summary-box.green {
+        background: #eaf8ea;
+        border: 1px solid #b6dfb6;
+        color: #1d6b1d;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .data-table th {
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .small-muted {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-missing {
+        background: #ffe3e3;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1c2;
+        color: #8a6300;
+    }
+
+    .status-ok {
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .event-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fcfcfc;
+    }
+
+    .event-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .event-meta {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    .empty-box {
+        padding: 16px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        color: #666;
+        text-align: center;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        color: #222;
+        font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 700px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+    }
+
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    @media (max-width: 1400px) {
+        .maintenance-layout {
+            grid-template-columns: 280px 1fr 360px;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .maintenance-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 1200px) {
+    .part-gallery {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    }
+
+    @media (max-width: 800px) {
+        .part-gallery {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-detail-page">
+    <div class="maintenance-title">
+        <h2>{{ part.code }} - {{ part.name }}</h2>
+    </div>
+
+    <div class="maintenance-layout">
+        <div class="panel">
+            <h3>Dane części</h3>
+
+            <div class="info-row"><b>Kod:</b> {{ part.code }}</div>
+            <div class="info-row"><b>Nazwa:</b> {{ part.name }}</div>
+            <div class="info-row"><b>Kategoria:</b> {{ part.category|default:"-" }}</div>
+            <div class="info-row"><b>Producent:</b> {{ part.producer|default:"-" }}</div>
+            <div class="info-row"><b>Jednostka:</b> {{ part.unit }}</div>
+            <div class="info-row"><b>Opis:</b><br>{{ part.description|default:"-" }}</div>
+
+            <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="btn" onclick="openSupplierModal()">Dodaj dostawcę</button>
+            </div>
+
+            {% if not available_suppliers %}
+                <div class="small-muted" style="margin-top:8px;">
+                    Wszyscy aktywni dostawcy są już przypisani do tej części.
+                </div>
+            {% endif %}
+
+            <div class="summary-boxes">
+                <div class="summary-box green">
+                    Stan całkowity: {{ current_qty }} {{ part.unit }}
+                </div>
+                <div class="summary-box yellow">
+                    Minimum: {{ part.min_quantity }} {{ part.unit }}
+                </div>
+                <div class="summary-box {% if current_qty <= 0 %}red{% elif below_minimum %}yellow{% else %}green{% endif %}">
+                    Status:
+                    {% if current_qty <= 0 %}
+                        BRAK
+                    {% elif below_minimum %}
+                        NISKI STAN
+                    {% else %}
+                        OK
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Stany magazynowe i dostawcy</h3>
+
+            <h4>Magazyny</h4>
+            {% if warehouse_stocks %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Magazyn</th>
+                            <th>Ilość</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ws in warehouse_stocks %}
+                            <tr>
+                                <td>{{ ws.warehouse.name }}</td>
+                                <td>{{ ws.quantity }} {{ part.unit }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Brak stanów magazynowych.
+                </div>
+            {% endif %}
+
+            <h4>Dostawcy</h4>
+            {% if part_suppliers %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Dostawca</th>
+                            <th>Kod u dostawcy</th>
+                            <th>Preferowany</th>
+                            <th>Lead time</th>
+                            <th>Notatki</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for link in part_suppliers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:supplier-detail' link.supplier.id %}">
+                                        {{ link.supplier.name }}
+                                    </a>
+                                </td>
+                                <td>{{ link.supplier_code|default:"-" }}</td>
+                                <td>{% if link.is_preferred %}Tak{% else %}Nie{% endif %}</td>
+                                <td>
+                                    {% if link.lead_time_days %}
+                                        {{ link.lead_time_days }} dni
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ link.notes|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Brak dostawców przypisanych do tej części.
+                </div>
+            {% endif %}
+
+            <h4>Przypisana do maszyn</h4>
+            {% if machines %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Maszyna</th>
+                            <th>Wymagane</th>
+                            <th>Krytyczna</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in machines %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:machine-detail' assignment.machine.id %}">
+                                        {{ assignment.machine }}
+                                    </a>
+                                </td>
+                                <td>{{ assignment.quantity_needed }} {{ part.unit }}</td>
+                                <td>{% if assignment.is_critical %}Tak{% else %}Nie{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Część nie jest przypisana do żadnej maszyny.
+                </div>
+            {% endif %}
+
+            {% if part.image_url_list %}
+                <h4>Zdjęcia</h4>
+                <div class="part-gallery">
+                    {% for image_url in part.image_url_list %}
+                        <img
+                            src="{{ image_url }}"
+                            alt="{{ part.name }}"
+                            class="part-gallery-image"
+                            onclick="openImageModal('{{ image_url|escapejs }}')"
+                        >
+                    {% endfor %}
+                </div>
+            {% endif %}
+                    </div>
+
+        <div class="panel">
+            <h3>Historia użycia</h3>
+
+            {% if usages %}
+                {% for usage in usages %}
+                    <div class="event-card">
+                        <div class="event-head">
+                            <span>{{ usage.event.get_event_type_display }}</span>
+                            <span>{{ usage.event.date|date:"Y-m-d" }}</span>
+                        </div>
+
+                        <div class="event-meta">
+                            Maszyna:
+                            <a href="{% url 'maintenance:machine-detail' usage.event.machine.id %}">
+                                {{ usage.event.machine }}
+                            </a><br>
+                            Zużyto: {{ usage.quantity }} {{ part.unit }}<br>
+                            Magazyn: {{ usage.warehouse_stock.warehouse.name|default:"-" }}
+                        </div>
+
+                        {% if usage.event.description %}
+                            <div>{{ usage.event.description }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-box">
+                    Brak historii użycia tej części.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="supplierModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj dostawcę do części</h3>
+            <button type="button" class="modal-close" onclick="closeSupplierModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:part-supplier-add' part.id %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_supplier">Dostawca</label>
+                    <select name="supplier" id="id_supplier" required>
+                        <option value="">---</option>
+                        {% for supplier in available_suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_supplier_code">Kod u dostawcy</label>
+                    <input type="text" name="supplier_code" id="id_supplier_code">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_lead_time_days">Lead time [dni]</label>
+                    <input type="number" name="lead_time_days" id="id_lead_time_days" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="is_preferred" id="id_is_preferred">
+                        Preferowany dostawca
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_notes">Notatki</label>
+                    <textarea name="notes" id="id_notes" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeSupplierModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="imageModal" class="image-modal-backdrop" style="display:none;">
+    <div class="image-modal-box">
+        <button type="button" class="image-modal-close" onclick="closeImageModal()">×</button>
+        <img id="imageModalPreview" src="" alt="Podgląd zdjęcia">
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openSupplierModal() {
+        document.getElementById("supplierModal").style.display = "flex";
+    }
+
+    function closeSupplierModal() {
+        document.getElementById("supplierModal").style.display = "none";
+        document.querySelector("#supplierModal form").reset();
+    }
+
+    window.addEventListener("mousedown", function(e) {
+        const supplierModal = document.getElementById("supplierModal");
+        if (e.target === supplierModal) {
+            closeSupplierModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeSupplierModal();
+        }
+    });
+</script>
+<script>
+    function openImageModal(imageUrl) {
+        const modal = document.getElementById("imageModal");
+        const preview = document.getElementById("imageModalPreview");
+        preview.src = imageUrl;
+        modal.style.display = "flex";
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById("imageModal");
+        const preview = document.getElementById("imageModalPreview");
+        modal.style.display = "none";
+        preview.src = "";
+    }
+
+    window.addEventListener("mousedown", function(e) {
+        const imageModal = document.getElementById("imageModal");
+        const supplierModal = document.getElementById("supplierModal");
+
+        if (e.target === imageModal) {
+            closeImageModal();
+        }
+
+        if (e.target === supplierModal) {
+            closeSupplierModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeSupplierModal();
+            closeImageModal();
+        }
+    });
+</script>
+{% endblock %}

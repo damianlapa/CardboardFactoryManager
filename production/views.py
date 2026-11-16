@@ -1,9 +1,14 @@
 from django.shortcuts import render, HttpResponse, redirect
 from django.views import View
 
+from django.shortcuts import get_object_or_404
+
 from django.http import JsonResponse
 
+from django.utils.dateparse import parse_datetime
+
 from django.db.models import Q
+from django.urls import reverse
 
 from production.models import *
 from production.forms import *
@@ -29,6 +34,26 @@ from django.urls import reverse_lazy
 import csv
 from django.http import HttpResponse
 from .models import ProductionUnit, WorkStation
+
+
+####### NEW IMPORTS
+
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.db.models import Count, Q
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views import View
+
+from production.models import (
+    ProductionOrder,
+    ProductionUnit,
+    WorkStation,
+)
+from warehousemanager.functions import visit_counter
+
+#######
 
 
 class Echo:
@@ -186,24 +211,6 @@ class GetProductionById(View):
             return HttpResponse(json.dumps(False))
 
 
-class ProductionMenu(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
-
-    def get(self, request):
-        return render(request, 'production/production-menu.html', locals())
-
-
-class AllProductionOrders(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
-
-    def get(self, request):
-        visit_counter(request.user, 'All Production Orders')
-        title = 'Production Orders'
-        production_orders = ProductionOrder.objects.filter(status__in=('ORDERED', 'UNCOMPLETED', 'COMPLETED', 'PLANNED'))
-        number = production_orders.count()
-        return render(request, 'production/production-all.html', locals())
-
-
 class AddMoreProductionOrders(LoginRequiredMixin, View):
     login_url = reverse_lazy('login')
 
@@ -243,55 +250,289 @@ class ProductionDetails(LoginRequiredMixin, View):
     def get(self, request, production_order_id):
         production_order_statuses = PRODUCTION_ORDER_STATUSES
         production_order = ProductionOrder.objects.get(id=production_order_id)
-        production_units = ProductionUnit.objects.filter(production_order=production_order).order_by('sequence')
+        production_units = ProductionUnit.objects.filter(
+            production_order=production_order
+        ).order_by('sequence')
+
+        production_unit_statuses = PRODUCTION_UNIT_STATUSES
+        workstations = WorkStation.objects.all()
+
+        today = datetime.datetime.today().date()
+
+        workers = Person.objects.filter(
+            occupancy_type='PRODUCTION',
+            job_end__isnull=True
+        ).order_by('last_name', 'first_name')
+
+        form = ProductionUnitForm(
+            initial={
+                'sequence': production_units.count() + 1,
+                'status': 'FINISHED',
+            },
+            day=today
+        )
+        punches_data = [
+            {
+                "id": punch.id,
+                "name": str(punch),
+            }
+            for punch in Punch.objects.all()
+        ]
+
+        photopolymers_data = [
+            {
+                "id": photopolymer.id,
+                "name": str(photopolymer),
+            }
+            for photopolymer in Photopolymer.objects.all()
+        ]
+
+        return render(request, 'production/production-details.html', locals())
+
+    def post(self, request, production_order_id):
+        production_order_statuses = PRODUCTION_ORDER_STATUSES
+        production_order = ProductionOrder.objects.get(id=production_order_id)
+        production_units = ProductionUnit.objects.filter(
+            production_order=production_order
+        ).order_by('sequence')
+
+        today = datetime.datetime.today().date()
+        form = ProductionUnitForm(request.POST, day=today)
+
+        production_unit_statuses = PRODUCTION_UNIT_STATUSES
+        workstations = WorkStation.objects.all()
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.production_order = production_order
+            obj.save()
+            form.save_m2m()
+
+            return redirect(
+                'production-details',
+                production_order_id=production_order.id
+            )
+
         return render(request, 'production/production-details.html', locals())
 
 
-class ChangeProductionStatus(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+class UpdateProductionUnitInline(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionunit"
+    )
 
-    def get(self, request):
-        production_order_id = int(request.GET.get('production-order-id'))
-        status = request.GET.get('status')
-        production_order = ProductionOrder.objects.get(id=production_order_id)
-        production_order.status = status
-        production_order.save()
+    def post(self, request, unit_id):
+        unit = get_object_or_404(
+            ProductionUnit,
+            pk=unit_id,
+        )
 
-        return redirect('production-details', production_order_id=production_order.id)
+        field = request.POST.get("field")
+        value = request.POST.get("value")
+
+        allowed_fields = {
+            "sequence",
+            "status",
+            "work_station",
+            "start",
+            "end",
+            "quantity_start",
+            "quantity_end",
+            "estimated_time",
+        }
+
+        if field not in allowed_fields:
+            return JsonResponse({
+                "success": False,
+                "error": "Niedozwolone pole."
+            }, status=400)
+
+        try:
+            if field == "work_station":
+                unit.work_station = WorkStation.objects.get(id=int(value))
+
+            elif field in ("sequence", "quantity_start", "quantity_end", "estimated_time"):
+                setattr(unit, field, int(value) if value else None)
 
 
-class AddProductionOrder(LoginRequiredMixin, View):
-    login_url = reverse_lazy('login')
+            elif field in ("start", "end"):
 
-    def get(self, request):
-        form = ProductionOrderForm()
-        return render(request, 'production/production-order-add.html', locals())
+                if value:
 
-    def post(self, request):
-        form = ProductionOrderForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            id_number = data['id_number']
-            cardboard = data['cardboard']
-            cardboard_dimensions = data['cardboard_dimensions']
-            customer = data['customer']
-            dimensions = data['dimensions']
-            ordered_quantity = data['ordered_quantity']
-            quantity = data['quantity']
-            status = data['status']
-            notes = data['notes']
+                    dt = datetime.datetime.strptime(value, "%Y-%m-%d %H:%M")
 
-            if customer:
-                customer = Buyer.objects.get(name=customer)
+                    if timezone.is_naive(dt):
+                        dt = timezone.make_aware(dt)
 
+                    setattr(unit, field, dt)
+
+                else:
+
+                    setattr(unit, field, None)
+
+            else:
+                setattr(unit, field, value)
+
+            unit.save()
+
+            return JsonResponse({
+                "success": True,
+                "field": field,
+                "value": value,
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            }, status=400)
+
+
+class UpdateProductionUnitPersons(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionunit"
+    )
+
+    def post(self, request, unit_id):
+        unit = ProductionUnit.objects.get(id=unit_id)
+
+        raw_ids = request.POST.getlist("persons[]")
+        person_ids = []
+
+        for value in raw_ids:
             try:
-                ProductionOrder.objects.get(id_number=id_number)
-            except ObjectDoesNotExist:
-                ProductionOrder.objects.create(ordered_quantity=ordered_quantity, id_number=id_number,
-                                               cardboard=cardboard,
-                                               cardboard_dimensions=cardboard_dimensions, customer=customer,
-                                               dimensions=dimensions, quantity=quantity, status=status, notes=notes)
-        return redirect('all-production-orders')
+                person_ids.append(int(value))
+            except ValueError:
+                pass
+
+        persons = Person.objects.filter(id__in=person_ids)
+        unit.persons.set(persons)
+
+        return JsonResponse({
+            "success": True,
+            "persons": [str(p) for p in persons],
+        })
+
+
+from django.http import JsonResponse
+
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.http import JsonResponse
+from django.shortcuts import (
+    get_object_or_404,
+)
+from django.views import View
+
+from production.models import (
+    PRODUCTION_ORDER_STATUSES,
+    ProductionOrder,
+)
+
+
+class ChangeProductionStatus(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionorder"
+    )
+
+    def post(
+        self,
+        request,
+        production_order_id,
+    ):
+        production_order = (
+            get_object_or_404(
+                ProductionOrder,
+                pk=production_order_id,
+            )
+        )
+
+        status = request.POST.get(
+            "status"
+        )
+
+        allowed_statuses = {
+            value
+            for value, label
+            in PRODUCTION_ORDER_STATUSES
+        }
+
+        if status not in allowed_statuses:
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error":
+                        "Nieprawidłowy status.",
+                },
+                status=400,
+            )
+
+        production_order.status = (
+            status
+        )
+
+        production_order.save(
+            update_fields=[
+                "status",
+            ]
+        )
+
+        return JsonResponse({
+            "success": True,
+            "status":
+                production_order.status,
+        })
+
+
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+
+from production.forms import (
+    ProductionOrderForm,
+)
+from production.models import (
+    ProductionOrder,
+)
+
+
+class ProductionOrderCreateView(
+    PermissionRequiredMixin,
+    CreateView,
+):
+    permission_required = (
+        "production.add_productionorder"
+    )
+
+    model = ProductionOrder
+
+    form_class = ProductionOrderForm
+
+    template_name = (
+        "production/orders/form.html"
+    )
+
+    def get_success_url(self):
+        return reverse(
+            "production-details",
+            kwargs={
+                "production_order_id":
+                    self.object.id,
+            },
+        )
 
 
 class WorkStations(LoginRequiredMixin, View):
@@ -1390,3 +1631,111 @@ class OrderDetailsRedirect(LoginRequiredMixin, View):
             return redirect('warehouse:order-detail-view', order_id=order.id)
         except ObjectDoesNotExist:
             return HttpResponse('notok')
+
+
+from django.contrib import messages
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+)
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+)
+from django.views import View
+
+from production.models import (
+    ProductionOrder,
+)
+from warehousemanager.models import (
+    Photopolymer,
+    Punch,
+)
+
+
+class UpdateProductionOrderToolView(
+    PermissionRequiredMixin,
+    View,
+):
+    permission_required = (
+        "production.change_productionorder"
+    )
+
+    def post(
+        self,
+        request,
+        production_order_id,
+    ):
+        production_order = (
+            get_object_or_404(
+                ProductionOrder,
+                pk=production_order_id,
+            )
+        )
+
+        tool_type = request.POST.get(
+            "tool_type"
+        )
+
+        tool_id = (
+            request.POST.get(
+                "tool_id"
+            )
+            or None
+        )
+
+        if tool_type == "punch":
+
+            production_order.punch = (
+                get_object_or_404(
+                    Punch,
+                    pk=tool_id,
+                )
+                if tool_id
+                else None
+            )
+
+            production_order.save(
+                update_fields=[
+                    "punch",
+                ]
+            )
+
+            messages.success(
+                request,
+                "Wykrojnik został zapisany.",
+            )
+
+        elif tool_type == "photopolymer":
+
+            production_order.photopolymer = (
+                get_object_or_404(
+                    Photopolymer,
+                    pk=tool_id,
+                )
+                if tool_id
+                else None
+            )
+
+            production_order.save(
+                update_fields=[
+                    "photopolymer",
+                ]
+            )
+
+            messages.success(
+                request,
+                "Polimer został zapisany.",
+            )
+
+        else:
+
+            messages.error(
+                request,
+                "Nieprawidłowy typ narzędzia.",
+            )
+
+        return redirect(
+            "production-details",
+            production_order_id=
+                production_order.id,
+        )

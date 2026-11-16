@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('deliveries', '0003_auto_20230703_0743'),
-        ('orders', '0015_orderproduct_cardboard'),
         ('warehousemanager', '0094_alter_photopolymer_name'),
     ]
 
@@ -30,17 +29,14 @@ class Migration(migrations.Migration):
                 ('driver', models.CharField(max_length=64)),
                 ('phone', models.CharField(max_length=24)),
                 ('palette_number', models.PositiveIntegerField(default=0)),
-                ('worker', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='warehousemanager.person')),
-                ('provider', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='deliveries.provider')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='DeliveryItem',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('quantity', models.PositiveIntegerField()),
-                ('delivery', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='deliveries.delivery')),
-                ('order_item', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='orders.orderproduct')),
+                ('worker', models.ForeignKey(
+                    on_delete=django.db.models.deletion.PROTECT,
+                    to='warehousemanager.person'
+                )),
+                ('provider', models.ForeignKey(
+                    on_delete=django.db.models.deletion.PROTECT,
+                    to='deliveries.provider'
+                )),
             ],
         ),
     ]

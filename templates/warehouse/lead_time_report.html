@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block style %}
+
+<link rel="stylesheet" href="{% static 'css/warehouse/lead_time_report.css' %}">
+
+{% endblock %}
+
+{% block content %}
+<div class="lt-page">
+  <header class="lt-heading">
+    <div><p class="lt-eyebrow">PRODUKCJA / ANALITYKA</p><h1>Analiza czasu realizacji</h1>
+    <p>Średnie czasy poszczególnych etapów zamówienia w dniach roboczych.</p></div>
+  </header>
+
+  <form method="get" class="lt-filters">
+    <label>Analizowany etap
+      <select name="metric">
+        {% for key, info in metrics.items %}<option value="{{ key }}" {% if metric == key %}selected{% endif %}>{{ info.0 }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Agregacja
+      <select name="grouping">
+        <option value="month" {% if grouping == 'month' %}selected{% endif %}>Miesiące</option>
+        <option value="week" {% if grouping == 'week' %}selected{% endif %}>Tygodnie</option>
+      </select>
+    </label>
+    <label>Klient
+      <select name="customer"><option value="">Wszyscy klienci</option>
+        {% for customer in customers %}<option value="{{ customer.pk }}" {% if customer_id == customer.pk|stringformat:'s' %}selected{% endif %}>{{ customer }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Od <input type="date" name="date_from" value="{{ date_from }}"></label>
+    <label>Do <input type="date" name="date_to" value="{{ date_to }}"></label>
+    <button type="submit" class="lt-submit">Pokaż wyniki</button>
+  </form>
+
+  <div class="lt-stats">
+    <div class="lt-stat"><span>Średni czas</span><strong>{% if average is not None %}{{ average|floatformat:2 }}{% else %}—{% endif %}</strong><small>dni roboczych</small></div>
+    <div class="lt-stat"><span>Mediana</span><strong>{% if median is not None %}{{ median|floatformat:2 }}{% else %}—{% endif %}</strong><small>dni roboczych</small></div>
+    <div class="lt-stat"><span>Liczba zamówień</span><strong>{{ count }}</strong><small>uwzględnionych w raporcie</small></div>
+  </div>
+
+  <section class="lt-panel"><div class="lt-panel-title"><h2>{{ metric_title }}</h2><span>Średnia według daty zakończenia etapu</span></div>
+    {% if periods %}<div class="lt-chart"><canvas id="ltChart" aria-label="Wykres średniego czasu realizacji"></canvas></div>
+    {% else %}<p class="lt-empty">Brak zamówień z kompletnymi datami w wybranym okresie.</p>{% endif %}
+  </section>
+
+  <section class="lt-panel"><div class="lt-panel-title"><h2>Podsumowanie okresów</h2></div>
+    <div class="lt-table-wrap"><table class="lt-table"><thead><tr><th>Okres</th><th>Średnia [dni]</th><th>Mediana [dni]</th><th>Zamówienia</th></tr></thead>
+    <tbody>{% for row in periods %}<tr><td>{{ row.label }}</td><td>{{ row.average|floatformat:2 }}</td><td>{{ row.median|floatformat:2 }}</td><td>{{ row.count }}</td></tr>
+    {% empty %}<tr><td colspan="4">Brak danych</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+
+  <section class="lt-panel"><div class="lt-panel-title"><h2>Szczegóły zamówień</h2><span>{{ count }} pozycji</span></div>
+    <div class="lt-table-wrap"><table class="lt-table"><thead><tr><th>Zamówienie</th><th>Klient</th><th>Od</th><th>Do</th><th>Dni robocze</th><th>Okres</th></tr></thead>
+    <tbody>{% for row in details %}<tr><td><strong>{{ row.order.provider }} {{ row.order.order_id }}</strong></td><td>{{ row.order.customer }}</td><td>{{ row.start|date:'d.m.Y' }}</td><td>{{ row.end|date:'d.m.Y' }}</td><td class="lt-number">{{ row.days }}</td><td>{{ row.period }}</td></tr>
+    {% empty %}<tr><td colspan="6">Brak danych</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+  <p class="lt-note">Dni robocze: pon.–pt. bez świąt z bazy Holiday. Dzień początkowy jest wyłączony, końcowy włączony. Zamówienia bez kompletnych lub chronologicznie poprawnych dat są pomijane.</p>
+</div>
+{{ chart_labels|json_script:'lt-labels' }}
+{{ chart_values|json_script:'lt-values' }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('ltChart');
+  if (!canvas || !window.Chart) return;
+  const labels = JSON.parse(document.getElementById('lt-labels').textContent);
+  const values = JSON.parse(document.getElementById('lt-values').textContent);
+  new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Średnia [dni robocze]', data: values,
+      borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.09)',
+      fill: true, tension: .3, pointRadius: 4, pointHoverRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Dni robocze' } } },
+      plugins: { legend: { display: false } } }
+  });
+})();
+</script>
+{% endblock %}

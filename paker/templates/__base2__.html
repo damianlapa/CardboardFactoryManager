@@ -36,7 +36,9 @@
         </div>
         <div class="welcome-text">
             <div>
-            WELCOME <a href="{% url 'profile' %}">{{ user }}</a>! | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
+            WELCOME <a href="{% url 'profile' %}">{{ user }}</a>!| <a href="{% url 'person-pin-change' %}">
+    Zmień PIN
+</a> | {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a> |{% endif %}
                 <a href="{% url 'logout' %}">LOGOUT</a></div>
             {% if new_messages %}
             <a href="{% url 'messages' %}">
@@ -50,7 +52,7 @@
     {% endblock %}
     <div class="nav-bar">
         {% if user.is_superuser %}
-        <a href="{% url 'persons' %}">
+        <a href="{% url 'employee_list' %}">
             <div class="nav-item" {% if new_reminders %}id="div-workers-att"{% endif %}>
                 WORKERS
             </div>
@@ -77,7 +79,7 @@
         </a>
         <a href="{% url 'absence-list' %}">
         <div class="nav-item">
-            ABSENCES
+            ABSENCESs
         </div>
             </a>
         <a href="{% url 'punches' %}">

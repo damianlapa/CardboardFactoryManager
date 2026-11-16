@@ -1,0 +1,107 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .maintenance-page {
+        padding: 20px;
+    }
+
+    .maintenance-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .maintenance-header h2 {
+        margin: 0;
+    }
+
+    .machine-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+    }
+
+    .machine-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: 0.2s ease;
+    }
+
+    .machine-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .machine-card a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .machine-code {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 6px;
+    }
+
+    .machine-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .machine-meta {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        color: #444;
+    }
+
+    .empty-box {
+        background: #fff;
+        border: 1px dashed #bbb;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-page">
+    <div class="maintenance-header">
+        <h2>Maszyny i urządzenia</h2>
+    </div>
+
+    {% if machines %}
+        <div class="machine-grid">
+            {% for machine in machines %}
+                <div class="machine-card">
+                    <a href="{% url 'maintenance:machine-detail' machine.id %}">
+                        <div class="machine-code">{{ machine.code }}</div>
+                        <div class="machine-name">{{ machine.name }}</div>
+
+                        <div class="machine-meta">
+                            <div><b>Producent:</b> {{ machine.manufacturer|default:"-" }}</div>
+                            <div><b>Nr seryjny:</b> {{ machine.serial_number|default:"-" }}</div>
+                            <div><b>Lokalizacja:</b> {{ machine.location|default:"-" }}</div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-box">
+            Brak aktywnych maszyn.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

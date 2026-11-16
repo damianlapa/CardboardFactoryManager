@@ -6,6 +6,7 @@ from warehousemanager.models import Person, Buyer, Holiday, Punch, Photopolymer
 from warehouse.models import MonthResults, DeliveryItem, Order
 from decimal import Decimal, ROUND_HALF_UP
 import datetime
+from django.conf import settings
 
 PRODUCTION_ORDER_STATUSES = (
     ('ORDERED', 'ORDERED'),
@@ -69,9 +70,26 @@ class ProductionOrder(models.Model):
     quantity = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=PRODUCTION_ORDER_STATUSES, default='UNCOMPLETED')
     completed = models.DateTimeField(null=True, blank=True)
-    priority = models.BooleanField(default=False)
+    PRIORITY_CHOICES = (
+        (1, "Niski"),
+        (2, "Wysoki"),
+        (3, "Krytyczny"),
+    )
+
+    priority = models.PositiveSmallIntegerField(
+        choices=PRIORITY_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    priority_date = models.DateField(
+        null=True,
+        blank=True,
+    )
     notes = models.CharField(max_length=1000, null=True, blank=True)
     add_date = models.DateTimeField(auto_now_add=True)
+    photopolymer = models.ForeignKey("warehousemanager.Photopolymer", on_delete=models.PROTECT, null=True, blank=True, related_name="orders")
+    punch = models.ForeignKey("warehousemanager.Punch", on_delete=models.PROTECT, null=True, blank=True, related_name="orders")
 
     def __str__(self):
         return f'{self.id_number} {self.customer} {self.dimensions}'
@@ -146,6 +164,72 @@ class ProductionOrder(models.Model):
 
     class Meta:
         ordering = ['add_date']
+
+
+from django.conf import settings
+from django.db import models
+
+
+class ProductionOrderPriorityHistory(models.Model):
+
+    PRIORITY_CHOICES = (
+        (1, "Niski"),
+        (2, "Wysoki"),
+        (3, "Krytyczny"),
+    )
+
+    order = models.ForeignKey(
+        ProductionOrder,
+        on_delete=models.CASCADE,
+        related_name="priority_history",
+    )
+
+    priority = models.PositiveSmallIntegerField(
+        choices=ProductionOrder.PRIORITY_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    priority_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="production_priority_changes",
+    )
+
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = [
+            "-changed_at",
+            "-id",
+        ]
+
+        indexes = [
+            models.Index(
+                fields=["order", "-changed_at"],
+            ),
+            models.Index(
+                fields=["changed_at"],
+            ),
+        ]
+
+    def __str__(self):
+        priority = self.priority if self.priority else "brak"
+
+        return (
+            f"{self.order} | "
+            f"priority={priority} | "
+            f"{self.changed_at:%Y-%m-%d %H:%M}"
+        )
 
 
 class WorkStation(models.Model):
@@ -315,20 +399,23 @@ class ProductionUnit(models.Model):
             return 0
 
     def unit_production_cost(self):
-        worker_cost = 0
-        unit_duration = self.unit_duration2() / 3600
-        unit_start = self.start
-        for worker in self.persons.all():
-            current_contract = worker.contract(unit_start)
-            if not current_contract:
-                current_contract = 0
-            unit_duration = Decimal(str(unit_duration))
-            worker_cost += (current_contract * unit_duration) / 168
-        worker_cost = D(str(worker_cost * Decimal('1.205')))
-        energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
-        machine_usage = self.work_station.calculate_machine_usage(unit_duration)
+        if self.unit_duration2():
+            worker_cost = 0
+            unit_duration = self.unit_duration2() / 3600
+            unit_start = self.start
+            for worker in self.persons.all():
+                current_contract = worker.contract(unit_start)
+                if not current_contract:
+                    current_contract = 0
+                unit_duration = Decimal(str(unit_duration))
+                worker_cost += (current_contract * unit_duration) / 168
+            worker_cost = D(str(worker_cost * Decimal('1.205')))
+            energy_cost = self.work_station.calculate_energy_cost(unit_duration, 1)
+            machine_usage = self.work_station.calculate_machine_usage(unit_duration)
 
-        return money(worker_cost), money(energy_cost), money(machine_usage)
+            return money(worker_cost), money(energy_cost), money(machine_usage)
+        else:
+            return money(Decimal('0.00')), money(Decimal('0.00')), money(Decimal('0.00'))
 
     @classmethod
     def last_in_line(cls, station, point=None):

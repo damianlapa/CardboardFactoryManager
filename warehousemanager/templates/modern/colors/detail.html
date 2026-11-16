@@ -1,0 +1,297 @@
+{% extends "__base_modern__.html" %}
+{% load static %}
+
+{% block title %}{{ color }}{% endblock %}
+{% block page_title %}Szczegóły farby{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/colors.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+
+        <a
+            href="{% url 'colors' %}"
+            class="color-back-link"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+            Wróć do farb
+        </a>
+
+        <div class="color-title-row">
+
+            <span
+                class="color-title-sample"
+                style="--color-value: {{ color_hex }};"
+            ></span>
+
+            <div>
+                <h1 class="app-page-title">
+                    {{ color }}
+                </h1>
+
+                <div class="app-page-description">
+                    {{ color_hex }}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="color-metrics">
+
+    <div class="app-card color-metric">
+
+        <div class="color-metric__label">
+            Aktualny stan
+        </div>
+
+        <div class="color-metric__value">
+            {{ current_weight|floatformat:1 }}
+            <span>kg</span>
+        </div>
+
+    </div>
+
+
+    <div class="app-card color-metric">
+
+        <div class="color-metric__label">
+            Aktywne wiadra
+        </div>
+
+        <div class="color-metric__value">
+            {{ active_buckets|length }}
+        </div>
+
+    </div>
+
+
+    <div class="app-card color-metric">
+
+        <div class="color-metric__label">
+            Łączne zużycie
+        </div>
+
+        <div class="color-metric__value">
+            {{ total_usage|floatformat:1 }}
+            <span>kg</span>
+        </div>
+
+    </div>
+
+
+    <div class="app-card color-metric">
+
+        <div class="color-metric__label">
+            Polimery
+        </div>
+
+        <div class="color-metric__value">
+            {{ polymers|length }}
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="color-detail-grid">
+
+    <section>
+
+        <div class="app-card color-section">
+
+            <div class="app-card__header">
+
+                <div>
+                    <h2 class="app-card__title">
+                        Wiadra
+                    </h2>
+
+                    <div class="color-section-description">
+                        Aktualne opakowania tej farby
+                    </div>
+                </div>
+
+            </div>
+
+
+            {% if active_buckets %}
+
+                <div class="color-table-scroll">
+
+                    <table class="color-table">
+
+                        <thead>
+                            <tr>
+                                <th>Wiadro</th>
+                                <th>Dostawca</th>
+                                <th>Produkcja</th>
+                                <th>Ważność</th>
+                                <th>Stan</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for bucket in active_buckets %}
+
+                                <tr>
+
+                                    <td>
+                                        <strong>
+                                            #{{ bucket.id }}
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        {{ bucket.provider|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {{ bucket.production_date|date:"d.m.Y"|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {{ bucket.expiration_date|date:"d.m.Y"|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        <strong>
+                                            {{ bucket.weight|floatformat:1 }}
+                                            kg
+                                        </strong>
+                                    </td>
+
+                                    <td class="color-action-cell">
+
+                                        <a
+                                            href="{% url 'bucket-details' bucket.id %}"
+                                            class="color-details-button"
+                                        >
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="color-empty">
+                    Brak aktywnych wiader.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="app-card color-section color-chart-card">
+
+            <div class="app-card__header">
+
+                <div>
+                    <h2 class="app-card__title">
+                        Zużycie farby
+                    </h2>
+
+                    <div class="color-section-description">
+                        Skumulowane zużycie w czasie
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="color-chart">
+                <canvas id="colorUsageChart"></canvas>
+            </div>
+
+            {{ chart_data|json_script:"color-chart-data" }}
+
+        </div>
+
+    </section>
+
+
+    <aside>
+
+        <div class="app-card color-section">
+
+            <div class="app-card__header">
+
+                <div>
+                    <h2 class="app-card__title">
+                        Polimery
+                    </h2>
+
+                    <div class="color-section-description">
+                        Powiązane z tym kolorem
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="color-polymer-list">
+
+                {% for polymer in polymers %}
+
+                    <a
+                        href="{% url 'polymer-details' polymer.id %}"
+                        class="color-polymer-item"
+                    >
+                        <span>
+                            {{ polymer }}
+                        </span>
+
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+
+                {% empty %}
+
+                    <div class="color-empty">
+                        Brak powiązanych polimerów.
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/modern/colors.js' %}"></script>
+
+{% endblock %}

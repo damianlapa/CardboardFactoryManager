@@ -1,0 +1,79 @@
+:root {
+
+    /* brand */
+
+    --app-primary: #2563eb;
+    --app-primary-hover: #1d4ed8;
+    --app-primary-soft: #eff6ff;
+
+    --app-danger: #dc2626;
+    --app-warning: #d97706;
+    --app-success: #16a34a;
+
+
+    /* backgrounds */
+
+    --app-bg: #f5f7fa;
+    --app-surface: #ffffff;
+
+    --app-surface-hover: #f8fafc;
+
+
+    /* text */
+
+    --app-text: #1e293b;
+    --app-text-secondary: #64748b;
+    --app-text-muted: #94a3b8;
+
+
+    /* borders */
+
+    --app-border: #e2e8f0;
+    --app-border-strong: #cbd5e1;
+
+
+    /* radius */
+
+    --app-radius-sm: 6px;
+    --app-radius: 10px;
+    --app-radius-lg: 14px;
+
+
+    /* shadows */
+
+    --app-shadow-sm:
+        0 1px 3px rgba(15, 23, 42, .06);
+
+    --app-shadow:
+        0 4px 18px rgba(15, 23, 42, .08);
+
+
+    /* spacing */
+
+    --app-space-1: 4px;
+    --app-space-2: 8px;
+    --app-space-3: 12px;
+    --app-space-4: 16px;
+    --app-space-5: 20px;
+    --app-space-6: 24px;
+    --app-space-8: 32px;
+
+
+    /* layout */
+
+    --app-header-height: 66px;
+    --app-navigation-height: 48px;
+
+
+    /* typography */
+
+    --app-font:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+}

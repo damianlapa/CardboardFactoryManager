@@ -7,6 +7,7 @@ import decimal
 import math
 import datetime
 from warehousemanager.clear_funcs import work_days_during_period
+from django.contrib.auth.hashers import make_password, check_password
 
 MONTHS = (
     ('1', 'January'),
@@ -131,20 +132,23 @@ OCCUPANCY_TYPE = (
     ('OFFICE', 'OFFICE'),
     ('OTHER', 'OTHER'),
     ('MANAGEMENT', 'MANAGEMENT'),
-    ('LOGISTIC', 'LOGISTIC')
+    ('LOGISTIC', 'LOGISTIC'),
+    ('MAN/PROD', 'MAN/PROD'),
 )
 
 COLORS_PROVIDERS = (
     ('INERGIS', 'INERGIS'),
     ('NEOINK', 'NEOINK'),
     ('AQUA POLIMERY', 'AQUA POLIMERY'),
-    ('CHESPA', 'CHESPA')
+    ('CHESPA', 'CHESPA'),
+    ('CHEMTEX', 'CHEMTEX')
 )
 
 
 class Person(models.Model):
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
+    birth_date = models.DateField(blank=True, null=True)
     email_address = models.EmailField()
     telephone = models.CharField(max_length=16)
     job_start = models.DateField(default=datetime.datetime.strptime('01-01-2017', '%d-%m-%Y'))
@@ -157,12 +161,25 @@ class Person(models.Model):
     qualified_workstations = models.ManyToManyField('production.WorkStation', through='WorkStationQualification', blank=True,
         related_name='qualified_persons'
     )
+    pin = models.CharField(max_length=128, blank=True, default='')
 
     class Meta:
         ordering = ['last_name', 'first_name']
 
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
+
+    def set_pin(self, raw_pin):
+        self.pin = make_password(str(raw_pin))
+
+    def check_pin(self, raw_pin):
+        if not self.pin:
+            return False
+
+        return check_password(str(raw_pin), self.pin)
+
+    def has_pin(self):
+        return bool(self.pin)
 
     def contract(self, date=None):
         contracts = list(Contract.objects.filter(worker=self).order_by('date_start'))
@@ -179,7 +196,6 @@ class Person(models.Model):
                     else:
                         return contracts[-1].salary
         return 0
-
 
     def get_initials(self):
         return '{}{}'.format(self.first_name[0:2], self.last_name[0:2])
@@ -221,8 +237,6 @@ class Person(models.Model):
         else:
             return 0
 
-
-
     # new
     def worker_vacations(self, year=2024):
         result = {}
@@ -246,28 +260,6 @@ class Person(models.Model):
             days += (limit - vacations_summary)
 
         return days
-
-
-
-    # def vacation_days(self, year):
-    #     r = 0
-    #     if year == '2021':
-    #         r += self.amount_2021 + self.yearly_vacation_limit
-    #     else:
-    #         r += self.yearly_vacation_limit + self.vacation_days(str(int(year) - 1))
-    #     for a in Absence.objects.filter(worker=self, absence_date__gt=datetime.date(2020, 12, 31)):
-    #         if a.absence_type == 'UW':
-    #             r -= 1
-    #     return r
-    #
-    # def vacation_last_from_year(self, year):
-    #     r = 0
-    #     if year == '2020':
-    #         r = self.amount_2021
-    #     else:
-    #         r = self.vacation_days(str(year)) - self.amount_2021
-    #
-    #     return r
 
     def end_year_vacation(self, year):
         if year < 2020:
@@ -325,9 +317,6 @@ class Person(models.Model):
         used_vacation = Absence.objects.filter(worker=self, absence_date__gte=start, absence_date__lte=end,
                                                absence_type__in=['UW', 'UŻ'])
         return len(used_vacation)
-
-    def vacation_from_last_year(self):
-        pass
 
     def status(self):
         if self.job_end:
@@ -879,6 +868,167 @@ class Color(models.Model):
         return color_hex
 
 
+
+
+
+from decimal import Decimal
+
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+
+class ColorOrder(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_RECEIVED = "received"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = (
+        (STATUS_OPEN, "Zamówione"),
+        (STATUS_RECEIVED, "Przyjęte"),
+        (STATUS_CANCELLED, "Anulowane"),
+    )
+
+    provider = models.CharField(
+        max_length=32,
+        choices=COLORS_PROVIDERS
+    )
+
+    order_date = models.DateField(default=datetime.date.today)
+
+    received_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_OPEN,
+    )
+
+    number = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-order_date", "-id"]
+
+    def __str__(self):
+        return f"Farby #{self.pk} - {self.get_provider_display()} - {self.order_date}"
+
+    @property
+    def total_value(self):
+        return sum(
+            (item.total_value for item in self.items.all()),
+            Decimal("0.00"),
+        )
+
+    @property
+    def ordered_quantity_kg(self):
+        return sum(
+            (item.quantity_kg for item in self.items.all()),
+            Decimal("0.00"),
+        )
+
+    @property
+    def received_quantity_kg(self):
+        return sum(
+            (item.received_quantity_kg for item in self.items.all()),
+            Decimal("0.00"),
+        )
+
+    @transaction.atomic
+    def receive(self, received_date=None):
+        if self.status == self.STATUS_RECEIVED:
+            raise ValidationError(
+                "To zamówienie zostało już przyjęte."
+            )
+
+        if self.status == self.STATUS_CANCELLED:
+            raise ValidationError(
+                "Nie można przyjąć anulowanego zamówienia."
+            )
+
+        # Każda pozycja musi mieć wpisane fizyczne wiadra
+        for item in self.items.all():
+            if not item.buckets.exists():
+                raise ValidationError(
+                    f"Brak wiader dla koloru: {item.color}"
+                )
+
+        self.status = self.STATUS_RECEIVED
+        self.received_date = received_date or timezone.localdate()
+
+        self.save(
+            update_fields=[
+                "status",
+                "received_date",
+            ]
+        )
+
+
+class ColorOrderItem(models.Model):
+    order = models.ForeignKey(
+        ColorOrder,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    color = models.ForeignKey(
+        Color,
+        on_delete=models.PROTECT,
+        related_name="order_items",
+    )
+
+    quantity_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    price_per_kg = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+    )
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.color} - {self.quantity_kg} kg"
+
+    @property
+    def total_value(self):
+        return (
+            Decimal(self.quantity_kg or 0)
+            * Decimal(self.price_per_kg or 0)
+        ).quantize(Decimal("0.01"))
+
+    @property
+    def received_quantity_kg(self):
+        return sum(
+            (bucket.weight for bucket in self.buckets.all()),
+            Decimal("0.00"),
+        )
+
+    @property
+    def quantity_difference_kg(self):
+        return (
+            self.received_quantity_kg
+            - Decimal(self.quantity_kg or 0)
+        ).quantize(Decimal("0.01"))
+
+
 class ColorBucket(models.Model):
     color = models.ForeignKey(Color, on_delete=models.PROTECT)
     provider = models.CharField(max_length=32, choices=COLORS_PROVIDERS)
@@ -886,6 +1036,13 @@ class ColorBucket(models.Model):
     production_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)
     usage = models.TextField(null=True, blank=True)
+    order_item = models.ForeignKey(
+        ColorOrderItem,
+        on_delete=models.PROTECT,
+        related_name="buckets",
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return f'{self.color} #{self.id} {self.provider}'
@@ -895,7 +1052,7 @@ class Photopolymer(models.Model):
     producer = models.CharField(max_length=16, choices=POLYMERS_PRODUCERS)
     project = models.FileField(upload_to='projects', null=True, blank=True)
     colors = models.ManyToManyField(Color)
-    identification_number = models.IntegerField()
+    identification_number = models.IntegerField(null=True, blank=True)
     identification_letter = models.CharField(max_length=8, blank=True, null=True)
     customer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     dimensions = models.CharField(max_length=32, blank=True, null=True)

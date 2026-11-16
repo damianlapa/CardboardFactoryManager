@@ -28,11 +28,13 @@
         {% endfor %}
       </ul>
     </td>
+  {% if perms.warehouse.delete_delivery %}
     <td>
       {% if delivery.number %}
         <button class="btn btn-danger delete-btn" data-id="{{ delivery.id }}" data-number="{{ delivery.number }}">Delete</button>
       {% endif %}
     </td>
+  {% endif %}
   </tr>
 
 {% empty %}

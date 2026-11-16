@@ -23,6 +23,21 @@ UNITS = (
     ('SET', 'SET')
 )
 
+FEFCO_CODES = [
+    ("110", "110"),
+    ("200", "200"),
+    ("201", "201"),
+    ("202", "202"),
+    ("203", "203"),
+    ("215", "215"),
+    ("301", "301"),
+    ("409", "409"),
+    ("410", "410"),
+    ("421", "421"),
+    ("427", "427"),
+    ("471", "471"),
+    ("OTH", "OTH")
+]
 
 class Palette(models.Model):
     name = models.CharField(max_length=32)
@@ -41,14 +56,18 @@ class Provider(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=128, unique=True)
+    alter_name = models.CharField(max_length=128, null=True, blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    FEFCO_code = models.CharField(max_length=4, default="201", choices=FEFCO_CODES)
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     flute = models.CharField(max_length=8, null=True, blank=True)
     gsm = models.PositiveIntegerField(default=0)
+    active = models.BooleanField(default=True)
 
     def clean(self):
         if self.name:
             self.name = norm_names(self.name)
+            self.alter_name = create_alter_name(norm_names(self.name))
         if self.dimensions:
             self.dimensions = norm_dimensions(self.dimensions)
         if self.flute:
@@ -59,6 +78,7 @@ class Product(models.Model):
         # zabezpieczenie nawet jak ktoś nie woła full_clean()
         if self.name:
             self.name = norm_names(self.name)
+            self.alter_name = create_alter_name(norm_names(self.name))
         if self.dimensions:
             self.dimensions = norm_dimensions(self.dimensions)
         if self.flute:
@@ -97,6 +117,52 @@ class Order(models.Model):
     def __str__(self):
         return f'{self.provider} {self.order_id} {self.name}'
 
+    def production_date_result(self):
+        from production.models import ProductionOrder, ProductionUnit
+
+        production_order = ProductionOrder.objects.filter(
+            id_number=f"{self.provider} {self.order_id}"
+        ).first()
+
+        if not production_order:
+            return Decimal("0.00")
+
+        units = (
+            ProductionUnit.objects
+            .filter(production_order=production_order)
+        )
+
+        if units:
+            return list(units)[-1].end
+
+    @classmethod
+    def produced_by_person(cls, person):
+        from production.models import ProductionOrder
+        from django.db import models
+
+        id_numbers = (
+            ProductionOrder.objects
+            .filter(productionunit__persons=person)
+            .values_list("id_number", flat=True)
+            .distinct()
+        )
+
+        q = models.Q()
+
+        for id_number in id_numbers:
+            try:
+                provider, order_id = id_number.rsplit(" ", 1)
+
+                q |= models.Q(
+                    provider__name=provider,
+                    order_id=order_id
+                )
+
+            except ValueError:
+                pass
+
+        return cls.objects.filter(q).distinct() if q else cls.objects.none()
+
     def total_sales(self):
         sells = (
             ProductSell3.objects
@@ -130,6 +196,36 @@ class Order(models.Model):
             return production_order.work_energy_usage_cost()
         else:
             return Decimal('0.00'), Decimal('0.00'), Decimal('0.00')
+
+    def production_work_hours(self):
+        from production.models import ProductionOrder, ProductionUnit
+
+        production_order = ProductionOrder.objects.filter(
+            id_number=f"{self.provider} {self.order_id}"
+        ).first()
+
+        if not production_order:
+            return Decimal("0.00")
+
+        units = (
+            ProductionUnit.objects
+            .filter(production_order=production_order)
+            .prefetch_related("persons")
+        )
+
+        total_minutes = 0
+
+        for unit in units:
+            minutes = unit.unit_duration_minutes()
+            people_count = unit.persons.count()
+
+            if minutes and people_count:
+                total_minutes += minutes * people_count
+
+        return Decimal(total_minutes / 60).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP
+        )
 
     def other_costs(self):
         month, year = self.order_date.month, self.order_date.year
@@ -182,6 +278,125 @@ class Order(models.Model):
         settlements = OrderSettlement.objects.filter(order=self)
         for s in settlements:
             print(s)
+
+    def sold_quantity(self):
+        from django.db.models import Sum
+        from warehouse.models import ProductSellOrderPart
+
+        return (
+                ProductSellOrderPart.objects
+                .filter(order=self)
+                .aggregate(total=Sum("quantity"))["total"] or 0
+        )
+
+    def real_sales_value(self):
+        from decimal import Decimal
+        from warehouse.models import ProductSellOrderPart
+
+        rows = (
+            ProductSellOrderPart.objects
+            .filter(order=self)
+            .select_related("sell")
+        )
+
+        total = Decimal("0.00")
+
+        for row in rows:
+            total += D(row.quantity) * D(row.sell.price)
+
+        return money(total)
+
+    def expected_total_sales(self):
+        sold_qty = self.sold_quantity()
+        settled_qty = self.settled_quantity()
+        sold_value = D(self.real_sales_value())
+
+        if sold_qty <= 0:
+            return money(0)
+
+        if settled_qty <= 0:
+            return money(sold_value)
+
+        if sold_qty >= settled_qty:
+            return money(sold_value)
+
+        avg_price = sold_value / D(sold_qty)
+
+        return money(avg_price * D(settled_qty))
+
+    def settled_quantity(self):
+        settlements = OrderSettlement.objects.filter(order=self)
+
+        qty = 0
+
+        history = WarehouseStockHistory.objects.filter(
+            order_settlement__in=settlements,
+            stock_supply__isnull=False,
+        )
+
+        for h in history:
+            delta = int(h.quantity_after or 0) - int(h.quantity_before or 0)
+            if delta > 0:
+                qty += delta
+
+        return qty
+
+    def sales_profitability_status(self):
+        sold_qty = self.sold_quantity()
+        settled_qty = self.settled_quantity()
+
+        if settled_qty <= 0:
+            return "NO_SETTLEMENT"
+
+        if sold_qty <= 0:
+            return "NO_SALES"
+
+        if sold_qty >= settled_qty:
+            return "SOLD_FULL"
+
+        return "FORECASTED"
+
+    def production_alternative_cost(self):
+        from warehousemanager.models import LocalSetting
+        work_hour_value = LocalSetting.objects.filter(name="work_hour_value").first()
+        value = str(work_hour_value.value) if work_hour_value else "192"
+        if self.production_work_hours():
+            return money(
+                D(value) * D(self.production_work_hours()) + D(self.material_cost())
+            )
+        return D("0.00")
+
+    def resolve_flute(self):
+        if self.name:
+            if "BC" in self.name:
+                return "BC"
+            if "EB" in self.name:
+                return "EB"
+            if "EE" in self.name:
+                return "EE"
+            if "B" in self.name:
+                return "B"
+            if "C" in self.name:
+                return "C"
+            if "E" in self.name:
+                return "E"
+
+    def setup_values(self):
+        flute = self.resolve_flute()
+
+        if self.product.FEFCO_code == "201":
+            if flute == "BC":
+                return 5, 7, 12, 7, 4
+            if flute == "EB":
+                return 4, 5, 10, 5, 3
+            if flute == "EE":
+                return 3, 4, 6, 4, 2
+            if flute == "B":
+                return 3, 4, 6, 4, 2
+            if flute == "C":
+                return 3, 4, 7, 4, 2
+            if flute == "E":
+                return 2, 2, 4, 2, 1
 
     class Meta:
         ordering = ['order_date', 'provider', 'order_id']
@@ -463,6 +678,43 @@ class DeliveryItem(models.Model):
         except Exception as e:
             return 0
 
+    def extract_flute(self, text=""):
+        """
+        Zwraca falę z tekstu: E, EE, B, C, EB, BC albo None.
+
+        Przykłady:
+        - "KLIENT | EB | produkt" -> "EB"
+        - "T30B1TWT0372" -> "B"
+        - "fala BC 1200x800" -> "BC"
+        """
+        import re
+
+        FLUTES = ("BC", "EB", "EE", "C", "B", "E")
+
+        text = (self.order.name or text).upper().strip()
+
+        if not text:
+            return None
+
+        # 1. Najpewniej: format nazw produktów z separatorami |
+        parts = [p.strip() for p in text.split("|")]
+        for part in parts:
+            if part in FLUTES:
+                return part
+
+        # 2. Szukaj całych tokenów
+        for flute in FLUTES:
+            pattern = rf"(?<![A-Z0-9]){flute}(?![A-Z0-9])"
+            if re.search(pattern, text):
+                return flute
+
+        # 3. Fallback dla kodów typu T30B1TWT0372
+        for flute in FLUTES:
+            if flute in text:
+                return flute
+
+        return None
+
 
 class DeliveryPalette(models.Model):
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT)
@@ -725,12 +977,20 @@ class StockSupply(models.Model):
     stock_type = models.ForeignKey(StockType, on_delete=models.PROTECT)
     delivery_item = models.ForeignKey(DeliveryItem, on_delete=models.PROTECT, null=True, blank=True)
     delivery_special_item = models.ForeignKey(DeliverySpecialItem, on_delete=models.PROTECT, null=True, blank=True)
+    maintenance_delivery_item = models.ForeignKey(
+        "maintenance.MaintenanceDeliveryItem",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
     dimensions = models.CharField(max_length=32, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     name = models.CharField(max_length=64)
     used = models.BooleanField(default=False)
     value = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    area = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    volume = models.DecimalField(max_digits=12, decimal_places=4, default=Decimal("0.0000"))
 
     class Meta:
         ordering = ['-date']
@@ -744,6 +1004,11 @@ class StockSupply(models.Model):
                 fields=["delivery_special_item"],
                 condition=Q(delivery_special_item__isnull=False),
                 name="uniq_supply_per_delivery_special_item",
+            ),
+            models.UniqueConstraint(
+                fields=["maintenance_delivery_item"],
+                condition=Q(maintenance_delivery_item__isnull=False),
+                name="uniq_supply_per_maintenance_delivery_item",
             )
         ]
 
@@ -779,7 +1044,11 @@ class StockSupply(models.Model):
             .filter(stock_supply=self)
             .aggregate(s=Coalesce(Sum("quantity"), 0))["s"]
         )
-        return int(settled) + int(sold)
+        maintenance_used = (
+            self.maintenance_usage_rows
+            .aggregate(s=Coalesce(Sum("quantity"), 0))["s"]
+        )
+        return int(settled) + int(sold) + int(maintenance_used)
 
     def available_quantity(self) -> int:
         """Ile jeszcze zostało w tej partii."""
@@ -811,6 +1080,22 @@ class StockSupply(models.Model):
 
         total_value = Decimal(self.value or 0)
         return (total_value * Decimal(avail) / Decimal(qty)).quantize(Decimal("0.01"))
+
+    def proportional_area(self, quantity):
+        if not self.quantity:
+            return Decimal("0.00")
+
+        return (
+                Decimal(self.area or 0) * Decimal(quantity) / Decimal(self.quantity)
+        ).quantize(Decimal("0.01"))
+
+    def proportional_volume(self, quantity):
+        if not self.quantity:
+            return Decimal("0.0000")
+
+        return (
+                Decimal(self.volume or 0) * Decimal(quantity) / Decimal(self.quantity)
+        ).quantize(Decimal("0.0001"))
 
 
 class Stock(models.Model):
@@ -856,6 +1141,7 @@ class Stock(models.Model):
 class Warehouse(models.Model):
     name = models.CharField(max_length=64)
     description = models.TextField(null=True, blank=True)
+    value = models.DecimalField(default="0.00", max_digits=12, decimal_places=2)
 
     def __str__(self):
         return f'{self.name}'
@@ -869,7 +1155,8 @@ class Warehouse(models.Model):
         value = 0
         for s in stocks:
             value += s.count_value()
-        return value
+        self.value = value
+        self.save()
 
 
 class WarehouseStock(models.Model):
@@ -1575,6 +1862,13 @@ class WarehouseStockHistory(models.Model):
     quantity_after = models.PositiveIntegerField(default=0)
     date = models.DateField(null=True, blank=True)
     sell = models.ForeignKey("ProductSell3", on_delete=models.PROTECT, null=True, blank=True)
+    maintenance_part_usage = models.ForeignKey(
+        "maintenance.MaintenancePartUsage",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="warehouse_history_rows",
+    )
 
     class Meta:
         ordering = ['-date', '-warehouse_stock']
@@ -1881,7 +2175,7 @@ class ProductPackaging(models.Model):
         editable=False,
         help_text="Auto: columns * layers * qty_per_pack",
     )
-
+    additional_info = models.CharField(max_length=200, blank=True, null=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -1909,3 +2203,321 @@ class ProductPackaging(models.Model):
 
     def __str__(self):
         return f"Packaging: {self.product}"
+
+    def order_info(self):
+        text = (f'Pakowane na paletę: {self.palette}\nSztuki w paczce: {self.qty_per_pack}\n'
+                f'Słupki: {self.columns}\nWartswy: {self.layers}\n{self.additional_info}')
+        return text
+
+
+from django.contrib.auth.models import User
+from django.db import models
+
+
+class ShipmentUnit(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name="shipment_units")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+    customer = models.ForeignKey(Buyer, on_delete=models.PROTECT, related_name="shipment_customers", null=True, blank=True)
+    palette = models.ForeignKey(Palette, on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=0)
+    palette_quantity = models.PositiveIntegerField(default=1)
+    created = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_shipment_units")
+    # shipped = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def save(self, *args, **kwargs):
+        if self.order:
+            self.product = self.order.product
+
+            if self._state.adding and not self.palette and self.palette_quantity > 0:
+                packaging = ProductPackaging.objects.filter(
+                    product=self.product
+                ).first()
+
+                self.palette = packaging.palette if packaging else None
+
+        if self.palette is None:
+            self.palette_quantity = 0
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.order} - {self.quantity} pcs"
+
+
+from django.conf import settings
+
+
+class ShipmentUnitHistory(models.Model):
+    ACTION_UPDATE = "UPDATE"
+    ACTION_DELETE = "DELETE"
+
+    ACTION_CHOICES = (
+        (ACTION_UPDATE, "Edycja"),
+        (ACTION_DELETE, "Usunięcie"),
+    )
+
+    shipment_unit = models.ForeignKey(
+        "ShipmentUnit",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="history",
+    )
+
+    # ID pozostaje zapisane również po usunięciu ShipmentUnit
+    shipment_unit_original_id = models.PositiveIntegerField()
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.PROTECT,
+        related_name="shipment_unit_history",
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    palette = models.ForeignKey(
+        Palette,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    quantity = models.PositiveIntegerField()
+    # Starsze wpisy historii nie mają wiarygodnej liczby palet.
+    palette_quantity = models.PositiveIntegerField(null=True, blank=True)
+
+    action = models.CharField(
+        max_length=16,
+        choices=ACTION_CHOICES,
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="shipment_unit_changes",
+    )
+
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]
+        verbose_name = "historia jednostki wysyłkowej"
+        verbose_name_plural = "historie jednostek wysyłkowych"
+
+    def __str__(self):
+        return (
+            f"{self.get_action_display()} "
+            f"ShipmentUnit #{self.shipment_unit_original_id} "
+            f"przez {self.changed_by}"
+        )
+
+
+from django.conf import settings
+from django.db import models
+from django.db.models import Q
+
+
+class Shipment(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_CONFIRMED = "confirmed"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = (
+        (STATUS_DRAFT, "W trakcie załadunku"),
+        (STATUS_CONFIRMED, "Potwierdzony"),
+        (STATUS_CANCELLED, "Anulowany"),
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_shipments",
+    )
+
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="confirmed_shipments",
+    )
+
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+    )
+
+    car_number = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+    )
+
+    driver_name = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    shipment_units = models.ManyToManyField(
+        "ShipmentUnit",
+        through="ShipmentItem",
+        related_name="shipments",
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["created_by"],
+                condition=Q(status="draft"),
+                name="one_draft_shipment_per_user",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Shipment #{self.id} [{self.get_status_display()}]"
+
+    @property
+    def units_count(self):
+        return self.items.count()
+
+    @property
+    def palettes_count(self):
+        return self.items.aggregate(total=models.Sum("shipment_unit__palette_quantity"))["total"] or 0
+
+    @property
+    def total_quantity(self):
+        return (
+            self.items.aggregate(
+                total=models.Sum("shipment_unit__quantity")
+            )["total"]
+            or 0
+        )
+
+
+class ShipmentItem(models.Model):
+    shipment = models.ForeignKey(
+        Shipment,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    shipment_unit = models.ForeignKey(
+        "ShipmentUnit",
+        on_delete=models.PROTECT,
+        related_name="shipment_items",
+    )
+
+    scanned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="scanned_shipment_items",
+    )
+
+    scanned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["scanned_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shipment_unit"],
+                name="shipment_unit_used_only_once",
+            ),
+            models.UniqueConstraint(
+                fields=["shipment", "shipment_unit"],
+                name="unique_unit_in_shipment",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Shipment #{self.shipment_id} "
+            f"– unit #{self.shipment_unit_id}"
+        )
+
+
+from django.conf import settings
+
+
+class CustomerStockList(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="customer_stock_list",
+    )
+
+    warehouse_stocks = models.ManyToManyField(
+        WarehouseStock,
+        through="CustomerStockItem",
+        related_name="customer_stock_lists",
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"Customer stock list - {self.user}"
+
+
+class CustomerStockItem(models.Model):
+    stock_list = models.ForeignKey(
+        CustomerStockList,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    warehouse_stock = models.ForeignKey(
+        WarehouseStock,
+        on_delete=models.CASCADE,
+        related_name="customer_stock_items",
+    )
+
+    minimum_quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["stock_list", "warehouse_stock"],
+                name="unique_customer_stock_item",
+            )
+        ]
+        ordering = ["warehouse_stock__stock__name"]
+
+    def __str__(self):
+        return (
+            f"{self.stock_list.user} | "
+            f"{self.warehouse_stock.stock.name} | "
+            f"min: {self.minimum_quantity}"
+        )
+
+    @property
+    def current_quantity(self):
+        return self.warehouse_stock.quantity
+
+    @property
+    def shortage(self):
+        return max(
+            self.minimum_quantity - self.warehouse_stock.quantity,
+            0,
+        )
+
+    @property
+    def below_minimum(self):
+        return self.warehouse_stock.quantity < self.minimum_quantity

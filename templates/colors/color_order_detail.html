@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'css/modern/colors.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="color-order-detail">
+
+    <a
+        href="{% url 'color-order-list' %}"
+        class="color-back-link"
+    >
+        ← Zamówienia farb
+    </a>
+
+
+    <!-- ====================================================== -->
+    <!-- HEADER                                                 -->
+    <!-- ====================================================== -->
+
+    <div class="color-order-detail-header">
+
+        <div>
+
+            <div class="color-order-detail-title-row">
+
+                <h1>
+                    Zamówienie #{{ color_order.id }}
+                </h1>
+
+
+                {% if color_order.status == "open" %}
+
+                    <span class="color-order-status color-order-status--open">
+                        Zamówione
+                    </span>
+
+                {% elif color_order.status == "received" %}
+
+                    <span class="color-order-status color-order-status--received">
+                        Przyjęte
+                    </span>
+
+                {% elif color_order.status == "cancelled" %}
+
+                    <span class="color-order-status color-order-status--cancelled">
+                        Anulowane
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+
+            {% if color_order.number %}
+
+                <div class="color-order-detail-subtitle">
+                    Numer dokumentu:
+                    <strong>{{ color_order.number }}</strong>
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- INFO                                                   -->
+    <!-- ====================================================== -->
+
+    <div class="color-order-info-grid">
+
+        <div class="color-order-info-card">
+
+            <span>Dostawca</span>
+
+            <strong>
+                {{ color_order.get_provider_display }}
+            </strong>
+
+        </div>
+
+
+        <div class="color-order-info-card">
+
+            <span>Data zamówienia</span>
+
+            <strong>
+                {{ color_order.order_date|date:"d.m.Y" }}
+            </strong>
+
+        </div>
+
+
+        <div class="color-order-info-card">
+
+            <span>Zamówiono</span>
+
+            <strong>
+                {{ color_order.ordered_quantity_kg }} kg
+            </strong>
+
+        </div>
+
+
+        <div class="color-order-info-card">
+
+            <span>Wartość</span>
+
+            <strong>
+                {{ color_order.total_value }} zł
+            </strong>
+
+        </div>
+
+
+        {% if color_order.received_date %}
+
+            <div class="color-order-info-card">
+
+                <span>Data przyjęcia</span>
+
+                <strong>
+                    {{ color_order.received_date|date:"d.m.Y" }}
+                </strong>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    {% if color_order.notes %}
+
+        <div class="color-order-notes">
+
+            <div class="color-order-notes-label">
+                Uwagi
+            </div>
+
+            <div>
+                {{ color_order.notes }}
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- ====================================================== -->
+    <!-- OPEN ORDER                                             -->
+    <!-- ====================================================== -->
+
+    {% if color_order.status == "open" %}
+
+        <form
+            method="post"
+            action="{% url 'color-order-receive' color_order.pk %}"
+            id="receive-form"
+        >
+
+            {% csrf_token %}
+
+
+            <div class="color-order-receive-header">
+
+                <div>
+
+                    <h2>
+                        Przyjęcie zamówienia
+                    </h2>
+
+                    <p>
+                        Wprowadź faktyczną wagę każdego otrzymanego wiadra.
+                    </p>
+
+                </div>
+
+
+                <div class="color-order-received-date">
+
+                    <label>
+                        Data przyjęcia
+                    </label>
+
+                    <input
+                        type="date"
+                        name="received_date"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="color-order-items">
+
+                {% for item in color_order.items.all %}
+
+                    <div
+                        class="color-order-item"
+                        data-item-id="{{ item.id }}"
+                        data-ordered="{{ item.quantity_kg }}"
+                    >
+
+                        <div class="color-order-item-header">
+
+                            <div>
+
+                                <h3>
+                                    {{ item.color }}
+                                </h3>
+
+                            </div>
+
+
+                            <div class="color-order-item-metrics">
+
+                                <div>
+                                    <span>Zamówiono</span>
+
+                                    <strong>
+                                        {{ item.quantity_kg }} kg
+                                    </strong>
+                                </div>
+
+
+                                <div>
+                                    <span>Cena</span>
+
+                                    <strong>
+                                        {{ item.price_per_kg }} zł/kg
+                                    </strong>
+                                </div>
+
+
+                                <div>
+                                    <span>Wartość</span>
+
+                                    <strong>
+                                        {{ item.total_value }} zł
+                                    </strong>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="color-order-buckets">
+
+                            <div class="color-order-buckets-title">
+                                Wiadra
+                            </div>
+
+
+                            <div class="bucket-list">
+
+                                <div class="bucket-row">
+
+                                    <div class="bucket-input">
+
+                                        <input
+                                            type="number"
+                                            name="bucket_{{ item.id }}[]"
+                                            step="0.01"
+                                            min="0.01"
+                                            placeholder="0.00"
+                                            required
+                                        >
+
+                                        <span>
+                                            kg
+                                        </span>
+
+                                    </div>
+
+
+                                    <button
+                                        type="button"
+                                        class="remove-bucket"
+                                    >
+                                        Usuń
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                class="add-bucket"
+                            >
+                                + Dodaj wiadro
+                            </button>
+
+                        </div>
+
+
+                        <div class="bucket-summary">
+
+                            <span>
+                                Przyjęto
+                            </span>
+
+                            <strong class="received-total">
+                                0.00
+                            </strong>
+
+                            <span>
+                                / {{ item.quantity_kg }} kg
+                            </span>
+
+
+                            <span class="difference"></span>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <div class="color-order-receive-footer">
+
+                <div>
+
+                    <span>
+                        Łączna wartość zamówienia
+                    </span>
+
+                    <strong>
+                        {{ color_order.total_value }} zł
+                    </strong>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="color-order-primary-button"
+                >
+                    Przyjmij zamówienie
+                </button>
+
+            </div>
+
+        </form>
+
+
+    <!-- ====================================================== -->
+    <!-- RECEIVED / CANCELLED                                   -->
+    <!-- ====================================================== -->
+
+    {% else %}
+
+        <div class="color-order-items">
+
+            {% for item in color_order.items.all %}
+
+                <div class="color-order-item">
+
+                    <div class="color-order-item-header">
+
+                        <div>
+                            <h3>
+                                {{ item.color }}
+                            </h3>
+                        </div>
+
+
+                        <div class="color-order-item-metrics">
+
+                            <div>
+                                <span>Zamówiono</span>
+
+                                <strong>
+                                    {{ item.quantity_kg }} kg
+                                </strong>
+                            </div>
+
+
+                            <div>
+                                <span>Cena</span>
+
+                                <strong>
+                                    {{ item.price_per_kg }} zł/kg
+                                </strong>
+                            </div>
+
+
+                            <div>
+                                <span>Wartość</span>
+
+                                <strong>
+                                    {{ item.total_value }} zł
+                                </strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="color-order-received-buckets">
+
+                        <div class="color-order-buckets-title">
+                            Przyjęte wiadra
+                        </div>
+
+
+                        {% for bucket in item.buckets.all %}
+
+                            <div class="color-order-received-bucket">
+
+                                <div>
+                                    Wiadro #{{ bucket.id }}
+                                </div>
+
+                                <strong>
+                                    {{ bucket.weight }} kg
+                                </strong>
+
+                            </div>
+
+                        {% empty %}
+
+                            <div class="color-order-no-buckets">
+                                Brak zapisanych wiader.
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document
+        .querySelectorAll(".color-order-item[data-item-id]")
+        .forEach(function (item) {
+
+            const itemId = item.dataset.itemId;
+
+            const ordered = parseFloat(
+                String(item.dataset.ordered || "0").replace(",", ".")
+            );
+
+
+            const bucketList =
+                item.querySelector(".bucket-list");
+
+            const addButton =
+                item.querySelector(".add-bucket");
+
+            const totalElement =
+                item.querySelector(".received-total");
+
+            const differenceElement =
+                item.querySelector(".difference");
+
+
+            function updateSummary() {
+
+                let total = 0;
+
+
+                bucketList
+                    .querySelectorAll('input[type="number"]')
+                    .forEach(function (input) {
+
+                        const value = parseFloat(
+                            String(input.value || "0").replace(",", ".")
+                        );
+
+
+                        if (!isNaN(value)) {
+                            total += value;
+                        }
+
+                    });
+
+
+                totalElement.textContent =
+                    total.toFixed(2);
+
+
+                const difference =
+                    total - ordered;
+
+
+                differenceElement.classList.remove(
+                    "difference--ok",
+                    "difference--plus",
+                    "difference--minus"
+                );
+
+
+                if (Math.abs(difference) < 0.001) {
+
+                    differenceElement.textContent =
+                        "✓ zgadza się";
+
+                    differenceElement.classList.add(
+                        "difference--ok"
+                    );
+
+                } else if (difference > 0) {
+
+                    differenceElement.textContent =
+                        "+" + difference.toFixed(2) + " kg";
+
+                    differenceElement.classList.add(
+                        "difference--plus"
+                    );
+
+                } else {
+
+                    differenceElement.textContent =
+                        difference.toFixed(2) + " kg";
+
+                    differenceElement.classList.add(
+                        "difference--minus"
+                    );
+
+                }
+
+            }
+
+
+            function bindRow(row) {
+
+                const input =
+                    row.querySelector('input[type="number"]');
+
+                const removeButton =
+                    row.querySelector(".remove-bucket");
+
+
+                input.addEventListener(
+                    "input",
+                    updateSummary
+                );
+
+
+                removeButton.addEventListener(
+                    "click",
+                    function () {
+
+                        const rows =
+                            bucketList.querySelectorAll(".bucket-row");
+
+
+                        if (rows.length === 1) {
+
+                            input.value = "";
+
+                        } else {
+
+                            row.remove();
+
+                        }
+
+
+                        updateSummary();
+
+                    }
+                );
+
+            }
+
+
+            bucketList
+                .querySelectorAll(".bucket-row")
+                .forEach(bindRow);
+
+
+            addButton.addEventListener(
+                "click",
+                function () {
+
+                    const row =
+                        document.createElement("div");
+
+
+                    row.className =
+                        "bucket-row";
+
+
+                    row.innerHTML = `
+                        <div class="bucket-input">
+
+                            <input
+                                type="number"
+                                name="bucket_${itemId}[]"
+                                step="0.01"
+                                min="0.01"
+                                placeholder="0.00"
+                                required
+                            >
+
+                            <span>
+                                kg
+                            </span>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            class="remove-bucket"
+                        >
+                            Usuń
+                        </button>
+                    `;
+
+
+                    bucketList.appendChild(
+                        row
+                    );
+
+
+                    bindRow(
+                        row
+                    );
+
+
+                    row
+                        .querySelector("input")
+                        .focus();
+
+                }
+            );
+
+
+            updateSummary();
+
+        });
+
+});
+</script>
+
+{% endblock %}

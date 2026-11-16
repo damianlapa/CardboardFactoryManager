@@ -1,0 +1,965 @@
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
+.weekly-plan-page {
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+
+    min-width: 0;
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.weekly-plan-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+
+.weekly-plan-title-row {
+    display: flex;
+    align-items: baseline;
+
+    gap: 10px;
+}
+
+
+.weekly-plan-title-row h1 {
+    margin: 0;
+
+    color: var(--app-text);
+
+    font-size: 27px;
+    font-weight: 800;
+
+    letter-spacing: -.035em;
+}
+
+
+.weekly-plan-date-range {
+    color: var(--app-text-muted);
+
+    font-size: 9px;
+    font-weight: 650;
+}
+
+
+.weekly-plan-header__actions {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+}
+
+
+.weekly-plan-nav-button {
+    width: 34px;
+    height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--app-border);
+
+    border-radius: 7px;
+
+    background: #ffffff;
+
+    color: var(--app-text-secondary);
+
+    text-decoration: none;
+}
+
+
+.weekly-plan-nav-button:hover {
+    border-color: var(--app-primary);
+
+    color: var(--app-primary);
+}
+
+
+/* ==========================================================
+   UNASSIGNED
+   ========================================================== */
+
+.weekly-unassigned {
+    overflow: hidden;
+
+    border: 1px solid var(--app-border);
+
+    border-radius: 12px;
+
+    background: var(--app-surface);
+}
+
+
+.weekly-unassigned__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 11px 13px;
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.weekly-unassigned__title {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+}
+
+
+.weekly-unassigned__title h2 {
+    margin: 0;
+
+    font-size: 11px;
+    font-weight: 750;
+}
+
+
+.weekly-unassigned__title > span {
+    min-width: 23px;
+    height: 23px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 6px;
+
+    border-radius: 20px;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 7px;
+    font-weight: 800;
+}
+
+
+.weekly-unassigned__header p {
+    margin: 2px 0 0;
+
+    color: var(--app-text-muted);
+
+    font-size: 7px;
+}
+
+
+.weekly-unassigned__tools {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.weekly-plan-search {
+    position: relative;
+
+    width: 230px;
+}
+
+
+.weekly-plan-search i {
+    position: absolute;
+
+    left: 9px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: var(--app-text-muted);
+
+    font-size: 8px;
+}
+
+
+.weekly-plan-search input {
+    width: 100%;
+    height: 34px;
+
+    padding: 6px 9px 6px 28px;
+
+    border: 1px solid var(--app-border-strong);
+
+    border-radius: 7px;
+
+    background: #fff;
+
+    color: var(--app-text);
+
+    font-family: inherit;
+    font-size: 8px;
+
+    outline: none;
+}
+
+
+.weekly-plan-search input:focus {
+    border-color: var(--app-primary);
+}
+
+
+.weekly-plan-filter {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 5px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 8px;
+
+    cursor: pointer;
+}
+
+
+.weekly-unassigned__list {
+    display: flex;
+    align-items: stretch;
+
+    gap: 8px;
+
+    min-height: 105px;
+
+    padding: 10px;
+
+    overflow-x: auto;
+}
+
+
+/* ==========================================================
+   BOARD
+   ========================================================== */
+
+.weekly-board-wrapper {
+    overflow: auto;
+
+    border: 1px solid var(--app-border);
+
+    border-radius: 12px;
+
+    background: var(--app-surface);
+
+    max-height: calc(100vh - 240px);
+}
+
+
+.weekly-board {
+    display: grid;
+
+    grid-template-columns:
+        155px
+        repeat(5, minmax(190px, 1fr));
+
+    min-width: 1120px;
+}
+
+
+/* sticky left */
+
+.weekly-board__sticky {
+    position: sticky;
+
+    left: 0;
+
+    z-index: 5;
+}
+
+
+/* ==========================================================
+   DAY HEADER
+   ========================================================== */
+
+.weekly-board__corner,
+.weekly-day-header {
+    position: sticky;
+
+    top: 0;
+
+    z-index: 8;
+
+    min-height: 57px;
+
+    padding: 9px 10px;
+
+    border-right: 1px solid var(--app-border);
+    border-bottom: 1px solid var(--app-border);
+
+    background: #f8fafc;
+}
+
+
+.weekly-board__corner {
+    left: 0;
+
+    z-index: 10;
+
+    display: flex;
+    align-items: center;
+
+    color: var(--app-text-muted);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+}
+
+
+.weekly-day-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 1px;
+}
+
+
+.weekly-day-header__name {
+    color: var(--app-text-muted);
+
+    font-size: 7px;
+    font-weight: 750;
+
+    text-transform: uppercase;
+}
+
+
+.weekly-day-header strong {
+    font-size: 11px;
+}
+
+
+.weekly-day-header small {
+    margin-top: 2px;
+
+    color: var(--app-primary);
+
+    font-size: 6px;
+    font-weight: 750;
+}
+
+
+.weekly-day-header--today {
+    background: #eff6ff;
+}
+
+
+/* ==========================================================
+   STATION
+   ========================================================== */
+
+.weekly-station-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    min-height: 190px;
+
+    padding: 10px;
+
+    border-right: 1px solid var(--app-border);
+    border-bottom: 1px solid var(--app-border);
+
+    background: #fafafa;
+}
+
+
+.weekly-station-cell span {
+    display: block;
+
+    color: var(--app-text-muted);
+
+    font-size: 6px;
+}
+
+
+.weekly-station-cell strong {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--app-text);
+
+    font-size: 9px;
+}
+
+
+.weekly-station-link {
+    color: var(--app-text-muted);
+
+    font-size: 8px;
+
+    text-decoration: none;
+}
+
+
+.weekly-station-link:hover {
+    color: var(--app-primary);
+}
+
+
+/* ==========================================================
+   LANE
+   ========================================================== */
+
+.weekly-lane {
+    min-height: 190px;
+
+    border-right: 1px solid var(--app-border);
+    border-bottom: 1px solid var(--app-border);
+
+    background: #ffffff;
+}
+
+
+.weekly-lane--today {
+    background: #fbfdff;
+}
+
+
+.weekly-lane--overloaded {
+    background: #fffafa;
+}
+
+
+/* ==========================================================
+   LANE HEADER
+   ========================================================== */
+
+.weekly-lane__header {
+    padding: 7px 8px;
+
+    border-bottom: 1px solid #eef2f7;
+
+    background: rgba(248, 250, 252, .8);
+}
+
+
+.weekly-lane__load {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 6px;
+}
+
+
+.weekly-lane__load strong {
+    color: #475569;
+
+    font-size: 6px;
+    font-weight: 750;
+}
+
+
+.weekly-lane__load span {
+    color: var(--app-text-muted);
+
+    font-size: 6px;
+}
+
+
+.weekly-load-bar {
+    height: 3px;
+
+    margin-top: 5px;
+
+    overflow: hidden;
+
+    border-radius: 10px;
+
+    background: #e2e8f0;
+}
+
+
+.weekly-load-bar__value {
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #3b82f6;
+}
+
+
+.weekly-load-bar__value--overloaded {
+    background: #ef4444;
+}
+
+
+.weekly-lane__overload {
+    display: flex;
+    align-items: center;
+
+    gap: 3px;
+
+    margin-top: 4px;
+
+    color: #b91c1c;
+
+    font-size: 6px;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   TASK LIST
+   ========================================================== */
+
+.weekly-lane__tasks {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    min-height: 140px;
+
+    padding: 7px;
+}
+
+
+/* ==========================================================
+   TASK CARD
+   ========================================================== */
+
+.weekly-task-card {
+    position: relative;
+
+    min-width: 0;
+
+    padding: 8px 9px;
+
+    border: 1px solid #dce4ee;
+    border-left: 3px solid #3b82f6;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 1px 3px rgba(15, 23, 42, .04);
+
+    cursor: grab;
+
+    user-select: none;
+}
+
+
+.weekly-task-card:active {
+    cursor: grabbing;
+}
+
+
+.weekly-task-card:hover {
+    border-color: #cbd5e1;
+
+    box-shadow:
+        0 3px 8px rgba(15, 23, 42, .07);
+}
+
+
+.weekly-task-card--priority {
+    border-left-color: #ef4444;
+}
+
+
+.weekly-task-card--unassigned {
+    width: 180px;
+
+    flex: 0 0 180px;
+
+    border-left-color: #94a3b8;
+}
+
+
+.weekly-task-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 6px;
+}
+
+
+.weekly-task-card__time,
+.weekly-task-card__station {
+    color: #64748b;
+
+    font-size: 6px;
+    font-weight: 700;
+}
+
+
+.weekly-task-card__priority {
+    color: #ef4444;
+
+    font-size: 7px;
+}
+
+
+.weekly-task-card__order {
+    display: block;
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: var(--app-text);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+a.weekly-task-card__order:hover {
+    color: var(--app-primary);
+}
+
+
+.weekly-task-card__customer {
+    display: block;
+
+    margin-top: 1px;
+
+    overflow: hidden;
+
+    color: var(--app-text-secondary);
+
+    font-size: 7px;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.weekly-task-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 6px;
+
+    margin-top: 6px;
+
+    color: var(--app-text-muted);
+
+    font-size: 6px;
+}
+
+
+.weekly-task-card__warning {
+    color: #c2410c;
+}
+
+
+.weekly-task-card__persons {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 3px;
+
+    margin-top: 6px;
+}
+
+
+.weekly-task-card__persons > span {
+    min-width: 19px;
+    height: 19px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 4px;
+
+    border-radius: 5px;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 5px;
+    font-weight: 800;
+}
+
+
+.weekly-task-card__persons
+.weekly-task-card__no-person {
+    width: auto;
+
+    color: #c2410c;
+
+    font-size: 6px;
+}
+
+
+.weekly-task-card__remove {
+    position: absolute;
+
+    right: 4px;
+    bottom: 4px;
+
+    width: 19px;
+    height: 19px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 5px;
+
+    background: transparent;
+
+    color: #94a3b8;
+
+    font-size: 7px;
+
+    cursor: pointer;
+
+    opacity: 0;
+}
+
+
+.weekly-task-card:hover
+.weekly-task-card__remove {
+    opacity: 1;
+}
+
+
+.weekly-task-card__remove:hover {
+    background: #fef2f2;
+
+    color: #dc2626;
+}
+
+
+/* ==========================================================
+   DRAG STATES
+   ========================================================== */
+
+.weekly-task-ghost {
+    opacity: .35;
+
+    border: 1px dashed #3b82f6;
+
+    background: #eff6ff;
+}
+
+
+.weekly-task-chosen {
+    box-shadow:
+        0 8px 20px rgba(15, 23, 42, .15);
+}
+
+
+.weekly-task-drag {
+    transform: rotate(1deg);
+}
+
+
+.weekly-lane.is-drag-target {
+    background: #f0f7ff;
+}
+
+
+/* ==========================================================
+   EMPTY
+   ========================================================== */
+
+.weekly-plan-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 70px;
+
+    color: var(--app-text-muted);
+
+    font-size: 7px;
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+    .weekly-plan-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .weekly-plan-header__actions {
+        flex-wrap: wrap;
+    }
+
+
+    .weekly-unassigned__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .weekly-unassigned__tools {
+        width: 100%;
+    }
+
+
+    .weekly-plan-search {
+        flex: 1;
+
+        width: auto;
+    }
+
+}
+
+/* ==========================================================
+   SAVING
+   ========================================================== */
+
+.weekly-plan-page.is-saving {
+    cursor: progress;
+}
+
+.weekly-plan-page.is-saving
+.weekly-task-card {
+    pointer-events: none;
+}
+
+
+/* ==========================================================
+   DRAGGING
+   ========================================================== */
+
+.weekly-plan-is-dragging {
+    cursor: grabbing;
+}
+
+.weekly-plan-is-dragging
+.weekly-lane {
+    transition:
+        background .15s ease,
+        box-shadow .15s ease;
+}
+
+.weekly-plan-is-dragging
+.weekly-lane.is-drag-target {
+    background: #f5f9ff;
+
+    box-shadow:
+        inset 0 0 0 1px #bfdbfe;
+}
+
+
+/* ==========================================================
+   TOAST
+   ========================================================== */
+
+.weekly-plan-toast-container {
+    position: fixed;
+
+    top: 18px;
+    right: 18px;
+
+    z-index: 9999;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    pointer-events: none;
+}
+
+
+.weekly-plan-toast {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    min-width: 220px;
+    max-width: 340px;
+
+    padding: 9px 11px;
+
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 8px 24px rgba(15, 23, 42, .12);
+
+    color: var(--app-text);
+
+    font-size: 8px;
+    font-weight: 650;
+
+    opacity: 0;
+
+    transform: translateY(-6px);
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.weekly-plan-toast.is-visible {
+    opacity: 1;
+
+    transform: translateY(0);
+}
+
+
+.weekly-plan-toast--success {
+    border-color: #bbf7d0;
+}
+
+
+.weekly-plan-toast--success i {
+    color: #16a34a;
+}
+
+
+.weekly-plan-toast--error {
+    border-color: #fecaca;
+
+    background: #fffafa;
+}
+
+
+.weekly-plan-toast--error i {
+    color: #dc2626;
+}

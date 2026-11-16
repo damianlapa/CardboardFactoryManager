@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Edycja operacji | Produkcja
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/unit_detail.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-unit-form-page">
+
+    <header class="production-unit-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:unit-details' object.id %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Wróć do operacji
+            </a>
+
+
+            <div class="production-eyebrow">
+                Produkcja
+            </div>
+
+
+            <h1>
+                Edytuj operację
+            </h1>
+
+
+            <p>
+                {{ object.production_order.id_number }}
+                ·
+                {{ object.work_station }}
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <form
+        method="post"
+        class="production-unit-edit-form"
+    >
+
+        {% csrf_token %}
+
+
+        {% if form.non_field_errors %}
+
+            <div class="production-form-error">
+                {{ form.non_field_errors }}
+            </div>
+
+        {% endif %}
+
+
+        <section class="production-unit-card">
+
+            <div class="production-unit-card__header">
+
+                <h2>
+                    Dane operacji
+                </h2>
+
+            </div>
+
+
+            <div class="production-unit-edit-grid">
+
+                {% for field in form %}
+
+                    {% if field.name != "persons" %}
+
+                        <div class="
+                            production-unit-edit-field
+                            {% if field.name == 'notes' %}
+                                production-unit-edit-field--full
+                            {% endif %}
+                        ">
+
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+
+                            {{ field }}
+
+                            {% if field.errors %}
+
+                                <div class="production-field-error">
+                                    {{ field.errors }}
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+        <section class="production-unit-card">
+
+            <div class="production-unit-card__header">
+
+                <h2>
+                    Pracownicy
+                </h2>
+
+            </div>
+
+
+            <div class="production-unit-persons-form">
+
+                {{ form.persons }}
+
+                {% if form.persons.errors %}
+
+                    <div class="production-field-error">
+                        {{ form.persons.errors }}
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+        <div class="production-form-actions">
+
+            <a
+                href="{% url 'modern_production:unit-details' object.id %}"
+                class="app-btn app-btn-secondary"
+            >
+                Anuluj
+            </a>
+
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-check"></i>
+                Zapisz zmiany
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+        if (
+            typeof flatpickr
+            === "undefined"
+        ) {
+            return;
+        }
+
+        flatpickr(
+            ".js-datetime-picker",
+            {
+                enableTime: true,
+                time_24hr: true,
+                dateFormat: "Y-m-d H:i",
+                allowInput: true,
+                locale: "pl",
+                minuteIncrement: 5,
+            }
+        );
+    }
+);
+</script>
+
+{% endblock %}

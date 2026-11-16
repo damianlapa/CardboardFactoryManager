@@ -5,11 +5,17 @@ from warehouse.views import *
 from warehouse.ajax_views import *
 from warehouse.load_csv_views import *
 from warehouse.statstics_views import *
-from warehouse.create_order_views import GenerateOrderInlineView
-from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
+from warehouse.create_order_views import GenerateOrderInlineView, GenerateOrderInlineView2
+# from warehouse.sales_reports_views import sales_report_view, sales_pdf_view
 from warehouse.product_complex_views import *
 from warehouse.price_list_view import PriceListUploadView
 from warehouse.monthly_reports_views import MonthlyWarehouseReportView
+
+# Add at the top of warehouse/urls.py:
+from warehouse.lead_time import lead_time_report
+from warehouse.modern_views.products import ProductCreateView
+
+
 
 
 app_name = 'warehouse'
@@ -25,6 +31,7 @@ urlpatterns = [
 
 urlpatterns += [
     path('generate-order-inline/<int:order_id>/', GenerateOrderInlineView.as_view(), name='generate_order_inline'),
+    path('generate-order-inline2/<int:order_id>/', GenerateOrderInlineView2.as_view(), name='generate_order_inline2'),
 ]
 
 # delivery urls
@@ -80,21 +87,21 @@ urlpatterns += [
     path('clr/', clear_orders),
 ]
 
-# report
-urlpatterns += [
-    path('sales-report/', sales_report_view, name='sales_report'),
-    path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
-]
-
-urlpatterns += [
-    path("assembly/new/", AssemblyCreateView.as_view(), name="assembly_create"),
-    path("assembly/", AssemblyListView.as_view(), name="assembly_list"),
-    path("assembly/<int:pk>/", AssemblyDetailView.as_view(), name="assembly_detail"),
-]
-
-urlpatterns += [
-    path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
-]
+# # report
+# urlpatterns += [
+#     path('sales-report/', sales_report_view, name='sales_report'),
+#     path('sales-report/pdf/', sales_pdf_view, name='sales_pdf'),
+# ]
+#
+# urlpatterns += [
+#     path("assembly/new/", AssemblyCreateView.as_view(), name="assembly_create"),
+#     path("assembly/", AssemblyListView.as_view(), name="assembly_list"),
+#     path("assembly/<int:pk>/", AssemblyDetailView.as_view(), name="assembly_detail"),
+# ]
+#
+# urlpatterns += [
+#     path("orders/<int:order_id>/add-shift/", AddShiftView.as_view(), name="add_shift"),
+# ]
 
 # urlpatterns += [
 #     path("orders/<int:order_id>/add-shift/", AddDeliveryItemToWarehouse.as_view(), name="add_shift"),
@@ -137,4 +144,124 @@ urlpatterns += [
     path('settlement/<int:settlement_id>/undo/', undo_order_settlement, name='undo_order_settlement'),
     path("sell/<int:sell_id>/undo/", undo_product_sell, name="undo_product_sell"),
     path("delivery-item/<int:item_id>/undo-process/", undo_delivery_item_process, name="undo_delivery_item_process"),
+]
+
+urlpatterns += [
+    path('warehouses/refresh_warehouses_values/', refresh_warehouses_values, name='refresh_warehouses_values'),
+    path(
+        "orders/profitability/",
+        OrderProfitabilityListView.as_view(),
+        name="orders-profitability"
+    ),
+    path(
+        "orders/profitability/data/",
+        OrderProfitabilityDataView.as_view(),
+        name="orders-profitability-data",
+    ),
+]
+
+urlpatterns += [
+    path("dashboard/", WarehouseDashboardView.as_view(), name="dashboard"),
+    path("dashboard/data/", DashboardDataView.as_view(), name="dashboard-data"),
+]
+
+urlpatterns += [
+    path(
+        "warehouse/volume-chart/",
+        WarehouseVolumeChartView.as_view(),
+        name="warehouse-volume-chart",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "order/<int:order_id>/shipment-unit/confirm-user/",
+        ShipmentUnitConfirmUserView.as_view(),
+        name="shipment-unit-confirm-user",
+    ),
+    path(
+        "order/<int:order_id>/shipment-unit/create/",
+        ShipmentUnitCreateView.as_view(),
+        name="shipment-unit-create",
+    ),
+    path(
+        "shipment-unit/<int:shipment_unit_id>/print/",
+        ShipmentUnitPrintView.as_view(),
+        name="shipment-unit-print",
+    ),
+    path(
+        "order/<int:order_id>/shipment-units/print/",
+        ShipmentUnitsPrintAllView.as_view(),
+        name="shipment-units-print-all",
+    ),
+    path(
+        "shipment-unit/<int:shipment_unit_id>/edit/",
+        ShipmentUnitUpdateView.as_view(),
+        name="shipment-unit-update",
+    ),
+
+    path(
+        "shipment-unit/<int:shipment_unit_id>/delete/",
+        ShipmentUnitDeleteView.as_view(),
+        name="shipment-unit-delete",
+    ),
+]
+
+urlpatterns += [
+    path(
+        "loading/scan/<str:token>/",
+        ShipmentUnitLoadingScanView.as_view(),
+        name="shipment-unit-loading-scan",
+    ),
+
+    path(
+        "shipments/active/",
+        ActiveShipmentView.as_view(),
+        name="active-shipment",
+    ),
+
+    path(
+        "shipments/<int:shipment_id>/",
+        ShipmentDetailView.as_view(),
+        name="shipment-detail",
+    ),
+
+    path(
+        "shipments/<int:shipment_id>/confirm/",
+        ShipmentConfirmView.as_view(),
+        name="shipment-confirm",
+    ),
+
+    path(
+        "shipment-items/<int:item_id>/delete/",
+        ShipmentItemDeleteView.as_view(),
+        name="shipment-item-delete",
+    ),
+
+]
+
+urlpatterns += [
+    path(
+        "shipments/",
+        ShipmentListView.as_view(),
+        name="shipment-list",
+    ),
+]
+
+
+
+
+# Add to urlpatterns (inside existing list or via +=):
+urlpatterns += [
+    path('orders/lead-time/', lead_time_report, name='lead-time-report'),
+]
+
+from warehouse.shipment_item_quantity_views import ShipmentItemQuantityListView
+
+urlpatterns += [
+    path(
+        "shipment-items/quantities/",
+        ShipmentItemQuantityListView.as_view(),
+        name="shipment-item-quantity-list",
+    ),
 ]

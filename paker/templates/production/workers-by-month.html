@@ -1,27 +1,280 @@
-{% extends '__base2__.html' %}
-{% block title %}Workers {{ month_date }}{% endblock %}
-{% block content %}
-<h1 class="white">{{ month_date }}</h1>
-<hr style="border: 2px solid pink">
-{% for worker in active_workers %}
-    <a href="{% url 'worker-efficiency' worker_id=worker.id month=month year=year %}" class="no-decor white">
-        <p class="white">
-            {{ worker }}
-            <a href="{% url 'mcp' worker_id=worker.id month=month year=year %}" target="_blank">
-        <button>
-            Karta Czasu Pracy
-        </button>
-            </a>
-        </p>
+```django
+{% extends "base.html" %}
 
-    </a>
-{% endfor %}
-<p class="red">
-            Wszyscy pracownicy
-            <a href="{% url 'mcpa' month=month year=year %}" target="_blank">
-        <button>
-            Karty Czasu Pracy
-        </button>
-            </a>
-</p>
+{% block title %}
+    Pracownicy {{ month_date }} | PAKER
 {% endblock %}
+
+{% block page_title %}
+    Pracownicy
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page">
+
+    <div class="app-page-header">
+
+        <div>
+
+            <div class="app-page-eyebrow">
+                Ewidencja czasu pracy
+            </div>
+
+            <h1>
+                {{ month_date }}
+            </h1>
+
+            <p>
+                Wybierz pracownika, aby przejść do jego efektywności
+                lub otworzyć kartę czasu pracy.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="app-card">
+
+        <div class="app-card-header">
+
+            <div>
+
+                <h2>
+                    Aktywni pracownicy
+                </h2>
+
+                <p>
+                    {{ active_workers|length }} pracowników
+                </p>
+
+            </div>
+
+
+            <a
+                href="{% url 'mcpa' month=month year=year %}"
+                target="_blank"
+                class="app-btn app-btn-secondary"
+            >
+                <i class="fa-regular fa-file-lines"></i>
+
+                Wszystkie karty czasu pracy
+            </a>
+
+        </div>
+
+
+        <div class="workers-month-list">
+
+            {% for worker in active_workers %}
+
+                <div class="workers-month-row">
+
+                    <a
+                        href="{% url 'worker-efficiency' worker_id=worker.id month=month year=year %}"
+                        class="workers-month-person"
+                    >
+
+                        <div class="workers-month-person__avatar">
+
+                            {{ worker.first_name|first }}
+                            {{ worker.last_name|first }}
+
+                        </div>
+
+
+                        <div class="workers-month-person__content">
+
+                            <strong>
+                                {{ worker }}
+                            </strong>
+
+                            <span>
+                                Zobacz efektywność pracownika
+                            </span>
+
+                        </div>
+
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </a>
+
+
+                    <a
+                        href="{% url 'mcp' worker_id=worker.id month=month year=year %}"
+                        target="_blank"
+                        class="app-btn app-btn-secondary workers-month-card-button"
+                    >
+                        <i class="fa-regular fa-clock"></i>
+
+                        Karta czasu pracy
+                    </a>
+
+                </div>
+
+            {% empty %}
+
+                <div class="app-empty-state">
+
+                    <i class="fa-solid fa-users-slash"></i>
+
+                    <strong>
+                        Brak aktywnych pracowników
+                    </strong>
+
+                    <span>
+                        Dla wybranego miesiąca nie znaleziono aktywnych pracowników.
+                    </span>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block style %}
+
+<style>
+
+    .workers-month-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+
+    .workers-month-row {
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+
+        align-items: center;
+
+        gap: 12px;
+
+        padding: 10px 12px;
+
+        border-bottom: 1px solid var(--app-border);
+    }
+
+
+    .workers-month-row:last-child {
+        border-bottom: 0;
+    }
+
+
+    .workers-month-row:hover {
+        background: #f8fafc;
+    }
+
+
+    .workers-month-person {
+        display: grid;
+
+        grid-template-columns:
+            auto
+            minmax(0, 1fr)
+            auto;
+
+        align-items: center;
+
+        gap: 10px;
+
+        min-width: 0;
+
+        color: var(--app-text);
+
+        text-decoration: none;
+    }
+
+
+    .workers-month-person__avatar {
+        width: 36px;
+        height: 36px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        flex: 0 0 36px;
+
+        border-radius: 50%;
+
+        background: #eff6ff;
+
+        color: #2563eb;
+
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+
+    .workers-month-person__content {
+        min-width: 0;
+    }
+
+
+    .workers-month-person__content strong {
+        display: block;
+
+        overflow: hidden;
+
+        font-size: 12px;
+        font-weight: 750;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+
+    .workers-month-person__content span {
+        display: block;
+
+        margin-top: 2px;
+
+        color: var(--app-text-muted);
+
+        font-size: 8px;
+    }
+
+
+    .workers-month-person > i {
+        color: #cbd5e1;
+
+        font-size: 9px;
+    }
+
+
+    .workers-month-card-button {
+        white-space: nowrap;
+    }
+
+
+    @media (max-width: 700px) {
+
+        .workers-month-row {
+            grid-template-columns: 1fr;
+        }
+
+
+        .workers-month-card-button {
+            justify-self: start;
+        }
+
+    }
+
+</style>
+
+{% endblock %}
+```

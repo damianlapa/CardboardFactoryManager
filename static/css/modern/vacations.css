@@ -1,0 +1,690 @@
+/* ========================================================== */
+/* TOOLBAR                                                    */
+/* ========================================================== */
+
+.vacation-toolbar {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+}
+
+
+.vacation-year-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+
+.vacation-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+
+.vacation-filter-label {
+    color: var(--app-text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+.vacation-filter-select {
+    min-width: 120px;
+    height: 38px;
+
+    padding: 0 34px 0 11px;
+
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+
+    color: var(--app-text);
+
+    font-family: inherit;
+    font-size: 13px;
+
+    outline: none;
+
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease;
+}
+
+
+.vacation-filter-select:focus {
+    border-color: var(--app-primary);
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .1);
+}
+
+
+/* ========================================================== */
+/* COMMON                                                     */
+/* ========================================================== */
+
+.vacation-section-description {
+    margin-top: 3px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+
+.vacation-section-icon {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* TABLE                                                      */
+/* ========================================================== */
+
+.vacation-summary-card,
+.vacation-history {
+    overflow: hidden;
+}
+
+
+.vacation-table-scroll {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+
+.vacation-table {
+    width: 100%;
+
+    min-width: 760px;
+
+    border-collapse: collapse;
+
+    background: var(--app-surface);
+}
+
+
+.vacation-table th {
+    padding: 11px 14px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    background: #f8fafc;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-align: left;
+
+    text-transform: uppercase;
+
+    letter-spacing: .04em;
+}
+
+
+.vacation-table td {
+    padding: 13px 14px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    color: var(--app-text);
+
+    font-size: 13px;
+
+    vertical-align: middle;
+}
+
+
+.vacation-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+.vacation-table tbody tr {
+    transition: background .12s ease;
+}
+
+
+.vacation-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+
+/* ========================================================== */
+/* WORKER                                                     */
+/* ========================================================== */
+
+.vacation-worker-link {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 9px;
+
+    color: var(--app-text);
+
+    font-weight: 650;
+
+    text-decoration: none;
+}
+
+
+.vacation-worker-link:hover {
+    color: var(--app-primary);
+}
+
+
+.vacation-worker-avatar {
+    width: 30px;
+    height: 30px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+
+    font-size: 11px;
+}
+
+
+/* ========================================================== */
+/* VALUES                                                     */
+/* ========================================================== */
+
+.vacation-value {
+    color: var(--app-text);
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+
+.vacation-value-unit {
+    margin-left: 2px;
+
+    color: var(--app-text-muted);
+
+    font-size: 11px;
+}
+
+
+.vacation-muted {
+    color: var(--app-text-muted);
+}
+
+
+.vacation-used-details {
+    margin-top: 3px;
+
+    color: var(--app-text-muted);
+
+    font-size: 10px;
+}
+
+
+.vacation-used-separator {
+    margin: 0 3px;
+}
+
+
+/* ========================================================== */
+/* BADGES                                                     */
+/* ========================================================== */
+
+.vacation-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 25px;
+
+    padding: 3px 8px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.vacation-badge--carry {
+    background: #eff6ff;
+
+    color: #1d4ed8;
+}
+
+
+.vacation-badge--available {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.vacation-badge--low {
+    background: #fef3c7;
+
+    color: #b45309;
+}
+
+
+.vacation-badge--empty {
+    background: #fee2e2;
+
+    color: #b91c1c;
+}
+
+
+/* ========================================================== */
+/* TABLE ACTION                                               */
+/* ========================================================== */
+
+.vacation-action-cell {
+    width: 55px;
+
+    text-align: right !important;
+}
+
+
+.vacation-details-button {
+    width: 32px;
+    height: 32px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: var(--app-radius-sm);
+
+    color: var(--app-text-muted);
+
+    text-decoration: none;
+
+    transition:
+        background .15s ease,
+        color .15s ease;
+}
+
+
+.vacation-details-button:hover {
+    background: var(--app-primary-soft);
+
+    color: var(--app-primary);
+}
+
+
+/* ========================================================== */
+/* DETAIL HEADER                                              */
+/* ========================================================== */
+
+.vacation-back-link {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    margin-bottom: 8px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    text-decoration: none;
+}
+
+
+.vacation-back-link:hover {
+    color: var(--app-primary);
+}
+
+
+.vacation-detail-title {
+    margin-top: 0;
+}
+
+
+.vacation-detail-year form {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.vacation-detail-year label {
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+/* ========================================================== */
+/* METRICS                                                    */
+/* ========================================================== */
+
+.vacation-metrics {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 14px;
+
+    margin-bottom: 18px;
+}
+
+
+.vacation-metric {
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    padding: 16px;
+}
+
+
+.vacation-metric__icon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 10px;
+
+    font-size: 15px;
+}
+
+
+.vacation-metric__icon--limit {
+    background: #eff6ff;
+
+    color: #2563eb;
+}
+
+
+.vacation-metric__icon--carry {
+    background: #f3e8ff;
+
+    color: #7e22ce;
+}
+
+
+.vacation-metric__icon--used {
+    background: #ffedd5;
+
+    color: #c2410c;
+}
+
+
+.vacation-metric__icon--remaining {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.vacation-metric__label {
+    margin-bottom: 2px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+.vacation-metric__value {
+    color: var(--app-text);
+
+    font-size: 21px;
+    font-weight: 750;
+}
+
+
+.vacation-metric__value span {
+    color: var(--app-text-muted);
+
+    font-size: 11px;
+    font-weight: 500;
+}
+
+
+/* ========================================================== */
+/* BREAKDOWN                                                  */
+/* ========================================================== */
+
+.vacation-breakdown {
+    margin-bottom: 18px;
+
+    overflow: hidden;
+}
+
+
+.vacation-breakdown__body {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+}
+
+
+.vacation-breakdown-item {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 16px 18px;
+}
+
+
+.vacation-breakdown-item + .vacation-breakdown-item {
+    border-left: 1px solid var(--app-border);
+}
+
+
+.vacation-breakdown-item__title {
+    color: var(--app-text);
+
+    font-size: 13px;
+    font-weight: 650;
+}
+
+
+.vacation-breakdown-item__code {
+    margin-top: 3px;
+
+    color: var(--app-text-muted);
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+
+.vacation-breakdown-item__value {
+    color: var(--app-text);
+
+    font-size: 16px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* ========================================================== */
+/* HISTORY                                                    */
+/* ========================================================== */
+
+.vacation-history-table {
+    min-width: 500px;
+}
+
+
+.vacation-date {
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+}
+
+
+.vacation-type-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-width: 34px;
+    min-height: 24px;
+
+    justify-content: center;
+
+    padding: 3px 7px;
+
+    border-radius: 5px;
+
+    background: #fee2e2;
+
+    color: #b91c1c;
+
+    font-size: 10px;
+    font-weight: 750;
+}
+
+
+/* ========================================================== */
+/* EMPTY STATE                                                */
+/* ========================================================== */
+
+.vacation-empty {
+    padding: 45px 25px;
+
+    text-align: center;
+}
+
+
+.vacation-empty__icon {
+    margin-bottom: 10px;
+
+    color: var(--app-text-muted);
+
+    font-size: 28px;
+}
+
+
+.vacation-empty__title {
+    margin-bottom: 4px;
+
+    color: var(--app-text);
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+
+.vacation-empty__description {
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+}
+
+.vacation-breakdown__body {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+}
+
+.vacation-breakdown-item--total {
+    background: #f8fafc;
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE                                                 */
+/* ========================================================== */
+
+@media (max-width: 1050px) {
+
+    .vacation-metrics {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .vacation-year-form {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .vacation-filter-select {
+        width: 100%;
+    }
+
+
+    .vacation-year-form .app-btn {
+        width: 100%;
+    }
+
+
+    .vacation-metrics {
+        grid-template-columns: 1fr;
+    }
+
+
+    .vacation-breakdown__body {
+        grid-template-columns: 1fr;
+    }
+
+
+    .vacation-breakdown-item +
+    .vacation-breakdown-item {
+        border-left: 0;
+
+        border-top: 1px solid var(--app-border);
+    }
+
+
+    .vacation-detail-year {
+        width: 100%;
+    }
+
+
+    .vacation-detail-year form {
+        justify-content: space-between;
+    }
+
+}

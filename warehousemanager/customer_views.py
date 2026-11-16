@@ -14,7 +14,7 @@ class DeliveryPlacesMapView(View):
         return render(request, self.template_name, context)
 
 
-# views.py
+# modern_views.py
 from django.http import HttpResponse
 from django.views import View
 from django.db.models import Prefetch

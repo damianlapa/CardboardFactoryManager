@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Operacja {{ unit.sequence }} | Produkcja
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/unit_detail.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-unit-page">
+
+
+    <!-- HEADER -->
+
+    <header class="production-unit-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:production-details' unit.production_order.id %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                {{ unit.production_order.id_number }}
+            </a>
+
+
+            <div class="production-eyebrow">
+                Operacja produkcyjna
+            </div>
+
+
+            <h1>
+                {{ unit.sequence }}. {{ unit.work_station }}
+            </h1>
+
+
+            <p>
+                {{ unit.production_order.customer }}
+                ·
+                {{ unit.production_order.id_number }}
+            </p>
+
+        </div>
+
+
+        <div class="production-unit-header__actions">
+
+            {% if perms.production.change_productionunit %}
+
+                <a
+                    href="{% url 'modern_production:unit-edit' unit.id %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    <i class="fa-solid fa-pen"></i>
+                    Edytuj
+                </a>
+
+            {% endif %}
+
+
+            {% if perms.production.delete_productionunit %}
+
+                <a
+                    href="{% url 'modern_production:unit-delete' unit.id %}"
+                    class="app-btn production-danger-button"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                    Usuń
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </header>
+
+
+    <!-- STATUS -->
+
+    <section class="production-unit-status-card">
+
+        <div>
+
+            <span>Status</span>
+
+            <strong>
+                {{ unit.get_status_display }}
+            </strong>
+
+        </div>
+
+
+        {% if perms.production.change_productionunit %}
+
+            <div class="production-unit-status-actions">
+
+                {% if unit.status == "NOT STARTED" %}
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-plan' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="app-btn app-btn-secondary"
+                        >
+                            <i class="fa-solid fa-calendar-plus"></i>
+                            Zaplanuj
+                        </button>
+                    </form>
+
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-start' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="app-btn app-btn-primary"
+                        >
+                            <i class="fa-solid fa-play"></i>
+                            Start
+                        </button>
+                    </form>
+
+                {% endif %}
+
+
+                {% if unit.status == "PLANNED" %}
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-move-up' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="production-icon-button"
+                            title="Przesuń wyżej"
+                        >
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                    </form>
+
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-move-down' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="production-icon-button"
+                            title="Przesuń niżej"
+                        >
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                    </form>
+
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-remove-from-plan' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="app-btn app-btn-secondary"
+                        >
+                            Usuń z planu
+                        </button>
+                    </form>
+
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-start' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="app-btn app-btn-primary"
+                        >
+                            <i class="fa-solid fa-play"></i>
+                            Start
+                        </button>
+                    </form>
+
+                {% endif %}
+
+
+                {% if unit.status == "IN PROGRESS" %}
+
+                    <form
+                        method="post"
+                        action="{% url 'modern_production:unit-finish' unit.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="app-btn production-success-button"
+                        >
+                            <i class="fa-solid fa-check"></i>
+                            Zakończ
+                        </button>
+                    </form>
+
+                {% endif %}
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- INFO -->
+
+    <div class="production-unit-grid">
+
+
+        <section class="production-unit-card">
+
+            <div class="production-unit-card__header">
+
+                <h2>
+                    Informacje
+                </h2>
+
+                <i class="fa-solid fa-circle-info"></i>
+
+            </div>
+
+
+            <div class="production-unit-info-grid">
+
+                <div>
+                    <span>Zlecenie</span>
+
+                    <strong>
+                        {{ unit.production_order.id_number }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Stanowisko</span>
+
+                    <strong>
+                        {{ unit.work_station }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Sekwencja</span>
+
+                    <strong>
+                        {{ unit.sequence }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Pozycja w kolejce</span>
+
+                    <strong>
+                        {{ unit.order|default:"—" }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Planowany czas</span>
+
+                    <strong>
+                        {% if unit.estimated_time %}
+                            {{ unit.estimated_time }} min
+                        {% else %}
+                            —
+                        {% endif %}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Rzeczywisty czas</span>
+
+                    <strong>
+                        {% if duration_minutes != None %}
+                            {{ duration_minutes }} min
+                        {% else %}
+                            —
+                        {% endif %}
+                    </strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="production-unit-card">
+
+            <div class="production-unit-card__header">
+
+                <h2>
+                    Ilości
+                </h2>
+
+                <i class="fa-solid fa-boxes-stacked"></i>
+
+            </div>
+
+
+            <div class="production-unit-info-grid">
+
+                <div>
+                    <span>Wejście</span>
+
+                    <strong>
+                        {{ unit.quantity_start|default:"—" }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Wyjście</span>
+
+                    <strong>
+                        {{ unit.quantity_end|default:"—" }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Operatorzy wymagani</span>
+
+                    <strong>
+                        {{ unit.required_operators }}
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>Pomocnicy wymagani</span>
+
+                    <strong>
+                        {{ unit.required_helpers }}
+                    </strong>
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- DATES -->
+
+    <section class="production-unit-card">
+
+        <div class="production-unit-card__header">
+
+            <h2>
+                Czas
+            </h2>
+
+            <i class="fa-regular fa-clock"></i>
+
+        </div>
+
+
+        <div class="production-unit-time-grid">
+
+            <div>
+
+                <span>
+                    Start
+                </span>
+
+                <strong>
+                    {% if unit.start %}
+                        {{ unit.start|date:"d.m.Y H:i" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Koniec
+                </span>
+
+                <strong>
+                    {% if unit.end %}
+                        {{ unit.end|date:"d.m.Y H:i" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PERSONS -->
+
+    <section class="production-unit-card">
+
+        <div class="production-unit-card__header">
+
+            <h2>
+                Pracownicy
+            </h2>
+
+            <span class="production-unit-count">
+                {{ persons_count }}
+            </span>
+
+        </div>
+
+
+        <div class="production-unit-persons">
+
+            {% for person in unit.persons.all %}
+
+                <span>
+                    <i class="fa-solid fa-user"></i>
+                    {{ person }}
+                </span>
+
+            {% empty %}
+
+                <div class="production-unit-empty">
+                    Brak przypisanych pracowników.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- TOOLS -->
+
+    <section class="production-unit-card">
+
+        <div class="production-unit-card__header">
+
+            <h2>
+                Narzędzia operacji
+            </h2>
+
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+
+        </div>
+
+
+        <div class="production-unit-info-grid">
+
+            <div>
+                <span>Wykrojnik</span>
+
+                <strong>
+                    {{ unit.punch|default:"—" }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Polimer</span>
+
+                <strong>
+                    {{ unit.polymer|default:"—" }}
+                </strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    {% if unit.notes %}
+
+        <section class="production-unit-card">
+
+            <div class="production-unit-card__header">
+                <h2>Notatki</h2>
+            </div>
+
+            <div class="production-unit-notes">
+                {{ unit.notes|linebreaksbr }}
+            </div>
+
+        </section>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

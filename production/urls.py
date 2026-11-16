@@ -5,21 +5,46 @@ from production.effectivity_views import *
 from production.planning_views import *
 from production.reports_view import *
 
+from production.modern_views.orders import (
+    ProductionOrderDetailView,
+)
+
+from production.modern_views.workstations import (
+    StartProductionUnitView,
+    FinishProductionUnitView,
+    PlanProductionUnitView,
+    RemoveProductionUnitFromPlanView,
+    MoveProductionUnitUpView,
+    MoveProductionUnitDownView
+)
+
 
 urlpatterns = [
-    path('', ProductionMenu.as_view(), name='production-menu'),
-    path('orders/all/', AllProductionOrders.as_view(), name='all-production-orders'),
-    path('order/details/<int:production_order_id>/', ProductionDetails.as_view(), name='production-details'),
-    path('order/details/change/', ChangeProductionStatus.as_view(), name='production-details-change'),
+    # path('', ProductionMenu.as_view(), name='production-menu'),
+    # path('orders/all/', AllProductionOrders.as_view(), name='all-production-orders'),
+    # path('order/details/<int:production_order_id>/', ProductionDetails.as_view(), name='production-details'),
+    path('order/details/change/<int:production_order_id>/', ChangeProductionStatus.as_view(), name='production-details-change'),
     path('workstation/all/', WorkStations.as_view(), name='production-workstations'),
     path('workstation/<int:workstation_id>', WorkStationDetails.as_view(), name='workstation-details'),
-    path('production-order-add/', AddProductionOrder.as_view(), name='production-order-add'),
+    path(
+        "production-order-add/",
+        ProductionOrderCreateView.as_view(),
+        name="production-order-add",
+    ),
     path('unit/details/<int:unit_id>/', ProductionUnitDetails.as_view(), name='unit-details'),
     path('production-unit-add/<order_id>/', AddProductionUnit.as_view(), name='production-unit-add'),
     path('production-unit-delete/<int:unit_id>/', DeleteProductionUnit.as_view(), name='delete-production-unit'),
     path('unit/edit/<int:unit_id>/', EditProductionUnit.as_view(), name='unit-edit'),
     path('set-estimated-time/', SetEstimatedTimeView.as_view(), name='set-estimated-time'),
     path('wrong-date-units/', WrongDateUnits.as_view(), name='wrong-date-units')
+]
+
+urlpatterns += [
+    path(
+        "order/details/<int:production_order_id>/",
+        ProductionOrderDetailView.as_view(),
+        name="production-details",
+    ),
 ]
 
 # production orders
@@ -30,12 +55,12 @@ urlpatterns += [
 
 # production units
 urlpatterns += [
-    path('unit/start/<int:unit_id>/', StartProductionUnit.as_view(), name='unit-start'),
-    path('unit/finish/<int:unit_id>/', FinishProductionUnit.as_view(), name='unit-finish'),
-    path('unit/plan/<int:unit_id>/', PlanProductionUnit.as_view(), name='unit-plan'),
-    path('unit/remove/<int:unit_id>/', RemoveProductionUnit.as_view(), name='unit-remove'),
-    path('unit/up/<int:unit_id>/', UpProductionUnit.as_view(), name='unit-up'),
-    path('unit/down/<int:unit_id>/', DownProductionUnit.as_view(), name='unit-down'),
+    # path('unit/start/<int:unit_id>/', StartProductionUnit.as_view(), name='unit-start'),
+    # path('unit/finish/<int:unit_id>/', FinishProductionUnit.as_view(), name='unit-finish'),
+    # path('unit/plan/<int:unit_id>/', PlanProductionUnit.as_view(), name='unit-plan'),
+    # path('unit/remove/<int:unit_id>/', RemoveProductionUnit.as_view(), name='unit-remove'),
+    # path('unit/up/<int:unit_id>/', UpProductionUnit.as_view(), name='unit-up'),
+    # path('unit/down/<int:unit_id>/', DownProductionUnit.as_view(), name='unit-down'),
 ]
 
 # worker
@@ -133,4 +158,82 @@ urlpatterns += [
 
 urlpatterns += [
     path('month-report/', MonthReport.as_view(), name='month-report')
+]
+
+urlpatterns += [
+    path(
+        "unit/<int:unit_id>/inline-update/",
+        UpdateProductionUnitInline.as_view(),
+        name="production-unit-inline-update"
+    ),
+    path(
+        "unit/<int:unit_id>/persons-update/",
+        UpdateProductionUnitPersons.as_view(),
+        name="production-unit-persons-update"
+    ),
+    path(
+        "production-order/<int:production_order_id>/tool/update/",
+        UpdateProductionOrderToolView.as_view(),
+        name="update_production_order_tool",
+    ),
+]
+
+urlpatterns += [
+    path(
+            "effectivity/workstations/",
+            WorkstationEffectivityView.as_view(),
+            name="workstation_effectivity",
+        ),
+    path(
+            "effectivity/workstations/pdf/",
+            WorkstationEffectivityPdfView.as_view(),
+            name="workstation_effectivity_pdf",
+        ),
+]
+
+urlpatterns += [
+    path(
+        "units/<int:unit_id>/start/",
+        StartProductionUnitView.as_view(),
+        name="unit-start",
+    ),
+
+    path(
+        "units/<int:unit_id>/finish/",
+        FinishProductionUnitView.as_view(),
+        name="unit-finish",
+    ),
+
+    path(
+        "units/<int:unit_id>/plan/",
+        PlanProductionUnitView.as_view(),
+        name="unit-plan",
+    ),
+
+    path(
+        "units/<int:unit_id>/remove-from-plan/",
+        RemoveProductionUnitFromPlanView.as_view(),
+        name="unit-remove-from-plan",
+    ),
+
+    path(
+        "units/<int:unit_id>/move-up/",
+        MoveProductionUnitUpView.as_view(),
+        name="unit-move-up",
+    ),
+
+    path(
+        "units/<int:unit_id>/move-down/",
+        MoveProductionUnitDownView.as_view(),
+        name="unit-move-down",
+    ),
+]
+
+
+urlpatterns += [
+    path(
+        "reports/die-cut-production/pdf/",
+        DieCutProductionPdfView.as_view(),
+        name="die-cut-production-pdf",
+    ),
 ]

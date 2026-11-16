@@ -1,143 +1,834 @@
-{% extends '__base2__.html' %}
-{% block title %}{{ prduction_order }}{% endblock %}
-{% block content %}
-<a href="{% url 'all-production-orders' %}">
-    <button>
-        BACK TO ALL ORDERS
-    </button>
-</a>
-<h1 class="page-header">{{ production_order }}</h1>
+{% extends "__base3__.html" %}
+{% load static %}
 
-<form class="ordinary-form" method="get" action="{% url 'production-details-change' %}">
-    <select id="select-status" name="status">
+{% block title %}{{ production_order }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/production/production-details.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="production-page">
+
+    <div class="mb-3">
+        <a href="{% url 'all-production-orders' %}" class="btn btn-link text-decoration-none px-0">
+            ← Back to all orders
+        </a>
+    </div>
+
+    <div class="page-top">
+        <div>
+            <h1 class="order-title">{{ production_order }}</h1>
+            <form id="status-form" class="d-flex gap-2 align-items-center">
+    {% csrf_token %}
+
+    <select id="select-status"
+            name="status"
+            class="form-select"
+            style="max-width: 190px;">
         {% for s in production_order_statuses %}
-        <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %} >
-            {{ s.0 }}
-        </option>
+            <option value="{{ s.0 }}" {% if production_order.status == s.0 %}selected{% endif %}>
+                {{ s.0 }}
+            </option>
         {% endfor %}
     </select>
-    <input type="number" value="{{ production_order.id }}" name="production-order-id" hidden>
-    <input type="submit" class="ordinary-form" value="CHANGE" id="change-btn" disabled>
+
+    <span id="status-save-info" class="small text-success fw-semibold d-none">
+        Zapisano
+    </span>
 </form>
+        </div>
+        <div class="production-tools">
+    <button
+        type="button"
+        class="tool-card"
+        data-tool-type="punch"
+        data-tool-label="Wykrojnik"
+        data-current-id="{{ production_order.punch_id|default:'' }}"
+    >
+        <div class="tool-title">Wykrojnik</div>
+        <div class="tool-name" id="punchValue">
+            {{ production_order.punch|default:"— brak —" }}
+        </div>
+        <div class="tool-edit">Kliknij, aby zmienić</div>
+    </button>
 
-<h3 class="red">DETAILS</h3>
-<a href="{% url 'order-redirect' order_id=production_order.id %}"><button>WAREHOUSE ORDER</button></a>
-<table style="border: 1px solid pink" class="center bg-white">
-    <tr style="display: none">
-        <td id="order_id">{{ production_order.id }}</td>
-    </tr>
-    <tr>
-        <th>id_number</th>
-        <th>{{ production_order.id_number }}</th>
-    </tr>
-    <tr>
-        <th>cardboard</th>
-        <th>{{ production_order.cardboard }}</th>
-    </tr>
-    <tr>
-        <th>cardboard dimensions</th>
-        <th>{{ production_order.cardboard_dimensions }}</th>
-    </tr>
-    <tr>
-        <th>customer</th>
-        <th>{{ production_order.customer }}</th>
-    </tr>
-    <tr>
-        <th>dimensions</th>
-        <th>{{ production_order.dimensions }}</th>
-    </tr>
-    <tr>
-        <th>ordered</th>
-        <th id="production-order-ordered">{{ production_order.ordered_quantity }}</th>
-    </tr>
-    <tr>
-        <th>quantity</th>
-        <th id="production-order-quantity">{{ production_order.quantity }}</th>
-    </tr>
-    <tr>
-        <th>status</th>
-        <th id="production-status">{{ production_order.status }}</th>
-    </tr>
-    <tr>
-        <th>completed</th>
-        <th>{{ production_order.completed }}</th>
-    </tr>
-    <tr>
-        <th>priority</th>
-        <th>{{ production_order.priority }}</th>
-    </tr>
-    <tr>
-        <th>notes</th>
-        <th>{{ production_order.notes }}</th>
-    </tr>
-    <tr>
-        <th>added</th>
-        <th>{{ production_order.add_date }}</th>
-    </tr>
-</table>
-<h3 class="red">UNITS</h3>
-<a href="{% url 'production-unit-add' order_id=production_order.id %}">
-    <button>Add Unit</button>
-</a>
-<div>
-    <table class="bg-white center">
-        <tr>
-            <th>
-                DETAILS
-            </th>
-            <th>
-                SEQUENCE
-            </th>
-            <th>
-                STATUS
-            </th>
-            <th>
-                WORK STATION
-            </th>
-            <th>
-                START
-            </th>
-            <th>
-                END
-            </th>
-            <th>
-                ESTIMATED TIME
-            </th>
-            <th>
-                ESTIMATED END
-            </th>
-
-        </tr>
-        {% for p in production_units %}
-        <tr>
-            <td>
-                <a href="{% url 'unit-details' unit_id=p.id %}" >
-                    <button style="color: white; background: green;">
-                        DETAILS
-                    </button>
-                </a>
-            </td>
-            <td>{{ p.sequence }}</td>
-            <td>{{ p.status }}</td>
-            <td>{{ p.work_station }}</td>
-            <td>{{ p.start }}</td>
-            <td>{{ p.end }}</td>
-            <td>{{ p.estimated_time }}</td>
-            <td>{{ p.estimated_end }}</td>
-            <td>
-                <a href="{% url 'delete-production-unit' unit_id=p.id %}">
-                <button style="background: red; color: white;">
-                DELETE
-                </button>
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+    <button
+        type="button"
+        class="tool-card"
+        data-tool-type="photopolymer"
+        data-tool-label="Fotopolimer"
+        data-current-id="{{ production_order.photopolymer_id|default:'' }}"
+    >
+        <div class="tool-title">Fotopolimer</div>
+        <div class="tool-name" id="photopolymerValue">
+            {{ production_order.photopolymer|default:"— brak —" }}
+        </div>
+        <div class="tool-edit">Kliknij, aby zmienić</div>
+    </button>
 </div>
 
+        <div class="order-card">
+            <div class="info-grid">
+                <div>
+                    <div class="info-label">Customer</div>
+                    <div class="info-value">{{ production_order.customer }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Dimensions</div>
+                    <div class="info-value">{{ production_order.dimensions }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Quantity</div>
+                    <div class="info-value">{{ production_order.quantity }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Status</div>
+                    <div class="info-value">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            {{ production_order.status }}
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+            <div id="productionToolModal" class="production-tool-modal">
+    <div class="production-tool-modal-content">
+        <button
+            type="button"
+            class="production-tool-modal-close"
+            id="closeProductionToolModal"
+        >
+            &times;
+        </button>
+
+        <h3 id="productionToolModalTitle">Wybierz narzędzie</h3>
+
+        <form
+            method="post"
+            action="{% url 'update_production_order_tool' production_order.id %}"
+            id="productionToolForm"
+        >
+            {% csrf_token %}
+
+            <input type="hidden" name="tool_type" id="productionToolType">
+
+            <label for="productionToolSelect" class="modal-tool-label">
+                Wybierz pozycję
+            </label>
+
+            <select
+                name="tool_id"
+                id="productionToolSelect"
+                class="modal-tool-select"
+            >
+                <option value="">— brak —</option>
+            </select>
+
+            <div class="modal-tool-actions">
+                <button
+                    type="button"
+                    class="modal-btn modal-btn-secondary"
+                    id="cancelProductionToolModal"
+                >
+                    Anuluj
+                </button>
+
+                <button
+                    type="submit"
+                    class="modal-btn modal-btn-primary"
+                >
+                    Zapisz
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+        </div>
+    </div>
+
+    <div class="nav-tabs-clean">
+        <a href="#">Details</a>
+        <a href="{% url 'order-redirect' order_id=production_order.id %}">Warehouse order</a>
+        <a href="#" class="active">Units</a>
+    </div>
+
+    <div class="table-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title mb-0">
+                Jednostki produkcyjne ({{ production_units.count }})
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Seq</th>
+                        <th>Status</th>
+                        <th>Stanowisko</th>
+                        <th>Start</th>
+                        <th>Koniec</th>
+                        <th>Ilość start</th>
+                        <th>Ilość koniec</th>
+                        <th>Czas przew. [min]</th>
+                        <th>Pracownicy</th>
+                        <th class="text-end">Akcje</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for p in production_units %}
+                        <tr class="{% if p.start and p.end and p.start >= p.end %}unit-row-error{% endif %}">
+    <td>
+        <input type="number"
+               class="unit-edit form-control form-control-sm"
+               data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+               data-field="sequence"
+               value="{{ p.sequence }}">
+    </td>
+
+    <td>
+        <select class="unit-edit form-select form-select-sm"
+                data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+                data-field="status">
+            {% for s in production_unit_statuses %}
+                <option value="{{ s.0 }}" {% if p.status == s.0 %}selected{% endif %}>
+                    {{ s.0 }}
+                </option>
+            {% endfor %}
+        </select>
+    </td>
+
+    <td>
+        <select class="unit-edit form-select form-select-sm"
+                data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+                data-field="work_station">
+            {% for station in workstations %}
+                <option value="{{ station.id }}" {% if p.work_station.id == station.id %}selected{% endif %}>
+                    {{ station }}
+                </option>
+            {% endfor %}
+        </select>
+    </td>
+
+    <td>
+        <input type="text"
+       class="unit-edit form-control form-control-sm js-datetime-picker"
+       data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+       data-field="start"
+       value="{{ p.start|date:'Y-m-d H:i' }}">
+    </td>
+
+    <td>
+        <input type="text"
+       class="unit-edit form-control form-control-sm js-datetime-picker"
+       data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+       data-field="end"
+       value="{{ p.end|date:'Y-m-d H:i' }}">
+    </td>
+
+    <td>
+        <input type="number"
+               class="unit-edit form-control form-control-sm"
+               data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+               data-field="quantity_start"
+               value="{{ p.quantity_start|default:'' }}">
+    </td>
+
+    <td>
+        <input type="number"
+               class="unit-edit form-control form-control-sm"
+               data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+               data-field="quantity_end"
+               value="{{ p.quantity_end|default:'' }}">
+    </td>
+
+    <td>
+        <input type="number"
+               class="unit-edit form-control form-control-sm"
+               data-url="{% url 'production-unit-inline-update' unit_id=p.id %}"
+               data-field="estimated_time"
+               value="{{ p.estimated_time|default:'' }}">
+    </td>
+
+    <td>
+    <div class="unit-workers-preview" id="workers-preview-{{ p.id }}">
+        {% for person in p.persons.all %}
+            <span class="badge bg-secondary worker-badge">{{ person }}</span>
+        {% empty %}
+            <span class="text-muted">Brak</span>
+        {% endfor %}
+    </div>
+
+    <button type="button"
+            class="btn btn-sm btn-outline-primary mt-1 edit-workers-btn"
+            data-unit-id="{{ p.id }}"
+            data-url="{% url 'production-unit-persons-update' unit_id=p.id %}"
+            data-current-workers="{% for person in p.persons.all %}{{ person.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+            data-bs-toggle="modal"
+            data-bs-target="#editWorkersModal">
+        Edytuj
+    </button>
+</td>
+
+    <td class="text-end text-nowrap">
+        <a href="{% url 'unit-details' unit_id=p.id %}" class="btn btn-sm btn-outline-primary">
+            Details
+        </a>
+        <a href="{% url 'delete-production-unit' unit_id=p.id %}" class="btn btn-sm btn-outline-danger">
+            Delete
+        </a>
+    </td>
+</tr>
+                    {% endfor %}
+
+                    <tr class="unit-add-row">
+
+    <td>
+        <form method="post" id="unit-form">
+            {% csrf_token %}
+            {{ form.sequence }}
+    </td>
+
+    <td>
+        {{ form.status }}
+    </td>
+
+    <td>
+        {{ form.work_station }}
+    </td>
+
+    <td>
+        {{ form.start }}
+    </td>
+
+    <td>
+        {{ form.end }}
+    </td>
+
+    <td>
+        {{ form.quantity_start }}
+    </td>
+
+    <td>
+        {{ form.quantity_end }}
+    </td>
+
+    <td>
+        {{ form.estimated_time }}
+    </td>
+
+    <td>
+        <button type="button"
+                class="btn btn-outline-primary btn-sm w-100"
+                data-bs-toggle="modal"
+                data-bs-target="#workersModal">
+            Wybierz
+        </button>
+
+        <div id="selected-workers-preview"
+             class="selected-workers-preview">
+            Brak
+        </div>
+
+        <div class="d-none">
+            {{ form.persons }}
+        </div>
+    </td>
+
+    <td class="text-end">
+        <button type="submit"
+                form="unit-form"
+                class="btn btn-primary btn-sm">
+            + Dodaj
+        </button>
+
+        </form>
+    </td>
+
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade " id="workersModal" tabindex="-1" aria-labelledby="workersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="workersModalLabel">
+                    Wybierz pracowników
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="workers-grid">
+                    {% for worker in workers %}
+                        <button type="button"
+                                class="worker-tile"
+                                data-worker-id="{{ worker.id }}"
+                                data-worker-name="{{ worker }}">
+                            {{ worker }}
+                        </button>
+                    {% empty %}
+                        <div class="text-muted">
+                            Brak dostępnych pracowników produkcyjnych.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="clear-workers-btn">
+                    Wyczyść
+                </button>
+
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    Zatwierdź
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade " id="editWorkersModal" tabindex="-1" aria-labelledby="editWorkersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="editWorkersModalLabel">
+                    Edytuj pracowników jednostki
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="workers-grid">
+                    {% for worker in workers %}
+                        <button type="button"
+                                class="worker-tile edit-worker-tile"
+                                data-worker-id="{{ worker.id }}"
+                                data-worker-name="{{ worker }}">
+                            {{ worker }}
+                        </button>
+                    {% empty %}
+                        <div class="text-muted">
+                            Brak dostępnych pracowników produkcyjnych.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        id="edit-clear-workers-btn">
+                    Wyczyść
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="save-edit-workers-btn">
+                    Zapisz
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}
+
 {% block scripts %}
-{% load static %}
-<script src="{% static 'js/production-order-details.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const personSelect = document.querySelector("#id_persons");
+    const workerTiles = document.querySelectorAll("#workersModal .worker-tile");
+    const preview = document.querySelector("#selected-workers-preview");
+    const clearBtn = document.querySelector("#clear-workers-btn");
+
+    if (!personSelect || !preview) {
+        return;
+    }
+
+    function updatePreview() {
+        const selectedNames = [];
+
+        workerTiles.forEach(tile => {
+            const workerId = tile.dataset.workerId;
+            const option = personSelect.querySelector(`option[value="${workerId}"]`);
+
+            if (tile.classList.contains("selected")) {
+                selectedNames.push(tile.dataset.workerName);
+                if (option) option.selected = true;
+            } else {
+                if (option) option.selected = false;
+            }
+        });
+
+        preview.textContent = selectedNames.length
+            ? selectedNames.join(", ")
+            : "Brak pracowników";
+    }
+
+    workerTiles.forEach(tile => {
+        tile.addEventListener("click", function () {
+            tile.classList.toggle("selected");
+            updatePreview();
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", function () {
+            workerTiles.forEach(tile => tile.classList.remove("selected"));
+            updatePreview();
+        });
+    }
+
+    updatePreview();
+
+    const workersModal = document.getElementById('workersModal');
+
+if (workersModal) {
+    workersModal.addEventListener('hidden.bs.modal', function () {
+        document.activeElement.blur();
+    });
+}
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function getCookie(name) {
+        let cookieValue = null;
+
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie("csrftoken");
+
+    document.querySelectorAll(".unit-edit").forEach(input => {
+        input.addEventListener("change", function () {
+            const url = this.dataset.url;
+            const field = this.dataset.field;
+            const value = this.value;
+
+            this.classList.remove("is-valid", "is-invalid");
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                    field: field,
+                    value: value,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.classList.add("is-valid");
+                } else {
+                    this.classList.add("is-invalid");
+                    alert(data.error || "Błąd zapisu.");
+                }
+            })
+            .catch(() => {
+                this.classList.add("is-invalid");
+                alert("Błąd połączenia.");
+            });
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function getCookie(name) {
+        let cookieValue = null;
+
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie("csrftoken");
+
+    const editWorkersModal = document.getElementById("editWorkersModal");
+    const editTiles = document.querySelectorAll("#editWorkersModal .edit-worker-tile");
+    const saveBtn = document.getElementById("save-edit-workers-btn");
+    const clearBtn = document.getElementById("edit-clear-workers-btn");
+
+    let activeUnitId = null;
+    let activeUrl = null;
+
+    document.querySelectorAll(".edit-workers-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            activeUnitId = this.dataset.unitId;
+            activeUrl = this.dataset.url;
+
+            const currentWorkers = this.dataset.currentWorkers
+                ? this.dataset.currentWorkers.split(",")
+                : [];
+
+            editTiles.forEach(tile => {
+                if (currentWorkers.includes(tile.dataset.workerId)) {
+                    tile.classList.add("selected");
+                } else {
+                    tile.classList.remove("selected");
+                }
+            });
+        });
+    });
+
+    editTiles.forEach(tile => {
+        tile.addEventListener("click", function () {
+            this.classList.toggle("selected");
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", function () {
+            editTiles.forEach(tile => tile.classList.remove("selected"));
+        });
+    }
+
+    if (saveBtn) {
+        saveBtn.addEventListener("click", function () {
+            if (!activeUrl || !activeUnitId) {
+                return;
+            }
+
+            const selectedIds = [];
+
+            editTiles.forEach(tile => {
+                if (tile.classList.contains("selected")) {
+                    selectedIds.push(tile.dataset.workerId);
+                }
+            });
+
+            const body = new URLSearchParams();
+
+            selectedIds.forEach(id => {
+                body.append("persons[]", id);
+            });
+
+            fetch(activeUrl, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: body,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.error || "Błąd zapisu pracowników.");
+                    return;
+                }
+
+                const preview = document.getElementById(`workers-preview-${activeUnitId}`);
+
+                if (preview) {
+                    if (data.persons.length) {
+                        preview.innerHTML = data.persons
+                            .map(name => `<span class="badge bg-secondary worker-badge">${name}</span>`)
+                            .join(" ");
+                    } else {
+                        preview.innerHTML = `<span class="text-muted">Brak</span>`;
+                    }
+                }
+
+                const button = document.querySelector(`.edit-workers-btn[data-unit-id="${activeUnitId}"]`);
+                if (button) {
+                    button.dataset.currentWorkers = selectedIds.join(",");
+                }
+
+                const modal = bootstrap.Modal.getInstance(editWorkersModal);
+                modal.hide();
+            })
+            .catch(() => {
+                alert("Błąd połączenia.");
+            });
+        });
+    }
+
+    if (editWorkersModal) {
+        editWorkersModal.addEventListener("hidden.bs.modal", function () {
+            document.activeElement.blur();
+        });
+    }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof flatpickr !== "undefined") {
+        flatpickr(".js-datetime-picker", {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: "Y-m-d H:i",
+            allowInput: true,
+            locale: "pl",
+            minuteIncrement: 5,
+        });
+    }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const select = document.getElementById("select-status");
+    const info = document.getElementById("status-save-info");
+
+    if (!select) return;
+
+    select.addEventListener("change", async function () {
+
+        const formData = new FormData();
+        formData.append("status", select.value);
+
+        try {
+            const response = await fetch(
+                "{% url 'production-details-change' production_order.id %}",
+                {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+
+                info.classList.remove("d-none");
+
+                setTimeout(() => {
+                    info.classList.add("d-none");
+                }, 1500);
+
+            } else {
+                alert("Błąd zapisu statusu");
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("Błąd połączenia");
+        }
+    });
+});
+</script>
+{{ punches_data|json_script:"punches-data" }}
+{{ photopolymers_data|json_script:"photopolymers-data" }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("productionToolModal");
+    const modalTitle = document.getElementById("productionToolModalTitle");
+    const toolTypeInput = document.getElementById("productionToolType");
+    const toolSelect = document.getElementById("productionToolSelect");
+
+    const closeButton = document.getElementById("closeProductionToolModal");
+    const cancelButton = document.getElementById("cancelProductionToolModal");
+
+    const punches = JSON.parse(
+        document.getElementById("punches-data").textContent
+    );
+
+    const photopolymers = JSON.parse(
+        document.getElementById("photopolymers-data").textContent
+    );
+
+    function closeModal() {
+        modal.classList.remove("is-visible");
+    }
+
+    function openModal(button) {
+        const toolType = button.dataset.toolType;
+        const toolLabel = button.dataset.toolLabel;
+        const currentId = button.dataset.currentId || "";
+
+        const items = toolType === "punch"
+            ? punches
+            : photopolymers;
+
+        toolTypeInput.value = toolType;
+        modalTitle.textContent = "Wybierz: " + toolLabel;
+
+        toolSelect.innerHTML = "";
+
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "— brak —";
+        toolSelect.appendChild(emptyOption);
+
+        items.forEach(function (item) {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = item.name;
+
+            if (String(item.id) === String(currentId)) {
+                option.selected = true;
+            }
+
+            toolSelect.appendChild(option);
+        });
+
+        modal.classList.add("is-visible");
+        toolSelect.focus();
+    }
+
+    document.querySelectorAll(".tool-card").forEach(function (button) {
+        button.addEventListener("click", function () {
+            openModal(button);
+        });
+    });
+
+    closeButton.addEventListener("click", closeModal);
+    cancelButton.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeModal();
+        }
+    });
+});
+</script>
 {% endblock %}

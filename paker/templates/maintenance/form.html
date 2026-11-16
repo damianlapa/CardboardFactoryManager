@@ -1,0 +1,119 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<style>
+    .maintenance-form-page {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 0 16px;
+    }
+
+    .form-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .form-panel h2 {
+        margin-top: 0;
+        margin-bottom: 18px;
+    }
+
+    .form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .form-row textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .errorlist {
+        margin: 6px 0 0 0;
+        padding-left: 18px;
+        color: #b42318;
+        font-size: 13px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        color: #222;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: #222;
+        color: #fff;
+        border-color: #222;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-form-page">
+    <div class="form-panel">
+        <h2>{{ title }}</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="errorlist">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+                {% for field in form %}
+                    <div class="form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="errorlist">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <a href="{% url 'maintenance:dashboard' %}" class="btn">Anuluj</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

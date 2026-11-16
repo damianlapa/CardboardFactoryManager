@@ -1,0 +1,625 @@
+```html
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Zlecenia produkcyjne | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="production-orders-page">
+
+    <header class="production-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:production-menu' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Produkcja
+            </a>
+
+            <div class="production-eyebrow">
+                Produkcja
+            </div>
+
+            <h1>
+                Zlecenia produkcyjne
+            </h1>
+
+            <p>
+                Zarządzanie zleceniami i przebiegiem produkcji
+            </p>
+
+        </div>
+
+
+        <div class="production-header__actions">
+
+            {% if perms.production.add_productionorder %}
+
+                <a
+                    href="{% url 'modern_production:production-order-add' %}"
+                    class="app-btn app-btn-primary"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Nowe zlecenie
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </header>
+
+
+    <form
+        method="get"
+        class="production-order-filters"
+    >
+
+        <div class="production-search">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                type="text"
+                name="q"
+                value="{{ search }}"
+                placeholder="Numer, klient, wymiar, tektura..."
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <select name="status">
+
+            <option value="">
+                Aktywne
+            </option>
+
+            {% for value, label in statuses %}
+
+                <option
+                    value="{{ value }}"
+                    {% if selected_status == value %}
+                        selected
+                    {% endif %}
+                >
+                    {{ label }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+
+        <button
+            type="submit"
+            class="app-btn app-btn-primary"
+        >
+            <i class="fa-solid fa-filter"></i>
+            Filtruj
+        </button>
+
+
+        {% if search or selected_status %}
+
+            <a
+                href="{% url 'modern_production:all-production-orders' %}"
+                class="app-btn app-btn-secondary"
+            >
+                Wyczyść
+            </a>
+
+        {% endif %}
+
+    </form>
+
+
+    <div class="production-result-header">
+
+        <div>
+
+            <strong>
+                {{ orders_count }}
+            </strong>
+
+            <span>
+                zleceń
+            </span>
+
+        </div>
+
+    </div>
+
+
+    {% if production_orders %}
+
+        <div class="production-order-list">
+
+            {% for order in production_orders %}
+
+                <div
+                    class="
+                        production-order-row
+                        {% if order.priority %}
+                            production-order-row--priority
+                            production-order-row--priority-{{ order.priority }}
+                        {% endif %}
+                    "
+                    data-order-row="{{ order.id }}"
+                >
+
+
+
+
+                    <div class="production-order-priority">
+
+                        <span class="production-table-label">
+                            Priorytet
+                        </span>
+
+                        <button
+                            type="button"
+                            class="
+                                production-priority-btn
+                                {% if order.priority %}
+                                    production-priority-btn--active
+                                    production-priority-btn--{{ order.priority }}
+                                {% endif %}
+                            "
+                            data-priority-open
+                            data-order-id="{{ order.id }}"
+                            data-order-number="{{ order.id_number }}"
+                            data-priority="{{ order.priority|default:'' }}"
+                            data-priority-date="{% if order.priority_date %}{{ order.priority_date|date:'Y-m-d' }}{% endif %}"
+                            data-url="{% url 'modern_production:production-order-priority-update' production_order_id=order.id %}"
+                        >
+
+                            <span class="production-priority-flames">
+
+                                {% if order.priority %}
+
+                                    {% for i in "123" %}
+
+                                        {% if forloop.counter <= order.priority %}
+
+                                            <i class="fa-solid fa-fire"></i>
+
+                                        {% endif %}
+
+                                    {% endfor %}
+
+                                {% else %}
+
+                                    <i class="fa-regular fa-flag"></i>
+
+                                {% endif %}
+
+                            </span>
+
+
+                            <small class="production-priority-date">
+
+                                {% if order.priority_date %}
+                                    {{ order.priority_date|date:"d.m.Y" }}
+                                {% else %}
+                                    Ustaw
+                                {% endif %}
+
+                            </small>
+
+                        </button>
+
+                    </div>
+
+                    <div class="production-order-row__number">
+
+                        <a
+                            href="{% url 'modern_production:production-details' production_order_id=order.id %}"
+                            class="production-order-link"
+                        >
+                            <strong>
+                                {{ order.id_number }}
+                            </strong>
+                        </a>
+
+                    </div>
+
+
+                    <div class="production-order-row__customer">
+
+                        <span class="production-table-label">
+                            Klient
+                        </span>
+
+                        <strong>
+                            {{ order.customer }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Produkt
+                        </span>
+
+                        <strong>
+                            {{ order.dimensions|default:"—" }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Tektura
+                        </span>
+
+                        <strong>
+                            {{ order.cardboard|default:"—" }}
+                        </strong>
+
+                        {% if order.cardboard_dimensions %}
+
+                            <small>
+                                {{ order.cardboard_dimensions }}
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Od zamówienia
+                        </span>
+
+                        <strong>
+                            {% if order.days_since_customer_order is not None %}
+                                {{ order.days_since_customer_order }} dni
+                            {% else %}
+                                —
+                            {% endif %}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Od dostawy
+                        </span>
+
+                        <strong>
+                            {% if order.days_since_cardboard_delivery is not None %}
+                                {{ order.days_since_cardboard_delivery }} dni
+                            {% else %}
+                                —
+                            {% endif %}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Ilość
+                        </span>
+
+                        <strong>
+                            {{ order.quantity|default:"—" }}
+                        </strong>
+
+                        {% if order.ordered_quantity %}
+
+                            <small>
+                                zam. {{ order.ordered_quantity }}
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Operacje
+                        </span>
+
+                        <strong>
+                            {{ order.units_count }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="production-table-label">
+                            Status
+                        </span>
+
+                        <span
+                            class="
+                                production-status
+                                production-status--{{ order.status|lower }}
+                            "
+                        >
+                            {{ order.get_status_display }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="production-order-row__arrow">
+
+                        <a
+                            href="{% url 'modern_production:production-details' production_order_id=order.id %}"
+                            aria-label="Otwórz zlecenie"
+                        >
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="production-empty">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <strong>
+                Brak zleceń
+            </strong>
+
+            <span>
+                Żadne zlecenie nie odpowiada wybranym filtrom.
+            </span>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div
+    class="priority-modal"
+    id="priorityModal"
+    hidden
+>
+
+    <div
+        class="priority-modal__backdrop"
+        data-priority-close
+    ></div>
+
+
+    <div
+        class="priority-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="priorityModalTitle"
+    >
+
+        <div class="priority-modal__header">
+
+            <div>
+
+                <span class="production-table-label">
+                    Priorytet zlecenia
+                </span>
+
+                <h3 id="priorityModalTitle">
+                    <span id="priorityModalOrderNumber">
+                        —
+                    </span>
+                </h3>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="priority-modal__close"
+                data-priority-close
+                aria-label="Zamknij"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <div class="priority-modal__body">
+
+            <div class="priority-modal__section">
+
+                <span class="priority-field-label">
+                    Poziom priorytetu
+                </span>
+
+
+                <div class="priority-levels">
+
+                    <button
+                        type="button"
+                        class="priority-level"
+                        data-priority-level="1"
+                    >
+
+                        <span class="priority-level__flames">
+                            <i class="fa-solid fa-fire"></i>
+                        </span>
+
+                        <strong>
+                            Poziom 1
+                        </strong>
+
+                        <small>
+                            Niski
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="priority-level"
+                        data-priority-level="2"
+                    >
+
+                        <span class="priority-level__flames">
+                            <i class="fa-solid fa-fire"></i>
+                            <i class="fa-solid fa-fire"></i>
+                        </span>
+
+                        <strong>
+                            Poziom 2
+                        </strong>
+
+                        <small>
+                            Wysoki
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="priority-level"
+                        data-priority-level="3"
+                    >
+
+                        <span class="priority-level__flames">
+                            <i class="fa-solid fa-fire"></i>
+                            <i class="fa-solid fa-fire"></i>
+                            <i class="fa-solid fa-fire"></i>
+                        </span>
+
+                        <strong>
+                            Poziom 3
+                        </strong>
+
+                        <small>
+                            Krytyczny
+                        </small>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="priority-modal__section">
+
+                <label
+                    for="priorityDate"
+                    class="priority-field-label"
+                >
+                    Termin realizacji
+                </label>
+
+                <input
+                    type="date"
+                    id="priorityDate"
+                    class="priority-date-input"
+                >
+
+            </div>
+
+
+            <div
+                class="priority-error"
+                id="priorityError"
+                hidden
+            ></div>
+
+        </div>
+
+
+        <div class="priority-modal__footer">
+
+            <button
+                type="button"
+                class="app-btn app-btn-secondary"
+                id="priorityRemove"
+            >
+                <i class="fa-solid fa-trash-can"></i>
+                Usuń priorytet
+            </button>
+
+
+            <div class="priority-modal__footer-right">
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-secondary"
+                    data-priority-close
+                >
+                    Anuluj
+                </button>
+
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-primary"
+                    id="prioritySave"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    Zapisz
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="{% static 'js/production/production_priorities.js' %}"
+    defer
+></script>
+
+{% endblock %}
+```

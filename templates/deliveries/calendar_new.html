@@ -1,0 +1,963 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Kalendarz | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Kalendarz
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/deliveries/calendar.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div
+    class="delivery-calendar"
+    id="deliveryCalendar"
+
+    data-events-url="{% url 'calendar-day-events' %}"
+    data-create-url="{% url 'calendar-event-create' %}"
+
+    data-detail-url-template="{% url 'calendar-event-detail' 999999 %}"
+    data-update-url-template="{% url 'calendar-event-update' 999999 %}"
+    data-complete-url-template="{% url 'calendar-event-complete' 999999 %}"
+    data-reopen-url-template="{% url 'calendar-event-reopen' 999999 %}"
+    data-delete-url-template="{% url 'calendar-event-delete' 999999 %}"
+>
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="calendar-header">
+
+        <div>
+
+            <div class="calendar-eyebrow">
+                Logistyka
+            </div>
+
+            <h1>
+
+                {% if calendar_view == "month" %}
+
+                    {{ month_label }}
+
+                {% else %}
+
+                    {{ week_start|date:"d.m" }}
+                    –
+                    {{ week_end|date:"d.m.Y" }}
+
+                {% endif %}
+
+            </h1>
+
+            <p>
+                Dostawy, spedycje, odbiory i pozostałe wydarzenia
+            </p>
+
+        </div>
+
+
+        <div class="calendar-header__actions">
+
+            <a
+                href="{% url 'deliveries-calendar' %}?view={{ calendar_view }}{% if calendar_view == 'week' %}&date={{ today|date:'Y-m-d' }}{% endif %}"
+                class="app-btn app-btn-secondary"
+            >
+                <i class="fa-regular fa-calendar-check"></i>
+                Dzisiaj
+            </a>
+
+
+            <button
+                type="button"
+                class="app-btn app-btn-primary"
+                id="calendarAddEventButton"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Dodaj wydarzenie
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- TOOLBAR                                             -->
+    <!-- =================================================== -->
+
+    <div class="calendar-toolbar">
+
+
+        <!-- NAVIGATION -->
+
+        {% if calendar_view == "month" %}
+
+            <div class="calendar-navigation">
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=month&year={{ previous_month.year }}&month={{ previous_month.month }}"
+                    class="calendar-navigation__button"
+                    title="Poprzedni miesiąc"
+                >
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+
+                <div class="calendar-navigation__month">
+                    {{ month_label }}
+                </div>
+
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=month&year={{ next_month.year }}&month={{ next_month.month }}"
+                    class="calendar-navigation__button"
+                    title="Następny miesiąc"
+                >
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+            </div>
+
+        {% else %}
+
+            <div class="calendar-navigation">
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=week&date={{ previous_week|date:'Y-m-d' }}"
+                    class="calendar-navigation__button"
+                    title="Poprzedni tydzień"
+                >
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+
+                <div class="calendar-navigation__week">
+                    {{ week_start|date:"d.m" }}
+                    –
+                    {{ week_end|date:"d.m.Y" }}
+                </div>
+
+
+                <a
+                    href="{% url 'deliveries-calendar' %}?view=week&date={{ next_week|date:'Y-m-d' }}"
+                    class="calendar-navigation__button"
+                    title="Następny tydzień"
+                >
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- VIEW SWITCH -->
+
+        <div class="calendar-view-switch">
+
+            <a
+    href="{% url 'deliveries-calendar' %}?view=month&year={{ today.year }}&month={{ today.month }}"
+    class="
+        calendar-view-switch__button
+        {% if calendar_view == 'month' %}
+            is-active
+        {% endif %}
+    "
+>
+    <i class="fa-solid fa-calendar-days"></i>
+    Miesiąc
+</a>
+
+
+            <a
+    href="{% url 'deliveries-calendar' %}?view=week&date={{ today|date:'Y-m-d' }}"
+    class="
+        calendar-view-switch__button
+        {% if calendar_view == 'week' %}
+            is-active
+        {% endif %}
+    "
+>
+    <i class="fa-solid fa-calendar-week"></i>
+    Tydzień
+</a>
+
+        </div>
+
+
+        <!-- LEGEND -->
+
+        <div class="calendar-legend">
+
+            <span class="calendar-legend__item">
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--planned
+                    "
+                ></span>
+                Dostawa
+            </span>
+
+
+            <span class="calendar-legend__item">
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--completed
+                    "
+                ></span>
+                Zrealizowana
+            </span>
+
+
+            <span class="calendar-legend__item">
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--shipping
+                    "
+                ></span>
+                Spedycja
+            </span>
+
+
+            <span class="calendar-legend__item">
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--pickup
+                    "
+                ></span>
+                Odbiór
+            </span>
+
+
+            <span class="calendar-legend__item">
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--meeting
+                    "
+                ></span>
+                Spotkanie
+            </span>
+
+
+            <span class="calendar-legend__item">
+                <span
+                    class="
+                        calendar-legend__dot
+                        calendar-legend__dot--other
+                    "
+                ></span>
+                Inne
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- MONTH VIEW                                          -->
+    <!-- =================================================== -->
+
+    {% if calendar_view == "month" %}
+
+        <div class="calendar-card">
+
+
+            <!-- WEEK DAYS -->
+
+            <div class="calendar-weekdays">
+
+                <div>Pon</div>
+                <div>Wt</div>
+                <div>Śr</div>
+                <div>Czw</div>
+                <div>Pt</div>
+                <div>Sob</div>
+                <div>Nie</div>
+
+            </div>
+
+
+            <!-- DAYS -->
+
+            <div class="calendar-grid">
+
+                {% for week in weeks %}
+
+                    {% for day in week %}
+
+                        <button
+    type="button"
+    class="
+        calendar-day
+
+        {% if not day.is_current_month %}
+            calendar-day--outside
+        {% endif %}
+
+        {% if day.is_today %}
+            calendar-day--today
+        {% endif %}
+
+        {% if day.is_current_week %}
+            calendar-day--current-week
+        {% endif %}
+    "
+    data-calendar-day
+    data-date="{{ day.date|date:'Y-m-d' }}"
+    {% if day.is_today %}
+        data-calendar-today
+    {% endif %}
+>
+
+                            <div class="calendar-day__header">
+
+                                <span class="calendar-day__number">
+                                    {{ day.date.day }}
+                                </span>
+
+
+                                <span class="calendar-day__add">
+                                    <i class="fa-solid fa-plus"></i>
+                                </span>
+
+                            </div>
+
+
+                            <div class="calendar-day__events">
+
+                                {% for event in day.events %}
+
+                                    {% include "deliveries/_calendar_event.html" %}
+
+                                {% endfor %}
+
+                            </div>
+
+                        </button>
+
+                    {% endfor %}
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+    <!-- =================================================== -->
+    <!-- WEEK VIEW                                           -->
+    <!-- =================================================== -->
+
+    {% else %}
+
+        <div class="calendar-week-view">
+
+            {% for day in days %}
+
+                <section
+    class="
+        calendar-week-day
+
+        {% if day.is_today %}
+            calendar-week-day--today
+        {% endif %}
+    "
+    data-calendar-day
+    data-date="{{ day.date|date:'Y-m-d' }}"
+>
+
+
+                    <!-- DAY HEADER -->
+
+                    <button
+                        type="button"
+                        class="calendar-week-day__header"
+                        data-calendar-day
+                        data-date="{{ day.date|date:'Y-m-d' }}"
+                    >
+
+                        <div>
+
+                            <span class="calendar-week-day__weekday">
+                                {{ day.weekday_name }}
+                            </span>
+
+                            <strong>
+                                {{ day.date|date:"d.m" }}
+                            </strong>
+
+                        </div>
+
+
+                        <span class="calendar-week-day__add">
+                            <i class="fa-solid fa-plus"></i>
+                        </span>
+
+                    </button>
+
+
+                    <!-- EVENTS -->
+
+                    <div class="calendar-week-day__events">
+
+                        {% for event in day.events %}
+
+                            {% include "deliveries/_calendar_event.html" %}
+
+                        {% empty %}
+
+                            <button
+                                type="button"
+                                class="calendar-week-day__empty"
+                                data-calendar-day
+                                data-date="{{ day.date|date:'Y-m-d' }}"
+                            >
+                                <i class="fa-solid fa-plus"></i>
+                                Dodaj wydarzenie
+                            </button>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- MODAL                                                   -->
+<!-- ======================================================= -->
+
+<div
+    class="calendar-modal-backdrop"
+    id="calendarModalBackdrop"
+    hidden
+>
+
+    <div
+        class="calendar-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendarModalTitle"
+    >
+
+
+        <!-- ================================================= -->
+        <!-- MODAL HEADER                                      -->
+        <!-- ================================================= -->
+
+        <div class="calendar-modal__header">
+
+            <div>
+
+                <div class="calendar-modal__eyebrow">
+                    Kalendarz
+                </div>
+
+                <h2 id="calendarModalTitle">
+                    Wydarzenia
+                </h2>
+
+                <div
+                    class="calendar-modal__date"
+                    id="calendarModalDate"
+                ></div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="calendar-modal__close"
+                id="calendarModalClose"
+                aria-label="Zamknij"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- MODAL BODY                                        -->
+        <!-- ================================================= -->
+
+        <div class="calendar-modal__body">
+
+
+            <!-- ================================================= -->
+            <!-- DAY VIEW                                          -->
+            <!-- ================================================= -->
+
+            <div id="calendarDayView">
+
+
+                <!-- EVENTS -->
+
+                <section class="calendar-modal-section">
+
+                    <div class="calendar-modal-section__header">
+
+                        <div>
+
+                            <h3>
+                                Wydarzenia
+                            </h3>
+
+                            <p>
+                                Zaplanowane na wybrany dzień
+                            </p>
+
+                        </div>
+
+
+                        <span
+                            class="calendar-modal-count"
+                            id="calendarEventCount"
+                        >
+                            0
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        class="calendar-modal-events"
+                        id="calendarModalEvents"
+                    ></div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- ADD EVENT                                         -->
+                <!-- ================================================= -->
+
+                <section class="calendar-modal-section">
+
+                    <div class="calendar-modal-section__header">
+
+                        <div>
+
+                            <h3>
+                                Dodaj wydarzenie
+                            </h3>
+
+                            <p>
+                                Nowa pozycja w kalendarzu
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="calendar-form-error"
+                        id="calendarFormError"
+                        hidden
+                    ></div>
+
+
+                    <form id="calendarEventForm">
+
+                        {% csrf_token %}
+
+                        <input
+                            type="hidden"
+                            name="day"
+                            id="calendarEventDay"
+                        >
+
+
+                        <div class="calendar-form-grid">
+
+
+                            <!-- TYPE -->
+
+                            <div class="calendar-form-field">
+
+                                <label for="calendarEventType">
+                                    Typ wydarzenia
+                                </label>
+
+                                <select
+                                    name="event_type"
+                                    id="calendarEventType"
+                                    required
+                                >
+
+                                    {% for event_type in event_types %}
+
+                                        <option value="{{ event_type.value }}">
+                                            {{ event_type.label }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </div>
+
+
+                            <!-- TITLE -->
+
+                            <div class="calendar-form-field">
+
+                                <label for="calendarEventTitle">
+                                    Tytuł
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="title"
+                                    id="calendarEventTitle"
+                                    maxlength="64"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- DETAILS -->
+
+                            <div
+                                class="
+                                    calendar-form-field
+                                    calendar-form-field--full
+                                "
+                            >
+
+                                <label for="calendarEventDetails">
+                                    Szczegóły
+                                </label>
+
+                                <textarea
+                                    name="details"
+                                    id="calendarEventDetails"
+                                    rows="3"
+                                ></textarea>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="calendar-form-actions">
+
+                            <button
+                                type="submit"
+                                class="app-btn app-btn-primary"
+                            >
+                                <i class="fa-solid fa-plus"></i>
+                                Dodaj wydarzenie
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- EVENT DETAIL                                      -->
+            <!-- ================================================= -->
+
+            <div
+                id="calendarEventDetailView"
+                hidden
+            >
+
+                <div class="calendar-detail-toolbar">
+
+                    <button
+                        type="button"
+                        class="calendar-detail-back"
+                        id="calendarEventDetailBack"
+                    >
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Wróć do dnia
+                    </button>
+
+                </div>
+
+
+                <section class="calendar-event-detail-card">
+
+                    <div class="calendar-event-detail-type">
+
+                        <span id="calendarEventDetailType">
+                            —
+                        </span>
+
+                    </div>
+
+
+                    <h3 id="calendarEventDetailTitle">
+                        —
+                    </h3>
+
+
+                    <div class="calendar-event-detail-section">
+
+                        <span class="calendar-event-detail-label">
+                            Szczegóły
+                        </span>
+
+                        <p id="calendarEventDetailDetails">
+                            —
+                        </p>
+
+                    </div>
+
+                </section>
+
+
+                <div class="calendar-event-detail-actions">
+
+                    <button
+                        type="button"
+                        class="app-btn app-btn-secondary"
+                        id="calendarEventEditButton"
+                    >
+                        <i class="fa-solid fa-pen"></i>
+                        Edytuj
+                    </button>
+
+
+                    <button
+    type="button"
+    class="app-btn calendar-btn-success"
+    id="calendarEventCompleteButton"
+>
+    <i class="fa-solid fa-check"></i>
+
+    <span id="calendarEventCompleteLabel">
+        Oznacz jako zrealizowaną
+    </span>
+</button>
+
+
+                    <button
+                        type="button"
+                        class="app-btn calendar-btn-danger"
+                        id="calendarEventDeleteButton"
+                    >
+                        <i class="fa-solid fa-trash"></i>
+                        Usuń
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- EVENT EDIT                                        -->
+            <!-- ================================================= -->
+
+            <div
+                id="calendarEventEditView"
+                hidden
+            >
+
+                <div class="calendar-detail-toolbar">
+
+                    <button
+                        type="button"
+                        class="calendar-detail-back"
+                        id="calendarEventEditBack"
+                    >
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Wróć do szczegółów
+                    </button>
+
+                </div>
+
+
+                <section class="calendar-modal-section">
+
+                    <div class="calendar-modal-section__header">
+
+                        <div>
+
+                            <h3>
+                                Edytuj wydarzenie
+                            </h3>
+
+                            <p>
+                                Zmień dane zapisanej pozycji
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="calendar-form-error"
+                        id="calendarEventEditError"
+                        hidden
+                    ></div>
+
+
+                    <form id="calendarEventEditForm">
+
+                        {% csrf_token %}
+
+
+                        <div class="calendar-form-grid">
+
+
+                            <!-- DATE -->
+
+                            <div class="calendar-form-field">
+
+                                <label for="calendarEventEditDay">
+                                    Data
+                                </label>
+
+                                <input
+                                    type="date"
+                                    name="day"
+                                    id="calendarEventEditDay"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- TYPE -->
+
+                            <div class="calendar-form-field">
+
+                                <label for="calendarEventEditType">
+                                    Typ wydarzenia
+                                </label>
+
+                                <select
+                                    name="event_type"
+                                    id="calendarEventEditType"
+                                    required
+                                >
+
+                                    {% for event_type in event_types %}
+
+                                        <option value="{{ event_type.value }}">
+                                            {{ event_type.label }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </div>
+
+
+                            <!-- TITLE -->
+
+                            <div
+                                class="
+                                    calendar-form-field
+                                    calendar-form-field--full
+                                "
+                            >
+
+                                <label for="calendarEventEditTitle">
+                                    Tytuł
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="title"
+                                    id="calendarEventEditTitle"
+                                    maxlength="64"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- DETAILS -->
+
+                            <div
+                                class="
+                                    calendar-form-field
+                                    calendar-form-field--full
+                                "
+                            >
+
+                                <label for="calendarEventEditDetails">
+                                    Szczegóły
+                                </label>
+
+                                <textarea
+                                    name="details"
+                                    id="calendarEventEditDetails"
+                                    rows="4"
+                                ></textarea>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="calendar-form-actions">
+
+                            <button
+                                type="submit"
+                                class="app-btn app-btn-primary"
+                            >
+                                <i class="fa-solid fa-check"></i>
+                                Zapisz zmiany
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{% static 'js/deliveries/calendar.js' %}"></script>
+{% endblock %}

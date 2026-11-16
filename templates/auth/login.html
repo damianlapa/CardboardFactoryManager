@@ -1,0 +1,179 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="pl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Logowanie | PAKER</title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/tokens.css' %}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/login.css' %}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+</head>
+
+
+<body class="login-page">
+
+    <main class="login-shell">
+
+        <section class="login-brand">
+
+            <div class="login-brand__content">
+
+                <div class="login-brand__eyebrow">
+                    System zarządzania produkcją
+                </div>
+
+                <h1>
+                    PAKER
+                </h1>
+
+                <p>
+                    Produkcja, magazyn i organizacja pracy
+                    w jednym miejscu.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <section class="login-panel">
+
+            <div class="login-card">
+
+                <div class="login-card__header">
+
+                    <h2>
+                        Zaloguj się
+                    </h2>
+
+                    <p>
+                        Wprowadź dane dostępowe do systemu.
+                    </p>
+
+                </div>
+
+
+                {% if login_error %}
+
+                    <div class="login-error">
+
+                        <i class="fa-solid fa-circle-exclamation"></i>
+
+                        <span>
+                            {{ login_error }}
+                        </span>
+
+                    </div>
+
+                {% endif %}
+
+
+                <form method="post">
+
+                    {% csrf_token %}
+
+                    <input
+                        type="hidden"
+                        name="next"
+                        value="{{ next_url }}"
+                    >
+
+
+                    <div class="login-field">
+
+                        <label for="username">
+                            Login
+                        </label>
+
+                        <div class="login-input">
+
+                            <i class="fa-solid fa-user"></i>
+
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                value="{{ username|default:'' }}"
+                                autocomplete="username"
+                                autofocus
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="login-field">
+
+                        <label for="password">
+                            Hasło
+                        </label>
+
+                        <div class="login-input">
+
+                            <i class="fa-solid fa-lock"></i>
+
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="login-submit"
+                    >
+                        Zaloguj się
+
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+
+                </form>
+
+
+                <div class="login-footer">
+                    PAKER
+                    <span>•</span>
+                    System wewnętrzny
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

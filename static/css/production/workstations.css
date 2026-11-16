@@ -1,0 +1,1649 @@
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
+.workstations-page,
+.workstation-detail-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+
+/* ==========================================================
+   SUMMARY
+   ========================================================== */
+
+.workstations-summary {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+
+.workstations-summary-card {
+    padding: 16px 18px;
+
+    border: 1px solid var(--app-border);
+    border-radius: 10px;
+
+    background: var(--app-surface);
+}
+
+
+.workstations-summary-card span {
+    display: block;
+
+    color: var(--app-text-muted);
+
+    font-size: 12px;
+    font-weight: 650;
+}
+
+
+.workstations-summary-card strong {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--app-text);
+
+    font-size: 25px;
+    font-weight: 850;
+}
+
+
+.workstations-summary-card--active {
+    border-color: #bbf7d0;
+
+    background: #f0fdf4;
+}
+
+
+/* ==========================================================
+   SECTIONS
+   ========================================================== */
+
+.workstations-section,
+.workstation-detail-section {
+    overflow: hidden;
+
+    border: 1px solid var(--app-border);
+    border-radius: 11px;
+
+    background: var(--app-surface);
+}
+
+
+.workstations-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 14px;
+
+    padding: 15px 18px;
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.workstations-section__eyebrow {
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: #94a3b8;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: .04em;
+}
+
+
+.workstations-section__header h2 {
+    margin: 0;
+
+    color: var(--app-text);
+
+    font-size: 17px;
+    font-weight: 850;
+}
+
+
+.workstations-section__header p {
+    margin: 4px 0 0;
+
+    color: var(--app-text-muted);
+
+    font-size: 12px;
+}
+
+
+.workstations-section__count {
+    min-width: 34px;
+    height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 9px;
+
+    border-radius: 18px;
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    font-size: 13px;
+    font-weight: 850;
+}
+
+
+/* ==========================================================
+   STATIONS LIST
+   ========================================================== */
+
+.workstations-list,
+.workstations-inactive__content {
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ==========================================================
+   STATION ROW
+   ========================================================== */
+
+.workstation-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(180px, 1.05fr)
+        minmax(190px, 1.15fr)
+        minmax(170px, .9fr)
+        minmax(320px, 1.8fr)
+        minmax(140px, .75fr)
+        28px;
+
+    align-items: center;
+
+    gap: 16px;
+
+    min-height: 120px;
+
+    padding: 16px 18px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    color: var(--app-text);
+
+    text-decoration: none;
+
+    transition:
+        background .12s ease,
+        box-shadow .12s ease;
+}
+
+
+.workstation-row:last-child {
+    border-bottom: 0;
+}
+
+
+.workstation-row:hover {
+    background: #f8fafc;
+}
+
+
+.workstation-row--active {
+    box-shadow:
+        inset 4px 0 0 #22c55e;
+}
+
+
+.workstation-row--error {
+    box-shadow:
+        inset 4px 0 0 #ef4444;
+
+    background: #fff7f7;
+}
+
+
+.workstation-row--inactive {
+    grid-template-columns:
+        minmax(220px, 1.4fr)
+        minmax(220px, 1.4fr)
+        minmax(180px, 1fr)
+        28px;
+
+    min-height: 82px;
+
+    background: #fcfcfd;
+}
+
+
+/* ==========================================================
+   STATION NAME
+   ========================================================== */
+
+.workstation-row__station {
+    min-width: 0;
+}
+
+
+.workstation-row__station-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+}
+
+
+.workstation-row__label {
+    display: block;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+.workstation-row__station-name {
+    display: block;
+
+    margin-top: 5px;
+
+    overflow: hidden;
+
+    color: #0f172a;
+
+    font-size: 19px;
+    font-weight: 900;
+
+    line-height: 1.1;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* ==========================================================
+   STATUS
+   ========================================================== */
+
+.workstation-status {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    flex: 0 0 auto;
+
+    padding: 5px 8px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+
+.workstation-status--running {
+    background: #dcfce7;
+
+    color: #15803d;
+}
+
+
+.workstation-status--free {
+    background: #f1f5f9;
+
+    color: #64748b;
+}
+
+
+.workstation-status--error {
+    background: #fee2e2;
+
+    color: #b91c1c;
+}
+
+
+.workstation-status__dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+}
+
+
+/* ==========================================================
+   CURRENT PRODUCTION
+   ========================================================== */
+
+.workstation-row__current {
+    min-width: 0;
+}
+
+
+.workstation-row__order {
+    display: block;
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: #0f172a;
+
+    font-size: 17px;
+    font-weight: 900;
+
+    line-height: 1.1;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.workstation-row__customer {
+    display: block;
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: #475569;
+
+    font-size: 14px;
+    font-weight: 650;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* ==========================================================
+   WORKERS IN STATION
+   ========================================================== */
+
+.workstation-row__workers {
+    min-width: 0;
+}
+
+
+.workstation-row__worker-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 5px;
+
+    margin-top: 6px;
+
+    min-width: 0;
+}
+
+
+.workstation-row__worker {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    width: 100%;
+    min-width: 0;
+
+    padding: 3px 6px 3px 3px;
+
+    border-radius: 7px;
+
+    background: #eff6ff;
+
+    color: #1e3a8a;
+}
+
+
+.workstation-row__worker-avatar {
+    width: 24px;
+    height: 24px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 24px;
+
+    border-radius: 50%;
+
+    background: #dbeafe;
+
+    color: #1e40af;
+
+    font-size: 9px;
+    font-weight: 900;
+}
+
+
+.workstation-row__worker strong {
+    overflow: hidden;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.workstation-row__no-workers {
+    color: #b45309;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   LIST TIMING
+   ========================================================== */
+
+.workstation-row__time {
+    display: grid;
+
+    grid-template-columns:
+        minmax(70px, .65fr)
+        minmax(100px, .85fr)
+        minmax(150px, 1.5fr);
+
+    gap: 12px;
+
+    min-width: 0;
+}
+
+
+.workstation-row__time > div {
+    min-width: 0;
+}
+
+
+.workstation-row__time strong {
+    display: block;
+
+    min-width: 0;
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: #0f172a;
+
+    font-size: 15px;
+    font-weight: 850;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.workstation-row__time
+.workstation-time {
+    font-size: 15px !important;
+    font-weight: 900 !important;
+
+    overflow: visible;
+
+    white-space: nowrap;
+
+    text-overflow: clip;
+}
+
+
+/* ==========================================================
+   QUEUE
+   ========================================================== */
+
+.workstation-row__queue {
+    display: grid;
+
+    grid-template-columns:
+        minmax(55px, .6fr)
+        minmax(90px, 1.4fr);
+
+    gap: 12px;
+}
+
+
+.workstation-row__queue strong {
+    display: block;
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: #0f172a;
+
+    font-size: 14px;
+    font-weight: 850;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.workstation-row__next-time {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.workstation-row__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #94a3b8;
+
+    font-size: 13px;
+}
+
+
+/* ==========================================================
+   INACTIVE STATIONS
+   ========================================================== */
+
+.workstations-section--inactive {
+    background: #fafafa;
+}
+
+
+.workstations-inactive {
+    width: 100%;
+}
+
+
+.workstations-inactive__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 15px 18px;
+
+    cursor: pointer;
+
+    list-style: none;
+}
+
+
+.workstations-inactive__summary::-webkit-details-marker {
+    display: none;
+}
+
+
+.workstations-inactive__summary strong {
+    display: block;
+
+    color: #334155;
+
+    font-size: 16px;
+    font-weight: 850;
+}
+
+
+.workstations-inactive__summary small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+}
+
+
+.workstations-inactive__summary-action {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    color: #64748b;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+
+.workstations-inactive__summary-action i {
+    transition:
+        transform .15s ease;
+}
+
+
+.workstations-inactive[open]
+.workstations-inactive__summary-action i {
+    transform: rotate(180deg);
+}
+
+
+.workstations-inactive__content {
+    border-top: 1px solid var(--app-border);
+}
+
+
+.workstation-row__inactive-message {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    color: #94a3b8;
+
+    font-size: 13px;
+}
+
+
+.workstation-row__inactive-message i {
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   MAIN WORKER LIST
+   ========================================================== */
+
+.workstation-workers-list {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.workstation-worker-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(240px, 1fr)
+        minmax(180px, 1fr)
+        30px;
+
+    align-items: center;
+
+    gap: 16px;
+
+    min-height: 58px;
+
+    padding: 10px 16px;
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.workstation-worker-row:last-child {
+    border-bottom: 0;
+}
+
+
+.workstation-worker-row__person {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.workstation-worker-avatar {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 38px;
+
+    border-radius: 50%;
+
+    background: #e2e8f0;
+
+    color: #334155;
+
+    font-size: 11px;
+    font-weight: 900;
+}
+
+
+.workstation-worker-row__person strong {
+    color: #0f172a;
+
+    font-size: 14px;
+    font-weight: 750;
+}
+
+
+.workstation-worker-status span {
+    display: block;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.workstation-worker-status strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #334155;
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+
+.workstation-worker-status__active {
+    color: #15803d;
+}
+
+
+.workstation-worker-status__free {
+    color: #64748b;
+}
+
+
+/* ==========================================================
+   DETAIL - BASE UNIT
+   ========================================================== */
+
+.workstation-unit-list {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.workstation-unit {
+    display: grid;
+
+    grid-template-columns:
+        auto
+        minmax(220px, 2fr)
+        minmax(100px, .7fr)
+        minmax(180px, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 13px 16px;
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.workstation-unit:last-child {
+    border-bottom: 0;
+}
+
+
+.workstation-unit--active {
+    background: #f0fdf4;
+}
+
+
+.workstation-unit--waiting {
+    grid-template-columns:
+        minmax(240px, 1.6fr)
+        minmax(110px, .7fr)
+        minmax(220px, 1.4fr)
+        auto;
+}
+
+
+/* ==========================================================
+   DETAIL - TIMED UNITS
+   ========================================================== */
+
+.workstation-unit--timed {
+    display: grid;
+
+    grid-template-columns:
+        minmax(210px, 1.4fr)
+        minmax(80px, .45fr)
+        minmax(260px, 1.55fr)
+        minmax(180px, 1.1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 16px 18px;
+}
+
+
+.workstation-unit--queue {
+    grid-template-columns:
+        auto
+        minmax(210px, 1.4fr)
+        minmax(100px, .55fr)
+        minmax(240px, 1.4fr)
+        auto;
+}
+
+
+/* ==========================================================
+   DETAIL TYPOGRAPHY
+   ========================================================== */
+
+.workstation-detail-page
+.production-header h1 {
+    font-size: 30px;
+}
+
+
+.workstation-detail-page
+.production-header p {
+    font-size: 13px;
+}
+
+
+.workstation-detail-page
+.workstations-section__header h2 {
+    font-size: 19px;
+}
+
+
+.workstation-detail-page
+.workstations-section__header p {
+    font-size: 13px;
+}
+
+
+.workstation-detail-page
+.workstation-unit__main > span {
+    font-size: 13px;
+}
+
+
+.workstation-detail-page
+.workstation-unit__main > a {
+    margin-top: 4px;
+
+    font-size: 19px;
+    font-weight: 900;
+}
+
+
+.workstation-detail-page
+.workstation-unit__main small {
+    margin-top: 4px;
+
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   DETAIL - QUEUE POSITION
+   ========================================================== */
+
+.workstation-queue-position {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 12px;
+    font-weight: 850;
+}
+
+
+.workstation-detail-page
+.workstation-queue-position {
+    width: 40px;
+    height: 40px;
+
+    font-size: 14px;
+}
+
+
+/* ==========================================================
+   DETAIL - MAIN
+   ========================================================== */
+
+.workstation-unit__main > span {
+    display: block;
+
+    color: #64748b;
+
+    font-size: 11px;
+}
+
+
+.workstation-unit__main > a {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #0f172a;
+
+    font-size: 15px;
+    font-weight: 850;
+
+    text-decoration: none;
+}
+
+
+.workstation-unit__main > a:hover {
+    color: var(--app-primary);
+}
+
+
+.workstation-unit__main small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+}
+
+
+/* ==========================================================
+   DETAIL - QUANTITY
+   ========================================================== */
+
+.workstation-unit__quantity span {
+    display: block;
+
+    color: #64748b;
+
+    font-size: 11px;
+}
+
+
+.workstation-unit__quantity strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #0f172a;
+
+    font-size: 14px;
+}
+
+
+.workstation-detail-page
+.workstation-unit__quantity span {
+    font-size: 12px;
+}
+
+
+.workstation-detail-page
+.workstation-unit__quantity strong {
+    margin-top: 4px;
+
+    font-size: 16px;
+}
+
+
+/* ==========================================================
+   DETAIL - TIMING
+   ========================================================== */
+
+.workstation-unit__timing,
+.workstation-unit__schedule {
+    display: grid;
+
+    min-width: 0;
+
+    gap: 10px;
+}
+
+
+.workstation-unit__timing {
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+}
+
+
+.workstation-unit__schedule {
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+}
+
+
+.workstation-unit__timing > div,
+.workstation-unit__schedule > div {
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+
+.workstation-unit__timing span,
+.workstation-unit__schedule span {
+    display: block;
+
+    overflow: hidden;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.workstation-unit__timing strong,
+.workstation-unit__schedule strong {
+    display: block;
+
+    min-width: 0;
+
+    margin-top: 5px;
+
+    overflow: hidden;
+
+    color: #0f172a;
+
+    font-size: 15px;
+    font-weight: 850;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* ==========================================================
+   COUNTDOWN
+   ========================================================== */
+
+.workstation-time {
+    font-size: 15px !important;
+    font-weight: 900 !important;
+}
+
+
+.workstation-time--remaining {
+    color: #15803d !important;
+}
+
+
+.workstation-time--overdue {
+    color: #dc2626 !important;
+}
+
+
+/* ==========================================================
+   DETAIL - WORKERS
+   ========================================================== */
+
+.workstation-unit__workers {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 5px;
+}
+
+
+.workstation-unit__workers span {
+    padding: 4px 7px;
+
+    border-radius: 6px;
+
+    background: #fff;
+
+    color: #334155;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+.workstation-detail-page
+.workstation-unit__workers {
+    display: flex;
+    flex-wrap: wrap;
+
+    min-width: 0;
+
+    gap: 5px;
+
+    overflow: hidden;
+}
+
+
+.workstation-detail-page
+.workstation-unit__workers span {
+    max-width: 100%;
+
+    padding: 5px 8px;
+
+    overflow: hidden;
+
+    border-radius: 6px;
+
+    background: #eff6ff;
+
+    color: #1e3a8a;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.workstation-unit__workers-empty {
+    background: #fff7ed !important;
+
+    color: #b45309 !important;
+}
+
+
+/* ==========================================================
+   DETAIL - ACTIONS
+   ========================================================== */
+
+.workstation-unit__actions {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+}
+
+
+.workstation-unit__actions form {
+    margin: 0;
+}
+
+
+.workstation-detail-page
+.workstation-unit__actions {
+    gap: 6px;
+}
+
+
+.workstation-detail-page
+.production-icon-button {
+    width: 36px;
+    height: 36px;
+
+    font-size: 13px;
+}
+
+
+/* ==========================================================
+   EMPTY
+   ========================================================== */
+
+.workstation-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    padding: 34px;
+
+    color: #94a3b8;
+
+    text-align: center;
+}
+
+
+.workstation-empty i {
+    font-size: 22px;
+}
+
+
+.workstation-empty strong {
+    color: #334155;
+
+    font-size: 14px;
+}
+
+
+.workstation-empty span {
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   DETAIL COLLAPSIBLE
+   ========================================================== */
+
+.workstation-collapsible summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 15px 18px;
+
+    cursor: pointer;
+}
+
+
+.workstation-collapsible summary span {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    color: #334155;
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+
+.workstation-collapsible summary strong {
+    min-width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 7px;
+
+    border-radius: 18px;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 11px;
+}
+
+
+/* ==========================================================
+   HISTORY
+   ========================================================== */
+
+.workstation-history {
+    border-top: 1px solid var(--app-border);
+}
+
+
+.workstation-history-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(220px, 2fr)
+        minmax(130px, .8fr)
+        minmax(130px, .8fr)
+        minmax(100px, .6fr)
+        auto;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 13px 16px;
+
+    border-bottom: 1px solid var(--app-border);
+
+    color: var(--app-text);
+
+    text-decoration: none;
+}
+
+
+.workstation-history-row:last-child {
+    border-bottom: 0;
+}
+
+
+.workstation-history-row:hover {
+    background: #f8fafc;
+}
+
+
+.workstation-history-row span {
+    display: block;
+
+    color: #64748b;
+
+    font-size: 11px;
+}
+
+
+.workstation-history-row strong {
+    display: block;
+
+    margin-top: 2px;
+
+    color: #0f172a;
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+
+/* ==========================================================
+   AJAX TOAST
+   ========================================================== */
+
+.workstation-toast {
+    position: fixed;
+
+    top: 20px;
+    right: 20px;
+
+    z-index: 20000;
+
+    max-width: 360px;
+
+    padding: 12px 16px;
+
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+
+    background: #fff;
+
+    color: #991b1b;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    box-shadow:
+        0 10px 30px rgba(15, 23, 42, .16);
+
+    opacity: 0;
+
+    transform:
+        translateY(-8px);
+
+    pointer-events: none;
+
+    transition:
+        opacity .15s ease,
+        transform .15s ease;
+}
+
+
+.workstation-toast--visible {
+    opacity: 1;
+
+    transform:
+        translateY(0);
+}
+
+
+/* ==========================================================
+   RESPONSIVE - LIST
+   ========================================================== */
+
+@media (max-width: 1200px) {
+
+    .workstation-row {
+        grid-template-columns:
+            minmax(170px, 1fr)
+            minmax(180px, 1.1fr)
+            minmax(150px, .85fr)
+            minmax(260px, 1.5fr)
+            minmax(130px, .75fr)
+            24px;
+
+        gap: 12px;
+    }
+
+}
+
+
+@media (max-width: 900px) {
+
+    .workstation-row {
+        grid-template-columns:
+            minmax(180px, 1fr)
+            minmax(200px, 1fr)
+            auto;
+
+        align-items: start;
+    }
+
+
+    .workstation-row__workers,
+    .workstation-row__time,
+    .workstation-row__queue {
+        grid-column:
+            1 / 3;
+    }
+
+
+    .workstation-row__arrow {
+        grid-column: 3;
+        grid-row: 1 / 5;
+
+        align-self: center;
+    }
+
+
+    .workstation-row--inactive {
+        grid-template-columns:
+            1fr
+            1fr
+            auto;
+    }
+
+
+    .workstation-row--inactive
+    .workstation-row__queue {
+        grid-column: auto;
+    }
+
+}
+
+
+/* ==========================================================
+   RESPONSIVE - DETAIL
+   ========================================================== */
+
+@media (max-width: 1200px) {
+
+    .workstation-unit--timed,
+    .workstation-unit--queue,
+    .workstation-unit--waiting {
+        grid-template-columns:
+            minmax(220px, 1.4fr)
+            minmax(100px, .6fr)
+            minmax(260px, 1.4fr)
+            auto;
+    }
+
+
+    .workstation-unit__workers {
+        grid-column:
+            1 / 4;
+    }
+
+}
+
+
+@media (max-width: 850px) {
+
+    .workstation-unit--timed,
+    .workstation-unit--queue,
+    .workstation-unit--waiting {
+        grid-template-columns:
+            1fr
+            auto;
+
+        align-items: start;
+    }
+
+
+    .workstation-unit__main,
+    .workstation-unit__quantity,
+    .workstation-unit__timing,
+    .workstation-unit__schedule,
+    .workstation-unit__workers {
+        grid-column: 1;
+    }
+
+
+    .workstation-unit__finish,
+    .workstation-unit__actions {
+        grid-column: 2;
+        grid-row: 1 / 5;
+    }
+
+
+    .workstation-unit__timing,
+    .workstation-unit__schedule {
+        grid-template-columns:
+            repeat(2, minmax(120px, 1fr));
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .workstations-summary {
+        grid-template-columns: 1fr;
+    }
+
+
+    .workstation-row,
+    .workstation-row--inactive {
+        grid-template-columns:
+            1fr
+            auto;
+
+        gap: 12px;
+
+        padding: 14px;
+    }
+
+
+    .workstation-row__current,
+    .workstation-row__workers,
+    .workstation-row__time,
+    .workstation-row__queue,
+    .workstation-row__inactive-message {
+        grid-column: 1;
+    }
+
+
+    .workstation-row__arrow {
+        grid-column: 2;
+        grid-row: 1 / 6;
+
+        align-self: center;
+    }
+
+
+    .workstation-worker-row {
+        grid-template-columns:
+            1fr
+            auto;
+    }
+
+
+    .workstation-worker-status {
+        grid-column: 1;
+    }
+
+
+    .workstation-unit {
+        grid-template-columns:
+            auto
+            1fr;
+    }
+
+
+    .workstation-unit__quantity,
+    .workstation-unit__timing,
+    .workstation-unit__schedule,
+    .workstation-unit__workers,
+    .workstation-unit__actions,
+    .workstation-unit > form {
+        grid-column: 2;
+    }
+
+
+    .workstation-history-row {
+        grid-template-columns:
+            1fr
+            auto;
+    }
+
+
+    .workstation-history-row > div:nth-child(2),
+    .workstation-history-row > div:nth-child(3),
+    .workstation-history-row > div:nth-child(4) {
+        display: none;
+    }
+
+}
+
+.workstation-detail-page
+.workstation-unit__workers {
+    display: flex;
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    min-width: 0;
+
+    gap: 5px;
+
+    overflow: hidden;
+}
+
+.workstation-detail-page
+.workstation-unit__workers span {
+    display: block;
+
+    width: 100%;
+    max-width: 100%;
+
+    padding: 5px 8px;
+
+    overflow: hidden;
+
+    border-radius: 6px;
+
+    background: #eff6ff;
+
+    color: #1e3a8a;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}

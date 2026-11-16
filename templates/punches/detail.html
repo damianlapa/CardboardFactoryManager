@@ -1,0 +1,699 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Wykrojnik {{ punch.punch_name }}
+{% endblock %}
+
+{% block page_title %}
+    Szczegóły wykrojnika
+{% endblock %}
+
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/punches.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ======================================================= -->
+<!-- HEADER                                                  -->
+<!-- ======================================================= -->
+
+<div class="app-page-header">
+
+    <div>
+
+        <a
+            href="{% url 'punches' %}"
+            class="punch-back-link"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+            Wróć do wykrojników
+        </a>
+
+
+        <h1 class="app-page-title punch-detail-title">
+            {{ punch.punch_name }}
+        </h1>
+
+
+        <div class="app-page-description">
+
+            {% if punch.name %}
+                {{ punch.name }}
+            {% else %}
+                Szczegóły techniczne wykrojnika
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="app-page-actions">
+
+        {% if perms.warehousemanager.change_punch %}
+
+            <a
+                href="{% url 'punch-edit' punch.id %}"
+                class="app-btn app-btn-secondary"
+            >
+                <i class="fa-solid fa-pen"></i>
+                Edytuj
+            </a>
+
+        {% endif %}
+
+
+        {% if perms.warehousemanager.delete_punch %}
+
+            <button
+                type="button"
+                class="app-btn punch-btn-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#deletePunchModal"
+            >
+                <i class="fa-solid fa-trash"></i>
+                Usuń
+            </button>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- SUMMARY                                                 -->
+<!-- ======================================================= -->
+
+<div class="punch-detail-metrics">
+
+    <div class="punch-detail-metric app-card">
+
+        <div class="punch-detail-metric__icon">
+            <i class="fa-solid fa-tag"></i>
+        </div>
+
+        <div>
+
+            <div class="punch-detail-metric__label">
+                Typ
+            </div>
+
+            <div class="punch-detail-metric__value">
+                {{ punch.type }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="punch-detail-metric app-card">
+
+        <div class="punch-detail-metric__icon">
+            <i class="fa-solid fa-ruler-combined"></i>
+        </div>
+
+        <div>
+
+            <div class="punch-detail-metric__label">
+                Wymiary
+            </div>
+
+            <div class="punch-detail-metric__value">
+                {{ dimension_label|default:"—" }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="punch-detail-metric app-card">
+
+        <div class="punch-detail-metric__icon">
+            <i class="fa-solid fa-expand"></i>
+        </div>
+
+        <div>
+
+            <div class="punch-detail-metric__label">
+                Format
+            </div>
+
+            <div class="punch-detail-metric__value">
+                {{ format_label|default:"—" }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="punch-detail-metric app-card">
+
+        <div class="punch-detail-metric__icon punch-detail-metric__icon--usage">
+            <i class="fa-solid fa-chart-line"></i>
+        </div>
+
+        <div>
+
+            <div class="punch-detail-metric__label">
+                Łączne użycie
+            </div>
+
+            <div class="punch-detail-metric__value">
+                {{ total_usage }}
+                <span>szt.</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- TECHNICAL DATA                                          -->
+<!-- ======================================================= -->
+
+<div class="punch-detail-grid">
+
+    <section class="punch-detail-main">
+
+        <div class="app-card punch-info-card">
+
+            <div class="app-card__header">
+
+                <div>
+
+                    <h2 class="app-card__title">
+                        Dane techniczne
+                    </h2>
+
+                    <div class="punch-section-description">
+                        Parametry wykrojnika
+                    </div>
+
+                </div>
+
+                <div class="punch-section-icon">
+                    <i class="fa-solid fa-gears"></i>
+                </div>
+
+            </div>
+
+
+            <div class="punch-info-grid">
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Identyfikator
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.punch_name|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Nazwa
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.name|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Typ
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.type|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Fala
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.cardboard|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Szerokość
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.dimension_one|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Długość
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.dimension_two|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Wysokość
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.dimension_three|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Ilość
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.quantity|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Format
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ format_label|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Kierunek fali
+                    </div>
+
+                    <div class="punch-info-item__value">
+
+                        {% if punch.wave_direction %}
+                            Tak
+                        {% else %}
+                            Nie
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Docisk duży
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.pressure_large|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Docisk mały
+                    </div>
+
+                    <div class="punch-info-item__value">
+                        {{ punch.pressure_small|default:"—" }}
+                    </div>
+
+                </div>
+
+
+                <div class="punch-info-item">
+
+                    <div class="punch-info-item__label">
+                        Status
+                    </div>
+
+                    <div class="punch-info-item__value">
+
+                        {% if punch.active %}
+
+                            <span class="punch-detail-status punch-detail-status--active">
+                                <span></span>
+                                Aktywny
+                            </span>
+
+                        {% else %}
+
+                            <span class="punch-detail-status punch-detail-status--inactive">
+                                <span></span>
+                                Nieaktywny
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- CUSTOMERS                                           -->
+    <!-- =================================================== -->
+
+    <aside class="punch-detail-side">
+
+        <div class="app-card punch-customers-card">
+
+            <div class="app-card__header">
+
+                <div>
+
+                    <h2 class="app-card__title">
+                        Klienci
+                    </h2>
+
+                    <div class="punch-section-description">
+                        Przypisani do wykrojnika
+                    </div>
+
+                </div>
+
+                <div class="punch-section-icon">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+
+            </div>
+
+
+            <div class="punch-detail-customers">
+
+                {% for customer in customers %}
+
+                    <div class="punch-detail-customer">
+
+                        <span class="punch-detail-customer__icon">
+                            <i class="fa-solid fa-building"></i>
+                        </span>
+
+                        <span>
+                            {{ customer }}
+                        </span>
+
+                    </div>
+
+                {% empty %}
+
+                    <div class="punch-detail-empty">
+                        Brak przypisanych klientów.
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+
+<!-- ======================================================= -->
+<!-- PRODUCTION HISTORY                                      -->
+<!-- ======================================================= -->
+
+<div class="app-card punch-production-card">
+
+    <div class="app-card__header">
+
+        <div>
+
+            <h2 class="app-card__title">
+                Historia użycia
+            </h2>
+
+            <div class="punch-section-description">
+                Zarejestrowana produkcja z wykorzystaniem tego wykrojnika
+            </div>
+
+        </div>
+
+        <div class="punch-section-icon">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+
+    </div>
+
+
+    {% if production_history %}
+
+        <div class="punch-table-scroll">
+
+            <table class="punch-table punch-production-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Data</th>
+                        <th>Produkcja</th>
+                        <th>Ilość</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for production in production_history %}
+
+                        <tr>
+
+                            <td>
+
+                                {% if production.date %}
+
+                                    {{ production.date|date:"d.m.Y" }}
+
+                                {% elif production.created %}
+
+                                    {{ production.created|date:"d.m.Y H:i" }}
+
+                                {% else %}
+
+                                    <span class="punch-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+                                {{ production }}
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    {{ production.quantity|default:"0" }}
+                                </strong>
+
+                                szt.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="punch-empty">
+
+            <div class="punch-empty__icon">
+                <i class="fa-solid fa-industry"></i>
+            </div>
+
+            <div class="punch-empty__title">
+                Brak historii użycia
+            </div>
+
+            <div class="punch-empty__description">
+                Ten wykrojnik nie został jeszcze zarejestrowany w produkcji.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% if perms.warehousemanager.delete_punch %}
+
+<div
+    class="modal fade"
+    id="deletePunchModal"
+    tabindex="-1"
+    aria-labelledby="deletePunchModalLabel"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content punch-delete-modal">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h2
+                        class="modal-title punch-delete-modal__title"
+                        id="deletePunchModalLabel"
+                    >
+                        Usunąć wykrojnik?
+                    </h2>
+
+                    <div class="punch-delete-modal__subtitle">
+                        {{ punch.punch_name }}
+                    </div>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Zamknij"
+                ></button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="punch-delete-warning">
+
+                    <div class="punch-delete-warning__icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Tej operacji nie można cofnąć.
+                        </strong>
+
+                        <div>
+                            Wykrojnik zostanie trwale usunięty.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    Anuluj
+                </button>
+
+
+                <form
+                    method="post"
+                    action="{% url 'punch-delete' punch.id %}"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="submit"
+                        class="app-btn punch-btn-danger-solid"
+                    >
+                        <i class="fa-solid fa-trash"></i>
+                        Usuń wykrojnik
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

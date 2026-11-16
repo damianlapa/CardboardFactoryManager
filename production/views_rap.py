@@ -306,3 +306,878 @@ class MonthReport(LoginRequiredMixin, View):
         }
 
         return render(request, 'production/month_report.html', context=context)
+
+
+import io
+import re
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer,
+    PageBreak,
+)
+from warehouse.models import *
+from production.models import ProductionUnit, ProductionOrder
+
+import os
+
+from django.conf import settings
+
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+from io import BytesIO
+from pathlib import Path
+
+from django.conf import settings
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    KeepTogether,
+)
+
+
+class DieCutProductionPdfView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("login")
+
+    FONT_REGULAR = "DejaVuSans"
+    FONT_BOLD = "DejaVuSans-Bold"
+
+    WORKSTATIONS = (
+        "TYGIEL MAŁY",
+        "TYGIEL DUŻY",
+    )
+
+    MIN_SHORT = 350
+    MAX_SHORT = 800
+
+    MIN_LONG = 500
+    MAX_LONG = 1500
+
+    EXCLUDED_PRODUCTS = (
+        "MERIDA | BC | KÓŁKA",
+    )
+
+    def _register_fonts(self):
+        regular_path = (
+            Path(settings.BASE_DIR)
+            / "warehousemanager"
+            / "static"
+            / "fonts"
+            / "DejaVuSans.ttf"
+        )
+
+        bold_path = (
+            Path(settings.BASE_DIR)
+            / "warehousemanager"
+            / "static"
+            / "fonts"
+            / "DejaVuSans-Bold.ttf"
+        )
+
+        missing = [
+            str(path)
+            for path in (
+                regular_path,
+                bold_path,
+            )
+            if not path.exists()
+        ]
+
+        if missing:
+            raise FileNotFoundError(
+                "Brakuje fontów wymaganych do wygenerowania PDF:\n"
+                + "\n".join(missing)
+            )
+
+        registered = pdfmetrics.getRegisteredFontNames()
+
+        if self.FONT_REGULAR not in registered:
+            pdfmetrics.registerFont(
+                TTFont(
+                    self.FONT_REGULAR,
+                    str(regular_path),
+                )
+            )
+
+        if self.FONT_BOLD not in registered:
+            pdfmetrics.registerFont(
+                TTFont(
+                    self.FONT_BOLD,
+                    str(bold_path),
+                )
+            )
+
+    @staticmethod
+    def _parse_dimensions(value):
+        if not value:
+            return None
+
+        value = str(value).lower().replace("×", "x")
+
+        match = re.search(
+            r"(\d+)\s*x\s*(\d+)",
+            value,
+        )
+
+        if not match:
+            return None
+
+        a = int(match.group(1))
+        b = int(match.group(2))
+
+        return min(a, b), max(a, b)
+
+    def _dimension_is_allowed(self, value):
+        dimensions = self._parse_dimensions(value)
+
+        if not dimensions:
+            return False
+
+        short_side, long_side = dimensions
+
+        return (
+            self.MIN_SHORT <= short_side <= self.MAX_SHORT
+            and
+            self.MIN_LONG <= long_side <= self.MAX_LONG
+        )
+
+    @staticmethod
+    def _normalize_name(value):
+        if not value:
+            return ""
+
+        return " ".join(
+            str(value).upper().split()
+        )
+
+    def get(self, request):
+        self._register_fonts()
+
+        today = datetime.date.today()
+
+        date_from = datetime.date(
+            today.year,
+            1,
+            1,
+        )
+
+        date_to = datetime.date(
+            today.year + 1,
+            1,
+            1,
+        )
+
+        # ============================================================
+        # JEDNOSTKI PRODUKCYJNE
+        # ============================================================
+
+        units_qs = (
+            ProductionUnit.objects
+            .filter(
+                work_station__name__in=self.WORKSTATIONS,
+                start__date__gte=date_from,
+                start__date__lt=date_to,
+                quantity_start__isnull=False,
+            )
+            .select_related(
+                "work_station",
+                "production_order",
+                "production_order__customer",
+            )
+            .order_by(
+                "start",
+                "production_order__customer__name",
+            )
+        )
+
+        # ============================================================
+        # MAPA ZLECEŃ MAGAZYNOWYCH
+        #
+        # ProductionOrder.id_number:
+        #   np. "TFP 123/26"
+        #
+        # Order:
+        #   provider + order_id
+        # ============================================================
+
+        warehouse_orders = (
+            Order.objects
+            .select_related(
+                "provider",
+                "product",
+            )
+            .all()
+        )
+
+        order_map = {
+            f"{order.provider} {order.order_id}": order
+            for order in warehouse_orders
+        }
+
+        # ============================================================
+        # WYKLUCZONE PRODUKTY
+        # ============================================================
+
+        excluded_products = {
+            self._normalize_name(name)
+            for name in self.EXCLUDED_PRODUCTS
+        }
+
+        # ============================================================
+        # DANE RAPORTU
+        # ============================================================
+
+        rows = []
+
+        total_quantity = 0
+
+        product_summary = {}
+
+        for unit in units_qs:
+            production_order = unit.production_order
+
+            # --------------------------------------------------------
+            # WYMIARY
+            # --------------------------------------------------------
+
+            dimensions = production_order.cardboard_dimensions
+
+            if not self._dimension_is_allowed(dimensions):
+                continue
+
+            # --------------------------------------------------------
+            # PRODUKT
+            # --------------------------------------------------------
+
+            warehouse_order = order_map.get(
+                production_order.id_number
+            )
+
+            product = (
+                warehouse_order.product
+                if warehouse_order
+                else None
+            )
+
+            product_name = (
+                product.name
+                if product
+                else "BRAK PRODUKTU"
+            )
+
+            normalized_product_name = self._normalize_name(
+                product_name
+            )
+
+            # dokładne wykluczenie
+            if normalized_product_name in excluded_products:
+                continue
+
+            # dodatkowe zabezpieczenie:
+            # jeśli np. istnieje:
+            # MERIDA | BC | KÓŁKA | INNY OPIS
+            if normalized_product_name.startswith(
+                "MERIDA | BC | KÓŁKA"
+            ):
+                continue
+
+            # --------------------------------------------------------
+            # ILOŚĆ
+            # --------------------------------------------------------
+
+            quantity = unit.quantity_start or 0
+
+            total_quantity += quantity
+
+            # --------------------------------------------------------
+            # WIERSZ RAPORTU
+            # --------------------------------------------------------
+
+            rows.append({
+                "customer": production_order.customer.name,
+                "dimensions": dimensions,
+                "quantity": quantity,
+                "date": unit.start.date(),
+                "workstation": unit.work_station.name,
+                "product": product_name,
+            })
+
+            # --------------------------------------------------------
+            # PODSUMOWANIE WG PRODUCT
+            # --------------------------------------------------------
+
+            if product_name not in product_summary:
+                product_summary[product_name] = {
+                    "quantity": 0,
+                    "units": 0,
+                }
+
+            product_summary[product_name]["quantity"] += quantity
+            product_summary[product_name]["units"] += 1
+
+        # ============================================================
+        # SORTOWANIE PODSUMOWANIA WG ILOŚCI
+        # ============================================================
+
+        product_summary = sorted(
+            product_summary.items(),
+            key=lambda x: x[1]["quantity"],
+            reverse=True,
+        )
+
+        # ============================================================
+        # RESPONSE
+        # ============================================================
+
+        response = HttpResponse(
+            content_type="application/pdf"
+        )
+
+        filename = (
+            f"tygle_{today.year}_"
+            f"350x500-800x1500.pdf"
+        )
+
+        response["Content-Disposition"] = (
+            f'inline; filename="{filename}"'
+        )
+
+        buffer = io.BytesIO()
+
+        # ============================================================
+        # DOKUMENT
+        # ============================================================
+
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),
+            rightMargin=12 * mm,
+            leftMargin=12 * mm,
+            topMargin=14 * mm,
+            bottomMargin=14 * mm,
+            title="Raport produkcji - tygle",
+        )
+
+        styles = getSampleStyleSheet()
+
+        # ============================================================
+        # STYLE
+        # ============================================================
+
+        title_style = ParagraphStyle(
+            "ReportTitle",
+            parent=styles["Title"],
+            fontName=self.FONT_BOLD,
+            fontSize=18,
+            leading=22,
+            spaceAfter=8,
+        )
+
+        subtitle_style = ParagraphStyle(
+            "ReportSubtitle",
+            parent=styles["Normal"],
+            fontName=self.FONT_REGULAR,
+            fontSize=9,
+            leading=12,
+            spaceAfter=10,
+        )
+
+        normal_style = ParagraphStyle(
+            "TableNormal",
+            parent=styles["Normal"],
+            fontName=self.FONT_REGULAR,
+            fontSize=8,
+            leading=10,
+        )
+
+        right_style = ParagraphStyle(
+            "Right",
+            parent=styles["Normal"],
+            fontName=self.FONT_REGULAR,
+            fontSize=8,
+            leading=10,
+            alignment=TA_RIGHT,
+        )
+
+        body_style = ParagraphStyle(
+            "Body",
+            parent=styles["Normal"],
+            fontName=self.FONT_REGULAR,
+            fontSize=9,
+            leading=12,
+        )
+
+        story = []
+
+        # ============================================================
+        # TYTUŁ
+        # ============================================================
+
+        story.append(
+            Paragraph(
+                (
+                    f"Produkcja - TYGIEL MAŁY / "
+                    f"TYGIEL DUŻY - {today.year}"
+                ),
+                title_style,
+            )
+        )
+
+        story.append(
+            Paragraph(
+                (
+                    f"Zakres dat: "
+                    f"{date_from:%d.%m.%Y} - "
+                    f"{today:%d.%m.%Y}<br/>"
+                    f"Format arkusza: "
+                    f"350x500 - 800x1500 mm"
+                ),
+                subtitle_style,
+            )
+        )
+
+        story.append(
+            Spacer(
+                1,
+                4 * mm,
+            )
+        )
+
+        # ============================================================
+        # TABELA SZCZEGÓŁOWA
+        # ============================================================
+
+        table_data = [
+            [
+                "Klient",
+                "Format",
+                "Ilość start",
+                "Data",
+                "Stanowisko",
+                "Produkt",
+            ]
+        ]
+
+        for row in rows:
+            table_data.append([
+                Paragraph(
+                    str(row["customer"]),
+                    normal_style,
+                ),
+                Paragraph(
+                    str(row["dimensions"]),
+                    normal_style,
+                ),
+                Paragraph(
+                    f'{row["quantity"]:,}'.replace(",", " "),
+                    right_style,
+                ),
+                Paragraph(
+                    row["date"].strftime("%d.%m.%Y"),
+                    normal_style,
+                ),
+                Paragraph(
+                    row["workstation"],
+                    normal_style,
+                ),
+                Paragraph(
+                    row["product"],
+                    normal_style,
+                ),
+            ])
+
+        # ============================================================
+        # SUMA
+        # ============================================================
+
+        table_data.append([
+            Paragraph(
+                "<b>SUMA</b>",
+                normal_style,
+            ),
+            "",
+            Paragraph(
+                f'<b>{total_quantity:,}</b>'.replace(",", " "),
+                right_style,
+            ),
+            "",
+            "",
+            "",
+        ])
+
+        table = Table(
+            table_data,
+            repeatRows=1,
+            colWidths=[
+                43 * mm,
+                25 * mm,
+                28 * mm,
+                26 * mm,
+                32 * mm,
+                103 * mm,
+            ],
+        )
+
+        table.setStyle(
+            TableStyle([
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#263238"),
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, 0),
+                    colors.white,
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    self.FONT_BOLD,
+                ),
+                (
+                    "FONTNAME",
+                    (0, 1),
+                    (-1, -1),
+                    self.FONT_REGULAR,
+                ),
+                (
+                    "FONTSIZE",
+                    (0, 0),
+                    (-1, -1),
+                    8,
+                ),
+                (
+                    "ALIGN",
+                    (1, 0),
+                    (4, -1),
+                    "CENTER",
+                ),
+                (
+                    "ALIGN",
+                    (2, 1),
+                    (2, -1),
+                    "RIGHT",
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "MIDDLE",
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -2),
+                    0.25,
+                    colors.HexColor("#CFD8DC"),
+                ),
+                (
+                    "LINEABOVE",
+                    (0, -1),
+                    (-1, -1),
+                    1,
+                    colors.black,
+                ),
+                (
+                    "BACKGROUND",
+                    (0, -1),
+                    (-1, -1),
+                    colors.HexColor("#ECEFF1"),
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    5,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    5,
+                ),
+                (
+                    "LEFTPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    5,
+                ),
+                (
+                    "RIGHTPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    5,
+                ),
+            ])
+        )
+
+        story.append(table)
+
+        # ============================================================
+        # PODSUMOWANIE OGÓLNE
+        # ============================================================
+
+        story.append(
+            Spacer(
+                1,
+                8 * mm,
+            )
+        )
+
+        story.append(
+            Paragraph(
+                (
+                    "<b>Łączna liczba jednostek produkcyjnych:</b> "
+                    f"{len(rows)}"
+                ),
+                body_style,
+            )
+        )
+
+        story.append(
+            Spacer(
+                1,
+                2 * mm,
+            )
+        )
+
+        story.append(
+            Paragraph(
+                (
+                    "<b>Łączna ilość:</b> "
+                    f'{total_quantity:,}'.replace(",", " ")
+                ),
+                body_style,
+            )
+        )
+
+        # ============================================================
+        # DRUGA STRONA
+        # PODSUMOWANIE WG PRODUCT
+        # ============================================================
+
+        story.append(
+            PageBreak()
+        )
+
+        story.append(
+            Paragraph(
+                "Podsumowanie według produktu",
+                title_style,
+            )
+        )
+
+        story.append(
+            Paragraph(
+                (
+                    f"Produkcja od "
+                    f"{date_from:%d.%m.%Y} "
+                    f"do {today:%d.%m.%Y}"
+                ),
+                subtitle_style,
+            )
+        )
+
+        story.append(
+            Spacer(
+                1,
+                4 * mm,
+            )
+        )
+
+        product_table_data = [
+            [
+                "Produkt",
+                "Liczba jednostek",
+                "Ilość",
+                "% całości",
+            ]
+        ]
+
+        for product_name, values in product_summary:
+            quantity = values["quantity"]
+
+            percent = (
+                quantity / total_quantity * 100
+                if total_quantity
+                else 0
+            )
+
+            product_table_data.append([
+                Paragraph(
+                    product_name,
+                    normal_style,
+                ),
+                Paragraph(
+                    f'{values["units"]:,}'.replace(",", " "),
+                    right_style,
+                ),
+                Paragraph(
+                    f'{quantity:,}'.replace(",", " "),
+                    right_style,
+                ),
+                Paragraph(
+                    f"{percent:.1f}%",
+                    right_style,
+                ),
+            ])
+
+        product_table_data.append([
+            Paragraph(
+                "<b>SUMA</b>",
+                normal_style,
+            ),
+            Paragraph(
+                f"<b>{len(rows)}</b>",
+                right_style,
+            ),
+            Paragraph(
+                f'<b>{total_quantity:,}</b>'.replace(",", " "),
+                right_style,
+            ),
+            Paragraph(
+                "<b>100.0%</b>" if total_quantity else "<b>0.0%</b>",
+                right_style,
+            ),
+        ])
+
+        product_table = Table(
+            product_table_data,
+            repeatRows=1,
+            colWidths=[
+                156 * mm,
+                38 * mm,
+                38 * mm,
+                30 * mm,
+            ],
+        )
+
+        product_table.setStyle(
+            TableStyle([
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#263238"),
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, 0),
+                    colors.white,
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    self.FONT_BOLD,
+                ),
+                (
+                    "FONTNAME",
+                    (0, 1),
+                    (-1, -1),
+                    self.FONT_REGULAR,
+                ),
+                (
+                    "FONTSIZE",
+                    (0, 0),
+                    (-1, -1),
+                    8,
+                ),
+                (
+                    "ALIGN",
+                    (1, 0),
+                    (-1, -1),
+                    "RIGHT",
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "MIDDLE",
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -2),
+                    0.25,
+                    colors.HexColor("#CFD8DC"),
+                ),
+                (
+                    "LINEABOVE",
+                    (0, -1),
+                    (-1, -1),
+                    1,
+                    colors.black,
+                ),
+                (
+                    "BACKGROUND",
+                    (0, -1),
+                    (-1, -1),
+                    colors.HexColor("#ECEFF1"),
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    6,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    6,
+                ),
+                (
+                    "LEFTPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    5,
+                ),
+                (
+                    "RIGHTPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    5,
+                ),
+            ])
+        )
+
+        story.append(product_table)
+
+        # ============================================================
+        # GENEROWANIE PDF
+        # ============================================================
+
+        doc.build(story)
+
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        response.write(pdf)
+
+        return response

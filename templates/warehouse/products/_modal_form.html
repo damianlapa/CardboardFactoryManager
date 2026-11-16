@@ -1,0 +1,23 @@
+<div class="products-modal__head">
+  <div><h2 id="products-modal-title">{{ heading }}</h2><p>{{ product.name }}</p></div>
+  <button type="button" class="products-modal__close" data-modal-close aria-label="Zamknij">×</button>
+</div>
+<form id="products-edit-form" class="products-modal__form" method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="products-modal__errors">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="products-modal__grid">
+    {% for field in form %}
+      <div class="products-modal__field {% if field.name == 'notes' or field.name == 'additional_info' %}products-modal__field--wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+        {{ field }}
+        {% if field.errors %}<div class="products-modal__error">{{ field.errors }}</div>{% endif %}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  {% if kind == 'packaging' %}<p class="products-modal__hint">Sztuki na palecie zostaną wyliczone automatycznie: słupki × warstwy × sztuki w paczce.</p>{% endif %}
+  <div class="products-modal__actions">
+    <button type="button" class="products-modal__cancel" data-modal-close>Anuluj</button>
+    <button type="submit" class="products-modal__save">Zapisz zmiany</button>
+  </div>
+</form>

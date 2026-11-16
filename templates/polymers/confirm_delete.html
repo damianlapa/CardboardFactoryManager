@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Usuń polimer | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Polimery
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/polymers.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="polymer-delete-page">
+
+    <div class="polymer-delete-card">
+
+        <div class="polymer-delete-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+
+        <h1>
+            Usuń polimer
+        </h1>
+
+        <p>
+            Czy na pewno chcesz usunąć:
+        </p>
+
+        <strong class="polymer-delete-name">
+            {{ object }}
+        </strong>
+
+
+        <div class="polymer-delete-warning">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            <span>
+                Ta operacja jest trwała i nie można jej cofnąć.
+            </span>
+
+        </div>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="polymer-delete-actions">
+
+                <a
+                    href="{% url 'polymer-details' object.id %}"
+                    class="app-btn app-btn-secondary"
+                >
+                    Anuluj
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="app-btn polymer-btn-danger"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                    Usuń polimer
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

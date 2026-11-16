@@ -1,0 +1,273 @@
+* {
+    box-sizing: border-box;
+}
+
+
+html,
+body {
+    margin: 0;
+
+    min-height: 100%;
+}
+
+
+.app-body {
+
+    min-height: 100vh;
+
+    margin: 0;
+
+    background: var(--app-bg);
+
+    color: var(--app-text);
+
+    font-family: var(--app-font);
+
+    font-size: 14px;
+}
+
+
+.app-shell {
+
+    min-height: 100vh;
+}
+
+
+/* ========================================================== */
+/* HEADER                                                     */
+/* ========================================================== */
+
+.app-header {
+
+    height: var(--app-header-height);
+
+    display: grid;
+
+    grid-template-columns:
+        220px
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 0 24px;
+
+    background: var(--app-surface);
+
+    border-bottom: 1px solid var(--app-border);
+}
+
+
+.app-header__logo {
+
+    display: flex;
+
+    align-items: center;
+}
+
+
+.app-header__logo img {
+
+    display: block;
+
+    max-width: 165px;
+
+    max-height: 44px;
+}
+
+
+.app-header__title {
+
+    min-width: 0;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    color: var(--app-text);
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+
+.app-header__user {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+/* ========================================================== */
+/* NAVIGATION                                                 */
+/* ========================================================== */
+
+.app-navigation {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 1000;
+
+    background: #0f172a;
+
+    box-shadow: var(--app-shadow-sm);
+}
+
+
+.app-navigation__inner {
+
+    min-height: var(--app-navigation-height);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding: 5px 20px;
+}
+
+
+.app-nav-item {
+
+    position: relative;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    min-height: 38px;
+
+    padding: 0 13px;
+
+    border-radius: var(--app-radius-sm);
+
+    color: #cbd5e1;
+
+    font-size: 14px;
+
+    font-weight: 500;
+
+    text-decoration: none;
+
+    transition:
+        background-color .15s ease,
+        color .15s ease;
+}
+
+
+.app-nav-item:hover {
+
+    color: #ffffff;
+
+    background: rgba(255, 255, 255, .08);
+}
+
+
+.app-nav-item i {
+
+    width: 16px;
+
+    text-align: center;
+
+    font-size: 13px;
+}
+
+
+.app-nav-dot {
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #fbbf24;
+}
+
+
+/* ========================================================== */
+/* CONTENT                                                    */
+/* ========================================================== */
+
+.app-main {
+
+    width: 100%;
+
+    max-width: 1700px;
+
+    margin: 0 auto;
+
+    padding: 24px;
+}
+
+
+/* ========================================================== */
+/* MESSAGES                                                   */
+/* ========================================================== */
+
+.app-messages {
+
+    width: min(900px, calc(100% - 40px));
+
+    margin: 14px auto 0;
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE                                                 */
+/* ========================================================== */
+
+@media (max-width: 900px) {
+
+    .app-header {
+
+        grid-template-columns:
+            150px
+            minmax(0, 1fr)
+            auto;
+
+        padding: 0 12px;
+    }
+
+
+    .app-header__logo img {
+
+        max-width: 135px;
+    }
+
+
+    .app-navigation__inner {
+
+        overflow-x: auto;
+
+        padding-left: 8px;
+
+        padding-right: 8px;
+    }
+
+
+    .app-nav-item {
+
+        flex: 0 0 auto;
+    }
+
+
+    .app-main {
+
+        padding: 14px;
+    }
+
+}

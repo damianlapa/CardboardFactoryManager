@@ -1,0 +1,397 @@
+{% extends "__base_modern__.html" %}
+{% load static %}
+
+{% block title %}Pracownicy{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/modern/employees.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="app-page-header">
+
+    <div>
+        <h1 class="app-page-title">
+            Pracownicy
+        </h1>
+
+        <div class="app-page-description">
+            Lista pracowników i podstawowe informacje kadrowe
+        </div>
+    </div>
+
+</div>
+
+
+<div class="employee-toolbar app-card">
+
+    <div class="employee-toolbar__status">
+
+        {% if include_inactive %}
+
+            <span class="employee-filter-badge employee-filter-badge--all">
+                <i class="fa-solid fa-users"></i>
+                Wszyscy pracownicy
+            </span>
+
+        {% else %}
+
+            <span class="employee-filter-badge employee-filter-badge--active">
+                <i class="fa-solid fa-user-check"></i>
+                Tylko aktywni
+            </span>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="employee-toolbar__actions">
+
+        {% if include_inactive %}
+
+            <a
+                href="{% url 'employee_list' %}"
+                class="app-btn app-btn-primary"
+            >
+                <i class="fa-solid fa-user-check"></i>
+                Tylko aktywni
+            </a>
+
+        {% else %}
+
+            <a
+                href="{% url 'employee_list' %}?all=1"
+                class="app-btn app-btn-secondary"
+            >
+                <i class="fa-solid fa-users"></i>
+                Pokaż wszystkich
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<div class="employee-list-card app-card">
+
+    <div class="app-card__header">
+
+        <div>
+            <h2 class="app-card__title">
+                Lista pracowników
+            </h2>
+
+            <div class="employee-section-description">
+                Kliknij pracownika, aby przejść do szczegółów
+            </div>
+        </div>
+
+        <div class="employee-count">
+            {{ employees|length }}
+        </div>
+
+    </div>
+
+
+    {% if employees %}
+
+        <div class="employee-table-scroll">
+
+            <table
+                class="employee-table"
+                id="employeeTable"
+            >
+
+                <thead>
+
+                    <tr>
+
+                        <th
+                            data-sort
+                            data-sort-type="text"
+                        >
+                            <button
+                                type="button"
+                                class="employee-sort-button"
+                            >
+                                Pracownik
+
+                                <span class="employee-sort-icon">
+                                    <i class="fa-solid fa-sort"></i>
+                                </span>
+                            </button>
+                        </th>
+
+
+                        <th
+                            data-sort
+                            data-sort-type="text"
+                        >
+                            <button
+                                type="button"
+                                class="employee-sort-button"
+                            >
+                                Dział
+
+                                <span class="employee-sort-icon">
+                                    <i class="fa-solid fa-sort"></i>
+                                </span>
+                            </button>
+                        </th>
+
+
+                        <th
+                            data-sort
+                            data-sort-type="date"
+                        >
+                            <button
+                                type="button"
+                                class="employee-sort-button"
+                            >
+                                Data zatrudnienia
+
+                                <span class="employee-sort-icon">
+                                    <i class="fa-solid fa-sort"></i>
+                                </span>
+                            </button>
+                        </th>
+
+
+                        <th
+                            data-sort
+                            data-sort-type="number"
+                        >
+                            <button
+                                type="button"
+                                class="employee-sort-button"
+                            >
+                                Staż
+
+                                <span class="employee-sort-icon">
+                                    <i class="fa-solid fa-sort"></i>
+                                </span>
+                            </button>
+                        </th>
+
+
+                        <th
+                            data-sort
+                            data-sort-type="text"
+                        >
+                            <button
+                                type="button"
+                                class="employee-sort-button"
+                            >
+                                Status
+
+                                <span class="employee-sort-icon">
+                                    <i class="fa-solid fa-sort"></i>
+                                </span>
+                            </button>
+                        </th>
+
+
+                        <th>
+                            Badania
+                        </th>
+
+                        <th class="employee-action-heading"></th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for row in employees %}
+
+                        <tr
+                            class="employee-row"
+                            data-href="{% url 'person-details' row.employee.id %}"
+                            tabindex="0"
+                            role="link"
+                        >
+
+                            <td
+                                data-value="{{ row.employee.last_name }} {{ row.employee.first_name }}"
+                            >
+
+                                <div class="employee-person">
+
+                                    <div class="employee-avatar">
+                                        {{ row.employee.first_name|first }}{{ row.employee.last_name|first }}
+                                    </div>
+
+                                    <div class="employee-person__details">
+
+                                        <div class="employee-person__name">
+                                            {{ row.employee.first_name }}
+                                            {{ row.employee.last_name }}
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+
+                            <td
+                                data-value="{{ row.employee.occupancy_type|default:'' }}"
+                            >
+
+                                {% if row.employee.occupancy_type %}
+
+                                    <span class="employee-department">
+                                        {{ row.employee.occupancy_type }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="employee-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td
+                                data-value="{{ row.employee.job_start|date:'Y-m-d' }}"
+                            >
+
+                                {% if row.employee.job_start %}
+
+                                    <span class="employee-date">
+                                        {{ row.employee.job_start|date:"d.m.Y" }}
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="employee-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td
+                                data-value="{{ row.seniority_days }}"
+                            >
+                                {{ row.seniority_label }}
+                            </td>
+
+
+                            <td
+                                data-value="{% if row.is_active %}active{% else %}inactive{% endif %}"
+                            >
+
+                                {% if row.is_active %}
+
+                                    <span class="employee-status employee-status--active">
+                                        <span class="employee-status__dot"></span>
+                                        Aktywny
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="employee-status employee-status--inactive">
+                                        <span class="employee-status__dot"></span>
+                                        Nieaktywny
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if row.medical_expired %}
+
+                                    <span
+                                        class="employee-medical employee-medical--expired"
+                                        title="Brak aktualnych badań lekarskich"
+                                    >
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        Brak / wygasły
+                                    </span>
+
+                                {% else %}
+
+                                    <span
+                                        class="employee-medical employee-medical--valid"
+                                        title="Badania lekarskie są aktualne"
+                                    >
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Aktualne
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="employee-action-cell">
+
+                                <a
+                                    href="{% url 'person-details' row.employee.id %}"
+                                    class="employee-details-button"
+                                    title="Szczegóły pracownika"
+                                    aria-label="Szczegóły pracownika"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="employee-empty">
+
+            <div class="employee-empty__icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+
+            <div class="employee-empty__title">
+                Brak pracowników
+            </div>
+
+            <div class="employee-empty__description">
+                Nie znaleziono pracowników spełniających wybrane kryteria.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+
+{% block script %}
+<script src="{% static 'js/modern/employees.js' %}"></script>
+{% endblock %}

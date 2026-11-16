@@ -1,0 +1,431 @@
+{% extends "__base3__.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+
+<style>
+    .maintenance-detail-page {
+        padding: 16px;
+    }
+
+    .maintenance-title {
+        margin-bottom: 16px;
+    }
+
+    .maintenance-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr 420px;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .panel h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        font-size: 18px;
+    }
+
+    .info-row {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .data-table th {
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .contact-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fcfcfc;
+    }
+
+    .contact-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .small-muted {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .main-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-missing {
+        background: #ffe3e3;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1c2;
+        color: #8a6300;
+    }
+
+    .status-ok {
+        background: #e7f6ea;
+        color: #1d6b1d;
+    }
+
+    .empty-box {
+        padding: 16px;
+        border: 1px dashed #bbb;
+        border-radius: 10px;
+        color: #666;
+        text-align: center;
+    }
+
+    @media (max-width: 1400px) {
+        .maintenance-layout {
+            grid-template-columns: 280px 1fr 360px;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .maintenance-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #f8f8f8;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 700px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+    }
+
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-form-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-row label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-detail-page">
+    <div class="maintenance-title">
+        <h2>{{ supplier.name }}</h2>
+    </div>
+
+    <div class="maintenance-layout">
+        <div class="panel">
+            <h3>Dane dostawcy</h3>
+
+            <div class="info-row"><b>Nazwa:</b> {{ supplier.name }}</div>
+            <div class="info-row"><b>Skrót:</b> {{ supplier.shortcut|default:"-" }}</div>
+            <div class="info-row"><b>Miasto:</b> {{ supplier.city|default:"-" }}</div>
+            <div class="info-row"><b>Adres:</b> {{ supplier.address|default:"-" }}</div>
+            <div class="info-row">
+                <b>WWW:</b>
+                {% if supplier.website %}
+                    <a href="{{ supplier.website }}" target="_blank" rel="noopener noreferrer">
+                        {{ supplier.website }}
+                    </a>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="info-row"><b>Notatki:</b><br>{{ supplier.notes|default:"-" }}</div>
+            <div style="margin-top:16px;">
+                <button type="button" class="btn" onclick="openContactModal()">Dodaj kontakt</button>
+            </div>
+            <div class="info-row" style="margin-top:16px;">
+                <b>Główny kontakt:</b><br>
+                {% if main_contact %}
+                    {{ main_contact.name }}<br>
+                    <span class="small-muted">{{ main_contact.role|default:"-" }}</span><br>
+                    <span class="small-muted">{{ main_contact.phone|default:"-" }}</span><br>
+                    <span class="small-muted">{{ main_contact.email|default:"-" }}</span>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Części dostawcy</h3>
+
+            {% if supplier_parts %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Część</th>
+                            <th>Kategoria</th>
+                            <th>Stan</th>
+                            <th>Minimum</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for link in supplier_parts %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'maintenance:part-detail' link.part.id %}">
+                                        <b>{{ link.part.name }}</b>
+                                    </a>
+                                    <div class="small-muted">{{ link.part.code }}</div>
+                                    {% if link.part.supplier_code %}
+                                        <div class="small-muted">Kod dostawcy: {{ link.part.supplier_code }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ link.part.category|default:"-" }}</td>
+                                <td>{{ link.part.current_qty }} {{ link.part.unit }}</td>
+                                <td>{{ link.part.min_quantity }} {{ link.part.unit }}</td>
+                                <td>
+                                    {% if link.part.current_qty <= 0 %}
+                                        <span class="status-badge status-missing">BRAK</span>
+                                    {% elif link.part.below_minimum %}
+                                        <span class="status-badge status-low">NISKI STAN</span>
+                                    {% else %}
+                                        <span class="status-badge status-ok">OK</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-box">
+                    Brak części przypisanych do tego dostawcy.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h3>Kontakty</h3>
+
+            {% if contacts %}
+                {% for contact in contacts %}
+                    <div class="contact-card">
+                        <div class="contact-head">
+                            <span>{{ contact.name }}</span>
+                            {% if contact.is_main %}
+                                <span class="main-badge">GŁÓWNY</span>
+                            {% endif %}
+                        </div>
+
+                        <div><b>Typ:</b> {{ contact.get_contact_type_display }}</div>
+                        <div><b>Rola:</b> {{ contact.role|default:"-" }}</div>
+                        <div><b>Telefon:</b> {{ contact.phone|default:"-" }}</div>
+                        <div><b>Email:</b> {{ contact.email|default:"-" }}</div>
+
+                        {% if contact.notes %}
+                            <div class="small-muted" style="margin-top:8px;">{{ contact.notes }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-box">
+                    Brak kontaktów dla tego dostawcy.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div id="contactModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Dodaj kontakt</h3>
+            <button type="button" class="modal-close" onclick="closeContactModal()">×</button>
+        </div>
+
+        <form method="post" action="{% url 'maintenance:supplier-contact-add' supplier.id %}">
+            {% csrf_token %}
+
+            <div class="modal-form-grid">
+                <div class="form-row">
+                    <label for="id_name">Imię i nazwisko</label>
+                    <input type="text" name="name" id="id_name" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_role">Rola</label>
+                    <input type="text" name="role" id="id_role">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_contact_type">Typ kontaktu</label>
+                    <select name="contact_type" id="id_contact_type" required>
+                        <option value="general">General</option>
+                        <option value="sales">Sales</option>
+                        <option value="service">Service</option>
+                        <option value="parts">Parts</option>
+                        <option value="complaint">Complaint</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="id_phone">Telefon</label>
+                    <input type="text" name="phone" id="id_phone">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_email">Email</label>
+                    <input type="email" name="email" id="id_email">
+                </div>
+
+                <div class="form-row">
+                    <label for="id_notes">Notatki</label>
+                    <textarea name="notes" id="id_notes" rows="4"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="is_main" id="id_is_main">
+                        Główny kontakt
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn">Zapisz</button>
+                <button type="button" class="btn" onclick="closeContactModal()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    function openContactModal() {
+        document.getElementById("contactModal").style.display = "flex";
+    }
+
+    function closeContactModal() {
+        document.getElementById("contactModal").style.display = "none";
+        document.querySelector("#contactModal form").reset();
+    }
+
+    window.addEventListener("mousedown", function(e) {
+        const modal = document.getElementById("contactModal");
+        if (e.target === modal) {
+            closeContactModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeContactModal();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Plan produkcji — tydzień {{ week }} | PAKER
+{% endblock %}
+
+{% block page_title %}
+    Produkcja
+{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/production.css' %}"
+>
+<link
+    rel="stylesheet"
+    href="{% static 'css/production/weekly_plan.css' %}"
+>
+{% endblock %}
+
+
+{% block content %}
+
+<div
+    class="weekly-plan-page"
+    data-weekly-plan
+    data-year="{{ year }}"
+    data-week="{{ week }}"
+    data-move-url="{% url 'modern_production:weekly-plan-move' year week %}"
+>
+
+
+    <!-- =================================================== -->
+    <!-- HEADER                                              -->
+    <!-- =================================================== -->
+
+    <header class="weekly-plan-header">
+
+        <div>
+
+            <a
+                href="{% url 'modern_production:production-menu' %}"
+                class="production-back-link"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Produkcja
+            </a>
+
+
+            <div class="production-eyebrow">
+                Plan produkcji
+            </div>
+
+
+            <div class="weekly-plan-title-row">
+
+                <h1>
+                    Tydzień {{ week }}
+                </h1>
+
+                <span class="weekly-plan-date-range">
+                    {{ week_start|date:"d.m" }}
+                    –
+                    {{ week_end|date:"d.m.Y" }}
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="weekly-plan-header__actions">
+
+            <a
+                href="{% url 'modern_production:weekly-plan' previous_week.year previous_week.week %}"
+                class="weekly-plan-nav-button"
+                title="Poprzedni tydzień"
+            >
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+
+
+            <a
+                href="{% url 'modern_production:planning' %}"
+                class="app-btn app-btn-secondary"
+            >
+                Dzisiaj
+            </a>
+
+
+            <a
+                href="{% url 'modern_production:weekly-plan' next_week.year next_week.week %}"
+                class="weekly-plan-nav-button"
+                title="Następny tydzień"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+
+            {% if perms.production.change_weeklyplan %}
+
+                <button
+                    type="button"
+                    class="app-btn app-btn-primary"
+                    id="generateWeeklyPlan"
+                >
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    Generuj plan
+                </button>
+
+            {% endif %}
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================== -->
+    <!-- UNASSIGNED                                          -->
+    <!-- =================================================== -->
+
+    <section class="weekly-unassigned">
+
+        <div class="weekly-unassigned__header">
+
+            <div>
+
+                <div class="weekly-unassigned__title">
+
+                    <h2>
+                        Niezaplanowane
+                    </h2>
+
+                    <span>
+                        {{ unassigned_count }}
+                    </span>
+
+                </div>
+
+                <p>
+                    Przeciągnij operację na wybrany dzień i stanowisko
+                </p>
+
+            </div>
+
+
+            <div class="weekly-unassigned__tools">
+
+                <div class="weekly-plan-search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="unassignedSearch"
+                        placeholder="Numer, klient, stanowisko..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+                <label class="weekly-plan-filter">
+
+                    <input
+                        type="checkbox"
+                        id="priorityOnly"
+                    >
+
+                    <span>
+                        Tylko priorytetowe
+                    </span>
+
+                </label>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="weekly-unassigned__list"
+            id="weeklyUnassignedList"
+            data-unassigned-lane
+        >
+
+            {% for unit in unassigned_units %}
+
+                <article
+                    class="
+                        weekly-task-card
+                        weekly-task-card--unassigned
+
+                        {% if unit.production_order.priority %}
+                            weekly-task-card--priority
+                        {% endif %}
+                    "
+                    data-unit-card
+                    data-unit-id="{{ unit.id }}"
+                    data-priority="{% if unit.production_order.priority %}1{% else %}0{% endif %}"
+                    data-search="
+                        {{ unit.production_order.id_number }}
+                        {{ unit.production_order.customer }}
+                        {{ unit.work_station }}
+                    "
+                >
+
+                    <div class="weekly-task-card__top">
+
+                        <span class="weekly-task-card__station">
+                            {{ unit.work_station }}
+                        </span>
+
+                        {% if unit.production_order.priority %}
+
+                            <span class="weekly-task-card__priority">
+                                <i class="fa-solid fa-fire"></i>
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <strong class="weekly-task-card__order">
+                        {{ unit.production_order.id_number }}
+                    </strong>
+
+
+                    <span class="weekly-task-card__customer">
+                        {{ unit.production_order.customer }}
+                    </span>
+
+
+                    <div class="weekly-task-card__meta">
+
+                        {% if unit.estimated_time %}
+
+                            <span>
+                                <i class="fa-regular fa-clock"></i>
+                                {{ unit.estimated_time }} min
+                            </span>
+
+                        {% else %}
+
+                            <span class="weekly-task-card__warning">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                Brak czasu
+                            </span>
+
+                        {% endif %}
+
+
+                        <span>
+                            Op. {{ unit.sequence }}
+                        </span>
+
+                    </div>
+
+                </article>
+
+            {% empty %}
+
+                <div class="weekly-plan-empty">
+                    Wszystkie operacje są zaplanowane.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- PLAN BOARD                                          -->
+    <!-- =================================================== -->
+
+    <section class="weekly-board-wrapper">
+
+        <div class="weekly-board">
+
+
+            <!-- TOP LEFT -->
+
+            <div class="
+                weekly-board__corner
+                weekly-board__sticky
+            ">
+
+                <span>
+                    Stanowisko
+                </span>
+
+            </div>
+
+
+            <!-- DAY HEADERS -->
+
+            {% for day in days %}
+
+                <div
+                    class="
+                        weekly-day-header
+
+                        {% if day.is_today %}
+                            weekly-day-header--today
+                        {% endif %}
+                    "
+                >
+
+                    <span class="weekly-day-header__name">
+                        {{ day.label }}
+                    </span>
+
+                    <strong>
+                        {{ day.date|date:"d.m" }}
+                    </strong>
+
+                    {% if day.is_today %}
+
+                        <small>
+                            Dzisiaj
+                        </small>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+
+            <!-- ================================================= -->
+            <!-- STATION ROWS                                      -->
+            <!-- ================================================= -->
+
+            {% for row in station_rows %}
+
+
+                <!-- STATION INFO -->
+
+                <div class="
+                    weekly-station-cell
+                    weekly-board__sticky
+                ">
+
+                    <div>
+
+                        <span>
+                            Stanowisko
+                        </span>
+
+                        <strong>
+                            {{ row.station.name }}
+                        </strong>
+
+                    </div>
+
+
+                    <a
+                        href="{% url 'modern_production:workstation-details' row.station.id %}"
+                        class="weekly-station-link"
+                        title="Otwórz stanowisko"
+                    >
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+
+                </div>
+
+
+                <!-- DAYS -->
+
+                {% for column in row.days %}
+
+                    <div
+                        class="
+                            weekly-lane
+
+                            {% if column.day.is_today %}
+                                weekly-lane--today
+                            {% endif %}
+
+                            {% if column.is_overloaded %}
+                                weekly-lane--overloaded
+                            {% endif %}
+                        "
+                        data-plan-lane
+                        data-station-id="{{ row.station.id }}"
+                        data-date="{{ column.day.date|date:'Y-m-d' }}"
+                    >
+
+
+                        <!-- LANE HEADER -->
+
+                        <div class="weekly-lane__header">
+
+                            <div class="weekly-lane__load">
+
+                                <strong>
+                                    {{ column.occupied_minutes }}
+                                    /
+                                    {{ column.capacity_minutes }}
+                                    min
+                                </strong>
+
+                                <span>
+                                    {{ column.occupancy_percent }}%
+                                </span>
+
+                            </div>
+
+
+                            <div class="weekly-load-bar">
+
+                                <div
+                                    class="
+                                        weekly-load-bar__value
+
+                                        {% if column.is_overloaded %}
+                                            weekly-load-bar__value--overloaded
+                                        {% endif %}
+                                    "
+                                    style="
+                                        width:
+                                        {% if column.occupancy_percent > 100 %}
+                                            100%
+                                        {% else %}
+                                            {{ column.occupancy_percent }}%
+                                        {% endif %}
+                                    "
+                                ></div>
+
+                            </div>
+
+
+                            {% if column.is_overloaded %}
+
+                                <span class="weekly-lane__overload">
+
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+
+                                    +{{ column.overload_minutes }} min
+
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <!-- TASKS -->
+
+                        <div
+                            class="weekly-lane__tasks"
+                            data-lane-tasks
+                        >
+
+                            {% for task in column.tasks %}
+
+                                <article
+                                    class="
+                                        weekly-task-card
+
+                                        {% if task.production_unit.production_order.priority %}
+                                            weekly-task-card--priority
+                                        {% endif %}
+                                    "
+                                    data-task-card
+                                    data-task-id="{{ task.id }}"
+                                    data-unit-id="{{ task.production_unit_id }}"
+                                >
+
+                                    <div class="weekly-task-card__top">
+
+                                        <span class="weekly-task-card__time">
+
+                                            {{ task.start|date:"H:i" }}
+                                            –
+                                            {{ task.end|date:"H:i" }}
+
+                                        </span>
+
+
+                                        {% if task.production_unit.production_order.priority %}
+
+                                            <span class="weekly-task-card__priority">
+                                                <i class="fa-solid fa-fire"></i>
+                                            </span>
+
+                                        {% endif %}
+
+                                    </div>
+
+
+                                    <a
+                                        href="{% url 'modern_production:unit-details' task.production_unit.id %}"
+                                        class="weekly-task-card__order"
+                                    >
+                                        {{ task.production_unit.production_order.id_number }}
+                                    </a>
+
+
+                                    <span class="weekly-task-card__customer">
+                                        {{ task.production_unit.production_order.customer }}
+                                    </span>
+
+
+                                    <div class="weekly-task-card__meta">
+
+                                        <span>
+                                            <i class="fa-regular fa-clock"></i>
+
+                                            {% if task.production_unit.estimated_time %}
+                                                {{ task.production_unit.estimated_time }} min
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </span>
+
+
+                                        <span>
+                                            Op. {{ task.production_unit.sequence }}
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="weekly-task-card__persons">
+
+                                        {% for person in task.persons.all %}
+
+                                            <span>
+                                                {{ person.first_name|first }}{{ person.last_name|first }}
+                                            </span>
+
+                                        {% empty %}
+
+                                            <span class="weekly-task-card__no-person">
+                                                Brak obsady
+                                            </span>
+
+                                        {% endfor %}
+
+                                    </div>
+
+
+                                    {% if perms.production.change_weeklyplan %}
+
+                                        <button
+                                            type="button"
+                                            class="weekly-task-card__remove"
+                                            data-remove-task
+                                            data-remove-url="{% url 'modern_production:weekly-plan-remove' year week task.id %}"
+                                            title="Usuń z planu"
+                                        >
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+
+                                    {% endif %}
+
+                                </article>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script
+    src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
+></script>
+
+<script
+    src="{% static 'js/production/weekly_plan.js' %}"
+></script>
+
+{% endblock %}

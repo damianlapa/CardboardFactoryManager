@@ -5,7 +5,7 @@ import datetime
 import re
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import OuterRef, Subquery, IntegerField, Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
@@ -34,12 +34,14 @@ WAREHOUSE_MAIN = "MAGAZYN GŁÓWNY"
 WAREHOUSE_FG = "MAGAZYN WYROBÓW GOTOWYCH"
 WAREHOUSE_AUX = "MAGAZYN MATERIAŁÓW POMOCNICZYCH"
 WAREHOUSE_CLEARANCE = "MAGAZYN WYPRZEDAŻOWY"
+WAREHOUSE_MAINTENANCE = "MAGAZYN CZĘŚCI"
 
 WAREHOUSE_NAMES = [
     WAREHOUSE_MAIN,
     WAREHOUSE_FG,
     WAREHOUSE_AUX,
     WAREHOUSE_CLEARANCE,
+    WAREHOUSE_MAINTENANCE,
 ]
 
 # Jeśli u Ciebie tektura ma inny typ niż "material", zmień tutaj (w jednym miejscu).
@@ -89,6 +91,7 @@ def supplies_value_at_date_for_keys(
       - debug_supply: supply_id -> szczegóły obliczeń
       - qty_map: (stock_type_id, name) -> remaining_qty_at_date  (sumarycznie po partiach)
     """
+
     if not keys:
         return {}, {}, {}
 
@@ -116,6 +119,20 @@ def supplies_value_at_date_for_keys(
         )
     }
 
+    from maintenance.models import MaintenancePartUsageSupply
+    maintenance_map = {
+        row["stock_supply_id"]: int(row["s"] or 0)
+        for row in (
+            MaintenancePartUsageSupply.objects
+            .filter(
+                stock_supply_id__in=supply_ids,
+                usage__event__date__lte=date_point
+            )
+            .values("stock_supply_id")
+            .annotate(s=Sum("quantity"))
+        )
+    }
+
     sold_map = {
         row["stock_supply_id"]: int(row["s"] or 0)
         for row in (
@@ -137,7 +154,8 @@ def supplies_value_at_date_for_keys(
 
         settled = settled_map.get(s.id, 0)
         sold = sold_map.get(s.id, 0)
-        used = settled + sold
+        maintenance_used = maintenance_map.get(s.id, 0)
+        used = settled + sold + maintenance_used
 
         overused = used > qty
         remaining_raw = qty - used  # może być ujemne
@@ -182,7 +200,8 @@ def supplies_value_at_date_for_keys(
     return value_map, debug_supply, qty_map
 
 
-class MonthlyWarehouseReportView(LoginRequiredMixin, View):
+class MonthlyWarehouseReportView(PermissionRequiredMixin, View):
+    permission_required = "warehouse.add_month_result"
     template_name = "warehouse/monthly_report.html"
 
     def _parse_year_month(self, request) -> tuple[int, int]:

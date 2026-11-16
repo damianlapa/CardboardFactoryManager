@@ -7,6 +7,7 @@
 {% block content %}
   <h1>
     Delivery # {{ delivery.number }} {{ delivery }}
+    {% if perms.warehouse.delete_delivery %}
     {% if delivery.processed %}
       <span class="processed-label">PROCESSED</span>
     {% else %}
@@ -25,6 +26,7 @@
     <a href="{% url 'warehouse:delivery-edit' delivery_id=delivery.id %}" id="edit-link">
           <button type="button" class="process-button" id="edit-button">Edit</button>
     </a>
+    {% endif %}
   </h1>
 
   <table>
@@ -37,8 +39,10 @@
         <th>Dimensions</th>
         <th>Quantity</th>
         <th>Palettes quantity</th>
+        {% if perms.warehouse.delete_delivery %}
         <th>Processed</th>
         <th>Action</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -51,6 +55,7 @@
         <td>{{ item.order.dimensions }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.palettes_quantity }}</td>
+        {% if perms.warehouse.delete_delivery %}
         <td>{% if item.processed %}✅{% else %}
           <a href="{% url 'warehouse:process-delivery-item' delivery_id=delivery.id item_id=item.id %}">
           ⬇️
@@ -71,6 +76,7 @@
     <span style="color:#888;">—</span>
   {% endif %}
 </td>
+         {% endif %}
       </tr>
       {% empty %}
       <tr>
