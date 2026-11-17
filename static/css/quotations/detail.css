@@ -1,0 +1,248 @@
+.quotation-detail { display: grid; gap: 20px; min-width: 0; color: var(--app-text); }
+.quotation-detail .qt-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.quotation-detail .qt-header > div { min-width: 0; }
+.quotation-detail .qt-back { display: inline-block; margin-bottom: 14px; color: var(--app-text-secondary); font-size: 12px; text-decoration: none; }
+.quotation-detail .qt-back:hover { color: var(--app-primary); }
+.quotation-detail .qt-description { margin: 7px 0 0; font-size: 13px; color: var(--app-text-secondary); overflow-wrap: anywhere; }
+.quotation-detail .qt-items { min-width: 0; overflow: hidden; }
+.quotation-detail .qt-hint { color: var(--app-text-secondary); font-size: 11px; line-height: 1.6; }
+.quotation-detail .app-card__header { flex-wrap: wrap; }
+.quotation-detail .qt-table-wrap { overflow: auto; max-height: 70vh; }
+.quotation-detail .qt-table { width: 100%; min-width: 1940px; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 12px; }
+.quotation-detail .qt-table th,
+.quotation-detail .qt-table td { padding: 10px 8px; border-bottom: 1px solid var(--app-border); vertical-align: top; }
+.quotation-detail .qt-table thead th { position: sticky; top: 0; z-index: 1; background: var(--app-surface-hover); color: var(--app-text-secondary); font-size: 10px; text-transform: uppercase; letter-spacing: .025em; }
+.quotation-detail .qt-table thead th:nth-child(1) { width: 55px; }
+.quotation-detail .qt-table thead th:nth-child(2) { width: 150px; }
+.quotation-detail .qt-table thead th:nth-child(3),
+.quotation-detail .qt-table thead th:nth-child(4),
+.quotation-detail .qt-table thead th:nth-child(5) { width: 90px; }
+.quotation-detail .qt-table thead th:nth-child(6) { width: 115px; }
+.quotation-detail .qt-table thead th:nth-child(7) { width: 265px; }
+.quotation-detail .qt-table thead th:nth-child(8) { width: 125px; }
+.quotation-detail .qt-table thead th:nth-child(9) { width: 205px; }
+.quotation-detail .qt-table thead th:nth-child(10) { width: 145px; }
+.quotation-detail .qt-table thead th:nth-child(11) { width: 150px; }
+.quotation-detail .qt-table thead th:nth-child(12) { width: 155px; }
+.quotation-detail input:not([type=hidden]),
+.quotation-detail select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 7px 8px; border: 1px solid var(--app-border-strong); border-radius: var(--app-radius-sm); background: var(--app-surface); color: var(--app-text); font: inherit; }
+.quotation-detail .qt-cell-button { width: 100%; min-height: 38px; padding: 8px; border: 1px solid var(--app-border-strong); border-radius: var(--app-radius-sm); background: var(--app-primary-soft); color: var(--app-primary); font: inherit; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.quotation-detail .qt-cell-button:hover { border-color: var(--app-primary); }
+.quotation-detail .qt-sheet { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 4px; }
+.quotation-detail .qt-lp { text-align: center; }
+.quotation-detail .qt-remove { padding: 2px 7px; border: 0; border-radius: var(--app-radius-sm); background: transparent; color: var(--app-danger); font-size: 20px; cursor: pointer; }
+.quotation-detail .qt-legacy { display: block; margin-top: 5px; color: var(--app-text-secondary); font-size: 10px; }
+.quotation-detail .qt-row-errors td,
+.quotation-detail .qt-error { padding: 12px 16px; color: var(--app-danger); font-size: 12px; }
+.quotation-detail .qt-row-errors .errorlist { margin: 4px 0; }
+.quotation-detail .qt-empty { padding: 30px 16px; margin: 0; text-align: center; font-size: 12px; color: var(--app-text-secondary); }
+.quotation-detail .qt-footer { display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; padding: 16px; border-top: 1px solid var(--app-border); font-size: 11px; color: var(--app-text-secondary); }
+.quotation-detail .qt-modal { box-sizing: border-box; width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 40px); padding: 22px; overflow: auto; border: 1px solid var(--app-border); border-radius: var(--app-radius-lg); background: var(--app-surface); color: var(--app-text); }
+.quotation-detail .qt-modal::backdrop { background: rgba(15,23,42,.5); }
+.quotation-detail .qt-modal header,
+.quotation-detail .qt-modal footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.quotation-detail .qt-modal footer { margin: 18px 0 0; justify-content: flex-end; }
+.quotation-detail .qt-modal h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.quotation-detail .qt-modal header button { border: 0; background: transparent; color: var(--app-text-secondary); font-size: 26px; }
+.quotation-detail .qt-modal label { display: block; margin-bottom: 6px; font-size: 12px; }
+.quotation-detail .qt-search { display: flex; gap: 8px; }
+.quotation-detail .qt-material-results { display: grid; gap: 8px; max-height: 45vh; overflow-y: auto; }
+.quotation-detail .qt-material-choice { display: grid; gap: 5px; padding: 12px; border: 1px solid var(--app-border); border-radius: var(--app-radius-sm); background: var(--app-surface); color: var(--app-text); text-align: left; cursor: pointer; }
+.quotation-detail .qt-material-choice:hover { border-color: var(--app-primary); background: var(--app-primary-soft); }
+.quotation-detail .qt-material-choice strong { font-size: 12px; overflow-wrap: anywhere; }
+.quotation-detail .qt-material-choice span,
+.quotation-detail #materialStatus,
+.quotation-detail #workStatus { color: var(--app-text-secondary); font-size: 11px; }
+.quotation-detail .qt-work-table { overflow-x: auto; margin-bottom: 14px; }
+.quotation-detail .qt-work-table table { width: 100%; min-width: 500px; border-collapse: collapse; }
+.quotation-detail .qt-work-table td,
+.quotation-detail .qt-work-table th { padding: 7px; font-size: 12px; }
+.quotation-detail .qt-work-table th:first-child { width: 50%; }
+.quotation-detail :is(input,select,button,a,[tabindex]):focus-visible { outline: 2px solid var(--app-primary); outline-offset: 3px; }
+.quotation-detail button:disabled { opacity: .5; cursor: not-allowed; }
+@media(max-width:600px) {
+    .quotation-detail .qt-header { align-items: stretch; flex-direction: column; gap: 14px; }
+    .quotation-detail .qt-modal { padding: 16px; }
+    .quotation-detail .qt-footer { align-items: stretch; flex-direction: column; }
+}
+/* Cała tabela w szerokości ekranu */
+.quotation-detail .qt-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+}
+
+.quotation-detail .qt-table th,
+.quotation-detail .qt-table td {
+    padding: 10px 4px;
+    overflow-wrap: anywhere;
+}
+
+.quotation-detail .qt-table thead th {
+    font-size: 9px;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+/* Szerokości kolumn — razem 100% */
+.quotation-detail .qt-table thead th:nth-child(1)  { width: 3%; }
+.quotation-detail .qt-table thead th:nth-child(2)  { width: 10%; }
+.quotation-detail .qt-table thead th:nth-child(3)  { width: 5%; }
+.quotation-detail .qt-table thead th:nth-child(4)  { width: 5%; }
+.quotation-detail .qt-table thead th:nth-child(5)  { width: 5%; }
+.quotation-detail .qt-table thead th:nth-child(6)  { width: 7%; }
+.quotation-detail .qt-table thead th:nth-child(7)  { width: 16%; }
+.quotation-detail .qt-table thead th:nth-child(8)  { width: 7%; }
+.quotation-detail .qt-table thead th:nth-child(9)  { width: 12%; }
+.quotation-detail .qt-table thead th:nth-child(10) { width: 9%; }
+.quotation-detail .qt-table thead th:nth-child(11) { width: 10%; }
+.quotation-detail .qt-table thead th:nth-child(12) { width: 11%; }
+
+/* Mniejsze pola tylko w tabeli pozycji */
+.quotation-detail .qt-table input:not([type="hidden"]),
+.quotation-detail .qt-table select {
+    min-width: 0;
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 3px;
+    font-size: 11px;
+}
+
+.quotation-detail .qt-cell-button {
+    min-width: 0;
+    padding: 7px 4px;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: normal;
+}
+
+/* Arkusz: dwa pola obok siebie */
+.quotation-detail .qt-sheet {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 2px;
+    font-size: 10px;
+}
+
+/* Ukrycie strzałek zwiększa miejsce na liczby */
+.quotation-detail .qt-table input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.quotation-detail .qt-table input[type="number"]::-webkit-inner-spin-button,
+.quotation-detail .qt-table input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quotation-detail .qt-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .quotation-detail .qt-header-actions {
+        justify-content: stretch;
+    }
+
+    .quotation-detail .qt-header-actions .app-btn {
+        flex: 1;
+    }
+}
+
+.quotation-detail .qt-material-filters {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.quotation-detail .qt-filter-field {
+    min-width: 0;
+}
+
+.quotation-detail .qt-flute-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.quotation-detail .qt-flute {
+    min-width: 40px;
+    min-height: 36px;
+    padding: 7px 11px;
+
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+    font-weight: 650;
+
+    cursor: pointer;
+}
+
+.quotation-detail .qt-flute:hover {
+    border-color: var(--app-primary);
+    color: var(--app-primary);
+}
+
+.quotation-detail .qt-flute.is-active {
+    border-color: var(--app-primary);
+    background: var(--app-primary);
+    color: #fff;
+}
+
+.quotation-detail .qt-gsm-field {
+    width: 150px;
+}
+
+.quotation-detail .qt-hours-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 30px;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.quotation-detail .qt-hours-calculator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.quotation-detail .qt-hours-calculator:hover {
+    border-color: var(--app-primary);
+}
+
+.quotation-detail .qt-hours-control.is-manual input {
+    border-color: var(--app-warning);
+}
+
+.quotation-detail .qt-hours-note {
+    margin-top: 5px;
+    color: var(--app-warning);
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+.quotation-detail .qt-hours-note:not([hidden]) {
+    display: block;
+}

@@ -51,7 +51,7 @@ class Quotation(models.Model):
     )
     date = models.DateField(
         "Data wyceny",
-        default=datetime.date.today(),
+        default=datetime.date.today,
     )
 
     class Meta:
@@ -64,56 +64,47 @@ class Quotation(models.Model):
 
 
 class QuotationItem(models.Model):
-    quotation = models.ForeignKey(
-        Quotation,
-        on_delete=models.CASCADE,
-        related_name="items",
-        verbose_name="Wycena",
-    )
-    packaging_type = models.ForeignKey(
-        FefcoType,
-        on_delete=models.PROTECT,
-        related_name="quotation_items",
-        verbose_name="Typ opakowania FEFCO",
-    )
-    width = models.PositiveIntegerField(
-        "Szerokość W (mm)", null=True, blank=True
-    )
-    length = models.PositiveIntegerField(
-        "Długość L (mm)", null=True, blank=True
-    )
-    height = models.PositiveIntegerField(
-        "Wysokość H (mm)", null=True, blank=True
-    )
+    quotation = models.ForeignKey("Quotation", on_delete=models.CASCADE, related_name="items", verbose_name="Wycena")
+    packaging_type = models.ForeignKey("FefcoType", on_delete=models.PROTECT, related_name="quotation_items", verbose_name="Typ FEFCO")
+    width = models.PositiveIntegerField("W (mm)")
+    length = models.PositiveIntegerField("L (mm)")
+    height = models.PositiveIntegerField("H (mm)")
+    quantity = models.PositiveIntegerField("Ilość sztuk", default=0)
     material = models.ForeignKey(
-        "warehouse.PriceListItem",
+        "orders.CardboardPriceListItem",
         on_delete=models.PROTECT,
         related_name="quotation_items",
-        verbose_name="Materiał z cennika",
+        verbose_name="Materiał",
     )
-    hours = models.DecimalField(
-        "Liczba godzin",
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal("0.00"),
-        validators=[MinValueValidator(Decimal("0.00"))],
+    products_per_sheet = models.PositiveIntegerField("Produktów z arkusza", default=1, validators=[MinValueValidator(1)])
+    sheet_width = models.PositiveIntegerField("Szerokość arkusza (mm)", default=0)
+    sheet_length = models.PositiveIntegerField("Długość arkusza (mm)", default=0)
+    material_price = models.DecimalField("Cena za materiał", max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))])
+    # Zachowane stare pole: istniejące dane nie są usuwane ani przeliczane.
+    hours = models.DecimalField("Dotychczasowe godziny", max_digits=10, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))])
+    hours_manual = models.BooleanField(
+        "Godziny wpisane ręcznie",
+        default=False,
     )
-    price = models.DecimalField(
-        "Cena",
-        max_digits=12,
-        decimal_places=2,
-        default=Decimal("0.00"),
-        validators=[MinValueValidator(Decimal("0.00"))],
-    )
+    price = models.DecimalField("Końcowa cena opakowania", max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))])
 
     class Meta:
+        ordering = ["pk"]
         verbose_name = "Pozycja wyceny"
         verbose_name_plural = "Pozycje wyceny"
-        ordering = ["pk"]
 
     def __str__(self):
-        return (
-            f"{self.packaging_type} | "
-            f"{self.width} × {self.length} × {self.height} mm | "
-            f"{self.material}"
-        )
+        return f"{self.packaging_type} | {self.width} × {self.length} × {self.height}"
+
+
+class QuotationWorkEntry(models.Model):
+    item = models.ForeignKey(QuotationItem, on_delete=models.CASCADE, related_name="work_entries")
+    work_station = models.ForeignKey("production.WorkStation", on_delete=models.PROTECT, verbose_name="Stanowisko")
+    employees = models.PositiveIntegerField("Liczba pracowników", default=1, validators=[MinValueValidator(1)])
+    hours = models.DecimalField("Liczba godzin", max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
+
+    class Meta:
+        ordering = ["pk"]
+        verbose_name = "Wpis godzin wyceny"
+        verbose_name_plural = "Wpisy godzin wyceny"
+

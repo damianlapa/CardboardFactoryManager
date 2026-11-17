@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dodaj pozycję | Wycena #{{ quotation.pk }} | PAKER{% endblock %}
+{% block page_title %}Dodaj pozycję wyceny{% endblock %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/quotations/item_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="quotation-item-form">
+    <header class="qi-header">
+        <a class="qi-back" href="{% url 'quotations:detail' quotation.pk %}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Wycena #{{ quotation.pk }}</a>
+        <h1 class="app-page-title">Dodaj pozycję wyceny</h1>
+        <p class="qi-description">{{ quotation.customer.name }} · {{ quotation.date|date:"d.m.Y" }}</p>
+    </header>
+
+    {% if not has_fefco_types or not has_materials %}
+    <div class="qi-notice" role="status">
+        <strong>Uzupełnij dane do wyboru</strong>
+        {% if not has_fefco_types %}<p>Katalog FEFCO jest pusty. Przed zapisem pozycji dodaj typy opakowań.</p>{% endif %}
+        {% if not has_materials %}<p>Brak materiałów w cennikach. Przed zapisem pozycji dodaj pozycje cennika materiałów.</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <section class="app-card qi-card" aria-labelledby="qi-form-heading">
+        <div class="app-card__header"><h2 class="app-card__title" id="qi-form-heading">Dane opakowania</h2></div>
+        <form method="post" action="{% url 'quotations:item_create' quotation.pk %}">
+            {% csrf_token %}
+            <div class="qi-body">
+                {% if form.errors %}
+                <div class="qi-error-summary" role="alert"><strong>Sprawdź dane formularza.</strong>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+                {% endif %}
+                <div class="qi-field">
+                    <label for="{{ form.packaging_type.id_for_label }}">{{ form.packaging_type.label }}</label>
+                    {{ form.packaging_type }}
+                    <div class="qi-errors" id="id_packaging_type_errors">{% for error in form.packaging_type.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+                <fieldset class="qi-dimensions">
+                    <legend>Wymiary W × L × H</legend>
+                    <div class="qi-dimension-grid">
+                        {% for field in form %}{% if field.name == 'width' or field.name == 'length' or field.name == 'height' %}
+                        <div class="qi-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}<div class="qi-errors" id="id_{{ field.name }}_errors">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div></div>
+                        {% endif %}{% endfor %}
+                    </div>
+                </fieldset>
+                <div class="qi-field">
+                    <label for="{{ form.material.id_for_label }}">{{ form.material.label }}</label>
+                    {{ form.material }}
+                    <p class="qi-help">Materiały ze wszystkich cenników. Na liście podano dostawcę i daty cennika.</p>
+                    <div class="qi-errors" id="id_material_errors">{% for error in form.material.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+                <div class="qi-values">
+                    <div class="qi-field"><label for="{{ form.hours.id_for_label }}">{{ form.hours.label }}</label>{{ form.hours }}<div class="qi-errors" id="id_hours_errors">{% for error in form.hours.errors %}<p>{{ error }}</p>{% endfor %}</div></div>
+                    <div class="qi-field"><label for="{{ form.price.id_for_label }}">{{ form.price.label }}</label>{{ form.price }}<div class="qi-errors" id="id_price_errors">{% for error in form.price.errors %}<p>{{ error }}</p>{% endfor %}</div></div>
+                </div>
+                <p class="qi-help">Godziny i cenę wpisujesz ręcznie. Wszystkie pola są wymagane.</p>
+            </div>
+            <footer class="qi-footer">
+                <a class="app-btn app-btn-secondary" href="{% url 'quotations:detail' quotation.pk %}">Anuluj</a>
+                <button class="app-btn app-btn-primary" type="submit"{% if not has_fefco_types or not has_materials %} disabled{% endif %}><i class="fa-solid fa-check" aria-hidden="true"></i> Dodaj pozycję</button>
+            </footer>
+        </form>
+    </section>
+</div>
+{% endblock %}

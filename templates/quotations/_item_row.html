@@ -1,0 +1,40 @@
+<tr data-item>
+    <td class="qt-lp">{{ form.id }}{{ form.quotation }}<span data-number></span>{% if not form.instance.pk %}<button type="button" class="qt-remove" data-remove aria-label="Usuń niezapisaną pozycję">×</button>{% endif %}</td>
+    <td>{{ form.packaging_type }}</td><td>{{ form.width }}</td><td>{{ form.length }}</td><td>{{ form.height }}</td><td>{{ form.quantity }}</td>
+    <td>{{ form.material }}<button type="button" class="qt-cell-button" data-material>{{ form.material_label|default:"Wybierz materiał" }}</button></td>
+    <td>{{ form.products_per_sheet }}</td>
+    <td><div class="qt-sheet">{{ form.sheet_width }}<span aria-hidden="true">×</span>{{ form.sheet_length }}</div></td>
+    <td>{{ form.material_price }}</td>
+    <td>
+    {{ form.work_entries }}
+    {{ form.hours_manual }}
+
+    <div class="qt-hours-control">
+        {{ form.hours }}
+
+        <button
+            type="button"
+            class="qt-hours-calculator"
+            data-work
+            aria-label="Otwórz kalkulator godzin"
+            title="Kalkulator godzin"
+        >
+            <i
+                class="fa-solid fa-calculator"
+                aria-hidden="true"
+            ></i>
+        </button>
+    </div>
+
+    <small
+        class="qt-hours-note"
+        data-hours-note
+        aria-live="polite"
+        hidden
+    >
+        Wpisano ręcznie
+    </small>
+</td>
+    <td>{{ form.price }}</td>
+</tr>
+{% if form.errors %}<tr class="qt-row-errors"><td colspan="12"><strong>Błędy pozycji:</strong>{{ form.errors }}</td></tr>{% endif %}

@@ -1,0 +1,34 @@
+.quotation-create { display: grid; gap: 20px; max-width: 820px; color: var(--app-text); }
+.quotation-create .qc-header { padding: 6px 0 2px; }
+.quotation-create .qc-back { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 14px; color: var(--app-text-secondary); font-size: 12px; text-decoration: none; }
+.quotation-create .qc-back:hover { color: var(--app-primary); }
+.quotation-create .qc-description { margin: 7px 0 0; color: var(--app-text-secondary); font-size: 13px; }
+.quotation-create .qc-card { min-width: 0; overflow: hidden; }
+.quotation-create .qc-body { display: grid; gap: 20px; padding: 22px; }
+.quotation-create .qc-field { display: grid; gap: 7px; min-width: 0; }
+.quotation-create .qc-field label { margin: 0; font-size: 12px; font-weight: 650; }
+.quotation-create .qc-field input,
+.quotation-create .qc-field select {
+    box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px;
+    padding: 9px 11px; border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-radius-sm); background: var(--app-surface);
+    color: var(--app-text); font-family: inherit; font-size: 13px;
+}
+.quotation-create .qc-field input::placeholder { color: var(--app-text-secondary); }
+.quotation-create .qc-field--date { max-width: 260px; }
+.quotation-create .qc-help { margin: 0; color: var(--app-text-secondary); font-size: 11px; line-height: 1.6; }
+.quotation-create .qc-required { color: var(--app-text-secondary); font-size: 11px; font-weight: 400; }
+.quotation-create .qc-errors { color: var(--app-danger); font-size: 12px; }
+.quotation-create .qc-errors:empty { display: none; }
+.quotation-create .qc-errors p { margin: 0; }
+.quotation-create .qc-error-summary { padding: 12px 14px; border: 1px solid var(--app-danger); border-radius: var(--app-radius-sm); color: var(--app-danger); font-size: 12px; }
+.quotation-create .qc-error-summary p { margin: 7px 0 0; }
+.quotation-create .qc-footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--app-border); background: var(--app-surface-hover); }
+.quotation-create .qc-footer .app-btn { min-height: 40px; }
+.quotation-create :is(input, select, a, button):focus-visible { outline: 2px solid var(--app-primary); outline-offset: 3px; }
+@media (max-width: 600px) {
+    .quotation-create .qc-body { padding: 16px; }
+    .quotation-create .qc-field--date { max-width: none; }
+    .quotation-create .qc-footer { padding: 14px 16px; }
+    .quotation-create .qc-footer .app-btn { flex: 1; }
+}

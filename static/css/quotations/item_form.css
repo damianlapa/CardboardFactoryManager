@@ -1,0 +1,35 @@
+.quotation-item-form { display: grid; gap: 20px; max-width: 960px; min-width: 0; color: var(--app-text); }
+.quotation-item-form .qi-header { min-width: 0; padding: 6px 0 2px; }
+.quotation-item-form .qi-back { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 14px; color: var(--app-text-secondary); font-size: 12px; text-decoration: none; }
+.quotation-item-form .qi-back:hover { color: var(--app-primary); }
+.quotation-item-form .qi-description { margin: 7px 0 0; color: var(--app-text-secondary); font-size: 13px; overflow-wrap: anywhere; }
+.quotation-item-form .qi-card { min-width: 0; overflow: hidden; }
+.quotation-item-form .qi-body { display: grid; gap: 20px; padding: 22px; }
+.quotation-item-form .qi-field { display: grid; gap: 7px; min-width: 0; }
+.quotation-item-form .qi-field label { margin: 0; font-size: 12px; font-weight: 650; }
+.quotation-item-form .qi-field input,
+.quotation-item-form .qi-field select { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--app-border-strong); border-radius: var(--app-radius-sm); background: var(--app-surface); color: var(--app-text); font-family: inherit; font-size: 13px; }
+.quotation-item-form .qi-dimensions { min-width: 0; margin: 0; padding: 0; border: 0; }
+.quotation-item-form .qi-dimensions legend { float: none; width: auto; margin: 0 0 12px; color: var(--app-text); font-size: 13px; font-weight: 700; }
+.quotation-item-form .qi-dimension-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.quotation-item-form .qi-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.quotation-item-form .qi-help { margin: 0; color: var(--app-text-secondary); font-size: 11px; line-height: 1.6; }
+.quotation-item-form .qi-errors { color: var(--app-danger); font-size: 12px; }
+.quotation-item-form .qi-errors:empty { display: none; }
+.quotation-item-form .qi-errors p { margin: 0; }
+.quotation-item-form .qi-error-summary { padding: 12px 14px; border: 1px solid var(--app-danger); border-radius: var(--app-radius-sm); color: var(--app-danger); font-size: 12px; }
+.quotation-item-form .qi-error-summary p { margin: 7px 0 0; }
+.quotation-item-form .qi-notice { padding: 14px 16px; border: 1px solid var(--app-warning); border-radius: var(--app-radius-md); background: var(--app-surface); font-size: 12px; }
+.quotation-item-form .qi-notice strong { color: var(--app-warning); }
+.quotation-item-form .qi-notice p { margin: 6px 0 0; color: var(--app-text-secondary); }
+.quotation-item-form .qi-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--app-border); background: var(--app-surface-hover); }
+.quotation-item-form .qi-footer .app-btn { min-height: 40px; }
+.quotation-item-form .qi-footer button:disabled { opacity: .55; cursor: not-allowed; }
+.quotation-item-form :is(input, select, a, button):focus-visible { outline: 2px solid var(--app-primary); outline-offset: 3px; }
+@media (max-width: 600px) {
+    .quotation-item-form .qi-body { padding: 16px; }
+    .quotation-item-form .qi-dimension-grid,
+    .quotation-item-form .qi-values { grid-template-columns: minmax(0, 1fr); }
+    .quotation-item-form .qi-footer { padding: 14px 16px; }
+    .quotation-item-form .qi-footer .app-btn { flex: 1; }
+}

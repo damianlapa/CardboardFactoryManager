@@ -36,6 +36,7 @@
     border-radius: var(--app-radius-md);
 }
 .quotation-dashboard .qd-header-icon { width: 52px; height: 52px; font-size: 22px; }
+.quotation-dashboard .qd-create-button { flex-shrink: 0; min-height: 40px; }
 .quotation-dashboard .qd-section-heading {
     display: flex;
     align-items: baseline;
@@ -91,7 +92,9 @@
 .quotation-dashboard .qd-table thead th { background: var(--app-surface-hover); color: var(--app-text-secondary); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .035em; }
 .quotation-dashboard .qd-table tbody tr:last-child > * { border-bottom: 0; }
 .quotation-dashboard .qd-table tbody tr:hover { background: var(--app-surface-hover); }
-.quotation-dashboard .qd-number { color: var(--app-primary); font-weight: 700; white-space: nowrap; }
+.quotation-dashboard .qd-number { display: inline-flex; align-items: center; gap: 7px; color: var(--app-primary); font-weight: 700; white-space: nowrap; text-decoration: none; }
+.quotation-dashboard .qd-number:hover { text-decoration: underline; }
+.quotation-dashboard .qd-number i { font-size: 9px; }
 .quotation-dashboard .qd-customer { max-width: 440px; overflow-wrap: anywhere; font-weight: 600; }
 .quotation-dashboard .qd-date { color: var(--app-text-secondary); white-space: nowrap; }
 .quotation-dashboard .qd-numeric { text-align: right; }
@@ -112,6 +115,8 @@
 }
 @media (max-width: 600px) {
     .quotation-dashboard { gap: 20px; }
+    .quotation-dashboard .qd-header { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .quotation-dashboard .qd-create-button { width: 100%; }
     .quotation-dashboard .qd-header-icon { display: none; }
     .quotation-dashboard .qd-kpis { gap: 10px; }
     .quotation-dashboard .qd-kpi { flex-direction: column; padding: 14px; gap: 10px; }

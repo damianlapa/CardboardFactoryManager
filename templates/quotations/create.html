@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Nowa wycena | PAKER{% endblock %}
+{% block page_title %}Nowa wycena{% endblock %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/quotations/create.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="quotation-create">
+    <header class="qc-header">
+        <div>
+            <a class="qc-back" href="{% url 'quotations:dashboard' %}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Centrum wycen</a>
+            <h1 class="app-page-title">Nowa wycena</h1>
+            <p class="qc-description">Wybierz firmę i ustal datę wyceny.</p>
+        </div>
+    </header>
+
+    <section class="app-card qc-card" aria-labelledby="qc-form-heading">
+        <div class="app-card__header"><h2 class="app-card__title" id="qc-form-heading">Dane wyceny</h2></div>
+        <form method="post" action="{% url 'quotations:create' %}">
+            {% csrf_token %}
+            <div class="qc-body">
+                {% if form.errors %}
+                <div class="qc-error-summary" role="alert">
+                    <strong>Sprawdź dane formularza.</strong>
+                    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="qc-field">
+                    <label for="{{ form.customer.id_for_label }}">{{ form.customer.label }}</label>
+                    {{ form.customer }}
+                    <p class="qc-help" id="id_customer_help">Wybierz istniejącą firmę lub wpisz nową poniżej.</p>
+                    <div class="qc-errors" id="id_customer_errors">{% for error in form.customer.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+
+                <div class="qc-field">
+                    <label for="{{ form.new_customer_name.id_for_label }}">{{ form.new_customer_name.label }}</label>
+                    {{ form.new_customer_name }}
+                    <p class="qc-help" id="id_new_customer_name_help">Uzupełnij tylko wtedy, gdy nie wybierasz firmy z listy. Firma zostanie dodana do klientów wycen.</p>
+                    <div class="qc-errors" id="id_new_customer_name_errors">{% for error in form.new_customer_name.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+
+                <div class="qc-field qc-field--date">
+                    <label for="{{ form.date.id_for_label }}">{{ form.date.label }} <span class="qc-required">(wymagane)</span></label>
+                    {{ form.date }}
+                    <div class="qc-errors" id="id_date_errors">{% for error in form.date.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+            </div>
+
+            <footer class="qc-footer">
+                <a class="app-btn app-btn-secondary" href="{% url 'quotations:dashboard' %}">Anuluj</a>
+                <button class="app-btn app-btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Utwórz wycenę</button>
+            </footer>
+        </form>
+    </section>
+</div>
+{% endblock %}

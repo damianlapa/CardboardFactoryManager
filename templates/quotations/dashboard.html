@@ -16,7 +16,9 @@
             <h1 class="app-page-title">Centrum wycen</h1>
             <p class="qd-description">Klienci, wyceny i opakowania w jednym miejscu.</p>
         </div>
-        <span class="qd-header-icon" aria-hidden="true"><i class="fa-solid fa-calculator"></i></span>
+        <a class="app-btn app-btn-primary qd-create-button" href="{% url 'quotations:create' %}">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Nowa wycena
+        </a>
     </header>
 
     <section aria-labelledby="qd-summary-heading">
@@ -84,7 +86,7 @@
                     <tbody>
                         {% for quotation in page_obj %}
                         <tr>
-                            <th scope="row"><span class="qd-number">#{{ quotation.pk }}</span></th>
+                            <th scope="row"><a class="qd-number" href="{% url 'quotations:detail' quotation.pk %}" aria-label="Otwórz wycenę numer {{ quotation.pk }}">#{{ quotation.pk }} <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></th>
                             <td class="qd-customer">{{ quotation.customer.name }}</td>
                             <td class="qd-date">{{ quotation.date|date:"d.m.Y" }}</td>
                             <td class="qd-numeric"><span class="qd-items{% if not quotation.items_count %} qd-items--empty{% endif %}">{{ quotation.items_count }}</span></td>

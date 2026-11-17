@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Wycena #{{ quotation.pk }} | PAKER{% endblock %}
+{% block page_title %}Wycena #{{ quotation.pk }}{% endblock %}
+{% block style %}<link rel="stylesheet" href="{% static 'css/quotations/detail.css' %}">{% endblock %}
+{% block content %}
+<div class="quotation-detail" id="quotationEditor" data-materials-url="{% url 'quotations:materials' %}">
+    <header class="qt-header">
+        <div><a class="qt-back" href="{% url 'quotations:dashboard' %}">← Centrum wycen</a><h1 class="app-page-title">Wycena #{{ quotation.pk }}</h1><p class="qt-description">{{ quotation.customer.name }} · {{ quotation.date|date:"d.m.Y" }}</p></div>
+        <div class="qt-header-actions">
+    <a
+        href="https://kartony.pl/wp-content/uploads/2017/05/katalog-fefco-stec.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="app-btn app-btn-secondary"
+    >
+        <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+        Katalog FEFCO
+    </a>
+
+    <button
+        type="button"
+        class="app-btn app-btn-primary"
+        id="addItem"
+    >
+        + Dodaj pozycję
+    </button>
+</div>
+    </header>
+    <form method="post" id="quotationItems" class="app-card qt-items">
+        {% csrf_token %}{{ formset.management_form }}
+        <div class="app-card__header"><h2 class="app-card__title">Pozycje wyceny</h2><span class="qt-hint">Zmiany w tabeli i modalach zapiszesz przyciskiem poniżej.</span></div>
+        {% if formset.non_form_errors %}<div class="qt-error" role="alert">{{ formset.non_form_errors }}</div>{% endif %}
+        <div class="qt-table-wrap" role="region" aria-label="Edytowalna tabela pozycji" tabindex="0">
+            <table class="qt-table"><thead><tr><th scope="col">Lp.</th><th scope="col">Typ opakowania</th><th scope="col">W</th><th scope="col">L</th><th scope="col">H</th><th scope="col">Ilość sztuk</th><th scope="col">Materiał</th><th scope="col">Produktów z arkusza</th><th scope="col">Wymiar arkusza (mm)</th><th scope="col">Cena za 1000 m²</th><th scope="col">Godziny pracy</th><th scope="col">Końcowa cena opakowania</th></tr></thead>
+            <tbody id="itemRows">{% for form in formset %}{% include "quotations/_item_row.html" %}{% endfor %}</tbody></table>
+        </div>
+        <p class="qt-empty" id="emptyItems"{% if formset.total_form_count %} hidden{% endif %}>Brak pozycji. Kliknij „Dodaj pozycję”, aby rozpocząć.</p>
+        <div class="qt-footer"><span id="saveStatus" role="status" aria-live="polite">Ceny wpisujesz ręcznie.</span><button type="submit" class="app-btn app-btn-primary">Zapisz pozycje</button></div>
+    </form>
+    <template id="emptyItem">{% with form=formset.empty_form %}{% include "quotations/_item_row.html" %}{% endwith %}</template>
+    {{ workstations|json_script:"workstationsData" }}
+
+    <dialog id="materialModal" class="qt-modal" aria-labelledby="materialTitle">
+        <header><h2 id="materialTitle">Wybierz materiał</h2><button type="button" data-close aria-label="Zamknij">×</button></header>
+
+        <form id="materialSearch">
+    <div class="qt-material-filters">
+        <div class="qt-filter-field">
+            <label>Fala</label>
+
+            <div
+                class="qt-flute-buttons"
+                role="group"
+                aria-label="Filtr fali"
+            >
+                <button
+                    type="button"
+                    class="qt-flute is-active"
+                    data-flute=""
+                    aria-pressed="true"
+                >
+                    Wszystkie
+                </button>
+
+                <button type="button" class="qt-flute"
+                        data-flute="B" aria-pressed="false">B</button>
+
+                <button type="button" class="qt-flute"
+                        data-flute="C" aria-pressed="false">C</button>
+
+                <button type="button" class="qt-flute"
+                        data-flute="E" aria-pressed="false">E</button>
+
+                <button type="button" class="qt-flute"
+                        data-flute="EB" aria-pressed="false">EB</button>
+
+                <button type="button" class="qt-flute"
+                        data-flute="BC" aria-pressed="false">BC</button>
+            </div>
+        </div>
+
+        <div class="qt-filter-field qt-gsm-field">
+            <label for="materialGsm">Min. gramatura g/m²</label>
+
+            <input
+                id="materialGsm"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Wszystkie"
+            >
+        </div>
+    </div>
+
+    <label for="materialQuery">Indeks lub dostawca</label>
+
+    <div class="qt-search">
+        <input
+            id="materialQuery"
+            type="search"
+            maxlength="200"
+            autocomplete="off"
+        >
+
+        <button
+            class="app-btn app-btn-primary"
+            type="submit"
+        >
+            Szukaj
+        </button>
+    </div>
+</form>
+        <p id="materialStatus" role="status" aria-live="polite"></p>
+        <div class="qt-material-results" id="materialResults"></div>
+        <footer><button type="button" class="app-btn app-btn-secondary" id="materialPrevious">Poprzednia</button><span id="materialPage"></span><button type="button" class="app-btn app-btn-secondary" id="materialNext">Następna</button></footer>
+        <p class="qt-hint">Wybór materiału nie zmienia wpisanej ceny. Jednostki i przeliczenia ustalimy w logice kalkulacji.</p>
+    </dialog>
+
+    <dialog id="workModal" class="qt-modal" aria-labelledby="workTitle">
+        <header><h2 id="workTitle">Godziny pracy</h2><button type="button" data-close aria-label="Zamknij">×</button></header>
+        <form id="workEditor">
+            <p class="qt-hint">Wpisy dotyczą wyłącznie aktualnie wybranej pozycji wyceny.</p>
+            <div class="qt-work-table"><table><thead><tr><th>Stanowisko</th><th>Pracownicy</th><th>Godziny</th><th></th></tr></thead><tbody id="workRows"></tbody></table></div>
+            <p id="workStatus" role="status"></p>
+            <button type="button" class="app-btn app-btn-secondary" id="addWork">+ Dodaj stanowisko</button>
+            <footer><button type="button" class="app-btn app-btn-secondary" data-close>Anuluj</button><button type="submit" class="app-btn app-btn-primary">Zastosuj do pozycji</button></footer>
+        </form>
+        <p class="qt-hint">„Zastosuj” przenosi listę do tabeli. Zapis do bazy następuje po kliknięciu „Zapisz pozycje”.</p>
+    </dialog>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/quotations/detail.js' %}" defer></script>{% endblock %}
