@@ -3708,6 +3708,8 @@ class ShipmentUnitLoadingScanView(LoginRequiredMixin, View):
         )
 
     def get_context(self, request, shipment_unit, token):
+        import time
+        time.sleep(30)
         visit_counter(request.user, "add_shipment_unit")
         active_shipment = get_active_shipment(request.user)
 
