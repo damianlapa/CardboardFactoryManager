@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ustawienia procesów | PAKER{% endblock %}
+{% block page_title %}Ustawienia procesów{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/quotations/settings.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<div class="quotation-settings">
+
+    <header class="qs-header">
+        <a
+            href="{% url 'quotations:dashboard' %}"
+            class="qs-back"
+        >
+            ← Centrum wycen
+        </a>
+
+        <h1 class="app-page-title">
+            Ustawienia procesów
+        </h1>
+
+        <p>Rotacja — bez nadruku</p>
+    </header>
+
+    <form
+        method="post"
+        action="{% url 'quotations:process_settings' %}"
+        class="qs-process-form"
+    >
+        {% csrf_token %}
+
+        <section class="app-card">
+            <div class="app-card__header">
+                <h2 class="app-card__title">
+                    Przygotowanie i zasady pracy
+                </h2>
+            </div>
+
+            <div class="qs-process-grid">
+                {% for field in profile_form %}
+                    <div class="qs-field">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% for error in field.errors %}
+                            <p class="qs-error">
+                                {{ error }}
+                            </p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                {% for error in profile_form.non_field_errors %}
+                    <p class="qs-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="app-card">
+            <div class="app-card__header">
+                <h2 class="app-card__title">
+                    Wydajność według fali
+                </h2>
+            </div>
+
+            <table class="qs-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Fala</th>
+                        <th scope="col">
+                            Pierwsza partia (min)
+                        </th>
+                        <th scope="col">
+                            Pełne tempo (ark./h)
+                        </th>
+                        <th scope="col">
+                            Minimalne tempo (ark./h)
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <th scope="row">
+                                <span class="qs-flute">
+                                    {{ row.flute }}
+                                </span>
+                            </th>
+
+                            {% for field in row.form %}
+                                <td>
+                                    {{ field }}
+
+                                    {% for error in field.errors %}
+                                        <p class="qs-error">
+                                            {{ error }}
+                                        </p>
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        {% if row.form.non_field_errors %}
+                            <tr>
+                                <td colspan="4">
+                                    {{ row.form.non_field_errors }}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <footer class="qs-footer">
+                <p>
+                    Między progami powierzchni tempo
+                    spada liniowo. Od górnego progu
+                    pozostaje na poziomie minimalnym.
+                    Przygotowanie i pierwsza partia
+                    są liczone osobno.
+                </p>
+
+                <button
+                    type="submit"
+                    class="app-btn app-btn-primary"
+                >
+                    Zapisz ustawienia
+                </button>
+            </footer>
+        </section>
+    </form>
+
+</div>
+{% endblock %}

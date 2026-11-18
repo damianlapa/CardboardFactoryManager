@@ -1,6 +1,7 @@
 from django.db import transaction
 from ..models import QuotationWorkEntry
 from decimal import Decimal
+from ..models import QuotationPrintColor
 
 def sum_work_hours(entries):
     return sum(
@@ -24,4 +25,13 @@ def save_quotation_items(formset):
         QuotationWorkEntry.objects.bulk_create([
             QuotationWorkEntry(item=item, work_station_id=entry["work_station"], employees=entry["employees"], hours=entry["hours"])
             for entry in form.cleaned_data["work_entries"]
+        ])
+        item.print_colors.all().delete()
+
+        QuotationPrintColor.objects.bulk_create([
+            QuotationPrintColor(
+                item=item,
+                **color,
+            )
+            for color in form.cleaned_data["print_colors"]
         ])

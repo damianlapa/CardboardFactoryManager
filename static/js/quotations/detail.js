@@ -19,6 +19,8 @@
         list.forEach((row, i) => {
             row.querySelector('[data-number]').textContent = String(i + 1);
             const count = workValue(row).length;
+            updateSheetPrice(row);
+            updatePrintBadge(row);
 
 row.querySelector('[data-work]').title = (
     `Kalkulator godzin · wpisów: ${count}`
@@ -160,6 +162,9 @@ document.getElementById('materialGsm').addEventListener('input', () => {
         );
 
         priceInput.value = item.price_per_1000_m2 ?? '';
+        updateSheetPrice(activeMaterialRow);
+
+        calculateSheet(activeMaterialRow);
 
         markDirty();
         materialModal.close();
@@ -340,5 +345,387 @@ rows.addEventListener('input', event => {
     updateHoursState(row);
     markDirty();
 });
+    const sheetTimers = new WeakMap();
+const sheetRequests = new WeakMap();
+
+const sheetSourceFields = new Set([
+    'packaging_type',
+    'width',
+    'length',
+    'height',
+    'material',
+    'products_per_sheet',
+]);
+
+async function calculateSheet(row) {
+    clearTimeout(sheetTimers.get(row));
+
+    sheetRequests.get(row)?.abort();
+
+    if (!row.isConnected) return;
+
+    const status = row.querySelector('[data-sheet-status]');
+
+    const values = Object.fromEntries(
+        [...sheetSourceFields].map(name => [
+            name,
+            field(row, name).value,
+        ])
+    );
+
+    const complete = Object.entries(values).every(
+    ([name, value]) => {
+        const number = Number(value);
+
+        return (
+            value !== ''
+            && Number.isFinite(number)
+            && number > 0
+            && (
+                name === 'products_per_sheet'
+                || Number.isInteger(number)
+            )
+        );
+    }
+);
+
+    if (!complete) {
+        status.textContent = (
+            'Uzupełnij FEFCO, materiał i wymiary pudełka.'
+        );
+        return;
+    }
+
+    const controller = new AbortController();
+
+    sheetRequests.set(row, controller);
+
+    status.textContent = 'Obliczanie arkusza…';
+
+    try {
+        const url = new URL(
+            root.dataset.sheetUrl,
+            location.origin
+        );
+
+        Object.entries(values).forEach(([name, value]) => {
+            url.searchParams.set(name, value);
+        });
+
+        const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok || response.redirected) {
+            throw new Error('sheet-request');
+        }
+
+        const data = await response.json();
+
+        if (
+            !row.isConnected
+            || sheetRequests.get(row) !== controller
+            || controller.signal.aborted
+        ) {
+            return;
+        }
+
+        status.textContent = data.message || '';
+
+        if (!data.ok) return;
+
+        field(row, 'sheet_width').value = data.sheet_width;
+        field(row, 'sheet_length').value = data.sheet_length;
+        field(row, 'products_per_sheet').value = (
+            data.products_per_sheet
+        );
+        updateSheetPrice(row);
+
+        markDirty();
+
+    } catch (error) {
+        if (
+            error.name !== 'AbortError'
+            && row.isConnected
+            && sheetRequests.get(row) === controller
+        ) {
+            status.textContent = (
+                'Nie udało się obliczyć arkusza. '
+                + 'Spróbuj ponownie.'
+            );
+        }
+    }
+}
+
+function scheduleSheetCalculation(event) {
+    const input = event.target;
+
+    if (!input.name) return;
+
+    const name = input.name.replace(
+        /^items-\d+-/,
+        ''
+    );
+
+    if (!sheetSourceFields.has(name)) return;
+
+    const row = input.closest('[data-item]');
+
+    if (!row) return;
+
+    clearTimeout(sheetTimers.get(row));
+    sheetRequests.get(row)?.abort();
+
+    row.querySelector('[data-sheet-status]').textContent = (
+        'Oczekiwanie na przeliczenie…'
+    );
+
+    sheetTimers.set(
+        row,
+        setTimeout(() => calculateSheet(row), 300)
+    );
+}
+
+rows.addEventListener(
+    'input',
+    scheduleSheetCalculation
+);
+
+rows.addEventListener(
+    'change',
+    scheduleSheetCalculation
+);
+function updateSheetPrice(row) {
+    const output = row.querySelector('[data-sheet-price]');
+
+    const widthValue = field(row, 'sheet_width').value;
+    const lengthValue = field(row, 'sheet_length').value;
+    const priceValue = field(row, 'material_price').value;
+
+    const width = Number(widthValue);
+    const length = Number(lengthValue);
+    const pricePer1000 = Number(priceValue);
+
+    if (
+        widthValue === ''
+        || lengthValue === ''
+        || priceValue === ''
+        || !Number.isInteger(width)
+        || !Number.isInteger(length)
+        || width <= 0
+        || length <= 0
+        || !Number.isFinite(pricePer1000)
+        || pricePer1000 < 0
+    ) {
+        output.value = '';
+        return;
+    }
+
+    const sheetPrice = (
+        width * length * pricePer1000 / 1_000_000_000
+    );
+
+    output.value = sheetPrice.toFixed(4);
+}
+
+function handleSheetPriceChange(event) {
+    const name = event.target.name?.replace(
+        /^items-\d+-/,
+        ''
+    );
+
+    if (
+        ![
+            'sheet_width',
+            'sheet_length',
+            'material_price',
+        ].includes(name)
+    ) {
+        return;
+    }
+
+    const row = event.target.closest('[data-item]');
+
+    if (row) {
+        updateSheetPrice(row);
+    }
+}
+
+rows.addEventListener('input', handleSheetPriceChange);
+rows.addEventListener('change', handleSheetPriceChange);
+
+const printModal = document.getElementById('printModal');
+const printRows = document.getElementById('printRows');
+const printEditor = document.getElementById('printEditor');
+const printStatus = document.getElementById('printStatus');
+
+let activePrintRow = null;
+
+function getPrintColors(row) {
+    try {
+        const value = JSON.parse(
+            field(row, 'print_colors').value || '[]'
+        );
+
+        return Array.isArray(value) ? value : [];
+    } catch {
+        return [];
+    }
+}
+
+function updatePrintBadge(row) {
+    const colors = getPrintColors(row);
+    const button = row.querySelector('[data-print]');
+
+    button.querySelector('[data-print-count]').textContent = (
+        String(colors.length)
+    );
+
+    button.classList.toggle(
+        'is-active',
+        colors.length > 0
+    );
+
+    button.title = colors.length
+        ? colors.map(color => color.color_name).join(', ')
+        : 'Brak nadruku — kliknij, aby dodać kolory';
+
+    button.setAttribute(
+        'aria-label',
+        `Nadruk. Liczba kolorów: ${colors.length}. Otwórz ustawienia.`
+    );
+}
+
+function addPrintColor(entry = {}) {
+    const row = document.createElement('tr');
+
+    const nameInput = document.createElement('input');
+
+    nameInput.type = 'text';
+    nameInput.required = true;
+    nameInput.maxLength = 100;
+    nameInput.placeholder = 'Nazwa lub kod koloru';
+    nameInput.value = entry.color_name ?? '';
+    nameInput.dataset.colorName = '';
+
+    nameInput.setAttribute(
+        'aria-label',
+        'Kolor lub kod koloru'
+    );
+
+    const consumptionInput = document.createElement('input');
+
+    consumptionInput.type = 'number';
+    consumptionInput.required = true;
+    consumptionInput.min = '0';
+    consumptionInput.max = '99999999.9999';
+    consumptionInput.step = '0.0001';
+    consumptionInput.value = (
+        entry.consumption_per_1000 ?? '0'
+    );
+
+    consumptionInput.dataset.colorConsumption = '';
+
+    consumptionInput.setAttribute(
+        'aria-label',
+        'Zużycie na 1000 sztuk'
+    );
+
+    const remove = document.createElement('button');
+
+    remove.type = 'button';
+    remove.className = 'qt-remove';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', 'Usuń kolor');
+
+    remove.addEventListener('click', () => {
+        row.remove();
+    });
+
+    for (
+        const control of [
+            nameInput,
+            consumptionInput,
+            remove,
+        ]
+    ) {
+        row.insertCell().append(control);
+    }
+
+    printRows.append(row);
+}
+
+document.getElementById('addPrintColor')
+    .addEventListener('click', () => {
+        addPrintColor();
+
+        printRows.lastElementChild
+            .querySelector('[data-color-name]')
+            .focus();
+    });
+
+printModal.querySelectorAll('[data-close]')
+    .forEach(button => {
+        button.addEventListener('click', () => {
+            printModal.close();
+        });
+    });
+
+rows.addEventListener('click', event => {
+    const button = event.target.closest('[data-print]');
+
+    if (!button) return;
+
+    activePrintRow = button.closest('[data-item]');
+
+    printRows.replaceChildren();
+    printStatus.textContent = '';
+
+    getPrintColors(activePrintRow).forEach(addPrintColor);
+
+    printModal.showModal();
+});
+
+printEditor.addEventListener('submit', event => {
+    event.preventDefault();
+
+    if (!printEditor.reportValidity()) return;
+
+    const colors = [...printRows.rows].map(row => ({
+        color_name: row.querySelector(
+            '[data-color-name]'
+        ).value.trim(),
+
+        consumption_per_1000: row.querySelector(
+            '[data-color-consumption]'
+        ).value,
+    }));
+
+    if (colors.length > 100) {
+        printStatus.textContent = (
+            'Maksymalnie 100 kolorów w jednej pozycji.'
+        );
+        return;
+    }
+
+    if (colors.some(color => !color.color_name)) {
+        printStatus.textContent = (
+            'Uzupełnij nazwę każdego koloru.'
+        );
+        return;
+    }
+
+    field(activePrintRow, 'print_colors').value = (
+        JSON.stringify(colors)
+    );
+
+    updatePrintBadge(activePrintRow);
+    markDirty();
+    printModal.close();
+});
+
     refreshRows();
 })();

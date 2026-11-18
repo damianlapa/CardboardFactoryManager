@@ -63,6 +63,11 @@ class WorkEntryForm(forms.Form):
 
 class QuotationItemForm(forms.ModelForm):
     work_entries = forms.JSONField(required=False, initial=list, widget=forms.HiddenInput)
+    print_colors = forms.JSONField(
+        required=False,
+        initial=list,
+        widget=forms.HiddenInput,
+    )
 
     class Meta:
         model = QuotationItem
@@ -109,6 +114,17 @@ class QuotationItemForm(forms.ModelForm):
             if isinstance(field, forms.DecimalField):
                 field.widget.attrs.update({"min": "0", "step": "0.01"})
 
+        if self.instance.pk:
+            self.initial["print_colors"] = [
+                {
+                    "color_name": color.color_name,
+                    "consumption_per_1000": str(
+                        color.consumption_per_1000
+                    ),
+                }
+                for color in self.instance.print_colors.all()
+            ]
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -121,6 +137,53 @@ class QuotationItemForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+    def clean_print_colors(self):
+        if self.add_prefix("print_colors") not in self.data:
+            raise ValidationError(
+                "Brak danych nadruku. Odśwież formularz."
+            )
+
+        entries = self.cleaned_data.get("print_colors")
+
+        if entries is None:
+            entries = []
+
+        if (
+            not isinstance(entries, list)
+            or len(entries) > 100
+        ):
+            raise ValidationError(
+                "Nadruk musi być listą zawierającą "
+                "najwyżej 100 kolorów."
+            )
+
+        result = []
+
+        for index, entry in enumerate(entries, 1):
+            if not isinstance(entry, dict):
+                raise ValidationError(
+                    f"Kolor #{index}: niepoprawne dane."
+                )
+
+            form = PrintColorForm(entry)
+
+            if not form.is_valid():
+                raise ValidationError(
+                    f"Kolor #{index}: podaj nazwę oraz "
+                    "nieujemne zużycie z maksymalnie "
+                    "4 miejscami po przecinku."
+                )
+
+            result.append({
+                "color_name": form.cleaned_data["color_name"],
+                "consumption_per_1000": str(
+                    form.cleaned_data["consumption_per_1000"]
+                ),
+            })
+
+        return result
 
     def clean_work_entries(self):
         if self.add_prefix("work_entries") not in self.data:
@@ -158,3 +221,14 @@ QuotationItemFormSet = inlineformset_factory(
     Quotation, QuotationItem, form=QuotationItemForm,
     formset=BaseQuotationItemFormSet, extra=0, can_delete=False,
 )
+
+
+class PrintColorForm(forms.Form):
+    color_name = forms.CharField(
+        max_length=100,
+    )
+    consumption_per_1000 = forms.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        min_value=0,
+    )

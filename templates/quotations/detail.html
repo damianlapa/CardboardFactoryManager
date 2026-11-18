@@ -4,7 +4,7 @@
 {% block page_title %}Wycena #{{ quotation.pk }}{% endblock %}
 {% block style %}<link rel="stylesheet" href="{% static 'css/quotations/detail.css' %}">{% endblock %}
 {% block content %}
-<div class="quotation-detail" id="quotationEditor" data-materials-url="{% url 'quotations:materials' %}">
+<div class="quotation-detail" id="quotationEditor" data-materials-url="{% url 'quotations:materials' %}" data-sheet-url="{% url 'quotations:calculate_sheet' %}">
     <header class="qt-header">
         <div><a class="qt-back" href="{% url 'quotations:dashboard' %}">← Centrum wycen</a><h1 class="app-page-title">Wycena #{{ quotation.pk }}</h1><p class="qt-description">{{ quotation.customer.name }} · {{ quotation.date|date:"d.m.Y" }}</p></div>
         <div class="qt-header-actions">
@@ -32,7 +32,7 @@
         <div class="app-card__header"><h2 class="app-card__title">Pozycje wyceny</h2><span class="qt-hint">Zmiany w tabeli i modalach zapiszesz przyciskiem poniżej.</span></div>
         {% if formset.non_form_errors %}<div class="qt-error" role="alert">{{ formset.non_form_errors }}</div>{% endif %}
         <div class="qt-table-wrap" role="region" aria-label="Edytowalna tabela pozycji" tabindex="0">
-            <table class="qt-table"><thead><tr><th scope="col">Lp.</th><th scope="col">Typ opakowania</th><th scope="col">W</th><th scope="col">L</th><th scope="col">H</th><th scope="col">Ilość sztuk</th><th scope="col">Materiał</th><th scope="col">Produktów z arkusza</th><th scope="col">Wymiar arkusza (mm)</th><th scope="col">Cena za 1000 m²</th><th scope="col">Godziny pracy</th><th scope="col">Końcowa cena opakowania</th></tr></thead>
+            <table class="qt-table"><thead><tr><th scope="col">Lp.</th><th scope="col">Typ opakowania</th><th scope="col">Nadruk</th><th scope="col">L</th><th scope="col">W</th><th scope="col">H</th><th scope="col">Ilość sztuk</th><th scope="col">Materiał</th><th scope="col">Cena za 1000 m²</th><th scope="col">Produktów z arkusza</th><th scope="col">Wymiar arkusza (mm)</th><th scope="col">Cena arkusza (PLN)</th><th scope="col">Godziny pracy</th><th scope="col">Końcowa cena opakowania</th></tr></thead>
             <tbody id="itemRows">{% for form in formset %}{% include "quotations/_item_row.html" %}{% endfor %}</tbody></table>
         </div>
         <p class="qt-empty" id="emptyItems"{% if formset.total_form_count %} hidden{% endif %}>Brak pozycji. Kliknij „Dodaj pozycję”, aby rozpocząć.</p>
@@ -128,6 +128,78 @@
         </form>
         <p class="qt-hint">„Zastosuj” przenosi listę do tabeli. Zapis do bazy następuje po kliknięciu „Zapisz pozycje”.</p>
     </dialog>
+
+    <dialog
+    id="printModal"
+    class="qt-modal"
+    aria-labelledby="printTitle"
+>
+    <header>
+        <h2 id="printTitle">Nadruk — kolory</h2>
+
+        <button
+            type="button"
+            data-close
+            aria-label="Zamknij"
+        >
+            ×
+        </button>
+    </header>
+
+    <form id="printEditor">
+        <p class="qt-hint">
+            Dodaj kolory oraz zużycie każdego koloru
+            na 1000 sztuk opakowania.
+        </p>
+
+        <div class="qt-work-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Kolor / kod koloru</th>
+                        <th scope="col">Zużycie / 1000 szt.</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+
+                <tbody id="printRows"></tbody>
+            </table>
+        </div>
+
+        <p id="printStatus" role="status"></p>
+
+        <button
+            type="button"
+            class="app-btn app-btn-secondary"
+            id="addPrintColor"
+        >
+            + Dodaj kolor
+        </button>
+
+        <footer>
+            <button
+                type="button"
+                class="app-btn app-btn-secondary"
+                data-close
+            >
+                Anuluj
+            </button>
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+                Zastosuj do pozycji
+            </button>
+        </footer>
+    </form>
+
+    <p class="qt-hint">
+        Pusta lista oznacza brak nadruku.
+        Zapis do bazy następuje po kliknięciu
+        „Zapisz pozycje”.
+    </p>
+</dialog>
 </div>
 {% endblock %}
 {% block scripts %}<script src="{% static 'js/quotations/detail.js' %}" defer></script>{% endblock %}

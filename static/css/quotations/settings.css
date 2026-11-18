@@ -1,0 +1,173 @@
+.quotation-settings {
+    display: grid;
+    gap: 20px;
+    max-width: 1100px;
+    color: var(--app-text);
+}
+
+.quotation-settings .qs-back {
+    display: inline-block;
+    margin-bottom: 14px;
+    color: var(--app-text-secondary);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.quotation-settings .qs-back:hover {
+    color: var(--app-primary);
+}
+
+.quotation-settings .qs-header p {
+    margin: 7px 0 0;
+    color: var(--app-text-secondary);
+    font-size: 13px;
+}
+
+.quotation-settings .qs-selector {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 20px;
+}
+
+.quotation-settings .qs-field {
+    display: grid;
+    gap: 7px;
+    flex: 1;
+    min-width: 180px;
+    max-width: 450px;
+}
+
+.quotation-settings label {
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.quotation-settings input,
+.quotation-settings select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+
+    padding: 8px 10px;
+
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+    color: var(--app-text);
+
+    font: inherit;
+    font-size: 13px;
+}
+
+.quotation-settings .qs-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.quotation-settings .qs-table th,
+.quotation-settings .qs-table td {
+    padding: 14px;
+    border-bottom: 1px solid var(--app-border);
+    vertical-align: top;
+}
+
+.quotation-settings .qs-table thead th {
+    background: var(--app-surface-hover);
+    color: var(--app-text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.quotation-settings .qs-table th:first-child {
+    width: 12%;
+}
+
+.quotation-settings .qs-flute {
+    display: inline-block;
+    padding: 7px 10px;
+
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.quotation-settings .qs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px;
+}
+
+.quotation-settings .qs-footer p {
+    max-width: 620px;
+    margin: 0;
+
+    color: var(--app-text-secondary);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.quotation-settings .qs-error {
+    margin: 6px 0 0;
+    color: var(--app-danger);
+    font-size: 11px;
+}
+
+.quotation-settings .qs-empty {
+    padding: 35px 20px;
+    color: var(--app-text-secondary);
+    text-align: center;
+    font-size: 13px;
+}
+
+.quotation-settings :is(input, select, button, a):focus-visible {
+    outline: 2px solid var(--app-primary);
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .quotation-settings .qs-table th,
+    .quotation-settings .qs-table td {
+        padding: 10px 5px;
+    }
+
+    .quotation-settings .qs-table input {
+        padding: 7px 4px;
+        font-size: 12px;
+    }
+}
+
+.quotation-settings .qs-process-form {
+    display: grid;
+    gap: 20px;
+}
+
+.quotation-settings .qs-process-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.quotation-settings .qs-process-grid .qs-field {
+    min-width: 0;
+    max-width: none;
+}
+
+@media (max-width: 700px) {
+    .quotation-settings .qs-process-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

@@ -1,10 +1,49 @@
 <tr data-item>
     <td class="qt-lp">{{ form.id }}{{ form.quotation }}<span data-number></span>{% if not form.instance.pk %}<button type="button" class="qt-remove" data-remove aria-label="Usuń niezapisaną pozycję">×</button>{% endif %}</td>
-    <td>{{ form.packaging_type }}</td><td>{{ form.width }}</td><td>{{ form.length }}</td><td>{{ form.height }}</td><td>{{ form.quantity }}</td>
+    <td>{{ form.packaging_type }}</td>
+    <td>
+    {{ form.print_colors }}
+
+    <button
+        type="button"
+        class="qt-print-button"
+        data-print
+        title="Kolory nadruku"
+        aria-label="Otwórz kolory nadruku"
+    >
+        <span data-print-count>0</span>
+    </button>
+    </td>
+    <td>{{ form.length }}</td><td>{{ form.width }}</td><td>{{ form.height }}</td><td>{{ form.quantity }}</td>
     <td>{{ form.material }}<button type="button" class="qt-cell-button" data-material>{{ form.material_label|default:"Wybierz materiał" }}</button></td>
-    <td>{{ form.products_per_sheet }}</td>
-    <td><div class="qt-sheet">{{ form.sheet_width }}<span aria-hidden="true">×</span>{{ form.sheet_length }}</div></td>
     <td>{{ form.material_price }}</td>
+    <td>{{ form.products_per_sheet }}</td>
+    <td>
+    <div class="qt-sheet">
+
+        {{ form.sheet_length }}
+
+
+        <span aria-hidden="true">×</span>
+        {{ form.sheet_width }}
+    </div>
+
+    <small
+        class="qt-sheet-status"
+        data-sheet-status
+        role="status"
+    ></small>
+</td><td>
+    <input
+        type="text"
+        class="qt-calculated-price"
+        data-sheet-price
+        readonly
+        aria-label="Cena arkusza w PLN"
+        placeholder="—"
+    >
+</td>
+
     <td>
     {{ form.work_entries }}
     {{ form.hours_manual }}
@@ -37,4 +76,4 @@
 </td>
     <td>{{ form.price }}</td>
 </tr>
-{% if form.errors %}<tr class="qt-row-errors"><td colspan="12"><strong>Błędy pozycji:</strong>{{ form.errors }}</td></tr>{% endif %}
+{% if form.errors %}<tr class="qt-row-errors"><td colspan="14"><strong>Błędy pozycji:</strong>{{ form.errors }}</td></tr>{% endif %}

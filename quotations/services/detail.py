@@ -22,7 +22,7 @@ def get_item_formset(quotation, data=None):
             "material__cardboard",
             "material__price_list__provider",
         )
-        .prefetch_related("work_entries")
+        .prefetch_related("work_entries", "print_colors")
         .order_by("pk")
     )
 

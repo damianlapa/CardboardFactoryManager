@@ -12,6 +12,22 @@ from .services.items import save_quotation_items
 from .services.materials import search_materials
 from django.http import JsonResponse
 
+from .services.processes import (
+    get_process_settings_context,
+    save_process_settings,
+)
+
+from urllib.parse import urlencode
+
+from django.urls import reverse
+
+from .services.settings import (
+    get_sheet_settings_context,
+    save_sheet_settings,
+)
+
+from .services.sheet import calculate_sheet
+
 
 class QuotationDashboardView(LoginRequiredMixin, View):
     login_url = "login"
@@ -56,3 +72,89 @@ class QuotationMaterialSearchView(LoginRequiredMixin, View):
 
     def get(self, request):
         return JsonResponse(search_materials(request.GET))
+
+
+class QuotationSettingsView(LoginRequiredMixin, View):
+    login_url = "login"
+    template_name = "quotations/settings.html"
+
+    def get(self, request):
+        context = get_sheet_settings_context(
+            request.GET,
+        )
+
+        return render(
+            request,
+            self.template_name,
+            context,
+        )
+
+    def post(self, request):
+        context = get_sheet_settings_context(
+            request.POST,
+            data=request.POST,
+        )
+
+        if save_sheet_settings(context):
+            messages.success(
+                request,
+                "Zapisano dodatki dla wybranego FEFCO.",
+            )
+
+            query = urlencode({
+                "packaging_type": (
+                    context["packaging_type"].pk
+                ),
+            })
+
+            return redirect(
+                f"{reverse('quotations:settings')}?{query}"
+            )
+
+        return render(
+            request,
+            self.template_name,
+            context,
+        )
+
+
+class QuotationSheetCalculationView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request):
+        return JsonResponse(
+            calculate_sheet(request.GET)
+        )
+
+
+class QuotationProcessSettingsView(LoginRequiredMixin, View):
+    login_url = "login"
+    template_name = "quotations/process_settings.html"
+
+    def get(self, request):
+        return render(
+            request,
+            self.template_name,
+            get_process_settings_context(),
+        )
+
+    def post(self, request):
+        context = get_process_settings_context(
+            data=request.POST,
+        )
+
+        if save_process_settings(context):
+            messages.success(
+                request,
+                "Zapisano ustawienia rotacji bez nadruku.",
+            )
+
+            return redirect(
+                "quotations:process_settings"
+            )
+
+        return render(
+            request,
+            self.template_name,
+            context,
+        )

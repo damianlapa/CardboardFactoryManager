@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ustawienia wycen | PAKER{% endblock %}
+{% block page_title %}Ustawienia wycen{% endblock %}
+
+{% block style %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/quotations/settings.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<div class="quotation-settings">
+
+    <header class="qs-header">
+        <a
+            href="{% url 'quotations:dashboard' %}"
+            class="qs-back"
+        >
+            ← Centrum wycen
+        </a>
+
+        <h1 class="app-page-title">Ustawienia wycen</h1>
+
+        <p>
+            Wybierz kod FEFCO i wpisz dodatki
+            dla poszczególnych fal.
+        </p>
+    </header>
+
+    <section class="app-card">
+        <div class="app-card__header">
+            <h2 class="app-card__title">
+                Wybór opakowania
+            </h2>
+        </div>
+
+        <form
+            method="get"
+            action="{% url 'quotations:settings' %}"
+            class="qs-selector"
+        >
+            <div class="qs-field">
+                <label
+                    for="{{ selector.packaging_type.id_for_label }}"
+                >
+                    Kod FEFCO
+                </label>
+
+                {{ selector.packaging_type }}
+
+                {% for error in selector.packaging_type.errors %}
+                    <p class="qs-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <button
+                type="submit"
+                class="app-btn app-btn-primary"
+            >
+                Wczytaj ustawienia
+            </button>
+        </form>
+    </section>
+
+    {% if packaging_type %}
+        <section class="app-card">
+            <div class="app-card__header">
+                <h2 class="app-card__title">
+                    Dodatki — FEFCO {{ packaging_type.code }}
+                </h2>
+            </div>
+
+            <form
+                method="post"
+                action="{% url 'quotations:settings' %}"
+            >
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="packaging_type"
+                    value="{{ packaging_type.pk }}"
+                >
+
+                <table class="qs-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Fala</th>
+                            <th scope="col">Zakładka (mm)</th>
+                            <th scope="col">
+                                Dodatek do długości (mm)
+                            </th>
+                            <th scope="col">
+                                Dodatek do szerokości (mm)
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in rows %}
+                            <tr>
+                                <th scope="row">
+                                    <span class="qs-flute">
+                                        {{ row.flute }}
+                                    </span>
+                                </th>
+
+                                {% for field in row.form %}
+                                    <td>
+                                        {{ field }}
+
+                                        {% for error in field.errors %}
+                                            <p class="qs-error">
+                                                {{ error }}
+                                            </p>
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+
+                            {% if row.form.non_field_errors %}
+                                <tr>
+                                    <td colspan="4">
+                                        {% for error in row.form.non_field_errors %}
+                                            <p class="qs-error" role="alert">
+                                                Fala {{ row.flute }}:
+                                                {{ error }}
+                                            </p>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <footer class="qs-footer">
+                    <p>
+                        Pusty wiersz oznacza brak konfiguracji.
+                        W uzupełnianym wierszu wpisz wszystkie
+                        trzy wartości — również 0.
+                    </p>
+
+                    <button
+                        type="submit"
+                        class="app-btn app-btn-primary"
+                    >
+                        Zapisz dodatki
+                    </button>
+                </footer>
+            </form>
+        </section>
+    {% else %}
+        <div class="app-card qs-empty">
+            Wybierz kod FEFCO, aby otworzyć tabelę dodatków.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

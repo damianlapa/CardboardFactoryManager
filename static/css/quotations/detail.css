@@ -246,3 +246,87 @@
 .quotation-detail .qt-hours-note:not([hidden]) {
     display: block;
 }
+
+.quotation-detail .qt-sheet-status {
+    display: block;
+    margin-top: 5px;
+
+    color: var(--app-text-secondary);
+
+    font-size: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.quotation-detail .qt-sheet-status:empty {
+    display: none;
+}
+
+.quotation-detail .qt-table thead th:nth-child(1)  { width: 3%; }
+.quotation-detail .qt-table thead th:nth-child(2)  { width: 8%; }
+.quotation-detail .qt-table thead th:nth-child(3)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(4)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(5)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(6)  { width: 6%; }
+.quotation-detail .qt-table thead th:nth-child(7)  { width: 14%; }
+.quotation-detail .qt-table thead th:nth-child(8)  { width: 6%; }
+.quotation-detail .qt-table thead th:nth-child(9)  { width: 12%; }
+.quotation-detail .qt-table thead th:nth-child(10) { width: 8%; }
+.quotation-detail .qt-table thead th:nth-child(11) { width: 9%; }
+.quotation-detail .qt-table thead th:nth-child(12) { width: 11%; }
+.quotation-detail .qt-table thead th:nth-child(13) { width: 11%; }
+
+.quotation-detail .qt-table .qt-calculated-price {
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: default;
+}
+
+.quotation-detail .qt-table thead th:nth-child(1)  { width: 3%; }
+.quotation-detail .qt-table thead th:nth-child(2)  { width: 8%; }
+.quotation-detail .qt-table thead th:nth-child(3)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(4)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(5)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(6)  { width: 4%; }
+.quotation-detail .qt-table thead th:nth-child(7)  { width: 6%; }
+.quotation-detail .qt-table thead th:nth-child(8)  { width: 12%; }
+.quotation-detail .qt-table thead th:nth-child(9)  { width: 6%; }
+.quotation-detail .qt-table thead th:nth-child(10) { width: 11%; }
+.quotation-detail .qt-table thead th:nth-child(11) { width: 8%; }
+.quotation-detail .qt-table thead th:nth-child(12) { width: 9%; }
+.quotation-detail .qt-table thead th:nth-child(13) { width: 10%; }
+.quotation-detail .qt-table thead th:nth-child(14) { width: 11%; }
+
+.quotation-detail .qt-print-button {
+    width: 100%;
+    min-height: 36px;
+    padding: 5px 2px;
+
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-radius-sm);
+
+    background: var(--app-surface);
+    color: var(--app-text-secondary);
+
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quotation-detail .qt-print-button:hover {
+    border-color: var(--app-primary);
+    color: var(--app-primary);
+}
+
+.quotation-detail .qt-print-button.is-active {
+    background: var(--app-primary-soft);
+    border-color: var(--app-primary);
+    color: var(--app-primary);
+}
+
+.quotation-detail #printStatus {
+    color: var(--app-danger);
+    font-size: 12px;
+}
